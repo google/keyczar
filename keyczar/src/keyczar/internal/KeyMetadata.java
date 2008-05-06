@@ -1,10 +1,11 @@
 package keyczar.internal;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import keyczar.KeyczarException;
 
-class KeyMetadata {
+public class KeyMetadata {
     
   private final String name;
   private final KeyPurpose purpose;
@@ -37,7 +38,7 @@ class KeyMetadata {
     return versions.add(version);
   }
 
-  static KeyMetadata getMetadata(DataUnpacker unpacker)
+  public static KeyMetadata getMetadata(DataUnpacker unpacker)
       throws DataPackingException {
     String name = new String(unpacker.getArray());
     KeyPurpose p = KeyPurpose.getPurpose(unpacker.getInt());
@@ -58,5 +59,9 @@ class KeyMetadata {
       written += v.write(packer);
     }
     return written;
+  }
+
+  public List<KeyVersion> getVersions() {
+    return versions;
   }
 }

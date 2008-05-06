@@ -1,6 +1,6 @@
 package keyczar.internal;
 
-class KeyVersion {
+public class KeyVersion {
   private final int versionNumber;
   private final KeyStatus status;
   private final boolean exportable;
@@ -11,7 +11,7 @@ class KeyVersion {
     this.exportable = export;
   }
 
-  int getVersionNumber() {
+  public int getVersionNumber() {
     return versionNumber;
   }
   

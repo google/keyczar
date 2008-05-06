@@ -14,6 +14,7 @@ import java.io.OutputStream;
   private static final int INT = 0;
   private static final int LONG = 1;
   private static final int ARRAY = 2;
+
   private static int MAX_VARINT_SIZE = 5;
   private static int MAX_VARLONG_SIZE = 10;
 
@@ -25,7 +26,7 @@ import java.io.OutputStream;
    */
   DataPacker(OutputStream output) {
     this.output = output;
-    this.tagCount = 0;
+    this.tagCount = 1;
   }
 
   /**
@@ -128,7 +129,7 @@ import java.io.OutputStream;
    * @param data The input data
    * @return The number of bytes its packed form would require
    */
-  static int packSize(byte[] data) {
+  static int arrayPackSize(byte[] data) {
     return intPackSize(data.length) + data.length;
   }
 

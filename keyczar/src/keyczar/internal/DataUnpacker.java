@@ -24,9 +24,9 @@ public class DataUnpacker {
    * 
    * @param input An input stream containing packed data
    */
-  DataUnpacker(InputStream input) {
+  public DataUnpacker(InputStream input) {
     DataUnpacker.input = input;
-    this.tagCount = 0;
+    this.tagCount = 1;
   }
 
   /**

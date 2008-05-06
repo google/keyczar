@@ -9,11 +9,11 @@ public class Util {
   private static MessageDigest md;
   static {
     try {
-      md = MessageDigest.getInstance(Messages.getString("HashAlgorithm"));
+      md = MessageDigest.getInstance(Messages.getString("Util.hashAlgorithm"));
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(
           Messages.getString("Util.unsupportedHashAlgorithm") +
-          Messages.getString("HashAlgorithm"), e);
+          Messages.getString("Util.hashAlgorithm"), e);
     }
   }
 
