@@ -1,4 +1,4 @@
-package keyczar.internal;
+package keyczar;
 
 import static org.junit.Assert.*;
 
@@ -7,6 +7,12 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+
+import keyczar.KeyStatus;
+import keyczar.KeyVersion;
+import keyczar.internal.DataPacker;
+import keyczar.internal.DataPackingException;
+import keyczar.internal.DataUnpacker;
 
 public class KeyVersionTest {
   static KeyVersion v = new KeyVersion(3, KeyStatus.ACTIVE, false);

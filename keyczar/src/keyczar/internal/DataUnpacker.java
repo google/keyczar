@@ -37,7 +37,7 @@ public class DataUnpacker {
    * @throws DataPackingException If a read error occurs,
    *                              or if the stream is corrupted
    */
-  byte[] getArray() throws DataPackingException {
+  public byte[] getArray() throws DataPackingException {
     checkTagFormat(ARRAY);
     int len = getIntNoTag();
     // Now position is pointing at the start of the array data
@@ -78,7 +78,7 @@ public class DataUnpacker {
    * @throws DataPackingException If a read error occurs,
    *                              or if the stream is corrupted
    */
-  int getInt() throws DataPackingException {
+  public int getInt() throws DataPackingException {
     checkTagFormat(INT);
     return getIntNoTag();
   }

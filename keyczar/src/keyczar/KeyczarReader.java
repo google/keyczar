@@ -1,3 +1,5 @@
+// Keyczar (http://code.google.com/p/keyczar/) 2008
+
 package keyczar;
 
 import java.io.InputStream;

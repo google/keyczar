@@ -1,8 +1,12 @@
-package keyczar.internal;
+package keyczar;
 
-public class KeyVersion {
+import keyczar.internal.DataPacker;
+import keyczar.internal.DataPackingException;
+import keyczar.internal.DataUnpacker;
+
+class KeyVersion {
   private final int versionNumber;
-  private final KeyStatus status;
+  private KeyStatus status;
   private final boolean exportable;
   
   KeyVersion(int v, KeyStatus s, boolean export) {
@@ -10,8 +14,12 @@ public class KeyVersion {
     this.status = s;
     this.exportable = export;
   }
+  
+  KeyVersion(int v, boolean export) {
+    this(v, KeyStatus.ACTIVE, export);
+  }
 
-  public int getVersionNumber() {
+  int getVersionNumber() {
     return versionNumber;
   }
   
@@ -42,5 +50,20 @@ public class KeyVersion {
     written += packer.putInt(status.getValue());
     written += packer.putInt(exportable ? 1 : 0);
     return written;
+  }
+
+  void setStatus(KeyStatus status) {
+    this.status = status;
+  }
+  
+  @Override
+  public String toString() {
+    StringBuffer buffer = new StringBuffer("Version: ");
+    buffer.append(getVersionNumber());
+    buffer.append(" Status: ").append(getStatus());
+    if (exportable) {
+      buffer.append(" Exportable");
+    }
+    return buffer.toString();
   }
 }

@@ -1,4 +1,4 @@
-package keyczar.internal;
+package keyczar;
 
 enum KeyStatus {
   PRIMARY(0),

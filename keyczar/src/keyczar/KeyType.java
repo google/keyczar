@@ -1,20 +1,28 @@
-package keyczar.internal;
+package keyczar;
 
 enum KeyType {
-  AES(0),
-  HMAC_SHA1(1);
+  AES(0, 16),
+  HMAC_SHA1(1, 32),
+  TEST(127, 1);
 
   private int value;
-  private KeyType(int v) {
+  private int defaultSize;
+  private KeyType(int v, int defaultSize) {
     this.value = v;
+    this.defaultSize = defaultSize;
   }
     
   static KeyType getType(int value) {
     switch (value) {
       case 0: return AES;
       case 1: return HMAC_SHA1;
+      case 127: return TEST;
     }
     return null;
+  }
+  
+  int defaultSize() {
+    return defaultSize;
   }
     
   int getValue() {

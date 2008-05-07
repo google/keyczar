@@ -1,16 +1,19 @@
 package keyczar.internal;
 
-public class DataPackingException extends Exception {
+import java.io.IOException;
 
+import keyczar.KeyczarException;
+
+public class DataPackingException extends KeyczarException {
   DataPackingException(String message) {
     super(message);
   }
-
-  public DataPackingException(Throwable e) {
-    super(e);
-  }
   
-  public DataPackingException(String message, Throwable e) {
-    super(message, e);
+  DataPackingException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  DataPackingException(Throwable cause) {
+    super(cause);
   }
 }

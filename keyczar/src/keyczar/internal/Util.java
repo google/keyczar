@@ -1,33 +1,62 @@
 package keyczar.internal;
 
+import java.io.ByteArrayOutputStream;
 import java.security.DigestException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
+/**
+ * 
+ * @author sweis@google.com (Your Name Here)
+ * 
+ */
 public class Util {
   private static MessageDigest md;
+  private static SecureRandom random;
   static {
+    random = new SecureRandom();
     try {
       md = MessageDigest.getInstance(Messages.getString("Util.hashAlgorithm"));
     } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(
-          Messages.getString("Util.unsupportedHashAlgorithm") +
-          Messages.getString("Util.hashAlgorithm"), e);
+      throw new RuntimeException(Messages
+          .getString("Util.unsupportedHashAlgorithm")
+          + Messages.getString("Util.hashAlgorithm"), e);
     }
   }
 
   private Util() {
     // Don't new me.
   }
+
+  public static synchronized byte[] rand(int len) {
+    byte[] output = new byte[len];
+    rand(output);
+    return output;
+  }
   
+  static synchronized void rand(byte[] dest) {
+    random.nextBytes(dest);
+  }
+  
+  public static synchronized byte[] hashPacked(byte[]... inputs)
+      throws DataPackingException {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    DataPacker packer = new DataPacker(output);
+    for (byte[] array : inputs) {
+      packer.putArray(array);
+    }
+    return md.digest(output.toByteArray());
+  }
+
   /**
    * Hashes a variable number of inputs and returns a new byte array
-   *  
+   * 
    * @param inputs The inputs to hash
    * @return The hash output
    */
-  static synchronized byte[] hash(byte[]... inputs) {
+  public static synchronized byte[] hash(byte[]... inputs) {
     for (byte[] array : inputs) {
       md.update(array);
     }
@@ -43,10 +72,10 @@ public class Util {
    * @param len The length allocated for the hash.
    * @param inputs The inputs to hash
    * @throws GeneralSecurityException If the allocated length is not large
-   * enough
+   *         enough
    */
-   static synchronized void hash(byte[] dest, int offset,
-      int len, byte[]... inputs) throws GeneralSecurityException {
+  static synchronized void hash(byte[] dest, int offset, int len,
+      byte[]... inputs) throws GeneralSecurityException {
     for (byte[] array : inputs) {
       md.update(array);
     }
@@ -54,21 +83,21 @@ public class Util {
   }
 
   /**
-   * Returns a byte array containing 4 big-endian ordered bytes representing 
-   * the given integer.
+   * Returns a byte array containing 4 big-endian ordered bytes representing the
+   * given integer.
    * 
    * @param input The integer to convert to a byte array.
    * @return A byte array representation of an integer.
    */
-  static byte[] fromInt(int input) {
+  public static byte[] fromInt(int input) {
     byte[] output = new byte[4];
     writeInt(input, output, 0);
     return output;
   }
-  
+
   /**
-   * Writes 4 big-endian ordered bytes representing the given integer into the 
-   * destination byte array starting from the given offset. 
+   * Writes 4 big-endian ordered bytes representing the given integer into the
+   * destination byte array starting from the given offset.
    * 
    * This method does not check the destination array length.
    * 
@@ -89,8 +118,8 @@ public class Util {
    * 
    * This method does not check the source array length.
    * 
-   * @param src A big-endian representation of an integer 
-   * @return The integer value represented by the source array 
+   * @param src A big-endian representation of an integer
+   * @return The integer value represented by the source array
    */
   static int toInt(byte[] src) {
     return readInt(src, 0);
@@ -104,7 +133,7 @@ public class Util {
    * 
    * @param src The source array to read bytes from
    * @param offset The offset to start reading bytes from.
-   * @return The integer value represented by the source array from the offset 
+   * @return The integer value represented by the source array from the offset
    */
   static int readInt(byte[] src, int offset) {
     int output = 0;
@@ -114,10 +143,10 @@ public class Util {
     output |= (src[offset++] & 0xFF);
     return output;
   }
-  
+
   /**
-   * Returns a byte array containing 8 big-endian ordered bytes representing 
-   * the given long.
+   * Returns a byte array containing 8 big-endian ordered bytes representing the
+   * given long.
    * 
    * @param input The long to convert to a byte array.
    * @return A byte array representation of a long.
@@ -127,10 +156,10 @@ public class Util {
     writeLong(input, output, 0);
     return output;
   }
-  
+
   /**
-   * Writes 8 big-endian ordered bytes representing the given long into the 
-   * destination byte array starting from the given offset. 
+   * Writes 8 big-endian ordered bytes representing the given long into the
+   * destination byte array starting from the given offset.
    * 
    * This method does not check the destination array length.
    * 
@@ -150,13 +179,12 @@ public class Util {
   }
 
   /**
-   * Converts a given byte array to a long. Reads the bytes in big-endian
-   * order.
+   * Converts a given byte array to a long. Reads the bytes in big-endian order.
    * 
    * This method does not check the source array length.
    * 
-   * @param src A big-endian representation of a long 
-   * @return The long value represented by the source array 
+   * @param src A big-endian representation of a long
+   * @return The long value represented by the source array
    */
   static long toLong(byte[] src) {
     return readLong(src, 0);
@@ -170,7 +198,7 @@ public class Util {
    * 
    * @param src The source array to read bytes from
    * @param offset The offset to start reading bytes from.
-   * @return The long value represented by the source array from the offset 
+   * @return The long value represented by the source array from the offset
    */
   static long readLong(byte[] src, int offset) {
     long output = 0;

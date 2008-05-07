@@ -8,7 +8,7 @@ import java.io.OutputStream;
  *
  * @author steveweis@gmail.com (Steve Weis)
  */
-  public class DataPacker {
+public class DataPacker {
   private OutputStream output;
   private int tagCount;
   private static final int INT = 0;
@@ -24,7 +24,7 @@ import java.io.OutputStream;
    * 
    * @param output An output stream where the packed data will be written
    */
-  DataPacker(OutputStream output) {
+  public DataPacker(OutputStream output) {
     this.output = output;
     this.tagCount = 1;
   }
@@ -36,7 +36,7 @@ import java.io.OutputStream;
    * @return The number of bytes written
    * @throws DataPackingException If a write error occurs
    */
-  int putArray(byte[] data) throws DataPackingException {
+  public int putArray(byte[] data) throws DataPackingException {
     return putArray(data, 0, data.length);
   }
 
@@ -50,7 +50,7 @@ import java.io.OutputStream;
    * @return The number of bytes written
    * @throws DataPackingException If a write error occurs
    */
-  int putArray(byte[] data, int offset, int len) throws DataPackingException {
+  public int putArray(byte[] data, int offset, int len) throws DataPackingException {
     int written = putByte((byte) ((tagCount++ << 3) | ARRAY));
     written += putIntNoTag(len);
     try {
@@ -69,7 +69,7 @@ import java.io.OutputStream;
    * @return The number of bytes written
    * @throws DataPackingException If a write error occurs
    */
-  int putInt(int value) throws DataPackingException {
+  public int putInt(int value) throws DataPackingException {
     int written = putByte((byte) ((tagCount++ << 3) | INT));
     written+= putIntNoTag(value);
     return written;
@@ -82,7 +82,7 @@ import java.io.OutputStream;
    * @return The number of bytes written
    * @throws DataPackingException If a write error occurs
    */
-  int putLong(long value) throws DataPackingException {
+  public int putLong(long value) throws DataPackingException {
     int written = putByte((byte) ((tagCount++ << 3) | LONG));
     for (int i = 0; i < MAX_VARLONG_SIZE; i++) {
       byte b = (byte) (value & 0x7F);

@@ -1,4 +1,4 @@
-package keyczar.internal;
+package keyczar;
 
 import static org.junit.Assert.*;
 
@@ -7,6 +7,15 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+
+import keyczar.KeyMetadata;
+import keyczar.KeyPurpose;
+import keyczar.KeyStatus;
+import keyczar.KeyType;
+import keyczar.KeyVersion;
+import keyczar.internal.DataPacker;
+import keyczar.internal.DataPackingException;
+import keyczar.internal.DataUnpacker;
 
 public class KeyMetadataTest {
   ByteArrayOutputStream output;

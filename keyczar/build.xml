@@ -23,6 +23,9 @@
         <copy includeemptydirs="false" todir="bin">
             <fileset dir="src" excludes="**/BUILD, **/OWNERS, **/*.launch, **/*.java"/>
         </copy>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="tests" excludes="**/BUILD, **/OWNERS, **/*.launch, **/*.java"/>
+        </copy>
     </target>
     <target name="clean">
         <delete dir="bin"/>
@@ -34,6 +37,10 @@
         <echo message="${ant.project.name}: ${ant.file}"/>
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
             <src path="src"/>
+            <classpath refid="Keyczar.classpath"/>
+        </javac>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
+            <src path="tests"/>
             <classpath refid="Keyczar.classpath"/>
         </javac>
     </target>
@@ -63,6 +70,70 @@
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
             <test name="keyczar.KeyczarTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="UtilTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.internal.UtilTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="PackedDataTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.internal.PackedDataTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="PackedDataOutputTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.internal.PackedDataOutputTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="DataUnpackerTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.internal.DataUnpackerTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="FileUnpackerTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.internal.FileUnpackerTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="DataPackerTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.internal.DataPackerTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="KeyMetadataTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.internal.KeyMetadataTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="KeyVersionTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.internal.KeyVersionTest" todir="${junit.output.dir}"/>
             <classpath refid="Keyczar.classpath"/>
         </junit>
     </target>

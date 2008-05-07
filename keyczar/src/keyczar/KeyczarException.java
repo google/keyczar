@@ -1,13 +1,19 @@
+// Keyczar (http://code.google.com/p/keyczar/) 2008
+
 package keyczar;
 
 import java.io.FileNotFoundException;
 
 public class KeyczarException extends Exception {
-  public KeyczarException(String message) {
+  protected KeyczarException(String message) {
     super(message);
   }
 
-  public KeyczarException(String message, Throwable cause) {
+  protected KeyczarException(String message, Throwable cause) {
     super(message, cause);
+  }
+  
+  protected KeyczarException(Throwable cause) {
+    super(cause);
   }
 }
