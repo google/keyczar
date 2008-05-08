@@ -1,5 +1,6 @@
 package keyczar.internal;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -27,6 +28,14 @@ public class DataUnpacker {
   public DataUnpacker(InputStream input) {
     DataUnpacker.input = input;
     this.tagCount = 1;
+  }
+  
+  public DataUnpacker(byte[] input) {
+    this(input, 0, input.length);
+  }
+
+  public DataUnpacker(byte[] input, int offset, int length) {
+    this(new ByteArrayInputStream(input, offset, length)); 
   }
 
   /**

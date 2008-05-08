@@ -30,7 +30,7 @@ public class UtilTest {
   @Test
   public final void testHashByteArrayIntIntByteArrayArray()
       throws GeneralSecurityException {
-    byte[] output = new byte[Constants.getDigestSize()];
+    byte[] output = new byte[20];
     Util.hash(output, 0, output.length);
     assertEquals(emptyHash, toHex(output));
     Util.hash(output, 0, output.length, data);

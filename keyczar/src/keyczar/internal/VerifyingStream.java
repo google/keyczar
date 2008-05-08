@@ -3,7 +3,9 @@ package keyczar.internal;
 import java.security.GeneralSecurityException;
 
 public interface VerifyingStream {
-  void initVerify() throws GeneralSecurityException;
+  int digestSize();
+  
+  void initVerify();
   
   /**
    * Update with some signed data
@@ -19,9 +21,7 @@ public interface VerifyingStream {
    *
    * @param signature The signature
    * @param offset Signature start offset.
-   * @param length Signature length.
-   *
    * @return Success of verification.
    */
-  boolean verify(byte[] signature, int offset, int length);
+  boolean verify(byte[] signature, int offset);
 }

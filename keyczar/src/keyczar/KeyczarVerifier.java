@@ -2,7 +2,6 @@
 
 package keyczar;
 
-import java.io.ByteArrayInputStream;
 import java.security.GeneralSecurityException;
 
 import keyczar.internal.Constants;
@@ -11,8 +10,8 @@ import keyczar.internal.DataUnpacker;
 import keyczar.internal.VerifyingStream;
 
 /**
+ * 
  * @author steveweis@gmail.com (Steve Weis)
- *
  */
 public class KeyczarVerifier extends Keyczar {
   public enum VerifyResult {
@@ -35,42 +34,38 @@ public class KeyczarVerifier extends Keyczar {
   protected boolean isAcceptablePurpose(KeyPurpose purpose) {
     return (purpose == KeyPurpose.VERIFY);
   }
+  
+  public boolean verify(byte[] data, byte[] signature) throws KeyczarException {
+    return verify(data, 0, data.length, signature, 0) == VerifyResult.VERIFIED;
+  }
 
-  /**
-   * Verify a signature.
-   *
-   * @param signed The data that was signed.
-   * @param signature The signature.
-   * @return Result of verification
-   * @throws KeyczarException If an Keyczar-specific error occurs 
-   * @throws GeneralSecurityException If a Java JCE error occurs
-   */
-  public VerifyResult verify(final byte[] signed, final byte[] signature)
-      throws KeyczarException, GeneralSecurityException  {
-    ByteArrayInputStream input = new ByteArrayInputStream(signature);
-    DataUnpacker unpacker = new DataUnpacker(input);
-    int version = unpacker.getInt();
-    if (version != Constants.getVersion()) {
+  public VerifyResult verify(byte[] data, int dataOffset, int dataLen,
+      byte[] signature, int signatureOffset)
+      throws KeyczarException {
+    if (signature.length - signatureOffset < Constants.HEADER_SIZE ||
+        signature[signatureOffset] != Constants.VERSION) {
       return VerifyResult.MALFORMED;
     }
-    byte[] hash = unpacker.getArray();
-    if (hash.length != Constants.getKeyHashSize()) {
-      return VerifyResult.MALFORMED;
-    }
-    
+
+    byte[] hash = new byte[Constants.KEY_HASH_SIZE];
+    System.arraycopy(signature, signatureOffset + 1,
+        hash, 0, Constants.KEY_HASH_SIZE);
     KeyczarKey key = getKey(hash);
+
     if (key == null) {
       return VerifyResult.KEY_UNAVAILABLE;
-    }    
-   
-    byte[] rawSig = unpacker.getArray();
-    if (rawSig.length != Constants.getDigestSize()) {
+    }
+    
+    VerifyingStream stream = (VerifyingStream) key.getStream();
+    int sigSize = Constants.HEADER_SIZE + stream.digestSize();
+    if (signature.length - signatureOffset < sigSize) {
       return VerifyResult.MALFORMED;
     }
-    VerifyingStream verifyingStream = (VerifyingStream) key.getStream();
-    verifyingStream.initVerify();
-    verifyingStream.updateVerify(signed, 0, signed.length);
-    if (verifyingStream.verify(signature, 0, signature.length)) {
+
+    stream.initVerify();
+    stream.updateVerify(signature, signatureOffset, Constants.HEADER_SIZE);
+    stream.updateVerify(data, dataOffset, dataLen);
+    if (stream.verify(signature, Constants.HEADER_SIZE)) {
       return VerifyResult.VERIFIED;
     } else {
       return VerifyResult.FAILED;

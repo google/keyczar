@@ -20,7 +20,7 @@ import keyczar.internal.Util;
  *
  * @author steveweis@gmail.com (Steve Weis)
  */
-public class Keyczar {
+class Keyczar {
   private final KeyczarReader reader;
   private KeyMetadata kmd;
   private KeyVersion primaryVersion;
@@ -81,6 +81,13 @@ public class Keyczar {
     return keys.get(v.getVersionNumber() - 1);
   }
   
+  KeyczarKey getPrimaryKey() {
+    if (primaryVersion == null)
+      return null;
+
+    return keys.get(primaryVersion.getVersionNumber() - 1);
+  }
+  
   KeyVersion getVersion(int i) {
     return kmd.getVersions().get(i);
   }
@@ -89,37 +96,32 @@ public class Keyczar {
     return kmd.getVersions().size();
   }
   
-  private void clearPrimary() {
-    if (primaryVersion != null) {
-      primaryVersion.setStatus(KeyStatus.ACTIVE);
-    }
-    primaryVersion = null;
+  KeyMetadata getMetadata() {
+    return kmd;
+  }
+
+  protected boolean isAcceptablePurpose(KeyPurpose purpose) {
+    return true;
+  }
+
+  // For KeyczarTool only
+  void setMetadata(KeyMetadata kmd) {
+    this.kmd = kmd;
   }
   
-  synchronized void addVersion(KeyStatus status)
+  // For KeyczarTool and constructor only
+  void addVersion(KeyStatus status)
       throws KeyczarException {
     KeyVersion version = new KeyVersion(numVersions() + 1, status, false);
     if (status == KeyStatus.PRIMARY) {
-      clearPrimary();
+      if (primaryVersion != null) {
+        primaryVersion.setStatus(KeyStatus.ACTIVE);
+      }
       primaryVersion = version;
     }
     kmd.getVersions().add(version);
     KeyczarKey key = KeyczarKey.fromType(kmd.getType());
     key.generate();
     keys.add(key);
-  }
-  
-  KeyMetadata getMetadata() {
-    return kmd;
-  }
-  
-  // For KeyczarTool
-  void setMetadata(KeyMetadata kmd) {
-    this.kmd = kmd;
-  }
-  
-  protected boolean isAcceptablePurpose(KeyPurpose purpose) {
-    // TODO: Make this abstract
-    return true;
   }
 }

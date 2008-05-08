@@ -43,13 +43,6 @@ public class KeyczarFileReader implements KeyczarReader {
    */
   @Override
   public InputStream getMetadata() throws KeyczarException {
-    File f = new File(".");
-    try {
-      System.out.println(f.getCanonicalPath());
-    } catch (IOException e1) {
-      // TODO Auto-generated catch block
-      e1.printStackTrace();
-    }
     try {
       return new FileInputStream(new File(location + META_FILE));
     } catch (FileNotFoundException e) {

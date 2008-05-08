@@ -3,7 +3,9 @@ package keyczar.internal;
 import java.security.GeneralSecurityException;
 
 public interface SigningStream {
-  void initSign() throws GeneralSecurityException;
+  int digestSize();
+  
+  void initSign();
   
   /**
    * Sign the given data

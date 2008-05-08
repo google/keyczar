@@ -23,19 +23,12 @@ import keyczar.internal.*;
 public class KeyczarHmacKey extends KeyczarKey {
   private static final String MAC_ALGORITHM = "HMACSHA1";
   private Key hmacKey;
-  private byte[] hash;
     
-  private void init(byte[] keyBytes) throws DataPackingException {
-    this.hash = Util.hashPacked(keyBytes);
+  private void init(byte[] keyBytes) {
+    byte[] fullHash = Util.hash(Util.fromInt(keyBytes.length), keyBytes);
+    System.arraycopy(fullHash, 0, hash, 0, hash.length);
+    hashCode = Util.toInt(hash);
     this.hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
-  }
-  
-  /* (non-Javadoc)
-   * @see keyczar.KeyczarKey#hash()
-   */
-  @Override
-  protected byte[] hash() {
-    return hash;
   }
 
   @Override
@@ -51,7 +44,7 @@ public class KeyczarHmacKey extends KeyczarKey {
   }
 
   @Override
-  protected void generate() throws KeyczarException {
+  protected void generate() {
     init(Util.rand(getType().defaultSize()));
   }
 
@@ -72,28 +65,34 @@ public class KeyczarHmacKey extends KeyczarKey {
 
   class HmacStream extends Stream implements VerifyingStream, SigningStream {
     private Mac hmac;
-    private Key key;
 
+    public int digestSize() {
+      return hmac.getMacLength();
+    }
+    
     public HmacStream(Key key) throws GeneralSecurityException {
       this.hmac = Mac.getInstance(MAC_ALGORITHM);
-      this.key = key;
+      hmac.init(key);
     }
 
     @Override
-    public void initVerify() throws GeneralSecurityException {
-      initSign();
+    public void initVerify()  {
+      hmac.reset();
     }
 
     @Override
     public void updateVerify(byte[] signedData, int offset, int length) {
-      updateSign(signedData, offset, length);
+      hmac.update(signedData, offset, length);
     }
 
     @Override
-    public boolean verify(byte[] signature, int offset, int length) {
-      byte[] sig = hmac.doFinal();
-      for (int i = 0; i < length; i++) {
-        if (sig[i] != signature[offset + i]) {
+    public boolean verify(byte[] signature, int offset) {
+      byte[] expectedSig = hmac.doFinal();
+      if (expectedSig.length != (signature.length - offset)) {
+        return false;
+      }
+      for (int i = 0; i < signature.length - offset; i++) {
+        if (expectedSig[i] != signature[offset + i]) {
           return false;
         }
       }
@@ -101,8 +100,8 @@ public class KeyczarHmacKey extends KeyczarKey {
     }
 
     @Override
-    public void initSign() throws GeneralSecurityException {
-      hmac.init(key);
+    public void initSign() {
+      hmac.reset();
     }
 
     @Override
