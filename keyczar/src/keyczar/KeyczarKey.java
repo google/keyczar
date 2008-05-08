@@ -1,8 +1,11 @@
 package keyczar;
 
+import java.io.ByteArrayOutputStream;
+
 import keyczar.internal.DataPacker;
 import keyczar.internal.DataPackingException;
 import keyczar.internal.DataUnpacker;
+import keyczar.internal.Util;
 
 abstract class KeyczarKey {
   protected KeyczarKey() {
@@ -33,4 +36,9 @@ abstract class KeyczarKey {
   protected abstract void generate() throws KeyczarException;
   
   protected abstract int write(DataPacker packer) throws KeyczarException;
+  
+  protected abstract Stream getStream() throws KeyczarException;
+  
+  protected abstract static class Stream {
+  }
 }

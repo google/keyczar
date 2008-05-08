@@ -125,7 +125,7 @@
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="keyczar.internal.KeyMetadataTest" todir="${junit.output.dir}"/>
+            <test name="keyczar.KeyMetadataTest" todir="${junit.output.dir}"/>
             <classpath refid="Keyczar.classpath"/>
         </junit>
     </target>
@@ -133,9 +133,21 @@
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="keyczar.internal.KeyVersionTest" todir="${junit.output.dir}"/>
+            <test name="keyczar.KeyVersionTest" todir="${junit.output.dir}"/>
             <classpath refid="Keyczar.classpath"/>
         </junit>
+    </target>
+    <target name="KeyczarTool create">
+        <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
+            <arg line="create --name=Testing --purpose=sign --location=/home/sweis/temp"/>
+            <classpath refid="Keyczar.classpath"/>
+        </java>
+    </target>
+    <target name="KeyczarTool addkey">
+        <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
+            <arg line="addkey --location=/home/sweis/temp --status=primary"/>
+            <classpath refid="Keyczar.classpath"/>
+        </java>
     </target>
     <target name="junitreport">
         <junitreport todir="${junit.output.dir}">

@@ -69,7 +69,7 @@ public class KeyczarTool {
     if (kmd == null) {
       throw new KeyczarException("Unsupported purpose: " + purposeFlag);
     }
-    Keyczar dummy = new Keyczar(null);
+    Keyczar dummy = new Keyczar(locationFlag);
     dummy.setMetadata(kmd);
     KeyczarFileWriter.writeKeyczar(locationFlag, dummy);
   }

@@ -2,8 +2,14 @@
 
 package keyczar;
 
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
+import javax.crypto.Mac;
+import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 
 import keyczar.internal.*;
@@ -62,5 +68,61 @@ public class KeyczarHmacKey extends KeyczarKey {
   @Override
   protected KeyType getType() {
     return KeyType.HMAC_SHA1;
+  }
+
+  class HmacStream extends Stream implements VerifyingStream, SigningStream {
+    private Mac hmac;
+    private Key key;
+
+    public HmacStream(Key key) throws GeneralSecurityException {
+      this.hmac = Mac.getInstance(MAC_ALGORITHM);
+      this.key = key;
+    }
+
+    @Override
+    public void initVerify() throws GeneralSecurityException {
+      initSign();
+    }
+
+    @Override
+    public void updateVerify(byte[] signedData, int offset, int length) {
+      updateSign(signedData, offset, length);
+    }
+
+    @Override
+    public boolean verify(byte[] signature, int offset, int length) {
+      byte[] sig = hmac.doFinal();
+      for (int i = 0; i < length; i++) {
+        if (sig[i] != signature[offset + i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    @Override
+    public void initSign() throws GeneralSecurityException {
+      hmac.init(key);
+    }
+
+    @Override
+    public void sign(byte[] dest, int offset) throws GeneralSecurityException {
+      hmac.doFinal(dest, offset);
+    }
+
+    @Override
+    public void updateSign(byte[] data, int offset, int length) {
+      hmac.update(data, offset, length);
+    }    
+  }
+  
+  @Override
+  protected Stream getStream() throws KeyczarException {
+    try {
+      Stream hmacStream = new HmacStream(hmacKey);
+      return hmacStream;
+    } catch (GeneralSecurityException e) {
+      throw new KeyczarException("Unable to initialize stream", e);
+    }
   }
 }

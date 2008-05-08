@@ -121,7 +121,7 @@ public class Util {
    * @param src A big-endian representation of an integer
    * @return The integer value represented by the source array
    */
-  static int toInt(byte[] src) {
+  public static int toInt(byte[] src) {
     return readInt(src, 0);
   }
 

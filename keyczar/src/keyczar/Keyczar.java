@@ -5,10 +5,12 @@ package keyczar;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import keyczar.internal.DataPackingException;
 import keyczar.internal.DataUnpacker;
+import keyczar.internal.Util;
 
 /**
  * Manages a Keyczar key set. Keys will not be read from a KeyczarReader until
@@ -22,8 +24,10 @@ public class Keyczar {
   private final KeyczarReader reader;
   private KeyMetadata kmd;
   private KeyVersion primaryVersion;
-  private ArrayList<KeyczarKey> keys = new ArrayList<KeyczarKey>();
-  
+  private ArrayList<KeyczarKey> keys = new ArrayList<KeyczarKey>();  
+  private HashMap<Integer, KeyczarKey> keyMap =
+    new HashMap<Integer, KeyczarKey>();
+
   /**
    * Instantiates a new Keyczar object with a KeyczarFileReader instantiated
    * with the given file location 
@@ -48,6 +52,10 @@ public class Keyczar {
     InputStream metaData = reader.getMetadata();
     DataUnpacker metaDataUnpacker = new DataUnpacker(metaData);
     kmd = KeyMetadata.getMetadata(metaDataUnpacker);
+    if (!isAcceptablePurpose(kmd.getPurpose())) {
+      throw new KeyczarException("Unacceptable purpose: "
+          + kmd.getPurpose());
+    }
     for (KeyVersion version : kmd.getVersions()) {
       if (version.getStatus() == KeyStatus.PRIMARY) {
         if (primaryVersion != null) {
@@ -61,7 +69,12 @@ public class Keyczar {
       KeyczarKey key = KeyczarKey.fromType(kmd.getType());
       key.read(keyDataUnpacker);
       keys.add(key);
+      keyMap.put(Util.toInt(key.hash()), key);
     }
+  }
+
+  KeyczarKey getKey(byte[] hash) {
+    return keyMap.get(Util.toInt(hash));
   }
   
   KeyczarKey getKey(KeyVersion v) {
@@ -103,5 +116,10 @@ public class Keyczar {
   // For KeyczarTool
   void setMetadata(KeyMetadata kmd) {
     this.kmd = kmd;
+  }
+  
+  protected boolean isAcceptablePurpose(KeyPurpose purpose) {
+    // TODO: Make this abstract
+    return true;
   }
 }
