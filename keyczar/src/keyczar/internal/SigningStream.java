@@ -1,6 +1,6 @@
 package keyczar.internal;
 
-import java.security.GeneralSecurityException;
+import keyczar.KeyczarException;
 
 public interface SigningStream {
   int digestSize();
@@ -21,6 +21,7 @@ public interface SigningStream {
    *
    * @param dest The destination where to write the signature
    * @param offset Signature start offset.
+   * @throws KeyczarException 
    */
-  void sign(byte[] dest, int offset) throws GeneralSecurityException;
+  void sign(byte[] dest, int offset) throws KeyczarException;
 }

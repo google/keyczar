@@ -9,7 +9,7 @@ import java.security.GeneralSecurityException;
 
 public class KeyczarSignerTest {
   private static final String TEST_DATA = "./testdata";
-  private KeyczarSigner signer = new KeyczarSigner(TEST_DATA + "/hmac");
+  private KeyczarSigner signer;
   private byte[] input = "This is some test input".getBytes();
   
   // This is a signature on 'input' by the primary key (version 2)
@@ -22,18 +22,16 @@ public class KeyczarSignerTest {
 
   @Before
   public void setUp() throws Exception {
-    signer.read();
+    signer = new KeyczarSigner(TEST_DATA + "/hmac");
   }
 
   @Test
-  public final void testSignAndVerify() throws KeyczarException,
-      GeneralSecurityException {
+  public final void testSignAndVerify() throws KeyczarException {
     byte[] sig = signer.sign(input);
     assertTrue(signer.verify(input, sig));
   }
   
-  public final void testVerify() throws KeyczarException,
-      GeneralSecurityException {
+  public final void testVerify() throws KeyczarException {
     byte[] sig = signer.sign(input);
     assertEquals(sig, primarySig);
     assertTrue(signer.verify(input, primarySig));
@@ -41,8 +39,7 @@ public class KeyczarSignerTest {
   }
 
   @Test
-  public final void testBadSigs() throws KeyczarException,
-      GeneralSecurityException {
+  public final void testBadSigs() throws KeyczarException {
     byte[] sig = signer.sign(input);
     assertEquals(signer.verify(input, new byte[0]), false);
     assertEquals(signer.verify(input, 0, input.length, new byte[0], 0),

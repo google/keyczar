@@ -65,6 +65,14 @@
             <classpath refid="Keyczar.classpath"/>
         </junit>
     </target>
+    <target name="KeyMetadataTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.KeyMetadataTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
     <target name="KeyczarTest">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
@@ -121,14 +129,6 @@
             <classpath refid="Keyczar.classpath"/>
         </junit>
     </target>
-    <target name="KeyMetadataTest">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="keyczar.KeyMetadataTest" todir="${junit.output.dir}"/>
-            <classpath refid="Keyczar.classpath"/>
-        </junit>
-    </target>
     <target name="KeyVersionTest">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
@@ -148,6 +148,21 @@
             <arg line="addkey --location=/home/sweis/temp --status=primary"/>
             <classpath refid="Keyczar.classpath"/>
         </java>
+    </target>
+    <target name="KeyczarSignerTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.KeyczarSignerTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="tests">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
     </target>
     <target name="junitreport">
         <junitreport todir="${junit.output.dir}">

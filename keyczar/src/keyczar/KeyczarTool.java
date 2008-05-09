@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -26,16 +27,53 @@ public class KeyczarTool {
   static KeyStatus statusFlag = KeyStatus.ACTIVE;
   static boolean asymmetricFlag;
   
+  private static class GenericKeyczar extends Keyczar {
+    public GenericKeyczar(String location) throws KeyczarException {
+      super(location);
+    }
+
+    @Override
+    protected boolean isAcceptablePurpose(KeyPurpose purpose) {
+      return true;
+    }
+
+    void write(String location) throws KeyczarException {
+      File metaFile = new File(locationFlag + KeyczarFileReader.META_FILE);
+      try {
+        FileOutputStream metaOutput = new FileOutputStream(metaFile);
+        DataPacker packer = new DataPacker(metaOutput);
+        writeMetadata(packer);
+        metaOutput.close();
+      } catch (IOException e) {
+        throw new KeyczarException("Unable to write to : " +
+            metaFile.toString(), e);
+      }
+      
+      Iterator<KeyVersion> versions = getVersions();
+      while (versions.hasNext()) {
+        KeyVersion version = versions.next();
+        File versionFile = new File(locationFlag + version.getVersionNumber());
+        try {
+          FileOutputStream versionOutput = new FileOutputStream(versionFile);
+          DataPacker packer = new DataPacker(versionOutput);
+          writeVersion(version, packer);
+        } catch (IOException e) {
+          throw new KeyczarException("Unable to write to : " +
+              versionFile.toString(), e);
+        }
+      }
+    }    
+  }
+    
   private static void addKey() throws KeyczarException {
     // Read existing metadata
     if (locationFlag == null) {
       throw new KeyczarException("Must define a key set location with the " +
           "--location flag");
     }
-    Keyczar keyczar = new Keyczar(new KeyczarFileReader(locationFlag));
-    keyczar.read();
-    keyczar.addVersion(statusFlag);
-    KeyczarFileWriter.writeKeyczar(locationFlag, keyczar);
+    GenericKeyczar genericKeyczar = new GenericKeyczar(locationFlag);
+    genericKeyczar.addVersion(statusFlag);
+    genericKeyczar.write(locationFlag);
   }
   
   private static void create() throws KeyczarException,
@@ -69,9 +107,19 @@ public class KeyczarTool {
     if (kmd == null) {
       throw new KeyczarException("Unsupported purpose: " + purposeFlag);
     }
-    Keyczar dummy = new Keyczar(locationFlag);
-    dummy.setMetadata(kmd);
-    KeyczarFileWriter.writeKeyczar(locationFlag, dummy);
+    File file = new File(locationFlag + KeyczarFileReader.META_FILE);
+    if (file.exists()) {
+      throw new KeyczarException("File already exists: " + file);
+    }
+    FileOutputStream metaOutput;
+    try {
+      metaOutput = new FileOutputStream(file);
+      DataPacker packer = new DataPacker(metaOutput);
+      kmd.write(packer);
+      metaOutput.close();
+    } catch (IOException e) {
+      throw new KeyczarException("Unable to write to : " + file.toString(), e);
+    }
   }
   
   public static void main(String[] args) throws Exception {
@@ -103,6 +151,9 @@ public class KeyczarTool {
     }
     nameFlag = params.get("name");
     locationFlag = params.get("location");
+    if (locationFlag != null && !locationFlag.endsWith(File.separator)) {
+      locationFlag += File.separator;
+    }
 
     if (params.get("purpose") != null) {
       if (params.get("purpose").equals("sign")) {
@@ -127,7 +178,6 @@ public class KeyczarTool {
   } 
   
   private static void printUsage() {
-    // TODO: Fill in a usage message
     System.out.print("Usage:");
     System.out.println("\t\"KeyczarTool command flags\"");
     System.out.println("Commands:");

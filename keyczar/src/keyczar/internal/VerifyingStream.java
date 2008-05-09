@@ -1,7 +1,5 @@
 package keyczar.internal;
 
-import java.security.GeneralSecurityException;
-
 public interface VerifyingStream {
   int digestSize();
   

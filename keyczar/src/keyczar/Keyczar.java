@@ -3,12 +3,12 @@
 package keyczar;
 
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Iterator;
 
-import keyczar.internal.DataPackingException;
+import keyczar.internal.DataPacker;
 import keyczar.internal.DataUnpacker;
 import keyczar.internal.Util;
 
@@ -16,25 +16,26 @@ import keyczar.internal.Util;
  * Manages a Keyczar key set. Keys will not be read from a KeyczarReader until
  * the read() method is called.
  *
- * This class is not thread-safe.
- *
  * @author steveweis@gmail.com (Steve Weis)
  */
-class Keyczar {
-  private final KeyczarReader reader;
-  private KeyMetadata kmd;
+public abstract class Keyczar {
+  private final KeyMetadata kmd; 
   private KeyVersion primaryVersion;
-  private ArrayList<KeyczarKey> keys = new ArrayList<KeyczarKey>();  
-  private HashMap<Integer, KeyczarKey> keyMap =
+  //final ArrayList<KeyczarKey> keys = new ArrayList<KeyczarKey>();  
+  private final HashMap<Integer, KeyczarKey> keyMap =
     new HashMap<Integer, KeyczarKey>();
+  private final HashMap<KeyVersion, KeyczarKey> versionMap =
+    new HashMap<KeyVersion, KeyczarKey>();
+  
 
   /**
    * Instantiates a new Keyczar object with a KeyczarFileReader instantiated
    * with the given file location 
    * 
    * @param fileLocation 
+   * @throws KeyczarException 
    */
-  public Keyczar(String fileLocation) {
+  public Keyczar(String fileLocation) throws KeyczarException {
     this(new KeyczarFileReader(fileLocation));
   }
   
@@ -42,16 +43,13 @@ class Keyczar {
    * Instantiates a new Keyczar object by passing it a Keyczar reader object 
    * 
    * @param reader A KeyczarReader to read keys from
+   * @throws KeyczarException 
    */
-  public Keyczar(KeyczarReader reader) {
-    this.reader = reader;
-  }
-    
-  public void read() throws KeyczarException {
+  public Keyczar(KeyczarReader reader) throws KeyczarException {
     // Reads keys from the KeyczarReader
     InputStream metaData = reader.getMetadata();
     DataUnpacker metaDataUnpacker = new DataUnpacker(metaData);
-    kmd = KeyMetadata.getMetadata(metaDataUnpacker);
+    this.kmd = KeyMetadata.getMetadata(metaDataUnpacker);
     if (!isAcceptablePurpose(kmd.getPurpose())) {
       throw new KeyczarException("Unacceptable purpose: "
           + kmd.getPurpose());
@@ -68,50 +66,29 @@ class Keyczar {
       DataUnpacker keyDataUnpacker = new DataUnpacker(keyData);
       KeyczarKey key = KeyczarKey.fromType(kmd.getType());
       key.read(keyDataUnpacker);
-      keys.add(key);
-      keyMap.put(Util.toInt(key.hash()), key);
+      if (keyMap.containsKey(key.hashCode())) {
+        throw new KeyczarException("Key identifiers cannot collide");
+      }
+      keyMap.put(key.hashCode(), key);
+      versionMap.put(version, key);
     }
   }
-
-  KeyczarKey getKey(byte[] hash) {
+  
+  protected KeyczarKey getKey(byte[] hash) {
     return keyMap.get(Util.toInt(hash));
   }
-  
-  KeyczarKey getKey(KeyVersion v) {
-    return keys.get(v.getVersionNumber() - 1);
-  }
-  
-  KeyczarKey getPrimaryKey() {
-    if (primaryVersion == null)
+
+  protected KeyczarKey getPrimaryKey() {
+    if (primaryVersion == null) {
       return null;
-
-    return keys.get(primaryVersion.getVersionNumber() - 1);
+    }
+    return getKey(primaryVersion);
   }
-  
-  KeyVersion getVersion(int i) {
-    return kmd.getVersions().get(i);
-  }
-
-  int numVersions() {
-    return kmd.getVersions().size();
-  }
-  
-  KeyMetadata getMetadata() {
-    return kmd;
-  }
-
-  protected boolean isAcceptablePurpose(KeyPurpose purpose) {
-    return true;
-  }
+    
+  protected abstract boolean isAcceptablePurpose(KeyPurpose purpose);
 
   // For KeyczarTool only
-  void setMetadata(KeyMetadata kmd) {
-    this.kmd = kmd;
-  }
-  
-  // For KeyczarTool and constructor only
-  void addVersion(KeyStatus status)
-      throws KeyczarException {
+  void addVersion(KeyStatus status) throws KeyczarException {
     KeyVersion version = new KeyVersion(numVersions() + 1, status, false);
     if (status == KeyStatus.PRIMARY) {
       if (primaryVersion != null) {
@@ -119,9 +96,37 @@ class Keyczar {
       }
       primaryVersion = version;
     }
-    kmd.getVersions().add(version);
     KeyczarKey key = KeyczarKey.fromType(kmd.getType());
-    key.generate();
-    keys.add(key);
+    do {
+      // Make sure no keys collide on their identifiers
+      key.generate();
+    } while (getKey(key.hash()) != null);
+    addKey(version, key);
+  }
+  
+  int numVersions() {
+    return versionMap.size();
+  }
+  
+  void addKey(KeyVersion version, KeyczarKey key) {
+    keyMap.put(key.hashCode(), key);
+    versionMap.put(version, key);
+    kmd.addVersion(version);
+  }
+  
+  Iterator<KeyVersion> getVersions() {
+    return Collections.unmodifiableSet(versionMap.keySet()).iterator();
+  }
+  
+  KeyczarKey getKey(KeyVersion v) {
+    return versionMap.get(v);
+  }
+  
+  int writeMetadata(DataPacker packer) throws KeyczarException {
+    return kmd.write(packer);
+  }
+  
+  int writeVersion(KeyVersion v, DataPacker packer) throws KeyczarException {
+    return versionMap.get(v).write(packer);
   }
 }

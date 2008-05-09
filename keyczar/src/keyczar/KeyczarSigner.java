@@ -7,11 +7,11 @@ import keyczar.internal.Constants;
 import keyczar.internal.SigningStream;
 
 public class KeyczarSigner extends KeyczarVerifier {
-  public KeyczarSigner(String fileLocation) {
+  public KeyczarSigner(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
 
-  public KeyczarSigner(KeyczarReader reader) {
+  public KeyczarSigner(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
   
@@ -20,13 +20,12 @@ public class KeyczarSigner extends KeyczarVerifier {
     return (purpose == KeyPurpose.SIGN_AND_VERIFY);
   }
   
-  public byte[] sign(byte[] input) throws KeyczarException,
-      GeneralSecurityException {
+  public byte[] sign(byte[] input) throws KeyczarException {
     return sign(input, 0, input.length);
   }
   
   public byte[] sign(byte[] input, int inputOffset, int inputLength)
-      throws KeyczarException, GeneralSecurityException {
+      throws KeyczarException {
     KeyczarKey key = getPrimaryKey();
     if (key == null) {
       throw new KeyczarException("Need a primary key for signing");

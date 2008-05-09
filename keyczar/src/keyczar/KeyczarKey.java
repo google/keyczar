@@ -9,12 +9,6 @@ import keyczar.internal.DataUnpacker;
 import keyczar.internal.Util;
 
 abstract class KeyczarKey {
-  protected final byte[] hash = new byte[Constants.KEY_HASH_SIZE];
-  protected int hashCode;
-  protected KeyczarKey() {
-
-  }
-  
   static KeyczarKey fromType(KeyType type) throws KeyczarException {
     switch(type) {
       case AES:
@@ -30,15 +24,8 @@ abstract class KeyczarKey {
    *
    * @return A hash of this key material
    */
-  protected byte[] hash() {
-    return hash;
-  }
-  
-  @Override
-  public int hashCode() {
-    return hashCode; 
-  }
-  
+  protected abstract byte[] hash();
+
   protected abstract KeyType getType();
  
   protected abstract void read(DataUnpacker unpacker) throws KeyczarException;

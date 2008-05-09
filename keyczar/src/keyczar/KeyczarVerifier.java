@@ -22,11 +22,11 @@ public class KeyczarVerifier extends Keyczar {
     VERIFIED,
   }
   
-  public KeyczarVerifier(String fileLocation) {
+  public KeyczarVerifier(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
 
-  public KeyczarVerifier(KeyczarReader reader) {
+  public KeyczarVerifier(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
   
@@ -40,8 +40,7 @@ public class KeyczarVerifier extends Keyczar {
   }
 
   public VerifyResult verify(byte[] data, int dataOffset, int dataLen,
-      byte[] signature, int signatureOffset)
-      throws KeyczarException {
+      byte[] signature, int signatureOffset) throws KeyczarException {
     if (signature.length - signatureOffset < Constants.HEADER_SIZE ||
         signature[signatureOffset] != Constants.VERSION) {
       return VerifyResult.MALFORMED;

@@ -23,12 +23,24 @@ import keyczar.internal.*;
 public class KeyczarHmacKey extends KeyczarKey {
   private static final String MAC_ALGORITHM = "HMACSHA1";
   private Key hmacKey;
+  private final byte[] hash = new byte[Constants.KEY_HASH_SIZE];
+  private int hashCode;
     
   private void init(byte[] keyBytes) {
     byte[] fullHash = Util.hash(Util.fromInt(keyBytes.length), keyBytes);
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
     hashCode = Util.toInt(hash);
     this.hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
+  }
+
+  @Override
+  protected byte[] hash() {
+    return hash;
+  }  
+  
+  @Override
+  public int hashCode() {
+    return hashCode;
   }
 
   @Override
@@ -62,17 +74,26 @@ public class KeyczarHmacKey extends KeyczarKey {
   protected KeyType getType() {
     return KeyType.HMAC_SHA1;
   }
+  
+  @Override
+  protected Stream getStream() throws KeyczarException {
+    return new HmacStream(hmacKey);
+  }
 
-  class HmacStream extends Stream implements VerifyingStream, SigningStream {
+  private class HmacStream extends Stream implements VerifyingStream, SigningStream {
     private Mac hmac;
 
     public int digestSize() {
       return hmac.getMacLength();
     }
     
-    public HmacStream(Key key) throws GeneralSecurityException {
-      this.hmac = Mac.getInstance(MAC_ALGORITHM);
-      hmac.init(key);
+    public HmacStream(Key key) throws KeyczarException {
+      try {
+        this.hmac = Mac.getInstance(MAC_ALGORITHM);
+        hmac.init(key);
+      } catch (GeneralSecurityException e) {
+        throw new KeyczarException(e);
+      }
     }
 
     @Override
@@ -88,6 +109,7 @@ public class KeyczarHmacKey extends KeyczarKey {
     @Override
     public boolean verify(byte[] signature, int offset) {
       byte[] expectedSig = hmac.doFinal();
+   
       if (expectedSig.length != (signature.length - offset)) {
         return false;
       }
@@ -105,23 +127,17 @@ public class KeyczarHmacKey extends KeyczarKey {
     }
 
     @Override
-    public void sign(byte[] dest, int offset) throws GeneralSecurityException {
-      hmac.doFinal(dest, offset);
+    public void sign(byte[] dest, int offset) throws KeyczarException {
+      try {
+        hmac.doFinal(dest, offset);
+      } catch (GeneralSecurityException e) {
+        throw new KeyczarException(e);
+      }
     }
 
     @Override
     public void updateSign(byte[] data, int offset, int length) {
       hmac.update(data, offset, length);
     }    
-  }
-  
-  @Override
-  protected Stream getStream() throws KeyczarException {
-    try {
-      Stream hmacStream = new HmacStream(hmacKey);
-      return hmacStream;
-    } catch (GeneralSecurityException e) {
-      throw new KeyczarException("Unable to initialize stream", e);
-    }
   }
 }
