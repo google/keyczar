@@ -2,6 +2,7 @@
 
 package keyczar;
 
+import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -77,7 +78,7 @@ public class KeyczarHmacKey extends KeyczarKey {
   
   @Override
   protected Stream getStream() throws KeyczarException {
-    return new HmacStream(hmacKey);
+    return new HmacStream();
   }
 
   private class HmacStream extends Stream implements VerifyingStream, SigningStream {
@@ -87,57 +88,49 @@ public class KeyczarHmacKey extends KeyczarKey {
       return hmac.getMacLength();
     }
     
-    public HmacStream(Key key) throws KeyczarException {
+    public HmacStream() throws KeyczarException {
       try {
         this.hmac = Mac.getInstance(MAC_ALGORITHM);
-        hmac.init(key);
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
     }
 
     @Override
-    public void initVerify()  {
-      hmac.reset();
+    public void initVerify() throws KeyczarException {
+      initSign();
     }
 
     @Override
-    public void updateVerify(byte[] signedData, int offset, int length) {
-      hmac.update(signedData, offset, length);
+    public void updateVerify(ByteBuffer input) {
+      updateSign(input);      
     }
 
     @Override
-    public boolean verify(byte[] signature, int offset) {
-      byte[] expectedSig = hmac.doFinal();
-   
-      if (expectedSig.length != (signature.length - offset)) {
-        return false;
-      }
-      for (int i = 0; i < signature.length - offset; i++) {
-        if (expectedSig[i] != signature[offset + i]) {
-          return false;
-        }
-      }
-      return true;
+    public boolean verify(ByteBuffer signature) {
+      byte[] sigBytes = new byte[digestSize()];
+      signature.get(sigBytes);
+      
+      return Arrays.equals(hmac.doFinal(), sigBytes);
     }
 
     @Override
-    public void initSign() {
-      hmac.reset();
-    }
-
-    @Override
-    public void sign(byte[] dest, int offset) throws KeyczarException {
+    public void initSign() throws KeyczarException {
       try {
-        hmac.doFinal(dest, offset);
+        hmac.init(hmacKey);
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
     }
 
     @Override
-    public void updateSign(byte[] data, int offset, int length) {
-      hmac.update(data, offset, length);
+    public void sign(ByteBuffer output) {
+      output.put(hmac.doFinal());
+    }
+
+    @Override
+    public void updateSign(ByteBuffer input) {
+      hmac.update(input);
     }    
   }
 }

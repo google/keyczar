@@ -137,18 +137,6 @@
             <classpath refid="Keyczar.classpath"/>
         </junit>
     </target>
-    <target name="KeyczarTool create">
-        <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="create --name=Testing --purpose=sign --location=/home/sweis/temp"/>
-            <classpath refid="Keyczar.classpath"/>
-        </java>
-    </target>
-    <target name="KeyczarTool addkey">
-        <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="addkey --location=/home/sweis/temp --status=primary"/>
-            <classpath refid="Keyczar.classpath"/>
-        </java>
-    </target>
     <target name="KeyczarSignerTest">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
@@ -157,12 +145,45 @@
             <classpath refid="Keyczar.classpath"/>
         </junit>
     </target>
+    <target name="keyczar">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="KeyczarTool addkey">
+        <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
+            <arg line="addkey --location=/home/sweis/temp --status=primary"/>
+            <classpath refid="Keyczar.classpath"/>
+        </java>
+    </target>
     <target name="tests">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
             <classpath refid="Keyczar.classpath"/>
         </junit>
+    </target>
+    <target name="KeyczarTool create signing">
+        <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
+            <arg line="create --name=Testing --purpose=sign --location=/home/sweis/temp"/>
+            <classpath refid="Keyczar.classpath"/>
+        </java>
+    </target>
+    <target name="KeyczarCrypterTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.KeyczarCrypterTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="KeyczarTool create crypting">
+        <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
+            <arg line="create --name=Testing --purpose=crypt --location=/home/sweis/temp"/>
+            <classpath refid="Keyczar.classpath"/>
+        </java>
     </target>
     <target name="junitreport">
         <junitreport todir="${junit.output.dir}">

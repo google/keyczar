@@ -1,25 +1,15 @@
 package keyczar.internal;
 
+import java.nio.ByteBuffer;
+
+import keyczar.KeyczarException;
+
 public interface VerifyingStream {
   int digestSize();
   
-  void initVerify();
+  void initVerify() throws KeyczarException;
   
-  /**
-   * Update with some signed data
-   *
-   * @param signedData The signed data to verify
-   * @param offset The offset to start at.
-   * @param length The length of signed data.
-   */
-   void updateVerify(byte[] signedData, int offset, int length);
-  
-  /**
-   * Verify a signature.
-   *
-   * @param signature The signature
-   * @param offset Signature start offset.
-   * @return Success of verification.
-   */
-  boolean verify(byte[] signature, int offset);
+  void updateVerify(ByteBuffer input);
+
+  boolean verify(ByteBuffer signature);
 }

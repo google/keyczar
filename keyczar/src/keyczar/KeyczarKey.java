@@ -1,6 +1,7 @@
 package keyczar;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 
 import keyczar.internal.Constants;
 import keyczar.internal.DataPacker;
@@ -12,11 +13,17 @@ abstract class KeyczarKey {
   static KeyczarKey fromType(KeyType type) throws KeyczarException {
     switch(type) {
       case AES:
+        return new KeyczarAesKey();
       case HMAC_SHA1:
         return new KeyczarHmacKey();
     }
     
     throw new KeyczarException("Unsupported key type: " + type);
+  }
+  
+  void writeHeader(ByteBuffer dest) {
+    dest.put(Constants.VERSION);
+    dest.put(this.hash());
   }
   
   /**

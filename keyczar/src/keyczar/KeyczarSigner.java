@@ -1,6 +1,7 @@
 package keyczar;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
 import keyczar.internal.Constants;
@@ -21,30 +22,45 @@ public class KeyczarSigner extends KeyczarVerifier {
   }
   
   public byte[] sign(byte[] input) throws KeyczarException {
-    return sign(input, 0, input.length);
+    ByteBuffer output = ByteBuffer.allocate(digestSize());
+    sign(ByteBuffer.wrap(input), output);
+    return output.array();
   }
   
-  public byte[] sign(byte[] input, int inputOffset, int inputLength)
+  public void sign(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
-    KeyczarKey key = getPrimaryKey();
-    if (key == null) {
-      throw new KeyczarException("Need a primary key for signing");
+    KeyczarKey signingKey = getPrimaryKey();
+    if (signingKey == null) {
+      throw new NoPrimaryKeyException();
     }
-    SigningStream stream = (SigningStream) key.getStream();
-    // Allocate space for a version byte, key ID, and raw digest
-    byte[] keyHash = key.hash();
-    byte[] outputSig =
-      new byte[1 + keyHash.length + stream.digestSize()];
-    int written = 0;
-    outputSig[written++] = Constants.VERSION;
-    System.arraycopy(keyHash, 0, outputSig, written, keyHash.length);
-    written += keyHash.length;
-    
+    SigningStream stream = (SigningStream) signingKey.getStream();
+
+    if (output.capacity() < digestSize()) {
+      throw new ShortBufferException(output.capacity(), digestSize());
+    }
+    ByteBuffer header = ByteBuffer.allocate(Constants.HEADER_SIZE);
+    signingKey.writeHeader(header);
+    header.rewind();
     stream.initSign();
-    // Sign the version byte and the hash
-    stream.updateSign(outputSig, 0, written);
-    stream.updateSign(input, inputOffset, inputLength);
-    stream.sign(outputSig, written);
-    return outputSig;
+    
+    // Sign the header and write it to the output buffer
+    output.mark();
+    output.put(header);
+    header.rewind();
+    stream.updateSign(header);
+    
+    // Write the signature to the output
+    stream.updateSign(input);
+    stream.sign(output);
+    output.limit(output.position());
+  }
+  
+  public int digestSize() throws KeyczarException {
+    KeyczarKey signingKey = getPrimaryKey();
+    if (signingKey == null) {
+      throw new NoPrimaryKeyException();
+    }
+    return Constants.HEADER_SIZE +
+        ((SigningStream) signingKey.getStream()).digestSize();
   }
 }

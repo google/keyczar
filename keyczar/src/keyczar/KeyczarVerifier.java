@@ -2,6 +2,7 @@
 
 package keyczar;
 
+import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
 import keyczar.internal.Constants;
@@ -14,14 +15,6 @@ import keyczar.internal.VerifyingStream;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public class KeyczarVerifier extends Keyczar {
-  public enum VerifyResult {
-    UNSIGNED,
-    FAILED,
-    KEY_UNAVAILABLE,
-    MALFORMED,
-    VERIFIED,
-  }
-  
   public KeyczarVerifier(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
@@ -36,38 +29,40 @@ public class KeyczarVerifier extends Keyczar {
   }
   
   public boolean verify(byte[] data, byte[] signature) throws KeyczarException {
-    return verify(data, 0, data.length, signature, 0) == VerifyResult.VERIFIED;
+    return verify(ByteBuffer.wrap(data), ByteBuffer.wrap(signature));
   }
 
-  public VerifyResult verify(byte[] data, int dataOffset, int dataLen,
-      byte[] signature, int signatureOffset) throws KeyczarException {
-    if (signature.length - signatureOffset < Constants.HEADER_SIZE ||
-        signature[signatureOffset] != Constants.VERSION) {
-      return VerifyResult.MALFORMED;
+  public boolean verify(ByteBuffer data, ByteBuffer signature)
+      throws KeyczarException {
+    if (signature.remaining() < Constants.HEADER_SIZE) {
+      throw new ShortSignatureException(signature.remaining());
+    }
+    
+    byte version = signature.get();
+    if (version != Constants.VERSION) {
+      throw new BadVersionException(version);
     }
 
     byte[] hash = new byte[Constants.KEY_HASH_SIZE];
-    System.arraycopy(signature, signatureOffset + 1,
-        hash, 0, Constants.KEY_HASH_SIZE);
+    signature.get(hash);
     KeyczarKey key = getKey(hash);
 
     if (key == null) {
-      return VerifyResult.KEY_UNAVAILABLE;
+      throw new KeyNotFoundException(hash);
     }
     
     VerifyingStream stream = (VerifyingStream) key.getStream();
-    int sigSize = Constants.HEADER_SIZE + stream.digestSize();
-    if (signature.length - signatureOffset < sigSize) {
-      return VerifyResult.MALFORMED;
+    if (signature.remaining() < stream.digestSize()) {
+      throw new ShortSignatureException(signature.remaining());
     }
 
+    ByteBuffer header = ByteBuffer.allocate(Constants.HEADER_SIZE);
+    key.writeHeader(header);
+    header.rewind();
     stream.initVerify();
-    stream.updateVerify(signature, signatureOffset, Constants.HEADER_SIZE);
-    stream.updateVerify(data, dataOffset, dataLen);
-    if (stream.verify(signature, Constants.HEADER_SIZE)) {
-      return VerifyResult.VERIFIED;
-    } else {
-      return VerifyResult.FAILED;
-    }
+    
+    stream.updateVerify(header);
+    stream.updateVerify(data);
+    return stream.verify(signature);
   }
 }
