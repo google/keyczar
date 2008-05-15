@@ -8,22 +8,22 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
-public class KeyczarSignerTest {
+public class SignerTest {
   private static final String TEST_DATA = "./testdata";
-  private KeyczarSigner signer;
+  private Signer signer;
   private byte[] input = "This is some test input".getBytes();
   
   // This is a signature on 'input' by the primary key (version 2)
-  private byte[] primarySig = {1, -53, -70, -13, 105, -2, -82, -40, 8, -99,
-      -85, -28, 46, 89, -128, 73, -87, -122, 121, -38, -8, -107, 6, -25, 15};
+  private byte[] primarySig = {1, 88, -7, 7, -105, -99, -49, 66, 97, -47, -36,
+      72, -13, 8, -123, 56, -74, 4, -118, 36, 18, 92, 25, 39, -84};
 
   // This is a signature on 'input' by an active key (version 1)
-  private byte[] activeSig = {1, 10, -119, 63, -127, -9, 71, -111, -100, 29,
-      -128, -119, -70, 98, -90, -90, -116, 33, -33, -27, 42, -85, 60, -65, 82};
+  private byte[] activeSig = {1, -105, -3, 86, 29, -80, 11, 114, -27, 49, -118,
+      104, 98, -38, -59, 106, 31, 42, 41, 122, -71, -6, 116, 14, 62};
 
   @Before
   public void setUp() throws Exception {
-    signer = new KeyczarSigner(TEST_DATA + "/hmac");
+    signer = new Signer(TEST_DATA + "/hmac");
   }
 
   @Test

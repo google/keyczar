@@ -2,6 +2,11 @@
 
 package keyczar;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -84,39 +89,46 @@ public class AesKey extends KeyczarKey {
   public int hashCode() {
     return hashCode;
   }
-
+  
   @Override
-  protected void read(DataUnpacker unpacker)
-      throws KeyczarException {
-    int typeValue = unpacker.getInt();
-    if (typeValue != getType().getValue()) {
-      throw new KeyczarException("Invalid key type for AES key: " +
-          KeyType.getType(typeValue));
+  protected void read(String input) throws KeyczarException {
+    try {
+      JSONObject json = new JSONObject(input);
+      int typeValue = json.getInt("type");
+      if (typeValue != getType().getValue()) {
+        throw new KeyczarException("Invalid key type for AES key: " +
+            KeyType.getType(typeValue));
+      }
+      mode = CipherMode.getMode(json.getInt("mode"));
+      byte[] aesBytes = Util.base64Decode(json.getString("aeskey"));
+      hmacKey.read(json.getString("hmackey"));
+      init(aesBytes);
+    } catch (JSONException e) {
+      throw new KeyczarException(e);
+    } catch (IOException e) {
+      throw new KeyczarException(e);
     }
-    CipherMode mode = CipherMode.getMode(unpacker.getInt()); 
-    byte[] aesKeyMaterial = unpacker.getArray();
-    hmacKey.read(unpacker);
-    
-    init(aesKeyMaterial);
+  }
+  
+  @Override
+  public String toString() {
+    JSONObject json = new JSONObject();
+    try {
+      json.put("type", getType().getValue());
+      json.put("mode", mode.getValue());
+      json.put("aeskey", Util.base64Encode(aesKey.getEncoded()));
+      json.put("hmackey", hmacKey);
+    } catch (JSONException e) {
+      // Do nothing? Will return empty string
+    }    
+    return json.toString();
   }
 
   @Override
-  protected void generate() {
+  protected void generate() throws KeyczarException {
     init(Util.rand(getType().defaultSize()));
     hmacKey = new HmacKey();
     hmacKey.generate();
-  }
-
-  @Override
-  protected int write(DataPacker packer) throws KeyczarException {
-    if (hmacKey == null) {
-      throw new KeyczarException("Cannot write uninitialized key");
-    }
-    int written = packer.putInt(getType().getValue());
-    written += packer.putInt(mode.getValue());
-    written += packer.putArray(aesKey.getEncoded());
-    written += hmacKey.write(packer);
-    return written;
   }
 
   @Override

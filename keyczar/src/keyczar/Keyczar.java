@@ -8,8 +8,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import keyczar.internal.DataPacker;
-import keyczar.internal.DataUnpacker;
 import keyczar.internal.Util;
 
 /**
@@ -36,7 +34,7 @@ public abstract class Keyczar {
    * @throws KeyczarException 
    */
   public Keyczar(String fileLocation) throws KeyczarException {
-    this(new FileReader(fileLocation));
+    this(new KeyczarFileReader(fileLocation));
   }
   
   /**
@@ -47,9 +45,7 @@ public abstract class Keyczar {
    */
   public Keyczar(KeyczarReader reader) throws KeyczarException {
     // Reads keys from the KeyczarReader
-    InputStream metaData = reader.getMetadata();
-    DataUnpacker metaDataUnpacker = new DataUnpacker(metaData);
-    this.kmd = KeyMetadata.getMetadata(metaDataUnpacker);
+    this.kmd = KeyMetadata.readJson(reader.getMetadata());
     if (!isAcceptablePurpose(kmd.getPurpose())) {
       throw new KeyczarException("Unacceptable purpose: "
           + kmd.getPurpose());
@@ -62,10 +58,8 @@ public abstract class Keyczar {
         }
         primaryVersion = version;
       }
-      InputStream keyData = reader.getKey(version.getVersionNumber());
-      DataUnpacker keyDataUnpacker = new DataUnpacker(keyData);
       KeyczarKey key = KeyczarKey.fromType(kmd.getType());
-      key.read(keyDataUnpacker);
+      key.read(reader.getKey(version.getVersionNumber()));
       if (keyMap.containsKey(key.hashCode())) {
         throw new KeyczarException("Key identifiers cannot collide");
       }
@@ -121,12 +115,9 @@ public abstract class Keyczar {
   KeyczarKey getKey(KeyVersion v) {
     return versionMap.get(v);
   }
-  
-  int writeMetadata(DataPacker packer) throws KeyczarException {
-    return kmd.write(packer);
-  }
-  
-  int writeVersion(KeyVersion v, DataPacker packer) throws KeyczarException {
-    return versionMap.get(v).write(packer);
+
+  @Override
+  public String toString() {
+    return kmd.toString();
   }
 }

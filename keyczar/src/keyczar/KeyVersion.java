@@ -1,18 +1,18 @@
 package keyczar;
 
-import keyczar.internal.DataPacker;
-import keyczar.internal.DataPackingException;
-import keyczar.internal.DataUnpacker;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+// TODO: Write JavaDocs
 class KeyVersion {
   private final int versionNumber;
   private KeyStatus status;
   private final boolean exportable;
   
   KeyVersion(int v, KeyStatus s, boolean export) {
-    this.versionNumber = v;
-    this.status = s;
-    this.exportable = export;
+    versionNumber = v;
+    status = s;
+    exportable = export;
   }
   
   KeyVersion(int v, boolean export) {
@@ -37,33 +37,32 @@ class KeyVersion {
       this.isExportable() == v.isExportable();
   }
 
-  static KeyVersion getVersion(DataUnpacker unpacker)
-      throws DataPackingException {
-    int v = unpacker.getInt();
-    KeyStatus s = KeyStatus.getStatus(unpacker.getInt());
-    int b = unpacker.getInt();
-    return new KeyVersion(v, s, (b != 0));
-  }
-
-  int write(DataPacker packer) throws DataPackingException {
-    int written = packer.putInt(versionNumber);
-    written += packer.putInt(status.getValue());
-    written += packer.putInt(exportable ? 1 : 0);
-    return written;
-  }
-
   void setStatus(KeyStatus status) {
     this.status = status;
   }
   
   @Override
   public String toString() {
-    StringBuffer buffer = new StringBuffer("Version: ");
-    buffer.append(getVersionNumber());
-    buffer.append(" Status: ").append(getStatus());
-    if (exportable) {
-      buffer.append(" Exportable");
+    JSONObject json = new JSONObject();
+    try {
+      json.put("number", versionNumber);
+      json.put("status", status.getValue());
+      json.put("exportable", exportable);
+    } catch (JSONException e) {
+      // Do nothing? Returns empty JSON string
     }
-    return buffer.toString();
+    return json.toString();
+  }
+
+  public static KeyVersion read(String jsonString) throws KeyczarException {
+    try {
+      JSONObject json = new JSONObject(jsonString);
+      int v = json.getInt("number");
+      KeyStatus s = KeyStatus.getStatus(json.getInt("status"));
+      boolean export = json.getBoolean("exportable");
+      return new KeyVersion(v, s, export);
+    } catch (JSONException e) {
+      throw new KeyczarException(e);
+    }
   }
 }

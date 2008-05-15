@@ -1,6 +1,7 @@
 package keyczar.internal;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.DigestException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -18,11 +19,9 @@ public class Util {
   static {
     random = new SecureRandom();
     try {
-      md = MessageDigest.getInstance(Messages.getString("Util.hashAlgorithm"));
+      md = MessageDigest.getInstance("SHA-1");
     } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(Messages
-          .getString("Util.unsupportedHashAlgorithm")
-          + Messages.getString("Util.hashAlgorithm"), e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -30,26 +29,18 @@ public class Util {
     // Don't new me.
   }
 
+  // TODO: Write JavaDocs
   public static synchronized byte[] rand(int len) {
     byte[] output = new byte[len];
     rand(output);
     return output;
   }
   
+  // TODO: Write JavaDocs
   static synchronized void rand(byte[] dest) {
     random.nextBytes(dest);
   }
   
-  public static synchronized byte[] hashPacked(byte[]... inputs)
-      throws DataPackingException {
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
-    DataPacker packer = new DataPacker(output);
-    for (byte[] array : inputs) {
-      packer.putArray(array);
-    }
-    return md.digest(output.toByteArray());
-  }
-
   /**
    * Hashes a variable number of inputs and returns a new byte array
    * 
@@ -211,5 +202,19 @@ public class Util {
     output |= (src[offset++] & 0xFFL) << 8;
     output |= (src[offset++] & 0xFFL);
     return output;
+  }
+  
+  // TODO: Write JavaDocs
+  public static String base64Encode(byte[] src) {
+    // TODO: Use standard Base64 encoder 
+    // Blatent misuse of sun.misc package. This could change at any time.
+    return new sun.misc.BASE64Encoder().encode(src);
+  }
+  
+  // TODO: Write JavaDocs
+  public static byte[] base64Decode(String src) throws IOException {
+    // TODO: Use standard Base64 decoder
+    // Blatent misuse of sun.misc package. This could change at any time.
+    return new sun.misc.BASE64Decoder().decodeBuffer(src);
   }
 }

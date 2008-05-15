@@ -7,6 +7,7 @@ import java.security.GeneralSecurityException;
 import keyczar.internal.Constants;
 import keyczar.internal.SigningStream;
 
+// TODO: Write JavaDocs
 public class Signer extends Verifier {
   public Signer(String fileLocation) throws KeyczarException {
     super(fileLocation);
@@ -21,12 +22,14 @@ public class Signer extends Verifier {
     return (purpose == KeyPurpose.SIGN_AND_VERIFY);
   }
   
+  // TODO: Write JavaDocs
   public byte[] sign(byte[] input) throws KeyczarException {
     ByteBuffer output = ByteBuffer.allocate(digestSize());
     sign(ByteBuffer.wrap(input), output);
     return output.array();
   }
   
+  // TODO: Write JavaDocs
   public void sign(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
     KeyczarKey signingKey = getPrimaryKey();
@@ -55,6 +58,7 @@ public class Signer extends Verifier {
     output.limit(output.position());
   }
   
+  // TODO: Write JavaDocs
   public int digestSize() throws KeyczarException {
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {

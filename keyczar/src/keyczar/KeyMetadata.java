@@ -1,23 +1,24 @@
 package keyczar;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import keyczar.internal.DataPacker;
-import keyczar.internal.DataPackingException;
-import keyczar.internal.DataUnpacker;
-
+// TODO: Write JavaDocs
 class KeyMetadata {
 
   private final String name;
   private final KeyPurpose purpose;
   private final KeyType type;
   private final ArrayList<KeyVersion> versions = new ArrayList<KeyVersion>(); 
-  
+
   KeyMetadata(String n, KeyPurpose p, KeyType t) {
-    this.name = n;
-    this.purpose = p;
-    this.type = t;
+    name = n;
+    purpose = p;
+    type = t;
   }
   
   String getName() {
@@ -39,28 +40,22 @@ class KeyMetadata {
   boolean addVersion(KeyVersion version) {
     return versions.add(version);
   }
-
-  static KeyMetadata getMetadata(DataUnpacker unpacker)
-      throws DataPackingException {
-    String name = new String(unpacker.getArray());
-    KeyPurpose p = KeyPurpose.getPurpose(unpacker.getInt());
-    KeyType t = KeyType.getType(unpacker.getInt());
-    KeyMetadata kmd = new KeyMetadata(name, p, t);
-    int numVersions = unpacker.getInt();
-    for (int i = 0; i < numVersions; i++) 
-      kmd.addVersion(KeyVersion.getVersion(unpacker));
-    return kmd;
-  }
   
-  int write(DataPacker packer) throws DataPackingException {
-    int written = packer.putArray(name.getBytes());
-    written += packer.putInt(purpose.getValue());
-    written += packer.putInt(type.getValue());
-    written += packer.putInt(versions.size());
-    for (KeyVersion v : versions) {
-      written += v.write(packer);
+  static KeyMetadata readJson(String jsonString) throws KeyczarException {
+    try {
+      JSONObject json = new JSONObject(jsonString);
+      String n = json.getString("name");
+      KeyPurpose p = KeyPurpose.getPurpose(json.getInt("purpose"));
+      KeyType t = KeyType.getType(json.getInt("type"));
+      JSONArray versions = json.getJSONArray("versions");
+      KeyMetadata kmd = new KeyMetadata(n, p, t);
+      for (int i = 0; i < versions.length(); i++) {
+        kmd.addVersion(KeyVersion.read(versions.getString(i)));
+      }
+      return kmd;
+    } catch (JSONException e) {
+      throw new KeyczarException(e);
     }
-    return written;
   }
 
   List<KeyVersion> getVersions() {
@@ -69,10 +64,15 @@ class KeyMetadata {
   
   @Override
   public String toString() {
-    StringBuffer buffer = new StringBuffer(name);
-    buffer.append(" Purpose: ").append(getPurpose());
-    buffer.append(" Type: ").append(getType());
-    buffer.append(" Versions: ").append(getVersions().size());
-    return buffer.toString();
+    JSONObject json = new JSONObject();
+    try {
+      json.put("name", name);
+      json.put("purpose", purpose.getValue());
+      json.put("type", type.getValue());
+      json.put("versions", versions);
+    } catch (JSONException e) {
+      // Do nothing? Will return empty JSON string
+    }
+    return json.toString();
   }
 }

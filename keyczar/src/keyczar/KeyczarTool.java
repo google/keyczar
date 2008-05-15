@@ -5,15 +5,12 @@ package keyczar;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import keyczar.internal.DataPacker;
-import keyczar.internal.DataPackingException;
-import keyczar.internal.DataUnpacker;
 
 /**
  * Command line tool for generating Keyczar key files
@@ -38,12 +35,11 @@ public class KeyczarTool {
     }
 
     void write(String location) throws KeyczarException {
-      File metaFile = new File(locationFlag + FileReader.META_FILE);
+      File metaFile = new File(locationFlag + KeyczarFileReader.META_FILE);
       try {
-        FileOutputStream metaOutput = new FileOutputStream(metaFile);
-        DataPacker packer = new DataPacker(metaOutput);
-        writeMetadata(packer);
-        metaOutput.close();
+        FileWriter metadataWriter = new FileWriter(metaFile);
+        metadataWriter.write(this.toString());
+        metadataWriter.close();
       } catch (IOException e) {
         throw new KeyczarException("Unable to write to : " +
             metaFile.toString(), e);
@@ -54,9 +50,12 @@ public class KeyczarTool {
         KeyVersion version = versions.next();
         File versionFile = new File(locationFlag + version.getVersionNumber());
         try {
-          FileOutputStream versionOutput = new FileOutputStream(versionFile);
-          DataPacker packer = new DataPacker(versionOutput);
-          writeVersion(version, packer);
+          FileWriter versionWriter = new FileWriter(versionFile);
+          versionWriter.write(getKey(version).toString());
+          versionWriter.close();
+          //FileOutputStream versionOutput = new FileOutputStream(versionFile);
+          //DataPacker packer = new DataPacker(versionOutput);
+          //writeVersion(version, packer);
         } catch (IOException e) {
           throw new KeyczarException("Unable to write to : " +
               versionFile.toString(), e);
@@ -76,8 +75,7 @@ public class KeyczarTool {
     genericKeyczar.write(locationFlag);
   }
   
-  private static void create() throws KeyczarException,
-      DataPackingException {
+  private static void create() throws KeyczarException {
     KeyMetadata kmd = null;
     if (purposeFlag == null) {
       throw new KeyczarException("Must define a key set purpose with the " +
@@ -107,15 +105,14 @@ public class KeyczarTool {
     if (kmd == null) {
       throw new KeyczarException("Unsupported purpose: " + purposeFlag);
     }
-    File file = new File(locationFlag + FileReader.META_FILE);
+    File file = new File(locationFlag + KeyczarFileReader.META_FILE);
     if (file.exists()) {
       throw new KeyczarException("File already exists: " + file);
     }
-    FileOutputStream metaOutput;
+
     try {
-      metaOutput = new FileOutputStream(file);
-      DataPacker packer = new DataPacker(metaOutput);
-      kmd.write(packer);
+      FileOutputStream metaOutput = new FileOutputStream(file);
+      metaOutput.write(kmd.toString().getBytes());
       metaOutput.close();
     } catch (IOException e) {
       throw new KeyczarException("Unable to write to : " + file.toString(), e);

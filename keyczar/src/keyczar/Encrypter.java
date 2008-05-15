@@ -8,6 +8,7 @@ import keyczar.internal.Constants;
 import keyczar.internal.EncryptingStream;
 import keyczar.internal.SigningStream;
 
+// TODO: Write JavaDocs
 /**
  * @author steveweis@gmail.com (Steve Weis)
  *
@@ -31,7 +32,8 @@ public class Encrypter extends Keyczar {
     return purpose == KeyPurpose.ENCRYPT;
   }
   
-  byte[] encrypt(byte[] input) throws KeyczarException {
+  // TODO: Write JavaDocs
+  public byte[] encrypt(byte[] input) throws KeyczarException {
     ByteBuffer output = ByteBuffer.allocate(ciphertextSize(input.length));
     encrypt(ByteBuffer.wrap(input), output);
     output.reset();
@@ -40,7 +42,8 @@ public class Encrypter extends Keyczar {
     return outputBytes;
   }
   
-  void encrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
+  // TODO: Write JavaDocs
+  public void encrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
     KeyczarKey encryptingKey = getPrimaryKey();
     if (encryptingKey == null) {
       throw new KeyczarException("Need a primary key for encrypting");
@@ -71,8 +74,9 @@ public class Encrypter extends Keyczar {
     output.limit(output.limit() + signStream.digestSize());
     signStream.sign(output);
   }
-  
-  int ciphertextSize(int input) throws KeyczarException {
+
+  // TODO: Write JavaDocs
+  public int ciphertextSize(int input) throws KeyczarException {
     KeyczarKey encryptingKey = getPrimaryKey();
     if (encryptingKey == null) {
       throw new KeyczarException("Need a primary key for encrypting");

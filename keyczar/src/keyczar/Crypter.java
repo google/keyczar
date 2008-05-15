@@ -32,7 +32,8 @@ public class Crypter extends Encrypter {
     return purpose == KeyPurpose.DECRYPT_AND_ENCRYPT;
   }
   
-  byte[] decrypt(byte[] input) throws KeyczarException {
+  // TODO: Write JavaDocs
+  public byte[] decrypt(byte[] input) throws KeyczarException {
     ByteBuffer output = ByteBuffer.allocate(input.length);
     decrypt(ByteBuffer.wrap(input), output);
     output.reset();
@@ -41,7 +42,9 @@ public class Crypter extends Encrypter {
     return outputBytes;
   }
 
-  void decrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
+  // TODO: Write JavaDocs
+  public void decrypt(ByteBuffer input, ByteBuffer output)
+      throws KeyczarException {
     if (input.remaining() < Constants.HEADER_SIZE) {
       throw new ShortCiphertextException(input.remaining());
     }

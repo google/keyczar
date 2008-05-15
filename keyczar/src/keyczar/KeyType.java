@@ -1,5 +1,6 @@
 package keyczar;
 
+// TODO: Write JavaDocs
 enum KeyType {
   AES(0, 16),
   HMAC_SHA1(1, 32),

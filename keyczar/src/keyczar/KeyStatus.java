@@ -1,5 +1,6 @@
 package keyczar;
 
+// TODO: Write JavaDocs
 enum KeyStatus {
   PRIMARY(0),
   ACTIVE(1),

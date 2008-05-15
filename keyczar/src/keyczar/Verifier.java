@@ -6,10 +6,10 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
 import keyczar.internal.Constants;
-import keyczar.internal.DataPackingException;
-import keyczar.internal.DataUnpacker;
 import keyczar.internal.VerifyingStream;
 
+
+// TODO: Write JavaDocs
 /**
  * 
  * @author steveweis@gmail.com (Steve Weis)
@@ -28,10 +28,12 @@ public class Verifier extends Keyczar {
     return (purpose == KeyPurpose.VERIFY);
   }
   
+  // TODO: Write JavaDocs
   public boolean verify(byte[] data, byte[] signature) throws KeyczarException {
     return verify(ByteBuffer.wrap(data), ByteBuffer.wrap(signature));
   }
 
+  // TODO: Write JavaDocs
   public boolean verify(ByteBuffer data, ByteBuffer signature)
       throws KeyczarException {
     if (signature.remaining() < Constants.HEADER_SIZE) {
