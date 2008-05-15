@@ -14,12 +14,12 @@ import keyczar.internal.VerifyingStream;
  * 
  * @author steveweis@gmail.com (Steve Weis)
  */
-public class KeyczarVerifier extends Keyczar {
-  public KeyczarVerifier(String fileLocation) throws KeyczarException {
+public class Verifier extends Keyczar {
+  public Verifier(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
 
-  public KeyczarVerifier(KeyczarReader reader) throws KeyczarException {
+  public Verifier(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
   

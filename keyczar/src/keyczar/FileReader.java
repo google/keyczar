@@ -15,11 +15,11 @@ import java.io.InputStream;
  * @author sweis@google.com (Your Name Here)
  *
  */
-public class KeyczarFileReader implements KeyczarReader {
+public class FileReader implements KeyczarReader {
   private String location;
   static final String META_FILE = "meta";
   
-  public KeyczarFileReader(String fileLocation) {
+  public FileReader(String fileLocation) {
     if (fileLocation != null && !fileLocation.endsWith(File.separator)) {
       fileLocation += File.separator;
     }

@@ -13,9 +13,9 @@ abstract class KeyczarKey {
   static KeyczarKey fromType(KeyType type) throws KeyczarException {
     switch(type) {
       case AES:
-        return new KeyczarAesKey();
+        return new AesKey();
       case HMAC_SHA1:
-        return new KeyczarHmacKey();
+        return new HmacKey();
     }
     
     throw new KeyczarException("Unsupported key type: " + type);

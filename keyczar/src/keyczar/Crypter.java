@@ -14,13 +14,13 @@ import keyczar.internal.VerifyingStream;
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-public class KeyczarCrypter extends KeyczarEncrypter {
+public class Crypter extends Encrypter {
 
-  public KeyczarCrypter(String fileLocation) throws KeyczarException {
+  public Crypter(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
 
-  public KeyczarCrypter(KeyczarReader reader) throws KeyczarException {
+  public Crypter(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
   

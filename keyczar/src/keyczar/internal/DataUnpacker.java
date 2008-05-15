@@ -13,9 +13,7 @@ import java.io.InputStream;
 public class DataUnpacker {
   private int tagCount;
   private static InputStream input;
-  private static final int INT = 0;
-  private static final int LONG = 1;
-  private static final int ARRAY = 2;
+  
   private static int MAX_VARINT_SIZE = 5;
   private static int MAX_VARLONG_SIZE = 10;
   
@@ -37,6 +35,21 @@ public class DataUnpacker {
   public DataUnpacker(byte[] input, int offset, int length) {
     this(new ByteArrayInputStream(input, offset, length)); 
   }
+  
+  public PackedDataType peek() throws DataPackingException {
+    if (input.markSupported()) {
+      input.mark(1);
+      byte value = getByte();
+      try {
+        input.reset();
+      } catch (IOException e) {
+        throw new DataPackingException(e);
+      }
+      return PackedDataType.fromByte(value);
+    } else {
+      throw new DataPackingException("Unsupported");
+    }
+  }
 
   /**
    * Destructively tries to unpack an array from the input stream. If an
@@ -47,7 +60,7 @@ public class DataUnpacker {
    *                              or if the stream is corrupted
    */
   public byte[] getArray() throws DataPackingException {
-    checkTagFormat(ARRAY);
+    checkTagFormat(PackedDataType.ARRAY);
     int len = getIntNoTag();
     // Now position is pointing at the start of the array data
     byte[] output = new byte[len];
@@ -70,7 +83,7 @@ public class DataUnpacker {
    *                              or if the stream is corrupted
    */
   void getArray(byte[] dest, int offset) throws DataPackingException {
-    checkTagFormat(ARRAY);
+    checkTagFormat(PackedDataType.ARRAY);
     int len = getIntNoTag();
     try {
       input.read(dest, offset, len);
@@ -88,7 +101,7 @@ public class DataUnpacker {
    *                              or if the stream is corrupted
    */
   public int getInt() throws DataPackingException {
-    checkTagFormat(INT);
+    checkTagFormat(PackedDataType.INT);
     return getIntNoTag();
   }
   
@@ -101,7 +114,7 @@ public class DataUnpacker {
    *                              or if the stream is corrupted
    */
   long getLong() throws DataPackingException {
-    checkTagFormat(LONG);
+    checkTagFormat(PackedDataType.LONG);
     long result = 0;
     for (int i = 0; i < MAX_VARLONG_SIZE; i++) {
       byte tmp = getByte();
@@ -113,7 +126,8 @@ public class DataUnpacker {
     return result;
   }
     
-  private void checkTagFormat(int format) throws DataPackingException {
+  private void checkTagFormat(PackedDataType format)
+      throws DataPackingException {
     int tag;
     try {
       tag = input.read();
@@ -124,7 +138,7 @@ public class DataUnpacker {
       throw new DataPackingException("Invalid packed data tag. " +
           "Expected count: " + tagCount);
     }
-    if ((tag & 0x07) != format) {
+    if ((tag & 0x07) != format.getValue()) {
       throw new DataPackingException("Expected format: " + format +
           ", Received: " + (tag & 0x07));
     }

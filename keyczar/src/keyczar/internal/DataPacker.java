@@ -11,9 +11,6 @@ import java.io.OutputStream;
 public class DataPacker {
   private OutputStream output;
   private int tagCount;
-  private static final int INT = 0;
-  private static final int LONG = 1;
-  private static final int ARRAY = 2;
 
   private static int MAX_VARINT_SIZE = 5;
   private static int MAX_VARLONG_SIZE = 10;
@@ -51,7 +48,7 @@ public class DataPacker {
    * @throws DataPackingException If a write error occurs
    */
   public int putArray(byte[] data, int offset, int len) throws DataPackingException {
-    int written = putByte((byte) ((tagCount++ << 3) | ARRAY));
+    int written = putByte(PackedDataType.ARRAY.getLabel(tagCount++));
     written += putIntNoTag(len);
     try {
       output.write(data, offset, len);
@@ -70,7 +67,7 @@ public class DataPacker {
    * @throws DataPackingException If a write error occurs
    */
   public int putInt(int value) throws DataPackingException {
-    int written = putByte((byte) ((tagCount++ << 3) | INT));
+    int written = putByte(PackedDataType.INT.getLabel(tagCount++));
     written+= putIntNoTag(value);
     return written;
   }
@@ -83,7 +80,7 @@ public class DataPacker {
    * @throws DataPackingException If a write error occurs
    */
   public int putLong(long value) throws DataPackingException {
-    int written = putByte((byte) ((tagCount++ << 3) | LONG));
+    int written = putByte(PackedDataType.LONG.getLabel(tagCount++));
     for (int i = 0; i < MAX_VARLONG_SIZE; i++) {
       byte b = (byte) (value & 0x7F);
       value >>>= 7;

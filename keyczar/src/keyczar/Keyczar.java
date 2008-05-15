@@ -36,7 +36,7 @@ public abstract class Keyczar {
    * @throws KeyczarException 
    */
   public Keyczar(String fileLocation) throws KeyczarException {
-    this(new KeyczarFileReader(fileLocation));
+    this(new FileReader(fileLocation));
   }
   
   /**

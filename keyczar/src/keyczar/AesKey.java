@@ -25,7 +25,7 @@ import keyczar.internal.*;
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-public class KeyczarAesKey extends KeyczarKey {
+public class AesKey extends KeyczarKey {
   private static final String AES_ALGORITHM = "AES";
   private enum CipherMode {
     CBC(0, "AES/CBC/PKCS5Padding", true),
@@ -59,7 +59,7 @@ public class KeyczarAesKey extends KeyczarKey {
     }
   }
   
-  private KeyczarHmacKey hmacKey = new KeyczarHmacKey();
+  private HmacKey hmacKey = new HmacKey();
   private Key aesKey;
   // Default mode is CBC
   private CipherMode mode = CipherMode.CBC;
@@ -103,7 +103,7 @@ public class KeyczarAesKey extends KeyczarKey {
   @Override
   protected void generate() {
     init(Util.rand(getType().defaultSize()));
-    hmacKey = new KeyczarHmacKey();
+    hmacKey = new HmacKey();
     hmacKey.generate();
   }
 

@@ -38,7 +38,7 @@ public class KeyczarTool {
     }
 
     void write(String location) throws KeyczarException {
-      File metaFile = new File(locationFlag + KeyczarFileReader.META_FILE);
+      File metaFile = new File(locationFlag + FileReader.META_FILE);
       try {
         FileOutputStream metaOutput = new FileOutputStream(metaFile);
         DataPacker packer = new DataPacker(metaOutput);
@@ -107,7 +107,7 @@ public class KeyczarTool {
     if (kmd == null) {
       throw new KeyczarException("Unsupported purpose: " + purposeFlag);
     }
-    File file = new File(locationFlag + KeyczarFileReader.META_FILE);
+    File file = new File(locationFlag + FileReader.META_FILE);
     if (file.exists()) {
       throw new KeyczarException("File already exists: " + file);
     }

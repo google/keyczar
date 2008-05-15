@@ -12,14 +12,14 @@ import keyczar.internal.SigningStream;
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-public class KeyczarEncrypter extends Keyczar {
+public class Encrypter extends Keyczar {
   private KeyczarKey encryptingKey;
 
-  public KeyczarEncrypter(String fileLocation) throws KeyczarException {
+  public Encrypter(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
 
-  public KeyczarEncrypter(KeyczarReader reader) throws KeyczarException {
+  public Encrypter(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
   

@@ -7,12 +7,12 @@ import java.security.GeneralSecurityException;
 import keyczar.internal.Constants;
 import keyczar.internal.SigningStream;
 
-public class KeyczarSigner extends KeyczarVerifier {
-  public KeyczarSigner(String fileLocation) throws KeyczarException {
+public class Signer extends Verifier {
+  public Signer(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
 
-  public KeyczarSigner(KeyczarReader reader) throws KeyczarException {
+  public Signer(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
   

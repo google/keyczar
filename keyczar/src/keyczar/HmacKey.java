@@ -21,7 +21,7 @@ import keyczar.internal.*;
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-public class KeyczarHmacKey extends KeyczarKey {
+public class HmacKey extends KeyczarKey {
   private static final String MAC_ALGORITHM = "HMACSHA1";
   private Key hmacKey;
   private final byte[] hash = new byte[Constants.KEY_HASH_SIZE];
