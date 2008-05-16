@@ -45,7 +45,7 @@ public abstract class Keyczar {
    */
   public Keyczar(KeyczarReader reader) throws KeyczarException {
     // Reads keys from the KeyczarReader
-    this.kmd = KeyMetadata.readJson(reader.getMetadata());
+    this.kmd = KeyMetadata.read(reader.getMetadata());
     if (!isAcceptablePurpose(kmd.getPurpose())) {
       throw new KeyczarException("Unacceptable purpose: "
           + kmd.getPurpose());

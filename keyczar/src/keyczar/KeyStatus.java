@@ -1,7 +1,7 @@
 package keyczar;
 
 // TODO: Write JavaDocs
-enum KeyStatus {
+public enum KeyStatus {
   PRIMARY(0),
   ACTIVE(1),
   SCHEDULED_FOR_REVOCATION(2);

@@ -1,7 +1,7 @@
 package keyczar;
 
 // TODO: Write JavaDocs
-enum KeyPurpose {
+public enum KeyPurpose {
   DECRYPT_AND_ENCRYPT(0),
   ENCRYPT(1),
   SIGN_AND_VERIFY(2),

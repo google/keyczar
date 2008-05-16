@@ -1,1 +1,1 @@
-{"versions":["{\"exportable\":false,\"status\":1,\"number\":1}","{\"exportable\":false,\"status\":0,\"number\":2}"],"name":"Testing","purpose":0,"type":0}
+{"name":"Testing","purpose":"DECRYPT_AND_ENCRYPT","type":"AES","versions":[{"versionNumber":1,"status":"ACTIVE","exportable":false},{"versionNumber":2,"status":"PRIMARY","exportable":false}]}

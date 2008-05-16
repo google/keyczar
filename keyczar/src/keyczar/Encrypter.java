@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import keyczar.internal.Constants;
 import keyczar.internal.EncryptingStream;
 import keyczar.internal.SigningStream;
+import keyczar.internal.Util;
 
 // TODO: Write JavaDocs
 /**
@@ -30,6 +31,10 @@ public class Encrypter extends Keyczar {
   @Override
   protected boolean isAcceptablePurpose(KeyPurpose purpose) {
     return purpose == KeyPurpose.ENCRYPT;
+  }
+  
+  public String encrypt(String input) throws KeyczarException {
+    return Util.base64Encode(encrypt(input.getBytes()));
   }
   
   // TODO: Write JavaDocs
@@ -57,7 +62,7 @@ public class Encrypter extends Keyczar {
 
     output.mark();
     // Write the key header
-    encryptingKey.writeHeader(output);
+    encryptingKey.copyHeader(output);
     
     // Write the IV. May be an empty array of zero length
     byte[] iv = cryptStream.initEncrypt();

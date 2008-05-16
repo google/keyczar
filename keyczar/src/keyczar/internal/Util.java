@@ -1,5 +1,8 @@
 package keyczar.internal;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.DigestException;
@@ -7,6 +10,8 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+
+import keyczar.KeyczarException;
 
 /**
  * 
@@ -16,6 +21,9 @@ import java.security.SecureRandom;
 public class Util {
   private static MessageDigest md;
   private static SecureRandom random;
+  private static final Gson gson =
+    new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+  
   static {
     random = new SecureRandom();
     try {
@@ -28,6 +36,22 @@ public class Util {
   private Util() {
     // Don't new me.
   }
+  
+  public static Gson gson() {
+    return gson;
+  }
+  
+  public static void checkHashPrefix(byte[] hash, String encoded)
+      throws KeyczarException {
+    byte[] decoded = Util.base64Decode(encoded);
+    byte[] fullHash = Util.prefixHash(decoded);
+    for (int i = 0; i < hash.length; i++) {
+      if (hash[i] != fullHash[i]) {
+        throw new KeyczarException("Hash does not match");
+      }
+    }
+  }
+  
 
   // TODO: Write JavaDocs
   public static synchronized byte[] rand(int len) {
@@ -47,30 +71,12 @@ public class Util {
    * @param inputs The inputs to hash
    * @return The hash output
    */
-  public static synchronized byte[] hash(byte[]... inputs) {
+  public static synchronized byte[] prefixHash(byte[]... inputs) {
     for (byte[] array : inputs) {
+      md.update(fromInt(array.length));
       md.update(array);
     }
     return md.digest();
-  }
-
-  /**
-   * Hashes a variable number of input arrays and writes them into the output
-   * buffer starting from the given offset.
-   * 
-   * @param dest The destination array to write the hash into
-   * @param offset The offset to start writing the hash from
-   * @param len The length allocated for the hash.
-   * @param inputs The inputs to hash
-   * @throws GeneralSecurityException If the allocated length is not large
-   *         enough
-   */
-  static synchronized void hash(byte[] dest, int offset, int len,
-      byte[]... inputs) throws GeneralSecurityException {
-    for (byte[] array : inputs) {
-      md.update(array);
-    }
-    md.digest(dest, offset, len);
   }
 
   /**
@@ -212,9 +218,13 @@ public class Util {
   }
   
   // TODO: Write JavaDocs
-  public static byte[] base64Decode(String src) throws IOException {
+  public static byte[] base64Decode(String src) throws KeyczarException {
     // TODO: Use standard Base64 decoder
     // Blatent misuse of sun.misc package. This could change at any time.
-    return new sun.misc.BASE64Decoder().decodeBuffer(src);
+    try {
+      return new sun.misc.BASE64Decoder().decodeBuffer(src);
+    } catch (IOException e) {
+      throw new KeyczarException(e);
+    }
   }
 }

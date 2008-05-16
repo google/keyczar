@@ -1,13 +1,18 @@
 package keyczar;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.annotations.Expose;
+
+import keyczar.internal.Util;
 
 // TODO: Write JavaDocs
 class KeyVersion {
-  private final int versionNumber;
-  private KeyStatus status;
-  private final boolean exportable;
+  @Expose private int versionNumber = 0;
+  @Expose private KeyStatus status = KeyStatus.ACTIVE;
+  @Expose private boolean exportable = false;
+  
+  private KeyVersion() {
+    // For Gson
+  }
   
   KeyVersion(int v, KeyStatus s, boolean export) {
     versionNumber = v;
@@ -43,26 +48,10 @@ class KeyVersion {
   
   @Override
   public String toString() {
-    JSONObject json = new JSONObject();
-    try {
-      json.put("number", versionNumber);
-      json.put("status", status.getValue());
-      json.put("exportable", exportable);
-    } catch (JSONException e) {
-      // Do nothing? Returns empty JSON string
-    }
-    return json.toString();
+    return Util.gson().toJson(this);
   }
 
-  public static KeyVersion read(String jsonString) throws KeyczarException {
-    try {
-      JSONObject json = new JSONObject(jsonString);
-      int v = json.getInt("number");
-      KeyStatus s = KeyStatus.getStatus(json.getInt("status"));
-      boolean export = json.getBoolean("exportable");
-      return new KeyVersion(v, s, export);
-    } catch (JSONException e) {
-      throw new KeyczarException(e);
-    }
+  public static KeyVersion read(String jsonString) {
+    return Util.gson().fromJson(jsonString, KeyVersion.class);
   }
 }

@@ -1,1 +1,1 @@
-{"versions":["{\"exportable\":false,\"status\":1,\"number\":1}","{\"exportable\":false,\"status\":0,\"number\":2}"],"name":"Testing","purpose":2,"type":1}
+{"name":"Testing","purpose":"SIGN_AND_VERIFY","type":"HMAC_SHA1","versions":[{"versionNumber":1,"status":"ACTIVE","exportable":false},{"versionNumber":2,"status":"PRIMARY","exportable":false}]}

@@ -13,7 +13,7 @@ public interface SigningStream {
   void initSign() throws KeyczarException;
   
   // TODO: Write JavaDocs
-  void updateSign(ByteBuffer input);
+  void updateSign(ByteBuffer input) throws KeyczarException;
 
   // TODO: Write JavaDocs
   void sign(ByteBuffer output) throws KeyczarException;

@@ -13,12 +13,14 @@ abstract class KeyczarKey {
         return new AesKey();
       case HMAC_SHA1:
         return new HmacKey();
+      case DSA_PRIV:
+        return new DsaPrivateKey();
     }
     
     throw new KeyczarException("Unsupported key type: " + type);
   }
   
-  void writeHeader(ByteBuffer dest) {
+  void copyHeader(ByteBuffer dest) {
     dest.put(Constants.VERSION);
     dest.put(this.hash());
   }
@@ -33,7 +35,7 @@ abstract class KeyczarKey {
   protected abstract KeyType getType();
    
   protected abstract void read(String input) throws KeyczarException;
-  
+
   protected abstract void generate() throws KeyczarException;
   
   protected abstract Stream getStream() throws KeyczarException;

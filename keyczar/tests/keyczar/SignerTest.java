@@ -5,78 +5,97 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
 public class SignerTest {
   private static final String TEST_DATA = "./testdata";
-  private Signer signer;
-  private byte[] input = "This is some test input".getBytes();
+  private String input = "This is some test input";
+  private byte[] inputBytes = input.getBytes();
   
   // This is a signature on 'input' by the primary key (version 2)
-  private byte[] primarySig = {1, 88, -7, 7, -105, -99, -49, 66, 97, -47, -36,
-      72, -13, 8, -123, 56, -74, 4, -118, 36, 18, 92, 25, 39, -84};
+  private String hmacPrimarySig = "Ab1PQ5IXUGHSnqcRGCLopEwt8KTdj+qw6g==";
 
   // This is a signature on 'input' by an active key (version 1)
-  private byte[] activeSig = {1, -105, -3, 86, 29, -80, 11, 114, -27, 49, -118,
-      104, 98, -38, -59, 106, 31, 42, 41, 122, -71, -6, 116, 14, 62};
+  private String hmacActiveSig = "AeM3GRZPlBcQRB/gJo49PLN0BwCWQ7X2rA==";
 
-  @Before
-  public void setUp() throws Exception {
-    signer = new Signer(TEST_DATA + "/hmac");
-  }
+  private String dsaPrimarySig = 
+    "AUiZdiAwLAIUeMQRssGRPUAMC1JmzqepUg2gl2wCFCGL6sii5pXPhF+DhhUz7IB0kZJf";
 
+  private String dsaActiveSig = 
+    "AQlauKIwLQIVAIx1iicAQ0D2QWt7gJryY9YOx/LAAhRCoB8GuNACGjygWoE8KtD0tYOzpA==";
   @Test
-  public final void testSignAndVerify() throws KeyczarException {
-    byte[] sig = signer.sign(input);
-    assertArrayEquals(sig, primarySig);
-    assertTrue(signer.verify(input, sig));
-    
+  public final void testHmacSignAndVerify() throws KeyczarException {
+    Signer hmacSigner = new Signer(TEST_DATA + "/hmac");
+    String sig = hmacSigner.sign(input);
+    assertTrue(hmacSigner.verify(input, sig));
+    System.out.println("Hmac Sig: " + sig);
     // Try signing and verifying directly in a buffer
-    ByteBuffer buffer = ByteBuffer.allocate(input.length + signer.digestSize());
-    buffer.put(input);
+    ByteBuffer buffer = ByteBuffer.allocate(inputBytes.length + hmacSigner.digestSize());
+    buffer.put(inputBytes);
     ByteBuffer sigBuffer = buffer.slice();
     buffer.limit(buffer.position());
     buffer.rewind();
-    signer.sign(buffer, sigBuffer);
+    hmacSigner.sign(buffer, sigBuffer);
     buffer.rewind();
     sigBuffer.rewind();
-    assertTrue(signer.verify(buffer, sigBuffer));
+    assertTrue(hmacSigner.verify(buffer, sigBuffer));
   }
-
+  
+  @Test
+  public final void testDsaSignAndVerify() throws KeyczarException {
+    Signer dsaSigner = new Signer(TEST_DATA + "/dsa");
+    String sig = dsaSigner.sign(input);
+    System.out.println("Dsa Sig: " + sig);
+    assertTrue(dsaSigner.verify(input, sig));
+    System.out.println(sig);
+  }
+  
   @Test
   public final void testVerify() throws KeyczarException {
-    byte[] sig = signer.sign(input);
-    assertArrayEquals(sig, primarySig);
-    assertTrue(signer.verify(input, primarySig));
-    assertTrue(signer.verify(input, activeSig));
-    
-    ByteBuffer buffer = ByteBuffer.allocate(input.length + signer.digestSize());
-    buffer.put(input);
-    ByteBuffer sigBuffer = buffer.slice();
-    buffer.limit(buffer.position());
-    buffer.rewind();
-    sigBuffer.put(primarySig);
-    sigBuffer.rewind();
-    assertTrue(signer.verify(buffer, sigBuffer));
+    Signer dsaSigner = new Signer(TEST_DATA + "/dsa");
+    assertTrue(dsaSigner.verify(input, dsaPrimarySig));
+    assertTrue(dsaSigner.verify(input, dsaActiveSig));
   }
 
   @Test
-  public final void testBadSigs() throws KeyczarException {
-    byte[] sig = signer.sign(input);
+  public final void testHmacVerify() throws KeyczarException {
+    Signer hmacSigner = new Signer(TEST_DATA + "/hmac");
+    String sig = hmacSigner.sign(input);
+    assertEquals(sig, hmacPrimarySig);
+    assertTrue(hmacSigner.verify(input, hmacPrimarySig));
+    assertTrue(hmacSigner.verify(input, hmacActiveSig));
+    
+    
+    byte[] sigBytes = hmacSigner.sign(inputBytes);
+    ByteBuffer buffer = ByteBuffer.allocate(inputBytes.length + hmacSigner.digestSize());
+    buffer.put(inputBytes);
+    ByteBuffer sigBuffer = buffer.slice();
+    buffer.limit(buffer.position());
+    buffer.rewind();
+    sigBuffer.put(keyczar.internal.Util.base64Decode(hmacPrimarySig));
+    sigBuffer.rewind();
+    assertTrue(hmacSigner.verify(buffer, sigBuffer));
+  }
+
+  @Test
+  public final void testHmacBadSigs() throws KeyczarException {
+    Signer hmacSigner = new Signer(TEST_DATA + "/hmac");
+    byte[] sig = hmacSigner.sign(inputBytes);
 
     // Another input string should not verify
-    assertFalse(signer.verify("Some other string".getBytes(), sig));
+    assertFalse(hmacSigner.verify("Some other string".getBytes(), sig));
 
     try {
-      signer.verify(input, new byte[0]);
+      hmacSigner.verify(inputBytes, new byte[0]);
     } catch (ShortSignatureException e) {
       // Expected
     }
     // Munge the signature version
     sig[0] ^= 23;
     try {
-      signer.verify(input, sig);
+      hmacSigner.verify(inputBytes, sig);
     } catch (BadVersionException e) {
       // Expected
     }
@@ -85,7 +104,7 @@ public class SignerTest {
     // Munge the key identifier
     sig[1] ^= 45;
     try {
-      signer.verify(input, sig);
+      hmacSigner.verify(inputBytes, sig);
     } catch (KeyNotFoundException e) {
       // Expected
     }

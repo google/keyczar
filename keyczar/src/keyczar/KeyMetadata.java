@@ -1,20 +1,24 @@
 package keyczar;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.annotations.Expose;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import keyczar.internal.Util;
+
 // TODO: Write JavaDocs
 class KeyMetadata {
 
-  private final String name;
-  private final KeyPurpose purpose;
-  private final KeyType type;
-  private final ArrayList<KeyVersion> versions = new ArrayList<KeyVersion>(); 
+  @Expose private String name = "";
+  @Expose private KeyPurpose purpose = KeyPurpose.TEST;
+  @Expose private KeyType type = KeyType.TEST;
+  @Expose private ArrayList<KeyVersion> versions = new ArrayList<KeyVersion>(); 
 
+  private KeyMetadata() {
+    // For Gson
+  }
+  
   KeyMetadata(String n, KeyPurpose p, KeyType t) {
     name = n;
     purpose = p;
@@ -41,21 +45,8 @@ class KeyMetadata {
     return versions.add(version);
   }
   
-  static KeyMetadata readJson(String jsonString) throws KeyczarException {
-    try {
-      JSONObject json = new JSONObject(jsonString);
-      String n = json.getString("name");
-      KeyPurpose p = KeyPurpose.getPurpose(json.getInt("purpose"));
-      KeyType t = KeyType.getType(json.getInt("type"));
-      JSONArray versions = json.getJSONArray("versions");
-      KeyMetadata kmd = new KeyMetadata(n, p, t);
-      for (int i = 0; i < versions.length(); i++) {
-        kmd.addVersion(KeyVersion.read(versions.getString(i)));
-      }
-      return kmd;
-    } catch (JSONException e) {
-      throw new KeyczarException(e);
-    }
+  static KeyMetadata read(String jsonString) {
+    return Util.gson().fromJson(jsonString, KeyMetadata.class);
   }
 
   List<KeyVersion> getVersions() {
@@ -64,15 +55,6 @@ class KeyMetadata {
   
   @Override
   public String toString() {
-    JSONObject json = new JSONObject();
-    try {
-      json.put("name", name);
-      json.put("purpose", purpose.getValue());
-      json.put("type", type.getValue());
-      json.put("versions", versions);
-    } catch (JSONException e) {
-      // Do nothing? Will return empty JSON string
-    }
-    return json.toString();
+    return Util.gson().toJson(this);
   }
 }

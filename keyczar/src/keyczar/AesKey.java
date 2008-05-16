@@ -2,27 +2,26 @@
 
 package keyczar;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.Mac;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import keyczar.internal.*;
+import keyczar.internal.Constants;
+import keyczar.internal.DecryptingStream;
+import keyczar.internal.EncryptingStream;
+import keyczar.internal.SigningStream;
+import keyczar.internal.Util;
+import keyczar.internal.VerifyingStream;
 
 /**
  * Wrapping class for AES keys
@@ -32,13 +31,13 @@ import keyczar.internal.*;
  */
 public class AesKey extends KeyczarKey {
   private static final String AES_ALGORITHM = "AES";
-  private enum CipherMode {
+  public enum CipherMode {
     CBC(0, "AES/CBC/PKCS5Padding", true),
     CTR(1, "AES/CTR/NoPadding", true),
     ECB(2, "AES/ECB/NoPadding", false),
     DET_CBC(3, "AES/CBC/PKCS5Padding", false);
     private String jceMode;
-    private int value;
+    @Expose private int value;
     private boolean useIv;
     private CipherMode(int v, String s, boolean useIv) {
       this.value = v;
@@ -64,17 +63,22 @@ public class AesKey extends KeyczarKey {
     }
   }
   
-  private HmacKey hmacKey = new HmacKey();
-  private Key aesKey;
+  
+  private static final CipherMode DEFAULT_MODE = CipherMode.CBC;
+  @Expose private KeyType type = KeyType.AES;
   // Default mode is CBC
-  private CipherMode mode = CipherMode.CBC;
-  private byte[] hash = new byte[Constants.KEY_HASH_SIZE];
+  @Expose private CipherMode mode = DEFAULT_MODE;
+  @Expose private String aesKeyString = "";
+  @Expose private HmacKey hmacKey = new HmacKey();
+
+  private Key aesKey;
+  
+  @Expose private byte[] hash = new byte[Constants.KEY_HASH_SIZE];
   private int hashCode;
   private int blockSize;
   
-  private void init(byte[] aesBytes) {
-    byte[] fullHash = Util.hash(Util.fromInt(aesBytes.length), aesBytes);
-    System.arraycopy(fullHash, 0, hash, 0, hash.length);
+  private void init() throws KeyczarException  {
+    byte[] aesBytes = Util.base64Decode(aesKeyString);
     hashCode = Util.toInt(hash);
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
     blockSize = aesBytes.length;
@@ -92,43 +96,35 @@ public class AesKey extends KeyczarKey {
   
   @Override
   protected void read(String input) throws KeyczarException {
-    try {
-      JSONObject json = new JSONObject(input);
-      int typeValue = json.getInt("type");
-      if (typeValue != getType().getValue()) {
-        throw new KeyczarException("Invalid key type for AES key: " +
-            KeyType.getType(typeValue));
-      }
-      mode = CipherMode.getMode(json.getInt("mode"));
-      byte[] aesBytes = Util.base64Decode(json.getString("aeskey"));
-      hmacKey.read(json.getString("hmackey"));
-      init(aesBytes);
-    } catch (JSONException e) {
-      throw new KeyczarException(e);
-    } catch (IOException e) {
-      throw new KeyczarException(e);
+    AesKey copy = Util.gson().fromJson(input, AesKey.class);
+    if (copy.type != getType()) {
+      throw new KeyczarException("Invalid type in input: " + copy.type);
     }
+    this.type = copy.type;
+    this.mode = copy.mode;
+    this.aesKeyString = copy.aesKeyString;
+    this.hmacKey = copy.hmacKey;
+    this.hmacKey.init();
+    this.hash = copy.hash;
+    Util.checkHashPrefix(this.hash, this.aesKeyString);
+    init();
   }
   
   @Override
   public String toString() {
-    JSONObject json = new JSONObject();
-    try {
-      json.put("type", getType().getValue());
-      json.put("mode", mode.getValue());
-      json.put("aeskey", Util.base64Encode(aesKey.getEncoded()));
-      json.put("hmackey", hmacKey);
-    } catch (JSONException e) {
-      // Do nothing? Will return empty string
-    }    
-    return json.toString();
+    return Util.gson().toJson(this);
   }
 
   @Override
-  protected void generate() throws KeyczarException {
-    init(Util.rand(getType().defaultSize()));
-    hmacKey = new HmacKey();
+  protected void generate() throws KeyczarException {    
+    byte[] aesBytes = Util.rand(getType().defaultSize());
+    aesKeyString = Util.base64Encode(aesBytes);
+    mode = DEFAULT_MODE;
+    type = getType();
     hmacKey.generate();
+    // TODO: Fix this to include the HMAC Key
+    byte[] fullHash = Util.prefixHash(aesBytes);
+    System.arraycopy(fullHash, 0, hash, 0, hash.length);
   }
 
   @Override
@@ -228,3 +224,4 @@ public class AesKey extends KeyczarKey {
     }
   }
 }
+

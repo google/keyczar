@@ -8,6 +8,7 @@ import keyczar.internal.Constants;
 import keyczar.internal.DecryptingStream;
 import keyczar.internal.EncryptingStream;
 import keyczar.internal.SigningStream;
+import keyczar.internal.Util;
 import keyczar.internal.VerifyingStream;
 
 /**
@@ -30,6 +31,10 @@ public class Crypter extends Encrypter {
   @Override
   protected boolean isAcceptablePurpose(KeyPurpose purpose) {
     return purpose == KeyPurpose.DECRYPT_AND_ENCRYPT;
+  }
+  
+  public String decrypt(String ciphertext) throws KeyczarException {
+    return new String(decrypt(Util.base64Decode(ciphertext)));
   }
   
   // TODO: Write JavaDocs

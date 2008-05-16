@@ -8,7 +8,7 @@ import keyczar.internal.Constants;
 import keyczar.internal.Util;
 
 public class KeyczarException extends Exception {
-  protected KeyczarException(String message) {
+  public KeyczarException(String message) {
     super(message);
   }
 
@@ -16,7 +16,7 @@ public class KeyczarException extends Exception {
     super(message, cause);
   }
   
-  protected KeyczarException(Throwable cause) {
+  public KeyczarException(Throwable cause) {
     super(cause);
   }
 }

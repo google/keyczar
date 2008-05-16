@@ -2,10 +2,8 @@
 
 package keyczar;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.annotations.Expose;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.Key;
@@ -28,24 +26,16 @@ import keyczar.internal.VerifyingStream;
 public class HmacKey extends KeyczarKey {
   private static final String MAC_ALGORITHM = "HMACSHA1";
   private Key hmacKey;
-  private final byte[] hash = new byte[Constants.KEY_HASH_SIZE];
+  @Expose private KeyType type = getType();
+  @Expose private byte[] hash = new byte[Constants.KEY_HASH_SIZE];
   private int hashCode;
-  private String stringRep;
-    
-  private void init(byte[] keyBytes) throws KeyczarException {
-    byte[] fullHash = Util.hash(Util.fromInt(keyBytes.length), keyBytes);
-    System.arraycopy(fullHash, 0, hash, 0, hash.length);
+  @Expose private String hmacKeyString;
+  private String stringRep;  
+  
+  void init() throws KeyczarException {
+    byte[] keyBytes = Util.base64Decode(hmacKeyString);
     hashCode = Util.toInt(hash);
     this.hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
-    
-    try {
-      JSONObject json = new JSONObject();
-      json.put("type", getType().getValue());
-      json.put("hmackey", Util.base64Encode(keyBytes));
-      stringRep = json.toString();
-    } catch (JSONException e) {
-      throw new KeyczarException(e);
-    }
   }
 
   @Override
@@ -60,25 +50,25 @@ public class HmacKey extends KeyczarKey {
 
   @Override
   protected void generate() throws KeyczarException {
-    init(Util.rand(getType().defaultSize()));
+    byte[] keyBytes = Util.rand(getType().defaultSize());
+    this.type = getType();
+    hmacKeyString = Util.base64Encode(keyBytes);
+    byte[] fullHash = Util.prefixHash(keyBytes);
+    System.arraycopy(fullHash, 0, hash, 0, hash.length);
+    init();
   }
 
   @Override
   protected void read(String input) throws KeyczarException {
-    try {
-      JSONObject json = new JSONObject(input);
-      int typeValue = json.getInt("type");
-      if (typeValue != getType().getValue()) {
-        throw new KeyczarException("Invalid key type for HMAC: " +
-            KeyType.getType(typeValue));
-      }
-      byte[] keyMaterial = Util.base64Decode(json.getString("hmackey"));      
-      init(keyMaterial);
-    } catch (JSONException e) {
-      throw new KeyczarException(e);
-    } catch (IOException e) {
-      throw new KeyczarException(e);
+    HmacKey copy = Util.gson().fromJson(input, HmacKey.class);
+    if (copy.type != getType()) {
+      throw new KeyczarException("Invalid type in input: " + copy.type);
     }
+    this.type = copy.type;
+    this.hmacKeyString = copy.hmacKeyString;
+    this.hash = copy.hash;
+    Util.checkHashPrefix(this.hash, this.hmacKeyString);
+    init();
   }
 
   @Override
@@ -93,14 +83,15 @@ public class HmacKey extends KeyczarKey {
   
   @Override
   public String toString() {
-    return stringRep;
+    return Util.gson().toJson(this);
   }
 
-  private class HmacStream extends Stream implements VerifyingStream, SigningStream {
+  private class HmacStream extends Stream implements
+      VerifyingStream, SigningStream {
     private Mac hmac;
 
     public int digestSize() {
-      return hmac.getMacLength();
+      return getType().getOutputSize();
     }
     
     public HmacStream() throws KeyczarException {

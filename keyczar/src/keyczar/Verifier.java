@@ -2,10 +2,12 @@
 
 package keyczar;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
 import keyczar.internal.Constants;
+import keyczar.internal.Util;
 import keyczar.internal.VerifyingStream;
 
 
@@ -26,6 +28,11 @@ public class Verifier extends Keyczar {
   @Override
   protected boolean isAcceptablePurpose(KeyPurpose purpose) {
     return (purpose == KeyPurpose.VERIFY);
+  }
+  
+  // TODO: Write JavaDocs
+  public boolean verify(String data, String signature) throws KeyczarException {
+    return verify(data.getBytes(), Util.base64Decode(signature));
   }
   
   // TODO: Write JavaDocs
@@ -53,16 +60,13 @@ public class Verifier extends Keyczar {
       throw new KeyNotFoundException(hash);
     }
     
-    VerifyingStream stream = (VerifyingStream) key.getStream();
-    if (signature.remaining() < stream.digestSize()) {
-      throw new ShortSignatureException(signature.remaining());
-    }
-
+    // Copy the header from the key.
     ByteBuffer header = ByteBuffer.allocate(Constants.HEADER_SIZE);
-    key.writeHeader(header);
+    key.copyHeader(header);
     header.rewind();
-    stream.initVerify();
     
+    VerifyingStream stream = (VerifyingStream) key.getStream();
+    stream.initVerify();
     stream.updateVerify(header);
     stream.updateVerify(data);
     return stream.verify(signature);

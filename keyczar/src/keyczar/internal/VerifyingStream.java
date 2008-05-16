@@ -12,8 +12,8 @@ public interface VerifyingStream {
   void initVerify() throws KeyczarException;
   
   // TODO: Write JavaDocs
-  void updateVerify(ByteBuffer input);
+  void updateVerify(ByteBuffer input) throws KeyczarException;
 
   // TODO: Write JavaDocs
-  boolean verify(ByteBuffer signature);
+  boolean verify(ByteBuffer signature) throws KeyczarException;
 }

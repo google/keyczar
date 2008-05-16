@@ -90,8 +90,8 @@ public class KeyczarTool {
         kmd = new KeyMetadata(nameFlag, KeyPurpose.TEST, KeyType.TEST);
         break;
       case SIGN_AND_VERIFY:
-        kmd =
-          new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY, KeyType.HMAC_SHA1);
+        kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
+            (asymmetricFlag ? KeyType.DSA_PRIV : KeyType.HMAC_SHA1));
         break;
       case DECRYPT_AND_ENCRYPT:
         kmd =
@@ -171,7 +171,7 @@ public class KeyczarTool {
         statusFlag = KeyStatus.SCHEDULED_FOR_REVOCATION;
       }
     }
-    asymmetricFlag = (params.get("asymmetric") == null);
+    asymmetricFlag = (params.get("asymmetric") != null);
   } 
   
   private static void printUsage() {
