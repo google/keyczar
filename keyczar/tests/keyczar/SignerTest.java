@@ -21,10 +21,15 @@ public class SignerTest {
   private String hmacActiveSig = "AeM3GRZPlBcQRB/gJo49PLN0BwCWQ7X2rA==";
 
   private String dsaPrimarySig = 
-    "AUiZdiAwLAIUeMQRssGRPUAMC1JmzqepUg2gl2wCFCGL6sii5pXPhF+DhhUz7IB0kZJf";
+    "AQ2qMEQwLAIUZAqjq2J8FmIsqVttuLFmd87PfIUCFA7lCbmrh4njJKFog83E+OfuCIeK";
 
   private String dsaActiveSig = 
-    "AQlauKIwLQIVAIx1iicAQ0D2QWt7gJryY9YOx/LAAhRCoB8GuNACGjygWoE8KtD0tYOzpA==";
+    "AdARpvYwLAIUP4P3b+y+kjKyGk1uXDvn4R5T7w8CFHDVGFMmUlDwZTtLsPrBFOis6Ktz";
+  
+  private String dsaCorruptSig = 
+    "AdARpvYwLAIUP4P3b+y+kjKyGk1uXDvn4R5T7w8CFHDVGFMmUlDwZTtLsPrBFOis6Ktw";
+
+
   @Test
   public final void testHmacSignAndVerify() throws KeyczarException {
     Signer hmacSigner = new Signer(TEST_DATA + "/hmac");
@@ -32,7 +37,8 @@ public class SignerTest {
     assertTrue(hmacSigner.verify(input, sig));
     System.out.println("Hmac Sig: " + sig);
     // Try signing and verifying directly in a buffer
-    ByteBuffer buffer = ByteBuffer.allocate(inputBytes.length + hmacSigner.digestSize());
+    ByteBuffer buffer =
+      ByteBuffer.allocate(inputBytes.length + hmacSigner.digestSize());
     buffer.put(inputBytes);
     ByteBuffer sigBuffer = buffer.slice();
     buffer.limit(buffer.position());
@@ -49,14 +55,22 @@ public class SignerTest {
     String sig = dsaSigner.sign(input);
     System.out.println("Dsa Sig: " + sig);
     assertTrue(dsaSigner.verify(input, sig));
-    System.out.println(sig);
+    assertFalse(dsaSigner.verify("Wrong string", sig));
   }
-  
+
   @Test
-  public final void testVerify() throws KeyczarException {
+  public final void testDsaVerify() throws KeyczarException {
     Signer dsaSigner = new Signer(TEST_DATA + "/dsa");
     assertTrue(dsaSigner.verify(input, dsaPrimarySig));
     assertTrue(dsaSigner.verify(input, dsaActiveSig));
+  }
+  
+  @Test
+  public final void testDsaBadVerify() throws KeyczarException {
+    Signer dsaSigner = new Signer(TEST_DATA + "/dsa");
+    assertFalse(dsaSigner.verify("Wrong string", dsaPrimarySig));
+    assertFalse(dsaSigner.verify("Wrong string", dsaActiveSig));
+    assertFalse(dsaSigner.verify(input, dsaCorruptSig));
   }
 
   @Test
@@ -74,7 +88,7 @@ public class SignerTest {
     ByteBuffer sigBuffer = buffer.slice();
     buffer.limit(buffer.position());
     buffer.rewind();
-    sigBuffer.put(keyczar.internal.Util.base64Decode(hmacPrimarySig));
+    sigBuffer.put(keyczar.Util.base64Decode(hmacPrimarySig));
     sigBuffer.rewind();
     assertTrue(hmacSigner.verify(buffer, sigBuffer));
   }
