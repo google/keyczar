@@ -60,11 +60,22 @@ public class SignerTest {
 
   @Test
   public final void testDsaVerify() throws KeyczarException {
+    // Verify as a Signer object
     Signer dsaSigner = new Signer(TEST_DATA + "/dsa");
     assertTrue(dsaSigner.verify(input, dsaPrimarySig));
     assertTrue(dsaSigner.verify(input, dsaActiveSig));
+        
+    // Try verifying with just the public keys
+    Verifier dsaVerifier = new Verifier(TEST_DATA + "/dsa.public");
+    assertTrue(dsaVerifier.verify(input, dsaPrimarySig));
+    assertTrue(dsaVerifier.verify(input, dsaActiveSig));
+    
+    // Verify as a Verifier object
+    Verifier dsaVerifier2 = new Signer(TEST_DATA + "/dsa");
+    assertTrue(dsaVerifier2.verify(input, dsaPrimarySig));
+    assertTrue(dsaVerifier2.verify(input, dsaActiveSig));
   }
-  
+    
   @Test
   public final void testDsaBadVerify() throws KeyczarException {
     Signer dsaSigner = new Signer(TEST_DATA + "/dsa");
@@ -81,6 +92,9 @@ public class SignerTest {
     assertTrue(hmacSigner.verify(input, hmacPrimarySig));
     assertTrue(hmacSigner.verify(input, hmacActiveSig));
     
+    Verifier hmacVerifier = new Signer(TEST_DATA + "/hmac");
+    assertTrue(hmacVerifier.verify(input, hmacPrimarySig));
+    assertTrue(hmacVerifier.verify(input, hmacActiveSig));
     
     byte[] sigBytes = hmacSigner.sign(inputBytes);
     ByteBuffer buffer = ByteBuffer.allocate(inputBytes.length + hmacSigner.digestSize());

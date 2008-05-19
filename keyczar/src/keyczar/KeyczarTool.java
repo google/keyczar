@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import keyczar.interfaces.PublicKeyExportable;
+
 /**
  * Command line tool for generating Keyczar key files
  * 
@@ -20,6 +22,7 @@ import java.util.Map;
 public class KeyczarTool {
   static String nameFlag;
   static String locationFlag;
+  static String destinationFlag;
   static KeyPurpose purposeFlag;
   static KeyStatus statusFlag = KeyStatus.ACTIVE;
   static boolean asymmetricFlag;
@@ -34,34 +37,53 @@ public class KeyczarTool {
       return true;
     }
 
-    void write(String location) throws KeyczarException {
-      File metaFile = new File(locationFlag + KeyczarFileReader.META_FILE);
+    private void writeFile(String data, String location)
+        throws KeyczarException {
+      File outputFile = new File(location);
       try {
-        FileWriter metadataWriter = new FileWriter(metaFile);
-        metadataWriter.write(this.toString());
-        metadataWriter.close();
+        FileWriter writer = new FileWriter(outputFile);
+        writer.write(data);
+        writer.close();
       } catch (IOException e) {
         throw new KeyczarException("Unable to write to : " +
-            metaFile.toString(), e);
+            outputFile.toString(), e);
       }
-      
+    }
+    
+    void write(String location) throws KeyczarException {
+      writeFile(this.getMetadata().toString(),
+          location + KeyczarFileReader.META_FILE);
       Iterator<KeyVersion> versions = getVersions();
       while (versions.hasNext()) {
         KeyVersion version = versions.next();
-        File versionFile = new File(locationFlag + version.getVersionNumber());
-        try {
-          FileWriter versionWriter = new FileWriter(versionFile);
-          versionWriter.write(getKey(version).toString());
-          versionWriter.close();
-          //FileOutputStream versionOutput = new FileOutputStream(versionFile);
-          //DataPacker packer = new DataPacker(versionOutput);
-          //writeVersion(version, packer);
-        } catch (IOException e) {
-          throw new KeyczarException("Unable to write to : " +
-              versionFile.toString(), e);
-        }
+        writeFile(getKey(version).toString(),
+            location + version.getVersionNumber());
       }
-    }    
+    }
+    
+    void publicKeyExport(String destination) throws KeyczarException {
+      KeyMetadata kmd = getMetadata();
+      // Can only export if type is DSA_PRIV and purpose is SIGN_AND_VERIFY
+      if (kmd.getType() == KeyType.DSA_PRIV &&
+          kmd.getPurpose() == KeyPurpose.SIGN_AND_VERIFY) {
+        KeyMetadata publicKmd =
+          new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY, KeyType.DSA_PUB);
+        Iterator<KeyVersion> versions = getVersions();
+        while (versions.hasNext()) {
+          KeyVersion version = versions.next();
+          KeyczarKey publicKey =
+            ((PublicKeyExportable) getKey(version)).getPublic();
+          writeFile(publicKey.toString(),
+              destination + version.getVersionNumber());
+          publicKmd.addVersion(version);
+        } 
+        writeFile(publicKmd.toString(),
+            destination + KeyczarFileReader.META_FILE);
+      } else {
+        throw new KeyczarException("Cannot export public keys for key type: " +
+            kmd.getType() + " and purpose " + kmd.getPurpose());
+      }
+    }
   }
     
   private static void addKey() throws KeyczarException {
@@ -119,6 +141,20 @@ public class KeyczarTool {
     }
   }
   
+  private static void publicKeys() throws KeyczarException {
+    if (locationFlag == null) {
+      throw new KeyczarException("Must define a key set location with the " +
+          "--location flag");
+    }
+    if (destinationFlag == null) {
+      throw new KeyczarException("Must define a public key set location with" +
+          " the --destination flag");
+    }
+    GenericKeyczar genericKeyczar = new GenericKeyczar(locationFlag);
+    genericKeyczar.publicKeyExport(destinationFlag);
+  }
+
+  
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
       printUsage();
@@ -128,6 +164,8 @@ public class KeyczarTool {
         create();
       } else if (args[0].equals("addkey")) {
         addKey();
+      } else if (args[0].equals("pubkey")) {
+        publicKeys();
       }
     }
   }
@@ -150,6 +188,11 @@ public class KeyczarTool {
     locationFlag = params.get("location");
     if (locationFlag != null && !locationFlag.endsWith(File.separator)) {
       locationFlag += File.separator;
+    }
+    
+    destinationFlag = params.get("destination");
+    if (destinationFlag != null && !destinationFlag.endsWith(File.separator)) {
+      destinationFlag += File.separator;
     }
 
     if (params.get("purpose") != null) {
@@ -182,9 +225,13 @@ public class KeyczarTool {
         "--purpose=purpose: Creates a new key store");
     System.out.println("\taddkey --location=location --status=status " + 
     ": Adds a new key to a store in the existing location.");
+    System.out.println("\tpubkey --location=location --destination=destination" +
+        " : Export a key set at the given location as a set of public keys at" +
+        " a given destination.");
     System.out.println("Flags:");
     System.out.println("\t--name : Define the name of a keystore. Optional.");
-    System.out.println("\t--location : Define the name of a keystore");
+    System.out.println("\t--location : Define the file location of a keystore");
+    System.out.println("\t--destination : Define the destination location of a keystore");
     System.out.println("\t--purpose : Define the purpose of a keystore. " + 
         "Must be sign, crypt, or test.");
     System.out.println("\t--status : Define the status of a new key. " + 

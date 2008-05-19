@@ -17,6 +17,7 @@ import java.security.interfaces.DSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 
+import keyczar.interfaces.PublicKeyExportable;
 import keyczar.interfaces.SigningStream;
 import keyczar.interfaces.VerifyingStream;
 
@@ -26,7 +27,7 @@ import keyczar.interfaces.VerifyingStream;
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-public class DsaPrivateKey extends KeyczarKey {
+public class DsaPrivateKey extends KeyczarKey implements PublicKeyExportable {
   private static final String SIG_ALGORITHM = "SHA1withDSA";
   private static final String KEY_GEN_ALGORITHM = "DSA";
   private PrivateKey privateKey;
@@ -57,6 +58,11 @@ public class DsaPrivateKey extends KeyczarKey {
   @Override
   public int hashCode() {
     return hashCode;
+  }
+  
+  @Override
+  public KeyczarKey getPublic() {
+    return publicKey;
   }
 
   @Override

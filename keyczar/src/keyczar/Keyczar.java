@@ -79,7 +79,11 @@ public abstract class Keyczar {
     }
     return getKey(primaryVersion);
   }
-    
+  
+  protected KeyMetadata getMetadata() {
+    return kmd;
+  }
+
   protected abstract boolean isAcceptablePurpose(KeyPurpose purpose);
 
   // For KeyczarTool only

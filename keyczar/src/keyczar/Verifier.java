@@ -24,7 +24,8 @@ public class Verifier extends Keyczar {
   
   @Override
   protected boolean isAcceptablePurpose(KeyPurpose purpose) {
-    return (purpose == KeyPurpose.VERIFY);
+    return (purpose == KeyPurpose.VERIFY ||
+        purpose == KeyPurpose.SIGN_AND_VERIFY);
   }
   
   // TODO: Write JavaDocs
@@ -34,9 +35,7 @@ public class Verifier extends Keyczar {
   
   // TODO: Write JavaDocs
   public boolean verify(byte[] data, byte[] signature) throws KeyczarException {
-    ByteBuffer sig = ByteBuffer.wrap(signature);
-    boolean result = verify(ByteBuffer.wrap(data), sig);
-    return result;
+    return verify(ByteBuffer.wrap(data), ByteBuffer.wrap(signature));
   }
 
   // TODO: Write JavaDocs

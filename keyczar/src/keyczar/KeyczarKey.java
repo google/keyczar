@@ -3,8 +3,7 @@ package keyczar;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
-
-abstract class KeyczarKey {
+public abstract class KeyczarKey {
   static KeyczarKey fromType(KeyType type) throws KeyczarException {
     switch(type) {
       case AES:
@@ -13,6 +12,8 @@ abstract class KeyczarKey {
         return new HmacKey();
       case DSA_PRIV:
         return new DsaPrivateKey();
+      case DSA_PUB:
+        return new DsaPublicKey();
     }
     
     throw new KeyczarException("Unsupported key type: " + type);
