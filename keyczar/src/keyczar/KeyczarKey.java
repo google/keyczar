@@ -3,8 +3,6 @@ package keyczar;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
-import keyczar.internal.Constants;
-import keyczar.internal.Util;
 
 abstract class KeyczarKey {
   static KeyczarKey fromType(KeyType type) throws KeyczarException {
@@ -21,7 +19,7 @@ abstract class KeyczarKey {
   }
   
   void copyHeader(ByteBuffer dest) {
-    dest.put(Constants.VERSION);
+    dest.put(Keyczar.VERSION);
     dest.put(this.hash());
   }
   

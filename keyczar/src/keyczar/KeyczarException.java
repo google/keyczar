@@ -4,8 +4,6 @@ package keyczar;
 
 import java.io.FileNotFoundException;
 
-import keyczar.internal.Constants;
-import keyczar.internal.Util;
 
 public class KeyczarException extends Exception {
   public KeyczarException(String message) {
@@ -61,6 +59,6 @@ class ShortSignatureException extends KeyczarException {
 class BadVersionException extends KeyczarException {
   protected BadVersionException(byte badVersion) {
     super("Received a bad version number: " + badVersion + " Expected: " +
-        Constants.VERSION);
+        Keyczar.VERSION);
   }
 }

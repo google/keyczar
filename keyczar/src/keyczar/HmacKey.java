@@ -12,10 +12,8 @@ import java.util.Arrays;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import keyczar.internal.Constants;
-import keyczar.internal.SigningStream;
-import keyczar.internal.Util;
-import keyczar.internal.VerifyingStream;
+import keyczar.interfaces.SigningStream;
+import keyczar.interfaces.VerifyingStream;
 
 /**
  * Wrapping class for HMAC-SHA1 keys
@@ -27,7 +25,7 @@ public class HmacKey extends KeyczarKey {
   private static final String MAC_ALGORITHM = "HMACSHA1";
   private Key hmacKey;
   @Expose private KeyType type = getType();
-  @Expose private byte[] hash = new byte[Constants.KEY_HASH_SIZE];
+  @Expose private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   private int hashCode;
   @Expose private String hmacKeyString;
   private String stringRep;  

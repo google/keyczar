@@ -1,19 +1,23 @@
-package keyczar.internal;
+package keyczar.interfaces;
 
 import java.nio.ByteBuffer;
 
 import keyczar.KeyczarException;
 
 // TODO: Write JavaDocs
-public interface DecryptingStream {
+public interface EncryptingStream {
+  
   // TODO: Write JavaDocs
-  VerifyingStream getVerifyingStream() throws KeyczarException;
+  SigningStream getSigningStream() throws KeyczarException;
+  
+  // TODO: Write JavaDocs
+  byte[] initEncrypt() throws KeyczarException;
   
   // TODO: Write JavaDocs
   int maxOutputSize(int inputLen);
 
   // TODO: Write JavaDocs
-  void initDecrypt(ByteBuffer input) throws KeyczarException;
+  int ivSize();
   
   // TODO: Write JavaDocs
   int update(ByteBuffer input, ByteBuffer output) throws KeyczarException;

@@ -1,4 +1,4 @@
-package keyczar.internal;
+package keyczar;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -11,14 +11,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
-import keyczar.KeyczarException;
 
 /**
  * 
  * @author sweis@google.com (Your Name Here)
  * 
  */
-public class Util {
+class Util {
   private static MessageDigest md;
   private static SecureRandom random;
   private static final Gson gson =
@@ -37,11 +36,11 @@ public class Util {
     // Don't new me.
   }
   
-  public static Gson gson() {
+  static Gson gson() {
     return gson;
   }
   
-  public static void checkHashPrefix(byte[] hash, String encoded)
+  static void checkHashPrefix(byte[] hash, String encoded)
       throws KeyczarException {
     byte[] decoded = Util.base64Decode(encoded);
     byte[] fullHash = Util.prefixHash(decoded);
@@ -54,7 +53,7 @@ public class Util {
   
 
   // TODO: Write JavaDocs
-  public static synchronized byte[] rand(int len) {
+  static synchronized byte[] rand(int len) {
     byte[] output = new byte[len];
     rand(output);
     return output;
@@ -71,7 +70,7 @@ public class Util {
    * @param inputs The inputs to hash
    * @return The hash output
    */
-  public static synchronized byte[] prefixHash(byte[]... inputs) {
+  static synchronized byte[] prefixHash(byte[]... inputs) {
     for (byte[] array : inputs) {
       md.update(fromInt(array.length));
       md.update(array);
@@ -86,7 +85,7 @@ public class Util {
    * @param input The integer to convert to a byte array.
    * @return A byte array representation of an integer.
    */
-  public static byte[] fromInt(int input) {
+  static byte[] fromInt(int input) {
     byte[] output = new byte[4];
     writeInt(input, output, 0);
     return output;
@@ -211,14 +210,14 @@ public class Util {
   }
   
   // TODO: Write JavaDocs
-  public static String base64Encode(byte[] src) {
+  static String base64Encode(byte[] src) {
     // TODO: Use standard Base64 encoder 
     // Blatent misuse of sun.misc package. This could change at any time.
     return new sun.misc.BASE64Encoder().encode(src);
   }
   
   // TODO: Write JavaDocs
-  public static byte[] base64Decode(String src) throws KeyczarException {
+  static byte[] base64Decode(String src) throws KeyczarException {
     // TODO: Use standard Base64 decoder
     // Blatent misuse of sun.misc package. This could change at any time.
     try {

@@ -2,7 +2,6 @@ package keyczar;
 
 import com.google.gson.annotations.Expose;
 
-import keyczar.internal.Util;
 
 // TODO: Write JavaDocs
 class KeyVersion {

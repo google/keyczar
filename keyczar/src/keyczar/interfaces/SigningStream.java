@@ -1,4 +1,4 @@
-package keyczar.internal;
+package keyczar.interfaces;
 
 import java.nio.ByteBuffer;
 

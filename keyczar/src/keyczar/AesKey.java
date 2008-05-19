@@ -12,22 +12,18 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 
 import javax.crypto.Cipher;
-import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import keyczar.internal.Constants;
-import keyczar.internal.DecryptingStream;
-import keyczar.internal.EncryptingStream;
-import keyczar.internal.SigningStream;
-import keyczar.internal.Util;
-import keyczar.internal.VerifyingStream;
+import keyczar.interfaces.DecryptingStream;
+import keyczar.interfaces.EncryptingStream;
+import keyczar.interfaces.SigningStream;
+import keyczar.interfaces.VerifyingStream;
 
 /**
  * Wrapping class for AES keys
  * 
  * @author steveweis@gmail.com (Steve Weis)
- *
  */
 public class AesKey extends KeyczarKey {
   private static final String AES_ALGORITHM = "AES";
@@ -73,7 +69,7 @@ public class AesKey extends KeyczarKey {
 
   private Key aesKey;
   
-  @Expose private byte[] hash = new byte[Constants.KEY_HASH_SIZE];
+  @Expose private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   private int hashCode;
   private int blockSize;
   
@@ -184,7 +180,7 @@ public class AesKey extends KeyczarKey {
     public int update(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       try {
         return cipher.update(input, output);
-      } catch (ShortBufferException e) {
+      } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
     }

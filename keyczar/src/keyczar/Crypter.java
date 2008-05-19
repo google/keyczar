@@ -4,12 +4,7 @@ package keyczar;
 
 import java.nio.ByteBuffer;
 
-import keyczar.internal.Constants;
-import keyczar.internal.DecryptingStream;
-import keyczar.internal.EncryptingStream;
-import keyczar.internal.SigningStream;
-import keyczar.internal.Util;
-import keyczar.internal.VerifyingStream;
+import keyczar.interfaces.*;
 
 /**
  * @author steveweis@gmail.com (Steve Weis)
@@ -50,16 +45,16 @@ public class Crypter extends Encrypter {
   // TODO: Write JavaDocs
   public void decrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
-    if (input.remaining() < Constants.HEADER_SIZE) {
+    if (input.remaining() < HEADER_SIZE) {
       throw new ShortCiphertextException(input.remaining());
     }
     input.mark();
     byte version = input.get();
-    if (version != Constants.VERSION) {
+    if (version != VERSION) {
       throw new BadVersionException(version);
     }
     
-    byte[] hash = new byte[Constants.KEY_HASH_SIZE];
+    byte[] hash = new byte[KEY_HASH_SIZE];
     input.get(hash);
     KeyczarKey key = getKey(hash);
     if (key == null) {
@@ -88,7 +83,7 @@ public class Crypter extends Encrypter {
     
     // Rewind back to the start of the ciphertext
     input.reset();
-    input.position(input.position() + Constants.HEADER_SIZE);
+    input.position(input.position() + HEADER_SIZE);
     cryptStream.initDecrypt(input);
     output.mark();
     cryptStream.doFinal(input, output);

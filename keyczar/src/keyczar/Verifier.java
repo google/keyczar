@@ -6,10 +6,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
-import keyczar.internal.Constants;
-import keyczar.internal.Util;
-import keyczar.internal.VerifyingStream;
-
+import keyczar.interfaces.VerifyingStream;
 
 // TODO: Write JavaDocs
 /**
@@ -37,22 +34,24 @@ public class Verifier extends Keyczar {
   
   // TODO: Write JavaDocs
   public boolean verify(byte[] data, byte[] signature) throws KeyczarException {
-    return verify(ByteBuffer.wrap(data), ByteBuffer.wrap(signature));
+    ByteBuffer sig = ByteBuffer.wrap(signature);
+    boolean result = verify(ByteBuffer.wrap(data), sig);
+    return result;
   }
 
   // TODO: Write JavaDocs
   public boolean verify(ByteBuffer data, ByteBuffer signature)
       throws KeyczarException {
-    if (signature.remaining() < Constants.HEADER_SIZE) {
+    if (signature.remaining() < HEADER_SIZE) {
       throw new ShortSignatureException(signature.remaining());
     }
     
     byte version = signature.get();
-    if (version != Constants.VERSION) {
+    if (version != VERSION) {
       throw new BadVersionException(version);
     }
 
-    byte[] hash = new byte[Constants.KEY_HASH_SIZE];
+    byte[] hash = new byte[KEY_HASH_SIZE];
     signature.get(hash);
     KeyczarKey key = getKey(hash);
 
@@ -61,7 +60,7 @@ public class Verifier extends Keyczar {
     }
     
     // Copy the header from the key.
-    ByteBuffer header = ByteBuffer.allocate(Constants.HEADER_SIZE);
+    ByteBuffer header = ByteBuffer.allocate(HEADER_SIZE);
     key.copyHeader(header);
     header.rewind();
     

@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import keyczar.internal.Util;
 
 /**
  * Manages a Keyczar key set. Keys will not be read from a KeyczarReader until
@@ -18,13 +17,15 @@ import keyczar.internal.Util;
  */
 public abstract class Keyczar {
   private final KeyMetadata kmd; 
-  private KeyVersion primaryVersion;
-  //final ArrayList<KeyczarKey> keys = new ArrayList<KeyczarKey>();  
+  private KeyVersion primaryVersion;  
   private final HashMap<Integer, KeyczarKey> keyMap =
     new HashMap<Integer, KeyczarKey>();
   private final HashMap<KeyVersion, KeyczarKey> versionMap =
     new HashMap<KeyVersion, KeyczarKey>();
   
+  static final byte VERSION = 1;
+  static final int KEY_HASH_SIZE = 4;
+  static final int HEADER_SIZE = 1 + KEY_HASH_SIZE;
 
   /**
    * Instantiates a new Keyczar object with a KeyczarFileReader instantiated

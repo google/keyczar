@@ -4,10 +4,8 @@ package keyczar;
 
 import java.nio.ByteBuffer;
 
-import keyczar.internal.Constants;
-import keyczar.internal.EncryptingStream;
-import keyczar.internal.SigningStream;
-import keyczar.internal.Util;
+import keyczar.interfaces.EncryptingStream;
+import keyczar.interfaces.SigningStream;
 
 // TODO: Write JavaDocs
 /**
@@ -89,7 +87,7 @@ public class Encrypter extends Keyczar {
     EncryptingStream cryptStream = (EncryptingStream) encryptingKey.getStream();
     SigningStream signStream = cryptStream.getSigningStream();
 
-    return Constants.HEADER_SIZE + cryptStream.ivSize() +
+    return HEADER_SIZE + cryptStream.ivSize() +
         cryptStream.maxOutputSize(input) + signStream.digestSize();
   }
 }

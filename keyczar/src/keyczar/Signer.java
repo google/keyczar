@@ -5,9 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
-import keyczar.internal.Constants;
-import keyczar.internal.SigningStream;
-import keyczar.internal.Util;
+import keyczar.interfaces.SigningStream;
 
 // TODO: Write JavaDocs
 public class Signer extends Verifier {
@@ -51,7 +49,7 @@ public class Signer extends Verifier {
     if (output.capacity() < digestSize()) {
       throw new ShortBufferException(output.capacity(), digestSize());
     }
-    ByteBuffer header = ByteBuffer.allocate(Constants.HEADER_SIZE);
+    ByteBuffer header = ByteBuffer.allocate(HEADER_SIZE);
     signingKey.copyHeader(header);
     header.rewind();
     stream.initSign();
@@ -74,7 +72,6 @@ public class Signer extends Verifier {
     if (signingKey == null) {
       throw new NoPrimaryKeyException();
     }
-    return Constants.HEADER_SIZE +
-        ((SigningStream) signingKey.getStream()).digestSize();
+    return HEADER_SIZE + ((SigningStream) signingKey.getStream()).digestSize();
   }
 }
