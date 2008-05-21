@@ -14,6 +14,10 @@ public abstract class KeyczarKey {
         return new DsaPrivateKey();
       case DSA_PUB:
         return new DsaPublicKey();
+      case RSA_PRIV:
+        return new RsaPrivateKey();
+      case RSA_PUB:
+        return new RsaPublicKey();
     }
     
     throw new KeyczarException("Unsupported key type: " + type);

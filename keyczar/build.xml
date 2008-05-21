@@ -8,15 +8,21 @@
     <property environment="env"/>
     <property name="ECLIPSE_HOME" value="../../../../opt/eclipse"/>
     <property name="junit.output.dir" value="junit"/>
+    <property name="Gson.location" value="../Gson"/>
     <property name="debuglevel" value="source,lines,vars"/>
     <property name="target" value="1.6"/>
     <property name="source" value="1.6"/>
     <path id="JUnit 4.libraryclasspath">
         <pathelement location="${ECLIPSE_HOME}/plugins/org.junit4_4.3.1/junit.jar"/>
     </path>
+    <path id="Gson.classpath">
+        <pathelement location="${Gson.location}/bin"/>
+        <path refid="JUnit 4.libraryclasspath"/>
+    </path>
     <path id="Keyczar.classpath">
         <pathelement location="bin"/>
         <path refid="JUnit 4.libraryclasspath"/>
+        <path refid="Gson.classpath"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
@@ -30,9 +36,17 @@
     <target name="clean">
         <delete dir="bin"/>
     </target>
-    <target depends="clean" name="cleanall"/>
+    <target depends="clean" name="cleanall">
+        <ant antfile="${Gson.location}/build.xml" inheritAll="false" target="clean"/>
+    </target>
     <target depends="build-subprojects,build-project" name="build"/>
-    <target name="build-subprojects"/>
+    <target name="build-subprojects">
+        <ant antfile="${Gson.location}/build.xml" inheritAll="false" target="build-project">
+            <propertyset>
+                <propertyref name="build.compiler"/>
+            </propertyset>
+        </ant>
+    </target>
     <target depends="init" name="build-project">
         <echo message="${ant.project.name}: ${ant.file}"/>
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
@@ -137,14 +151,6 @@
             <classpath refid="Keyczar.classpath"/>
         </junit>
     </target>
-    <target name="KeyczarSignerTest">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="keyczar.KeyczarSignerTest" todir="${junit.output.dir}"/>
-            <classpath refid="Keyczar.classpath"/>
-        </junit>
-    </target>
     <target name="keyczar">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
@@ -154,7 +160,7 @@
     </target>
     <target name="KeyczarTool addkey">
         <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="addkey --location=/home/sweis/temp --status=primary"/>
+            <arg line="addkey  --location=/home/sweis/workspace/Keyczar/testdata/rsa/ --status=primary"/>
             <classpath refid="Keyczar.classpath"/>
         </java>
     </target>
@@ -167,7 +173,7 @@
     </target>
     <target name="KeyczarTool create signing">
         <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="create --name=Testing --purpose=sign --location=/home/sweis/temp"/>
+            <arg line="create --name=Testing --purpose=sign --location=/home/sweis/temp --asymmetric"/>
             <classpath refid="Keyczar.classpath"/>
         </java>
     </target>
@@ -175,13 +181,35 @@
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="keyczar.KeyczarCrypterTest" todir="${junit.output.dir}"/>
+            <test name="keyczar.CrypterTest" todir="${junit.output.dir}"/>
             <classpath refid="Keyczar.classpath"/>
         </junit>
     </target>
     <target name="KeyczarTool create crypting">
         <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="create --name=Testing --purpose=crypt --location=/home/sweis/temp"/>
+            <arg line="create --name=Testing --purpose=crypt --location=/home/sweis/workspace/Keyczar/testdata/rsa/ --asymmetric"/>
+            <classpath refid="Keyczar.classpath"/>
+        </java>
+    </target>
+    <target name="SignerTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.SignerTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="JsonOutputTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="keyczar.JsonOutputTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar.classpath"/>
+        </junit>
+    </target>
+    <target name="KeyczarTool pubkey">
+        <java classname="keyczar.KeyczarTool" failonerror="true" fork="yes">
+            <arg line="pubkey  --location=/home/sweis/temp --destination=/home/sweis/temp/public"/>
             <classpath refid="Keyczar.classpath"/>
         </java>
     </target>

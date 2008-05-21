@@ -20,8 +20,10 @@ public interface EncryptingStream {
   int ivSize();
   
   // TODO: Write JavaDocs
-  int update(ByteBuffer input, ByteBuffer output) throws KeyczarException;
+  int updateEncrypt(ByteBuffer input, ByteBuffer output)
+    throws KeyczarException;
 
   // TODO: Write JavaDocs
-  int doFinal(ByteBuffer input, ByteBuffer output) throws KeyczarException;
+  int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
+    throws KeyczarException;
 }

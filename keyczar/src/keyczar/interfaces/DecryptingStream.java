@@ -16,8 +16,10 @@ public interface DecryptingStream {
   void initDecrypt(ByteBuffer input) throws KeyczarException;
   
   // TODO: Write JavaDocs
-  int update(ByteBuffer input, ByteBuffer output) throws KeyczarException;
+  int updateDecrypt(ByteBuffer input, ByteBuffer output)
+    throws KeyczarException;
 
   // TODO: Write JavaDocs
-  int doFinal(ByteBuffer input, ByteBuffer output) throws KeyczarException;
+  int doFinalDecrypt(ByteBuffer input, ByteBuffer output)
+    throws KeyczarException;
 }

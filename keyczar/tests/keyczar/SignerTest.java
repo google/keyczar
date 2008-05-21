@@ -29,6 +29,12 @@ public class SignerTest {
   private String dsaCorruptSig = 
     "AdARpvYwLAIUP4P3b+y+kjKyGk1uXDvn4R5T7w8CFHDVGFMmUlDwZTtLsPrBFOis6Ktw";
 
+  private String rsaSignature = 
+    "AZjGkthszRhei7s8Ah4cCo5uzkKYwgzxuflTC/TofyD8htOVVBLLqDhhWxG9dhIRCHDxmqUPCRO/" +
+    "U2uOCZkEY5aBAGMzR7fAIJ01C+Ug9705R+DY/yBb8sTBS/IcxOs6txkz97LtpSLGjz8B22bPVriD" +
+    "Y3WDs05xKZ4+XNIudMVITZ+iIXC+xCcwzjwzPrxjIm4OBcx0TnP0E1o+KCaMWomrWgyrKYQrKruQ" +
+    "HngX4Z7X8HyhfCweJcn87OiL9rzpRwCxfbS40+CHtSR1Z+10URqRmMya56hlFAYv3a0QpjVOYu2l" +
+    "iuu76sU9de8wHPkV7+HRQD1UcHlVFoBjHNcAfo3v1v6J";
 
   @Test
   public final void testHmacSignAndVerify() throws KeyczarException {
@@ -57,6 +63,32 @@ public class SignerTest {
     assertTrue(dsaSigner.verify(input, sig));
     assertFalse(dsaSigner.verify("Wrong string", sig));
   }
+  
+  @Test
+  public final void testRsaSignAndVerify() throws KeyczarException {
+    Signer rsaSigner = new Signer(TEST_DATA + "/rsa-sign");
+    String sig = rsaSigner.sign(input);
+    System.out.println("Rsa Sig: " + sig);
+    assertTrue(rsaSigner.verify(input, sig));
+    assertFalse(rsaSigner.verify("Wrong string", sig));
+  }
+
+  @Test
+  public final void testRsaVerify() throws KeyczarException {
+    // Verify as a Signer object
+    Signer rsaSigner = new Signer(TEST_DATA + "/rsa-sign");
+    assertTrue(rsaSigner.verify(input, rsaSignature));
+    
+    // Try verifying with just the public keys
+    Verifier rsaVerifier = new Verifier(TEST_DATA + "/rsa-sign.public");
+    assertTrue(rsaVerifier.verify(input, rsaSignature));
+
+    // Verify as a Verifier object
+    Verifier rsaVerifier2 = new Signer(TEST_DATA + "/rsa-sign");
+    assertTrue(rsaVerifier2.verify(input, rsaSignature));
+
+  }
+
 
   @Test
   public final void testDsaVerify() throws KeyczarException {

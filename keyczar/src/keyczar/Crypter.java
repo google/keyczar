@@ -63,30 +63,32 @@ public class Crypter extends Encrypter {
     
     DecryptingStream cryptStream = (DecryptingStream) key.getStream();  
     VerifyingStream verifyStream = cryptStream.getVerifyingStream();
-    
-    if (input.remaining() < verifyStream.digestSize()) {
-      throw new ShortCiphertextException(input.remaining());
-    }
-    
-    input.position(input.limit() - verifyStream.digestSize());
-    ByteBuffer signature = input.slice();
-    // Reset the position of the input to the header
-    input.reset();
-    
+        
     // Set the read limit to the end of the ciphertext
-    input.limit(input.limit() - verifyStream.digestSize());
-    verifyStream.initVerify();
-    verifyStream.updateVerify(input);
-    if (!verifyStream.verify(signature)) {
-      throw new InvalidSignatureException();
+    if (verifyStream.digestSize() > 0) {
+      if (input.remaining() < verifyStream.digestSize()) {
+        throw new ShortCiphertextException(input.remaining());
+      }
+        
+      input.position(input.limit() - verifyStream.digestSize());
+      ByteBuffer signature = input.slice();
+
+      // Reset the position of the input to the header
+      input.reset();
+      input.limit(input.limit() - verifyStream.digestSize());
+      verifyStream.initVerify();
+      verifyStream.updateVerify(input);
+      if (!verifyStream.verify(signature)) {
+        throw new InvalidSignatureException();
+      }
+      // Rewind back to the start of the ciphertext
+      input.reset();
+      input.position(input.position() + HEADER_SIZE);
     }
-    
-    // Rewind back to the start of the ciphertext
-    input.reset();
-    input.position(input.position() + HEADER_SIZE);
+
     cryptStream.initDecrypt(input);
     output.mark();
-    cryptStream.doFinal(input, output);
+    cryptStream.doFinalDecrypt(input, output);
     output.limit(output.position());
   }
   

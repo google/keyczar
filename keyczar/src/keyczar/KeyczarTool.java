@@ -25,7 +25,7 @@ public class KeyczarTool {
   static String destinationFlag;
   static KeyPurpose purposeFlag;
   static KeyStatus statusFlag = KeyStatus.ACTIVE;
-  static boolean asymmetricFlag;
+  static String asymmetricFlag;
   
   private static class GenericKeyczar extends Keyczar {
     public GenericKeyczar(String location) throws KeyczarException {
@@ -64,25 +64,35 @@ public class KeyczarTool {
     void publicKeyExport(String destination) throws KeyczarException {
       KeyMetadata kmd = getMetadata();
       // Can only export if type is DSA_PRIV and purpose is SIGN_AND_VERIFY
+      KeyMetadata publicKmd = null;
       if (kmd.getType() == KeyType.DSA_PRIV &&
           kmd.getPurpose() == KeyPurpose.SIGN_AND_VERIFY) {
-        KeyMetadata publicKmd =
+        publicKmd =
           new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY, KeyType.DSA_PUB);
-        Iterator<KeyVersion> versions = getVersions();
-        while (versions.hasNext()) {
-          KeyVersion version = versions.next();
-          KeyczarKey publicKey =
-            ((PublicKeyExportable) getKey(version)).getPublic();
-          writeFile(publicKey.toString(),
-              destination + version.getVersionNumber());
-          publicKmd.addVersion(version);
-        } 
-        writeFile(publicKmd.toString(),
-            destination + KeyczarFileReader.META_FILE);
-      } else {
+      } else if (kmd.getType() == KeyType.RSA_PRIV) {
+        if (kmd.getPurpose() == KeyPurpose.DECRYPT_AND_ENCRYPT) {
+          publicKmd =
+            new KeyMetadata(kmd.getName(), KeyPurpose.ENCRYPT, KeyType.RSA_PUB);
+        } else if (kmd.getPurpose() == KeyPurpose.SIGN_AND_VERIFY) {
+          publicKmd =
+            new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY, KeyType.RSA_PUB);
+        }
+      } 
+      if (publicKmd == null) {
         throw new KeyczarException("Cannot export public keys for key type: " +
             kmd.getType() + " and purpose " + kmd.getPurpose());
       }
+      Iterator<KeyVersion> versions = getVersions();
+      while (versions.hasNext()) {
+        KeyVersion version = versions.next();
+        KeyczarKey publicKey =
+          ((PublicKeyExportable) getKey(version)).getPublic();
+        writeFile(publicKey.toString(),
+            destination + version.getVersionNumber());
+        publicKmd.addVersion(version);
+      } 
+      writeFile(publicKmd.toString(),
+          destination + KeyczarFileReader.META_FILE);
     }
   }
     
@@ -112,17 +122,29 @@ public class KeyczarTool {
         kmd = new KeyMetadata(nameFlag, KeyPurpose.TEST, KeyType.TEST);
         break;
       case SIGN_AND_VERIFY:
-        kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
-            (asymmetricFlag ? KeyType.DSA_PRIV : KeyType.HMAC_SHA1));
+        if (asymmetricFlag != null) {
+          if (asymmetricFlag.equalsIgnoreCase("rsa")) { 
+            kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
+                KeyType.RSA_PRIV);
+          } else {
+            // Default to DSA
+            kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
+              KeyType.DSA_PRIV);
+          }
+        } else {
+          kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
+              KeyType.HMAC_SHA1);
+        }
         break;
       case DECRYPT_AND_ENCRYPT:
-        kmd =
-          new KeyMetadata(nameFlag, KeyPurpose.DECRYPT_AND_ENCRYPT, KeyType.AES);
+        if (asymmetricFlag != null) {
+          kmd = new KeyMetadata(nameFlag, KeyPurpose.DECRYPT_AND_ENCRYPT,
+              KeyType.RSA_PRIV);
+        } else {
+          kmd = new KeyMetadata(nameFlag, KeyPurpose.DECRYPT_AND_ENCRYPT,
+              KeyType.AES);
+        }
         break;
-      case VERIFY:
-        // For sets of public signing keys only
-      case ENCRYPT:
-        // For sets of public crypting keys only
     }
     if (kmd == null) {
       throw new KeyczarException("Unsupported purpose: " + purposeFlag);
@@ -214,20 +236,19 @@ public class KeyczarTool {
         statusFlag = KeyStatus.SCHEDULED_FOR_REVOCATION;
       }
     }
-    asymmetricFlag = (params.get("asymmetric") != null);
+    asymmetricFlag = params.get("asymmetric");
   } 
   
   private static void printUsage() {
+    // TODO: Clean this up
     System.out.print("Usage:");
     System.out.println("\t\"KeyczarTool command flags\"");
     System.out.println("Commands:");
-    System.out.println("\tcreate --name=name --location=location " + 
-        "--purpose=purpose: Creates a new key store");
-    System.out.println("\taddkey --location=location --status=status " + 
-    ": Adds a new key to a store in the existing location.");
-    System.out.println("\tpubkey --location=location --destination=destination" +
-        " : Export a key set at the given location as a set of public keys at" +
-        " a given destination.");
+    System.out.println("create --name=name --location=location --purpose=purpose");
+    System.out.println("\tCreates a new key store");
+    System.out.println("addkey --location=location --status=status "); 
+    System.out.println("\tpubkey --location=location --destination=destination");
+    System.out.println("\tExport a key set at the given location as a set of public keys at a given destination.");
     System.out.println("Flags:");
     System.out.println("\t--name : Define the name of a keystore. Optional.");
     System.out.println("\t--location : Define the file location of a keystore");

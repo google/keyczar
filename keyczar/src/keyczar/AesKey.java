@@ -32,8 +32,10 @@ public class AesKey extends KeyczarKey {
     CTR(1, "AES/CTR/NoPadding", true),
     ECB(2, "AES/ECB/NoPadding", false),
     DET_CBC(3, "AES/CBC/PKCS5Padding", false);
+
     private String jceMode;
     @Expose private int value;
+
     private boolean useIv;
     private CipherMode(int v, String s, boolean useIv) {
       this.value = v;
@@ -83,7 +85,7 @@ public class AesKey extends KeyczarKey {
   @Override
   protected byte[] hash() {
     return hash;
-  }  
+  } 
   
   @Override
   public int hashCode() {
@@ -96,13 +98,21 @@ public class AesKey extends KeyczarKey {
     if (copy.type != getType()) {
       throw new KeyczarException("Invalid type in input: " + copy.type);
     }
+    this.hash = copy.hash;
     this.type = copy.type;
     this.mode = copy.mode;
     this.aesKeyString = copy.aesKeyString;
     this.hmacKey = copy.hmacKey;
     this.hmacKey.init();
-    this.hash = copy.hash;
-    Util.checkHashPrefix(this.hash, this.aesKeyString);
+    
+    // Check that the hash is correct
+    byte[] aesBytes = Util.base64Decode(this.aesKeyString);
+    byte[] fullHash = Util.prefixHash(aesBytes, hmacKey.hash());
+    for (int i = 0; i < this.hash.length; i++) {
+      if (hash[i] != fullHash[i]) {
+        throw new KeyczarException("Hash does not match");
+      }
+    }
     init();
   }
   
@@ -112,14 +122,13 @@ public class AesKey extends KeyczarKey {
   }
 
   @Override
-  protected void generate() throws KeyczarException {    
-    byte[] aesBytes = Util.rand(getType().defaultSize());
+  protected void generate() throws KeyczarException {
+    byte[] aesBytes = Util.rand(getType().defaultSize() / 8);
     aesKeyString = Util.base64Encode(aesBytes);
     mode = DEFAULT_MODE;
     type = getType();
     hmacKey.generate();
-    // TODO: Fix this to include the HMAC Key
-    byte[] fullHash = Util.prefixHash(aesBytes);
+    byte[] fullHash = Util.prefixHash(aesBytes, hmacKey.hash());
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
   }
 
@@ -146,17 +155,6 @@ public class AesKey extends KeyczarKey {
     }
     
     @Override
-    public void initDecrypt(ByteBuffer input) throws KeyczarException {
-      try {
-        byte[] ivBytes = new byte[cipher.getBlockSize()];
-        input.get(ivBytes);
-        cipher.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(ivBytes));
-      } catch (GeneralSecurityException e) {
-        throw new KeyczarException(e);
-      } 
-    }
-    
-    @Override
     public byte[] initEncrypt() throws KeyczarException {
       try {
         cipher.init(Cipher.ENCRYPT_MODE, aesKey);
@@ -167,7 +165,41 @@ public class AesKey extends KeyczarKey {
     }
 
     @Override
-    public int doFinal(ByteBuffer input, ByteBuffer output)
+    public int updateEncrypt(ByteBuffer input, ByteBuffer output)
+        throws KeyczarException {
+      return update(input, output);
+    }
+    
+    @Override
+    public int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
+        throws KeyczarException {
+      return doFinal(input, output);
+    }
+
+    @Override
+    public void initDecrypt(ByteBuffer input) throws KeyczarException {
+      try {
+        byte[] ivBytes = new byte[cipher.getBlockSize()];
+        input.get(ivBytes);
+        cipher.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(ivBytes));
+      } catch (GeneralSecurityException e) {
+        throw new KeyczarException(e);
+      } 
+    }
+        
+    @Override
+    public int updateDecrypt(ByteBuffer input, ByteBuffer output)
+        throws KeyczarException {
+      return update(input, output);
+    }
+
+    @Override
+    public int doFinalDecrypt(ByteBuffer input, ByteBuffer output)
+        throws KeyczarException {
+      return doFinal(input, output);
+    }
+
+    private int doFinal(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       try {
         return cipher.doFinal(input, output);
@@ -176,8 +208,7 @@ public class AesKey extends KeyczarKey {
       }
     }
     
-    @Override
-    public int update(ByteBuffer input, ByteBuffer output) throws KeyczarException {
+    private int update(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       try {
         return cipher.update(input, output);
       } catch (GeneralSecurityException e) {

@@ -28,7 +28,8 @@ public class Encrypter extends Keyczar {
    */
   @Override
   protected boolean isAcceptablePurpose(KeyPurpose purpose) {
-    return purpose == KeyPurpose.ENCRYPT;
+    return purpose == KeyPurpose.ENCRYPT ||
+      purpose == KeyPurpose.DECRYPT_AND_ENCRYPT;
   }
   
   public String encrypt(String input) throws KeyczarException {
@@ -52,7 +53,6 @@ public class Encrypter extends Keyczar {
       throw new KeyczarException("Need a primary key for encrypting");
     }
     EncryptingStream cryptStream = (EncryptingStream) encryptingKey.getStream();
-    SigningStream signStream = cryptStream.getSigningStream();
     
     if (output.capacity() < ciphertextSize(input.remaining())) {
       throw new KeyczarException("Output buffer is too small");
@@ -65,11 +65,13 @@ public class Encrypter extends Keyczar {
     // Write the IV. May be an empty array of zero length
     byte[] iv = cryptStream.initEncrypt();
     output.put(iv);
-    cryptStream.doFinal(input, output);
+    cryptStream.doFinalEncrypt(input, output);
     
     // The output ciphertext is between output.mark() and output.limit()
     output.limit(output.position());
     
+    SigningStream signStream = cryptStream.getSigningStream();
+
     // Sign the ciphertext output
     signStream.initSign();
     output.reset();

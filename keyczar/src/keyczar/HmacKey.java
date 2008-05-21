@@ -48,7 +48,7 @@ public class HmacKey extends KeyczarKey {
 
   @Override
   protected void generate() throws KeyczarException {
-    byte[] keyBytes = Util.rand(getType().defaultSize());
+    byte[] keyBytes = Util.rand(getType().defaultSize() / 8);
     this.type = getType();
     hmacKeyString = Util.base64Encode(keyBytes);
     byte[] fullHash = Util.prefixHash(keyBytes);
@@ -65,7 +65,13 @@ public class HmacKey extends KeyczarKey {
     this.type = copy.type;
     this.hmacKeyString = copy.hmacKeyString;
     this.hash = copy.hash;
-    Util.checkHashPrefix(this.hash, this.hmacKeyString);
+    byte[] hmacBytes = Util.base64Decode(hmacKeyString);
+    byte[] fullHash = Util.prefixHash(hmacBytes);
+    for (int i = 0; i < hash.length; i++) {
+      if (hash[i] != fullHash[i]) {
+        throw new KeyczarException("Hash does not match");
+      }
+    }
     init();
   }
 
