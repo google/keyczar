@@ -8,13 +8,13 @@ import keyczar.KeyczarException;
 public interface SigningStream {
   // TODO: Write JavaDocs
   int digestSize();
-  
+
   // TODO: Write JavaDocs
   void initSign() throws KeyczarException;
-  
-  // TODO: Write JavaDocs
-  void updateSign(ByteBuffer input) throws KeyczarException;
 
   // TODO: Write JavaDocs
   void sign(ByteBuffer output) throws KeyczarException;
+
+  // TODO: Write JavaDocs
+  void updateSign(ByteBuffer input) throws KeyczarException;
 }

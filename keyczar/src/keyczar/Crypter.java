@@ -4,34 +4,23 @@ package keyczar;
 
 import java.nio.ByteBuffer;
 
-import keyczar.interfaces.*;
+import keyczar.enums.KeyPurpose;
+import keyczar.interfaces.DecryptingStream;
+import keyczar.interfaces.VerifyingStream;
 
 /**
  * @author steveweis@gmail.com (Steve Weis)
- *
+ * 
  */
 public class Crypter extends Encrypter {
+  public Crypter(KeyczarReader reader) throws KeyczarException {
+    super(reader);
+  }
 
   public Crypter(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
 
-  public Crypter(KeyczarReader reader) throws KeyczarException {
-    super(reader);
-  }
-  
-  /* (non-Javadoc)
-   * @see keyczar.Keyczar#isAcceptablePurpose(keyczar.KeyPurpose)
-   */
-  @Override
-  protected boolean isAcceptablePurpose(KeyPurpose purpose) {
-    return purpose == KeyPurpose.DECRYPT_AND_ENCRYPT;
-  }
-  
-  public String decrypt(String ciphertext) throws KeyczarException {
-    return new String(decrypt(Util.base64Decode(ciphertext)));
-  }
-  
   // TODO: Write JavaDocs
   public byte[] decrypt(byte[] input) throws KeyczarException {
     ByteBuffer output = ByteBuffer.allocate(input.length);
@@ -53,23 +42,23 @@ public class Crypter extends Encrypter {
     if (version != VERSION) {
       throw new BadVersionException(version);
     }
-    
+
     byte[] hash = new byte[KEY_HASH_SIZE];
     input.get(hash);
     KeyczarKey key = getKey(hash);
     if (key == null) {
       throw new KeyNotFoundException(hash);
     }
-    
-    DecryptingStream cryptStream = (DecryptingStream) key.getStream();  
+
+    DecryptingStream cryptStream = (DecryptingStream) key.getStream();
     VerifyingStream verifyStream = cryptStream.getVerifyingStream();
-        
+
     // Set the read limit to the end of the ciphertext
     if (verifyStream.digestSize() > 0) {
       if (input.remaining() < verifyStream.digestSize()) {
         throw new ShortCiphertextException(input.remaining());
       }
-        
+
       input.position(input.limit() - verifyStream.digestSize());
       ByteBuffer signature = input.slice();
 
@@ -91,5 +80,18 @@ public class Crypter extends Encrypter {
     cryptStream.doFinalDecrypt(input, output);
     output.limit(output.position());
   }
-  
+
+  public String decrypt(String ciphertext) throws KeyczarException {
+    return new String(decrypt(Util.base64Decode(ciphertext)));
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see keyczar.Keyczar#isAcceptablePurpose(keyczar.KeyPurpose)
+   */
+  @Override
+  boolean isAcceptablePurpose(KeyPurpose purpose) {
+    return purpose == KeyPurpose.DECRYPT_AND_ENCRYPT;
+  }
 }
