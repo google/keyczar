@@ -6,22 +6,50 @@ import java.nio.ByteBuffer;
 
 import keyczar.enums.KeyPurpose;
 import keyczar.interfaces.DecryptingStream;
+import keyczar.interfaces.KeyczarReader;
 import keyczar.interfaces.VerifyingStream;
 
 /**
- * @author steveweis@gmail.com (Steve Weis)
+ * Crypters may both encrypt and decrypt data using sets of symmetric or private
+ * keys. Sets of public keys may only be used with {@link Encrypter} objects.
  * 
+ * @author steveweis@gmail.com (Steve Weis)
  */
 public class Crypter extends Encrypter {
+  /**
+   * Initialize a new Crypter with a KeyczarReader. The corresponding key set
+   * must have a purpose {@link keyczar.enums.KeyPurpose#DECRYPT_AND_ENCRYPT}.
+   * 
+   * @param reader A reader to read keys from
+   * @throws KeyczarException In the event of an IO error reading keys or if the
+   * key set does not have the appropriate purpose.
+   */
   public Crypter(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
 
-  public Crypter(String fileLocation) throws KeyczarException {
+  /**
+   * Initialize a new Crypter with a key set location. This will attempt to
+   * read the keys using a KeyczarFileReader. The corresponding key set
+   * must have a purpose of
+   * {@link keyczar.enums.KeyPurpose#DECRYPT_AND_ENCRYPT}.
+   *  
+   * @param fileLocation Directory containing a key set
+   * @throws KeyczarException In the event of an IO error reading keys or if the
+   * key set does not have the appropriate purpose.
+   */  public Crypter(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
 
-  // TODO: Write JavaDocs
+  /**
+   * Decrypt the given byte array of ciphertext
+   * 
+   * @param input The input ciphertext
+   * @return The decrypted plaintext
+   * @throws KeyczarException If the input is malformed, the ciphertext
+   * signature does not verify, the decryption key is not found, or a JCE
+   * error occurs.
+   */
   public byte[] decrypt(byte[] input) throws KeyczarException {
     ByteBuffer output = ByteBuffer.allocate(input.length);
     decrypt(ByteBuffer.wrap(input), output);
@@ -31,7 +59,16 @@ public class Crypter extends Encrypter {
     return outputBytes;
   }
 
-  // TODO: Write JavaDocs
+  /**
+   * Decrypt the given ciphertext input ByteBuffer and write the decrypted
+   * plaintext to the output ByteBuffer 
+   *  
+   * @param input The input ciphertext
+   * @param output The output buffer to write the decrypted plaintext
+   * @throws KeyczarException If the input is malformed, the ciphertext
+   * signature does not verify, the decryption key is not found, or a JCE
+   * error occurs.
+   */
   public void decrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
     if (input.remaining() < HEADER_SIZE) {
@@ -81,6 +118,16 @@ public class Crypter extends Encrypter {
     output.limit(output.position());
   }
 
+  /**
+   * Decrypt the given web-safe Base64 encoded ciphertext and return the
+   * decrypted plaintext as a String.
+   * 
+   * @param ciphertext The encrypted ciphertext in web-safe Base64 format
+   * @return The decrypted plaintext as a string
+   * @throws KeyczarException If the input is malformed, the ciphertext
+   * signature does not verify, the decryption key is not found, the input is
+   * not web-safe Base64 encoded, or a JCE error occurs.
+   */
   public String decrypt(String ciphertext) throws KeyczarException {
     return new String(decrypt(Util.base64Decode(ciphertext)));
   }

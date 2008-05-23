@@ -15,26 +15,27 @@ public class SignerTest {
   private byte[] inputBytes = input.getBytes();
   
   // This is a signature on 'input' by the primary key (version 2)
-  private String hmacPrimarySig = "Ab1PQ5IXUGHSnqcRGCLopEwt8KTdj+qw6g==";
+  private String hmacPrimarySig = "Ab1PQ5IXUGHSnqcRGCLopEwt8KTdj-qw6g";
 
   // This is a signature on 'input' by an active key (version 1)
-  private String hmacActiveSig = "AeM3GRZPlBcQRB/gJo49PLN0BwCWQ7X2rA==";
+  private String hmacActiveSig = "AeM3GRZPlBcQRB_gJo49PLN0BwCWQ7X2rA";
 
   private String dsaPrimarySig = 
-    "AQ2qMEQwLAIUZAqjq2J8FmIsqVttuLFmd87PfIUCFA7lCbmrh4njJKFog83E+OfuCIeK";
+    "AQ2qMEQwLAIUZAqjq2J8FmIsqVttuLFmd87PfIUCFA7lCbmrh4njJKFog83E-OfuCIeK";
 
   private String dsaActiveSig = 
-    "AdARpvYwLAIUP4P3b+y+kjKyGk1uXDvn4R5T7w8CFHDVGFMmUlDwZTtLsPrBFOis6Ktz";
+    "AdARpvYwLAIUP4P3b-y-kjKyGk1uXDvn4R5T7w8CFHDVGFMmUlDwZTtLsPrBFOis6Ktz";
   
   private String dsaCorruptSig = 
-    "AdARpvYwLAIUP4P3b+y+kjKyGk1uXDvn4R5T7w8CFHDVGFMmUlDwZTtLsPrBFOis6Ktw";
+    "AdARpvYwLAIUP4P3b-y-kjKyGk1uXDvn4R5T7w8CFHDVGFMmUlDwZTtLsPrBFOis6Ktw";
 
   private String rsaSignature = 
-    "AZjGkthszRhei7s8Ah4cCo5uzkKYwgzxuflTC/TofyD8htOVVBLLqDhhWxG9dhIRCHDxmqUPCRO/" +
-    "U2uOCZkEY5aBAGMzR7fAIJ01C+Ug9705R+DY/yBb8sTBS/IcxOs6txkz97LtpSLGjz8B22bPVriD" +
-    "Y3WDs05xKZ4+XNIudMVITZ+iIXC+xCcwzjwzPrxjIm4OBcx0TnP0E1o+KCaMWomrWgyrKYQrKruQ" +
-    "HngX4Z7X8HyhfCweJcn87OiL9rzpRwCxfbS40+CHtSR1Z+10URqRmMya56hlFAYv3a0QpjVOYu2l" +
-    "iuu76sU9de8wHPkV7+HRQD1UcHlVFoBjHNcAfo3v1v6J";
+    "AZjGkthszRhei7s8Ah4cCo5uzkKYwgzxuflTC_TofyD8htOVVBLLqDhhWxG9dhIRCH" +
+    "DxmqUPCRO_U2uOCZkEY5aBAGMzR7fAIJ01C-Ug9705R-DY_yBb8sTBS_IcxOs6txkz" +
+    "97LtpSLGjz8B22bPVriDY3WDs05xKZ4-XNIudMVITZ-iIXC-xCcwzjwzPrxjIm4OBc" +
+    "x0TnP0E1o-KCaMWomrWgyrKYQrKruQHngX4Z7X8HyhfCweJcn87OiL9rzpRwCxfbS4" +
+    "0-CHtSR1Z-10URqRmMya56hlFAYv3a0QpjVOYu2liuu76sU9de8wHPkV7-HRQD1UcH" +
+    "lVFoBjHNcAfo3v1v6J";
 
   @Test
   public final void testHmacSignAndVerify() throws KeyczarException {

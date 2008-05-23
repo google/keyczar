@@ -8,6 +8,7 @@ import java.util.Iterator;
 
 import keyczar.enums.KeyPurpose;
 import keyczar.enums.KeyStatus;
+import keyczar.interfaces.KeyczarReader;
 
 /**
  * Manages a Keyczar key set. Keys will not be read from a KeyczarReader until
@@ -15,7 +16,7 @@ import keyczar.enums.KeyStatus;
  * 
  * @author steveweis@gmail.com (Steve Weis)
  */
-public abstract class Keyczar {
+abstract class Keyczar {
   private final HashMap<Integer, KeyczarKey> keyMap = new HashMap<Integer, KeyczarKey>();
   private final KeyMetadata kmd;
   private KeyVersion primaryVersion;

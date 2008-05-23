@@ -10,7 +10,7 @@ import keyczar.enums.KeyType;
 
 
 // TODO: Write JavaDocs
-public class KeyMetadata {
+class KeyMetadata {
   @Expose private String name = "";
   @Expose private KeyPurpose purpose = KeyPurpose.TEST;
   @Expose private KeyType type = KeyType.TEST;

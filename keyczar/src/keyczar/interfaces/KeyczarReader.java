@@ -1,6 +1,8 @@
 // Keyczar (http://code.google.com/p/keyczar/) 2008
 
-package keyczar;
+package keyczar.interfaces;
+
+import keyczar.KeyczarException;
 
 /**
  * Abstract class for KeyczarReaders. Typically, these will read key files from
@@ -8,7 +10,7 @@ package keyczar;
  * 
  * @author steveweis@gmail.com (Steve Weis)
  */
-abstract class KeyczarReader {
+public interface KeyczarReader {
   /**
    * Returns an input stream of a particular version of a packed key
    * 
@@ -17,12 +19,12 @@ abstract class KeyczarReader {
    * @throws KeyczarException If an error occurs while attempting to read data,
    *         e.g. an IOException
    */
-  abstract String getKey(int version) throws KeyczarException;
+  String getKey(int version) throws KeyczarException;
 
   /**
    * @return A JSON string representation of KeyMetadata
    * @throws KeyczarException If an error occurs while attempting to read data,
    *         e.g. an IOException
    */
-  abstract String getMetadata() throws KeyczarException;
+  String getMetadata() throws KeyczarException;
 }

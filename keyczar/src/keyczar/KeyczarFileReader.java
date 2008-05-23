@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import keyczar.interfaces.KeyczarReader;
+
 
 /**
  * Reads metadata and key files from the given location.
@@ -13,11 +15,11 @@ import java.io.RandomAccessFile;
  * @author sweis@google.com (Your Name Here)
  * 
  */
-public class KeyczarFileReader extends KeyczarReader {
+class KeyczarFileReader implements KeyczarReader {
   private String location;
   static final String META_FILE = "meta";
 
-  public KeyczarFileReader(String fileLocation) {
+  KeyczarFileReader(String fileLocation) {
     if (fileLocation != null && !fileLocation.endsWith(File.separator)) {
       fileLocation += File.separator;
     }
@@ -25,12 +27,12 @@ public class KeyczarFileReader extends KeyczarReader {
   }
 
   @Override
-  String getKey(int version) throws KeyczarException {
+  public String getKey(int version) throws KeyczarException {
     return readFile(location + version);
   }
 
   @Override
-  String getMetadata() throws KeyczarException {
+  public String getMetadata() throws KeyczarException {
     return readFile(location + META_FILE);
   }
 

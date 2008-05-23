@@ -13,7 +13,7 @@ import java.security.SecureRandom;
  * @author sweis@google.com (Your Name Here)
  * 
  */
-public class Util {
+class Util {
   /**
    * Mapping table from 6-bit nibbles to Base64 characters.
    */
@@ -75,7 +75,7 @@ public class Util {
   }
 
   // TODO: Write JavaDocs
-  public static byte[] base64Decode(String src) throws KeyczarException {
+  static byte[] base64Decode(String src) throws KeyczarException {
     char[] in = src.toCharArray();
     int inLen = in.length;
     // Trim up to two trailing '=' padding characters
@@ -145,7 +145,7 @@ public class Util {
   }
 
   // TODO: Write JavaDocs
-  public static String base64Encode(byte[] in) {
+  static String base64Encode(byte[] in) {
     int inputBlocks = in.length / 3;
     int remainder = in.length % 3;
     int outputLen = inputBlocks * 4;

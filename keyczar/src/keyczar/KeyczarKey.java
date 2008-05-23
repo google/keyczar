@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import keyczar.enums.KeyType;
 
-public abstract class KeyczarKey {
+abstract class KeyczarKey {
   void copyHeader(ByteBuffer dest) {
     dest.put(Keyczar.VERSION);
     dest.put(hash());
