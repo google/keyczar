@@ -9,6 +9,7 @@ import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.exceptions.ShortSignatureException;
 import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.VerifyingStream;
+import com.google.keyczar.util.Base64Coder;
 
 import java.nio.ByteBuffer;
 
@@ -24,6 +25,9 @@ import java.nio.ByteBuffer;
 * @author steveweis@gmail.com (Steve Weis)
 */
 public class Verifier extends Keyczar {
+  private static final StreamCache<VerifyingStream> VERIFY_CACHE
+    = new StreamCache<VerifyingStream>();
+
   /**
    * Initialize a new Verifier with a KeyczarReader. The corresponding key set
    * must have a purpose of either {@link com.google.keyczar.enums.KeyPurpose#VERIFY} or
@@ -97,11 +101,16 @@ public class Verifier extends Keyczar {
     key.copyHeader(header);
     header.rewind();
 
-    VerifyingStream stream = (VerifyingStream) key.getStream();
+    VerifyingStream stream = VERIFY_CACHE.get(key);
+    if (stream == null) {
+      stream = (VerifyingStream) key.getStream();
+    }
     stream.initVerify();
     stream.updateVerify(header);
     stream.updateVerify(data);
-    return stream.verify(signature);
+    boolean result = stream.verify(signature);
+    VERIFY_CACHE.put(key, stream);
+    return result;
   }
 
   /**
@@ -114,7 +123,7 @@ public class Verifier extends Keyczar {
    * occurs.
    */
   public boolean verify(String data, String signature) throws KeyczarException {
-    return verify(data.getBytes(), Util.base64Decode(signature));
+    return verify(data.getBytes(), Base64Coder.decode(signature));
   }
 
   @Override

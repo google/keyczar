@@ -1,14 +1,13 @@
 package com.google.security.keyczar;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import com.google.keyczar.Crypter;
-import com.google.keyczar.exceptions.*;
+import com.google.keyczar.exceptions.KeyNotFoundException;
+import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.exceptions.ShortCiphertextException;
 
-import org.junit.Before;
 import org.junit.Test;
-
-import java.security.GeneralSecurityException;
 
 public class CrypterTest {
   private static final String TEST_DATA = "./testdata";

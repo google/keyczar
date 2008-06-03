@@ -5,6 +5,8 @@ package com.google.keyczar;
 import com.google.gson.annotations.Expose;
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.util.Base64Coder;
+import com.google.keyczar.util.Util;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -51,7 +53,7 @@ abstract class KeyczarPrivateKey extends KeyczarKey {
       throw new KeyczarException(e);
     }
     hash = getPublic().hash();
-    pkcs8 = Util.base64Encode(jcePrivateKey.getEncoded());
+    pkcs8 = Base64Coder.encode(jcePrivateKey.getEncoded());
     init();
   }
 
@@ -71,7 +73,7 @@ abstract class KeyczarPrivateKey extends KeyczarKey {
   void init() throws KeyczarException {
     hashCode = Util.toInt(hash);
     hashCodeObject = new Integer(hashCode);
-    byte[] pkcs8Bytes = Util.base64Decode(pkcs8);
+    byte[] pkcs8Bytes = Base64Coder.decode(pkcs8);
     try {
       KeyFactory kf = KeyFactory.getInstance(getKeyGenAlgorithm());
       jcePrivateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(pkcs8Bytes));

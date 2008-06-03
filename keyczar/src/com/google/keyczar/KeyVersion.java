@@ -4,6 +4,7 @@ package com.google.keyczar;
 
 import com.google.gson.annotations.Expose;
 import com.google.keyczar.enums.KeyStatus;
+import com.google.keyczar.util.Util;
 
 
 // TODO: Write JavaDocs

@@ -8,6 +8,7 @@ import com.google.keyczar.exceptions.NoPrimaryKeyException;
 import com.google.keyczar.exceptions.ShortBufferException;
 import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.SigningStream;
+import com.google.keyczar.util.Base64Coder;
 
 import java.nio.ByteBuffer;
 
@@ -22,6 +23,9 @@ import java.nio.ByteBuffer;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public class Signer extends Verifier {
+  private final StreamQueue<SigningStream> SIGN_QUEUE =
+    new StreamQueue<SigningStream>();
+
   /**
    * Initialize a new Signer with a KeyczarReader. The corresponding key set
    * must have a purpose {@link com.google.keyczar.enums.KeyPurpose#SIGN_AND_VERIFY}.
@@ -92,7 +96,10 @@ public class Signer extends Verifier {
     if (signingKey == null) {
       throw new NoPrimaryKeyException();
     }
-    SigningStream stream = (SigningStream) signingKey.getStream();
+    SigningStream stream = SIGN_QUEUE.poll();
+    if (stream == null) {
+      stream = (SigningStream) signingKey.getStream();
+    }
 
     if (output.capacity() < digestSize()) {
       throw new ShortBufferException(output.capacity(), digestSize());
@@ -112,6 +119,7 @@ public class Signer extends Verifier {
     stream.updateSign(input);
     stream.sign(output);
     output.limit(output.position());
+    SIGN_QUEUE.add(stream);
   }
 
   /**
@@ -124,7 +132,7 @@ public class Signer extends Verifier {
    * @throws KeyczarException
    */
   public String sign(String input) throws KeyczarException {
-    return Util.base64Encode(sign(input.getBytes()));
+    return Base64Coder.encode(sign(input.getBytes()));
   }
 
   @Override

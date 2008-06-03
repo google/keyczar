@@ -5,6 +5,7 @@ package com.google.keyczar;
 import com.google.gson.annotations.Expose;
 import com.google.keyczar.enums.KeyPurpose;
 import com.google.keyczar.enums.KeyType;
+import com.google.keyczar.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;

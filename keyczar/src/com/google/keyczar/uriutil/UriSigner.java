@@ -6,10 +6,13 @@ import com.google.keyczar.interfaces.KeyczarReader;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.TreeSet;
 
-
+/**
+ * Under construction. This class will most likely change.
+ * 
+ * @author steveweis@gmail.com (Steve Weis)
+ */
 public class UriSigner {
   private static final String DEFAULT_SIG_PARAM = "sig";
   private Signer signer;

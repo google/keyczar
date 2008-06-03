@@ -1,16 +1,14 @@
 package com.google.security.keyczar.uriutil;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.uriutil.UriSigner;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 
 
 public class UriSignerTest {

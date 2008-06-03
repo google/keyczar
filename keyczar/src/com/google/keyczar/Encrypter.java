@@ -6,10 +6,10 @@ import com.google.keyczar.enums.KeyPurpose;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.exceptions.NoPrimaryKeyException;
 import com.google.keyczar.exceptions.ShortBufferException;
-import com.google.keyczar.interfaces.DecryptingStream;
 import com.google.keyczar.interfaces.EncryptingStream;
 import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.SigningStream;
+import com.google.keyczar.util.Base64Coder;
 
 import java.nio.ByteBuffer;
 
@@ -44,7 +44,8 @@ public class Encrypter extends Keyczar {
   /**
    * Initialize a new Encrypter with a key set location. This will attempt to
    * read the keys using a KeyczarFileReader. The corresponding key set
-   * must have a purpose of either {@link com.google.keyczar.enums.KeyPurpose#ENCRYPT} or
+   * must have a purpose of either
+   * {@link com.google.keyczar.enums.KeyPurpose#ENCRYPT} or
    * {@link com.google.keyczar.enums.KeyPurpose#DECRYPT_AND_ENCRYPT}
    *  
    * @param fileLocation Directory containing a key set
@@ -150,7 +151,7 @@ public class Encrypter extends Keyczar {
    * not contain a primary encrypting key.
    */
   public String encrypt(String input) throws KeyczarException {
-    return Util.base64Encode(encrypt(input.getBytes()));
+    return Base64Coder.encode(encrypt(input.getBytes()));
   }
 
   /*

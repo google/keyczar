@@ -5,6 +5,8 @@ package com.google.keyczar;
 import com.google.gson.annotations.Expose;
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.util.Base64Coder;
+import com.google.keyczar.util.Util;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -58,7 +60,7 @@ abstract class KeyczarPublicKey extends KeyczarKey {
   void init() throws KeyczarException {
     hashCode = Util.toInt(hash);
     hashCodeObject = new Integer(hashCode);
-    byte[] x509Bytes = Util.base64Decode(x509);
+    byte[] x509Bytes = Base64Coder.decode(x509);
     try {
       KeyFactory kf = KeyFactory.getInstance(getKeyGenAlgorithm());
       jcePublicKey = kf.generatePublic(new X509EncodedKeySpec(x509Bytes));
@@ -77,7 +79,7 @@ abstract class KeyczarPublicKey extends KeyczarKey {
     type = copy.type;
     hash = copy.hash;
     x509 = copy.x509;
-    byte[] fullHash = Util.prefixHash(Util.base64Decode(x509));
+    byte[] fullHash = Util.prefixHash(Base64Coder.decode(x509));
     for (int i = 0; i < hash.length; i++) {
       if (hash[i] != fullHash[i]) {
         throw new KeyczarException("Key hash does not match");
@@ -88,7 +90,7 @@ abstract class KeyczarPublicKey extends KeyczarKey {
 
   void set(byte[] x509Bytes) throws KeyczarException {
     type = getType();
-    x509 = Util.base64Encode(x509Bytes);
+    x509 = Base64Coder.encode(x509Bytes);
     byte[] fullHash = Util.prefixHash(x509Bytes);
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
     init();

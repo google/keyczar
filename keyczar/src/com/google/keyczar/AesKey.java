@@ -12,20 +12,15 @@ import com.google.keyczar.interfaces.EncryptingStream;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.interfaces.Stream;
 import com.google.keyczar.interfaces.VerifyingStream;
+import com.google.keyczar.util.Base64Coder;
+import com.google.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -69,7 +64,7 @@ class AesKey extends KeyczarKey {
   @Override
   void generate() throws KeyczarException {
     byte[] aesBytes = Util.rand(getType().defaultSize() / 8);
-    aesKeyString = Util.base64Encode(aesBytes);
+    aesKeyString = Base64Coder.encode(aesBytes);
     mode = DEFAULT_MODE;
     type = getType();
     hmacKey.generate();
@@ -106,7 +101,7 @@ class AesKey extends KeyczarKey {
     hmacKey.init();
 
     // Check that the hash is correct
-    byte[] aesBytes = Util.base64Decode(aesKeyString);
+    byte[] aesBytes = Base64Coder.decode(aesKeyString);
     byte[] fullHash = Util.prefixHash(aesBytes, hmacKey.hash());
     for (int i = 0; i < hash.length; i++) {
       if (hash[i] != fullHash[i]) {
@@ -117,7 +112,7 @@ class AesKey extends KeyczarKey {
   }
 
   private void init() throws KeyczarException {
-    byte[] aesBytes = Util.base64Decode(aesKeyString);
+    byte[] aesBytes = Base64Coder.decode(aesKeyString);
     hashCode = Util.toInt(hash);
     hashCodeObject = new Integer(hashCode);
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
@@ -127,6 +122,7 @@ class AesKey extends KeyczarKey {
   private class AesStream implements EncryptingStream, DecryptingStream {
     private Cipher encryptingCipher;
     private Cipher decryptingCipher;
+    private SigningStream signStream;
     boolean ivRead = false;
     private SecureRandom randomGenerator = new SecureRandom();
 
@@ -140,6 +136,7 @@ class AesKey extends KeyczarKey {
         encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey, zeroIv);
         decryptingCipher = Cipher.getInstance(mode.getMode());
         decryptingCipher.init(Cipher.DECRYPT_MODE, aesKey, zeroIv);
+        signStream = (SigningStream) hmacKey.getStream();
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
@@ -147,13 +144,13 @@ class AesKey extends KeyczarKey {
     }
 
     @Override
-    public SigningStream getSigningStream() throws KeyczarException {
-      return (SigningStream) hmacKey.getStream();
+    public SigningStream getSigningStream() {
+      return signStream;
     }
 
     @Override
-    public VerifyingStream getVerifyingStream() throws KeyczarException {
-      return (VerifyingStream) hmacKey.getStream();
+    public VerifyingStream getVerifyingStream() {
+      return (VerifyingStream) signStream;
     }
 
     @Override

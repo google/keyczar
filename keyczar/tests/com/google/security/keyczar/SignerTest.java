@@ -1,17 +1,19 @@
 package com.google.security.keyczar;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import com.google.keyczar.exceptions.*;
 import com.google.keyczar.Signer;
 import com.google.keyczar.Verifier;
+import com.google.keyczar.exceptions.BadVersionException;
+import com.google.keyczar.exceptions.KeyNotFoundException;
+import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.exceptions.ShortSignatureException;
 
-import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
 
 public class SignerTest {
   private static final String TEST_DATA = "./testdata";

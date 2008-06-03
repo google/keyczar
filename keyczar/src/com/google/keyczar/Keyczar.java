@@ -6,6 +6,7 @@ import com.google.keyczar.enums.KeyPurpose;
 import com.google.keyczar.enums.KeyStatus;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.interfaces.KeyczarReader;
+import com.google.keyczar.util.Util;
 
 import java.util.Collections;
 import java.util.HashMap;

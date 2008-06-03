@@ -11,6 +11,7 @@ import com.google.keyczar.exceptions.ShortCiphertextException;
 import com.google.keyczar.interfaces.DecryptingStream;
 import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.VerifyingStream;
+import com.google.keyczar.util.Base64Coder;
 
 import java.nio.ByteBuffer;
 
@@ -96,7 +97,7 @@ public class Crypter extends Encrypter {
       throw new KeyNotFoundException(hash);
     }
 
-    DecryptingStream cryptStream = CRYPT_CACHE.get(key.hashKey()); 
+    DecryptingStream cryptStream = CRYPT_CACHE.get(key); 
     if (cryptStream == null) {
       cryptStream = (DecryptingStream) key.getStream();
     }
@@ -128,7 +129,7 @@ public class Crypter extends Encrypter {
     output.mark();
     cryptStream.doFinalDecrypt(input, output);
     output.limit(output.position());
-    CRYPT_CACHE.put(key.hashKey(), cryptStream);
+    CRYPT_CACHE.put(key, cryptStream);
   }
 
   /**
@@ -142,7 +143,7 @@ public class Crypter extends Encrypter {
    * not web-safe Base64 encoded, or a JCE error occurs.
    */
   public String decrypt(String ciphertext) throws KeyczarException {
-    return new String(decrypt(Util.base64Decode(ciphertext)));
+    return new String(decrypt(Base64Coder.decode(ciphertext)));
   }
 
   /*

@@ -8,6 +8,8 @@ import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.interfaces.Stream;
 import com.google.keyczar.interfaces.VerifyingStream;
+import com.google.keyczar.util.Base64Coder;
+import com.google.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -53,10 +55,23 @@ class HmacKey extends KeyczarKey {
   void generate() throws KeyczarException {
     byte[] keyBytes = Util.rand(getType().defaultSize() / 8);
     type = getType();
-    hmacKeyString = Util.base64Encode(keyBytes);
+    hmacKeyString = Base64Coder.encode(keyBytes);
     byte[] fullHash = Util.prefixHash(keyBytes);
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
     init();
+  }
+  
+  void init() throws KeyczarException {
+    byte[] keyBytes = Base64Coder.decode(hmacKeyString);
+    byte[] fullHash = Util.prefixHash(keyBytes);
+    for (int i = 0; i < hash.length; i++) {
+      if (hash[i] != fullHash[i]) {
+        throw new KeyczarException("Hash does not match");
+      }
+    }
+    hashCode = Util.toInt(hash);
+    hashCodeObject = new Integer(hashCode);
+    hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
   }
 
   @Override
@@ -74,13 +89,6 @@ class HmacKey extends KeyczarKey {
     return hash;
   }
 
-  void init() throws KeyczarException {
-    byte[] keyBytes = Util.base64Decode(hmacKeyString);
-    hashCode = Util.toInt(hash);
-    hashCodeObject = new Integer(hashCode);
-    hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
-  }
-
   @Override
   void read(String input) throws KeyczarException {
     HmacKey copy = Util.gson().fromJson(input, HmacKey.class);
@@ -90,13 +98,6 @@ class HmacKey extends KeyczarKey {
     type = copy.type;
     hmacKeyString = copy.hmacKeyString;
     hash = copy.hash;
-    byte[] hmacBytes = Util.base64Decode(hmacKeyString);
-    byte[] fullHash = Util.prefixHash(hmacBytes);
-    for (int i = 0; i < hash.length; i++) {
-      if (hash[i] != fullHash[i]) {
-        throw new KeyczarException("Hash does not match");
-      }
-    }
     init();
   }
 

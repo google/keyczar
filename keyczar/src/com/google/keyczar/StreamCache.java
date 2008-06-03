@@ -8,27 +8,33 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 class StreamCache<T extends Stream> {
-  private final ConcurrentHashMap<Integer, StreamQueue<T>> cacheMap = 
-    new ConcurrentHashMap<Integer, StreamQueue<T>>();
+  private final ConcurrentHashMap<KeyczarKey, StreamQueue<T>> cacheMap = 
+    new ConcurrentHashMap<KeyczarKey, StreamQueue<T>>();
     
-  void put(Integer key, T s) {
+  void put(KeyczarKey key, T s) {
     getQueue(key).add(s);
   }
   
-  T get(Integer key) {
+  T get(KeyczarKey key) {
     return getQueue(key).poll();
   }
   
-  ConcurrentLinkedQueue<T> getQueue(Integer key) {
+  StreamQueue<T> getQueue(KeyczarKey key) {
     StreamQueue<T> queue = cacheMap.get(key);
-    if (queue == null) {
-      queue = new StreamQueue<T>(); 
-      cacheMap.put(key, queue);
+    if (queue != null) {
+      return queue;
+
     }
-    return queue;
+    StreamQueue<T> freshQueue = new StreamQueue<T>(); 
+    queue = cacheMap.putIfAbsent(key, freshQueue);
+    if (queue != null) {
+      // Another thread already inserted a fresh queue with this key. 
+      return queue;
+    }
+    return freshQueue;
   }
 }
 
 class StreamQueue<T extends Stream> extends ConcurrentLinkedQueue<T> {
-  
+
 }

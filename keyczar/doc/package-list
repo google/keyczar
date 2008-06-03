@@ -1,4 +1,8 @@
-keyczar
-keyczar.enums
-keyczar.interfaces
-keyczar.uriutil
+com.google.keyczar
+com.google.keyczar.enums
+com.google.keyczar.exceptions
+com.google.keyczar.interfaces
+com.google.keyczar.uriutil
+com.google.keyczar.util
+com.google.security.keyczar
+com.google.security.keyczar.uriutil

@@ -8,8 +8,6 @@ import com.google.keyczar.interfaces.Stream;
 
 import java.nio.ByteBuffer;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 abstract class KeyczarKey {
   void copyHeader(ByteBuffer dest) {
     dest.put(Keyczar.VERSION);

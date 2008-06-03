@@ -1,22 +1,14 @@
 package com.google.security.keyczar;
 
-import static org.junit.Assert.assertEquals;
-
 import com.google.keyczar.Crypter;
 import com.google.keyczar.exceptions.KeyczarException;
-import com.google.security.keyczar.ThreadTest.CrypterRunnable;
 
-import org.junit.Test;
-
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.List;
 
 public class CryptPerformanceTest {
-  private static final String TEST_DATA = "./testdata";
-  static final int NUM_THREADS = 4;
-  static final int NUM_ITERATIONS = 20000;
+  private static final String TEST_DATA = "/home/sweis/workspace/Keyczar/testdata";
+  static final int NUM_THREADS = 3;
+  static final int NUM_ITERATIONS = 30000;
   static volatile boolean caughtException;
   
   private static void displayPerformance(long start, long end, int size,
@@ -57,7 +49,7 @@ public class CryptPerformanceTest {
   
   public static void main(String[] args) throws KeyczarException,
       InterruptedException {
-    int[] sizes = {10, 128, 1024, 2048, 4096, 8192};
+    int[] sizes = {10, 1024, 2048, 4096};
     System.out.println("Aes Test");
     System.out.println("Trials \tSize \tDuration (ms)\tAverage (ms)\tThroughput (MB/s)");
     for (int s : sizes) {
@@ -78,7 +70,6 @@ public class CryptPerformanceTest {
       this.size = size;
       this.trials = trials;
     }
-
 
    public void run() {
      byte[] input = new byte[size];
