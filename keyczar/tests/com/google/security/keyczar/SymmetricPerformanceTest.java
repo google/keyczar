@@ -17,11 +17,15 @@
 package com.google.security.keyczar;
 
 import com.google.keyczar.Crypter;
+import com.google.keyczar.Signer;
 import com.google.keyczar.exceptions.KeyczarException;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-public class CryptPerformanceTest {
+public class SymmetricPerformanceTest {
+  enum Tests { HMAC, AES }
+  
   private static final String TEST_DATA = "/home/sweis/workspace/Keyczar/testdata";
   static final int NUM_THREADS = 3;
   static final int NUM_ITERATIONS = 30000;
@@ -29,6 +33,7 @@ public class CryptPerformanceTest {
   
   private static void displayPerformance(long start, long end, int size,
       int trials) {
+    System.out.println("Trials \tSize \tDuration (ms)\tAverage (ms)\tThroughput (MB/s)");
     long duration = end - start;
     float averageOperation = ((float) duration) / trials;
     int data = size * trials;
@@ -60,38 +65,93 @@ public class CryptPerformanceTest {
     for (Thread t : threads) {
       t.join();
     }
-
   }
+  
+  private static void testHmacPerformance(int size, int trials, int numThreads)
+      throws KeyczarException, InterruptedException {
+    Signer signer = new Signer(TEST_DATA + "/hmac");
+    ArrayList<Thread> threads = new ArrayList<Thread>(numThreads);
+    for (int i = 0; i < NUM_THREADS; i++) {
+      SignerRunnable signerRunnable = new SignerRunnable(signer, trials, size);
+      Thread t = new Thread(signerRunnable);
+      t.start();
+      threads.add(t);
+    }
+
+    /* wait for all threads to finish */
+    for (Thread t : threads) {
+      t.join();
+    }
+}
   
   public static void main(String[] args) throws KeyczarException,
       InterruptedException {
-    int[] sizes = {10, 1024, 2048, 4096};
+    int[] sizes = {10, 128, 1024, 2048, 4096};
     System.out.println("Aes Test");
-    System.out.println("Trials \tSize \tDuration (ms)\tAverage (ms)\tThroughput (MB/s)");
     for (int s : sizes) {
       long start = System.currentTimeMillis();
       testAesPerformance(NUM_ITERATIONS, s, NUM_THREADS);
       long end = System.currentTimeMillis();
       displayPerformance(start, end, s, NUM_ITERATIONS * NUM_THREADS);
     }
+    System.out.println("Hmac Test");
+    for (int s : sizes) {
+      long start = System.currentTimeMillis();
+      testHmacPerformance(NUM_ITERATIONS, s, NUM_THREADS);
+      long end = System.currentTimeMillis();
+      displayPerformance(start, end, s, NUM_ITERATIONS * NUM_THREADS);
+    }
   }
+  
+  static class SignerRunnable implements Runnable {
+    private Signer signer;
+    private int size;
+    private int trials;
+    private ByteBuffer input;
+    private ByteBuffer output;
+
+    SignerRunnable(Signer signer, int size, int trials) {
+      this.input = ByteBuffer.wrap(new byte[size]);
+      this.output = ByteBuffer.allocate(25);
+      this.signer = signer;
+      this.size = size;
+      this.trials = trials;
+    }
+
+   public void run() {
+      try {
+        for (int i = 0; i < trials; i++) {
+          signer.sign(input, output);
+          input.rewind();
+          output.rewind();
+        }
+      } catch (KeyczarException e) {
+        e.printStackTrace();
+      }
+      }
+    }
   
   static class CrypterRunnable implements Runnable {
     private Crypter crypter;
     private int size;
     private int trials;
+    private ByteBuffer input;
+    private ByteBuffer output;
 
     CrypterRunnable(Crypter crypter, int size, int trials) {
+      this.input = ByteBuffer.wrap(new byte[size]);
+      this.output = ByteBuffer.allocate(size + 58);
       this.crypter = crypter;
       this.size = size;
       this.trials = trials;
     }
 
    public void run() {
-     byte[] input = new byte[size];
       try {
         for (int i = 0; i < trials; i++) {
-          byte[] ciphertext = crypter.encrypt(input);
+          crypter.encrypt(input, output);
+          input.rewind();
+          output.rewind();
         }
       } catch (KeyczarException e) {
         e.printStackTrace();
