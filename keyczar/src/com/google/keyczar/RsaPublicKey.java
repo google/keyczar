@@ -22,6 +22,8 @@ import com.google.keyczar.interfaces.EncryptingStream;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.interfaces.Stream;
 import com.google.keyczar.interfaces.VerifyingStream;
+import com.google.keyczar.util.Base64Coder;
+import com.google.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -41,7 +43,8 @@ import javax.crypto.ShortBufferException;
  * 
  */
 class RsaPublicKey extends KeyczarPublicKey {
-  private static final String CRYPT_ALGORITHM = "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
+  private static final String CRYPT_ALGORITHM =
+    "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
   private static final String KEY_GEN_ALGORITHM = "RSA";
   private static final String SIG_ALGORITHM = "SHA1withRSA";
 
@@ -58,6 +61,22 @@ class RsaPublicKey extends KeyczarPublicKey {
   @Override
   KeyType getType() {
     return KeyType.RSA_PUB;
+  }
+  
+  static RsaPublicKey read(String input) throws KeyczarException {
+    RsaPublicKey key = Util.gson().fromJson(input, RsaPublicKey.class);
+    if (key.getType() != KeyType.RSA_PUB) {
+      throw new KeyczarException("Incorrect type. Received: " + key.getType());
+    }
+    byte[] fullHash = Util.prefixHash(Base64Coder.decode(key.x509));
+    byte[] keyHash = key.hash();
+    for (int i = 0; i < keyHash.length; i++) {
+      if (keyHash[i] != fullHash[i]) {
+        throw new KeyczarException("Key hash does not match");
+      }
+    }
+    key.init();
+    return key;
   }
 
   private class RsaStream implements VerifyingStream, EncryptingStream {

@@ -22,10 +22,10 @@ import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.util.Util;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-
 
 /**
  * Manages a Keyczar key set. Keys will not be read from a KeyczarReader until
@@ -34,13 +34,34 @@ import java.util.Iterator;
  * @author steveweis@gmail.com (Steve Weis)
  */
 abstract class Keyczar {
-  private final HashMap<Integer, KeyczarKey> keyMap =
-    new HashMap<Integer, KeyczarKey>();
+  private class KeyHash {
+    private byte[] data;
+    
+    private KeyHash(byte[] d) {
+      if (d.length != KEY_HASH_SIZE) {
+        throw new IllegalArgumentException();
+      }
+      data = d;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+      return (o instanceof KeyHash && o.hashCode() == this.hashCode());
+    }
+    
+    @Override
+    public int hashCode() {
+      return (data[0] & 0xFF) << 24 | (data[1] & 0xFF) << 16 | 
+        (data[2] & 0xFF) << 24  | (data[3] & 0xFF);
+    }
+  }
+  
   private final KeyMetadata kmd;
   private KeyVersion primaryVersion;
   private final HashMap<KeyVersion, KeyczarKey> versionMap =
     new HashMap<KeyVersion, KeyczarKey>();
-
+  private final HashMap<KeyHash, KeyczarKey> hashMap =
+    new HashMap<KeyHash, KeyczarKey>();
   static final byte VERSION = 1;
   static final int KEY_HASH_SIZE = 4;
   static final int HEADER_SIZE = 1 + KEY_HASH_SIZE;
@@ -65,12 +86,9 @@ abstract class Keyczar {
         }
         primaryVersion = version;
       }
-      KeyczarKey key = KeyczarKey.fromType(kmd.getType());
-      key.read(reader.getKey(version.getVersionNumber()));
-      if (keyMap.containsKey(key.hashCode())) {
-        throw new KeyczarException("Key identifiers cannot collide");
-      }
-      keyMap.put(key.hashCode(), key);
+      KeyczarKey key = KeyczarKey.readKey(kmd.getType(),
+          reader.getKey(version.getVersionNumber()));
+      hashMap.put(new KeyHash(key.hash()), key);
       versionMap.put(version, key);
     }
   }
@@ -92,7 +110,7 @@ abstract class Keyczar {
   }
 
   void addKey(KeyVersion version, KeyczarKey key) {
-    keyMap.put(key.hashCode(), key);
+    hashMap.put(new KeyHash(key.hash()), key);
     versionMap.put(version, key);
     kmd.addVersion(version);
   }
@@ -106,16 +124,16 @@ abstract class Keyczar {
       }
       primaryVersion = version;
     }
-    KeyczarKey key = KeyczarKey.fromType(kmd.getType());
+    KeyczarKey key;
     do {
       // Make sure no keys collide on their identifiers
-      key.generate();
+      key = KeyczarKey.genKey(kmd.getType());
     } while (getKey(key.hash()) != null);
     addKey(version, key);
   }
 
   KeyczarKey getKey(byte[] hash) {
-    return keyMap.get(Util.toInt(hash));
+    return hashMap.get(new KeyHash(hash));
   }
 
   KeyczarKey getKey(KeyVersion v) {

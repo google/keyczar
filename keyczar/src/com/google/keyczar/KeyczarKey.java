@@ -28,8 +28,6 @@ abstract class KeyczarKey {
     dest.put(hash());
   }
 
-  abstract void generate() throws KeyczarException;
-
   abstract Stream getStream() throws KeyczarException;
 
   abstract KeyType getType();
@@ -40,28 +38,39 @@ abstract class KeyczarKey {
    * @return A hash of this key material
    */
   abstract byte[] hash();
-  
-  abstract Integer hashKey();
-  
-  @Override
-  public abstract int hashCode();
 
-  abstract void read(String input) throws KeyczarException;
-
-  static KeyczarKey fromType(KeyType type) throws KeyczarException {
+  static KeyczarKey genKey(KeyType type) throws KeyczarException {
     switch (type) {
     case AES:
-      return new AesKey();
+      return AesKey.generate();
     case HMAC_SHA1:
-      return new HmacKey();
+      return HmacKey.generate();
     case DSA_PRIV:
-      return new DsaPrivateKey();
-    case DSA_PUB:
-      return new DsaPublicKey();
+      return DsaPrivateKey.generate();
     case RSA_PRIV:
-      return new RsaPrivateKey();
+      return RsaPrivateKey.generate();
+    case RSA_PUB: case DSA_PUB:
+      throw new KeyczarException("Public keys of type " + type +
+          " must be exported from private keys");
+    }
+
+    throw new KeyczarException("Unsupported key type: " + type);
+  }
+  
+  static KeyczarKey readKey(KeyType type, String key) throws KeyczarException {
+    switch (type) {
+    case AES:
+      return AesKey.read(key);
+    case HMAC_SHA1:
+      return HmacKey.read(key);
+    case DSA_PRIV:
+      return DsaPrivateKey.read(key);
+    case DSA_PUB:
+      return DsaPublicKey.read(key);
+    case RSA_PRIV:
+      return RsaPrivateKey.read(key);
     case RSA_PUB:
-      return new RsaPublicKey();
+      return RsaPublicKey.read(key);
     }
 
     throw new KeyczarException("Unsupported key type: " + type);

@@ -41,38 +41,31 @@ import javax.crypto.spec.SecretKeySpec;
  * 
  */
 class HmacKey extends KeyczarKey {
-  private Integer hashCodeObject;
-  private int hashCode;
   private Key hmacKey;
   private static final String MAC_ALGORITHM = "HMACSHA1";
   
   @Expose private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   @Expose private String hmacKeyString;
-  @Expose private KeyType type = getType();
-
-  @Override
-  public Integer hashKey() {
-    return hashCodeObject;
-  }
-  
-  @Override
-  public int hashCode() {
-    return hashCode;
-  }
+  @Expose private KeyType type = KeyType.HMAC_SHA1;
 
   @Override
   public String toString() {
     return Util.gson().toJson(this);
   }
-
+  
   @Override
-  void generate() throws KeyczarException {
-    byte[] keyBytes = Util.rand(getType().defaultSize() / 8);
-    type = getType();
-    hmacKeyString = Base64Coder.encode(keyBytes);
+  public int hashCode() {
+    return (hash[0] << 24) | hash[1] << 16 | hash[2] << 8 | hash[3];
+  }
+
+  static HmacKey generate() throws KeyczarException {
+    HmacKey key = new HmacKey();
+    byte[] keyBytes = Util.rand(key.getType().defaultSize() / 8);
+    key.hmacKeyString = Base64Coder.encode(keyBytes);
     byte[] fullHash = Util.prefixHash(keyBytes);
-    System.arraycopy(fullHash, 0, hash, 0, hash.length);
-    init();
+    System.arraycopy(fullHash, 0, key.hash, 0, key.hash.length);
+    key.init();
+    return key;
   }
   
   void init() throws KeyczarException {
@@ -83,8 +76,6 @@ class HmacKey extends KeyczarKey {
         throw new KeyczarException("Hash does not match");
       }
     }
-    hashCode = Util.toInt(hash);
-    hashCodeObject = new Integer(hashCode);
     hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
   }
 
@@ -103,16 +94,13 @@ class HmacKey extends KeyczarKey {
     return hash;
   }
 
-  @Override
-  void read(String input) throws KeyczarException {
-    HmacKey copy = Util.gson().fromJson(input, HmacKey.class);
-    if (copy.type != getType()) {
-      throw new KeyczarException("Invalid type in input: " + copy.type);
+  static HmacKey read(String input) throws KeyczarException {
+    HmacKey key = Util.gson().fromJson(input, HmacKey.class);
+    if (key.getType() != KeyType.HMAC_SHA1) {
+      throw new KeyczarException("Invalid type in input: " + key.getType());
     }
-    type = copy.type;
-    hmacKeyString = copy.hmacKeyString;
-    hash = copy.hash;
-    init();
+    key.init();
+    return key;
   }
 
   private class HmacStream implements VerifyingStream, SigningStream {

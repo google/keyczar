@@ -106,7 +106,7 @@ public class Util {
    * 
    * @param dest Destionation to write the data
    */
-  static void rand(byte[] dest) {
+  public static void rand(byte[] dest) {
     SecureRandom random = RAND_QUEUE.poll();
     if (random == null) {
       random = new SecureRandom();

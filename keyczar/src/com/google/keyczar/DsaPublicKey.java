@@ -20,11 +20,14 @@ import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.interfaces.Stream;
 import com.google.keyczar.interfaces.VerifyingStream;
+import com.google.keyczar.util.Base64Coder;
+import com.google.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.util.Arrays;
 
 
 /**
@@ -42,7 +45,7 @@ class DsaPublicKey extends KeyczarPublicKey {
   public Stream getStream() throws KeyczarException {
     return new DsaVerifyingStream();
   }
-
+  
   @Override
   String getKeyGenAlgorithm() {
     return KEY_GEN_ALGORITHM;
@@ -51,6 +54,22 @@ class DsaPublicKey extends KeyczarPublicKey {
   @Override
   KeyType getType() {
     return KeyType.DSA_PUB;
+  }
+
+  static DsaPublicKey read(String input) throws KeyczarException {
+    DsaPublicKey key = Util.gson().fromJson(input, DsaPublicKey.class);
+    if (key.getType() != KeyType.DSA_PUB) {
+      throw new KeyczarException("Incorrect type. Received: " + key.getType());
+    }
+    byte[] fullHash = Util.prefixHash(Base64Coder.decode(key.x509));
+    byte[] keyHash = key.hash();
+    for (int i = 0; i < keyHash.length; i++) {
+      if (keyHash[i] != fullHash[i]) {
+        throw new KeyczarException("Key hash does not match");
+      }
+    }
+    key.init();
+    return key;
   }
 
   private class DsaVerifyingStream implements VerifyingStream {

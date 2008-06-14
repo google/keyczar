@@ -121,15 +121,11 @@ public class Encrypter extends Keyczar {
    * not contain a primary encrypting key, or the output buffer is too small.
    */
   public void encrypt(ByteBuffer input, ByteBuffer output)
-      throws KeyczarException {
+  throws KeyczarException {
     KeyczarKey encryptingKey = getPrimaryKey();
     if (encryptingKey == null) {
       throw new NoPrimaryKeyException() ;
     }    
-    if (output.capacity() < ciphertextSize(input.remaining())) {
-      throw new ShortBufferException(output.capacity(),
-          ciphertextSize(input.remaining()));
-    }
     EncryptingStream cryptStream = ENCRYPT_QUEUE.poll(); 
     if (cryptStream == null) {
       cryptStream = (EncryptingStream) encryptingKey.getStream();

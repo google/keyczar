@@ -30,45 +30,16 @@ import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 
-
 abstract class KeyczarPrivateKey extends KeyczarKey {
-  private PrivateKey jcePrivateKey;
-  private Integer hashCodeObject;
-  private int hashCode;
+  protected PrivateKey jcePrivateKey;
   
-  @Expose private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
-  @Expose private String pkcs8;
-  @Expose private KeyType type = getType();
-
-  @Override
-  public Integer hashKey() {
-    return hashCodeObject;
-  }
-  
-  @Override
-  public int hashCode() {
-    return hashCode;
-  }
+  @Expose
+  protected byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
+  @Expose protected String pkcs8;
 
   @Override
   public String toString() {
     return Util.gson().toJson(this);
-  }
-
-  @Override
-  void generate() throws KeyczarException {
-    try {
-      KeyPairGenerator kpg = KeyPairGenerator.getInstance(getKeyGenAlgorithm());
-      kpg.initialize(getType().defaultSize());
-      KeyPair pair = kpg.generateKeyPair();
-      jcePrivateKey = pair.getPrivate();
-      getPublic().set(pair.getPublic().getEncoded());
-    } catch (GeneralSecurityException e) {
-      throw new KeyczarException(e);
-    }
-    hash = getPublic().hash();
-    pkcs8 = Base64Coder.encode(jcePrivateKey.getEncoded());
-    init();
   }
 
   PrivateKey getJcePrivateKey() {
@@ -85,8 +56,6 @@ abstract class KeyczarPrivateKey extends KeyczarKey {
   }
 
   void init() throws KeyczarException {
-    hashCode = Util.toInt(hash);
-    hashCodeObject = new Integer(hashCode);
     byte[] pkcs8Bytes = Base64Coder.decode(pkcs8);
     try {
       KeyFactory kf = KeyFactory.getInstance(getKeyGenAlgorithm());
@@ -94,23 +63,6 @@ abstract class KeyczarPrivateKey extends KeyczarKey {
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
-  }
-
-  @Override
-  void read(String input) throws KeyczarException {
-    KeyczarPrivateKey copy = Util.gson().fromJson(input, this.getClass());
-    if (copy.type != getType()) {
-      throw new KeyczarException("Incorrect type. Received: " + copy.type
-          + " Expected: " + getType());
-    }
-    type = copy.type;
-    hash = copy.hash;
-    pkcs8 = copy.pkcs8;
-    setPublic(copy.getPublic());
-    if (!Arrays.equals(hash, getPublic().hash())) {
-      throw new KeyczarException("Key hash does not match");
-    }
-    init();
   }
 
   abstract void setPublic(KeyczarPublicKey pub) throws KeyczarException;

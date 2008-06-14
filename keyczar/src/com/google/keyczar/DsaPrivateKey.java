@@ -22,11 +22,16 @@ import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.interfaces.Stream;
 import com.google.keyczar.interfaces.VerifyingStream;
+import com.google.keyczar.util.Base64Coder;
+import com.google.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.util.Arrays;
 
 
 /**
@@ -40,8 +45,9 @@ class DsaPrivateKey extends KeyczarPrivateKey {
   private static final String SIG_ALGORITHM = "SHA1withDSA";
 
   @Expose private DsaPublicKey publicKey;
-  
-  DsaPrivateKey() {
+  @Expose private KeyType type = KeyType.DSA_PRIV;
+
+  private DsaPrivateKey() {
     publicKey = new DsaPublicKey();
   }
 
@@ -59,7 +65,7 @@ class DsaPrivateKey extends KeyczarPrivateKey {
   Stream getStream() throws KeyczarException {
     return new DsaSigningStream();
   }
-
+  
   @Override
   KeyType getType() {
     return KeyType.DSA_PRIV;
@@ -69,6 +75,37 @@ class DsaPrivateKey extends KeyczarPrivateKey {
   void setPublic(KeyczarPublicKey pub) throws KeyczarException {
     publicKey = (DsaPublicKey) pub;
     publicKey.init();
+  }
+  
+  static DsaPrivateKey generate() throws KeyczarException {
+    DsaPrivateKey key = new DsaPrivateKey();
+    try {
+      KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_GEN_ALGORITHM);
+      kpg.initialize(key.getType().defaultSize());
+      KeyPair pair = kpg.generateKeyPair();
+      key.jcePrivateKey = pair.getPrivate();
+      key.getPublic().set(pair.getPublic().getEncoded());
+    } catch (GeneralSecurityException e) {
+      throw new KeyczarException(e);
+    }
+    key.hash = key.getPublic().hash();
+    key.pkcs8 = Base64Coder.encode(key.jcePrivateKey.getEncoded());
+    key.init();
+    key.getPublic().init();
+    return key;
+  }
+  
+  static DsaPrivateKey read(String input) throws KeyczarException {
+    DsaPrivateKey key = Util.gson().fromJson(input, DsaPrivateKey.class);
+    if (key.getType() != KeyType.DSA_PRIV) {
+      throw new KeyczarException("Incorrect type. Received: " + key.getType());
+    }
+    if (!Arrays.equals(key.hash(), key.getPublic().hash())) {
+      throw new KeyczarException("Key hash does not match");
+    }
+    key.init();
+    key.getPublic().init();
+    return key;
   }
 
   private class DsaSigningStream implements SigningStream, VerifyingStream {

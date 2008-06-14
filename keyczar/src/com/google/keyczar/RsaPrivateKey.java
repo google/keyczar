@@ -24,12 +24,17 @@ import com.google.keyczar.interfaces.EncryptingStream;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.interfaces.Stream;
 import com.google.keyczar.interfaces.VerifyingStream;
+import com.google.keyczar.util.Base64Coder;
+import com.google.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
@@ -49,7 +54,7 @@ class RsaPrivateKey extends KeyczarPrivateKey {
 
   private static final String SIG_ALGORITHM = "SHA1withRSA";
 
-  RsaPrivateKey() {
+  private RsaPrivateKey() {
     publicKey = new RsaPublicKey();
   }
 
@@ -62,7 +67,6 @@ class RsaPrivateKey extends KeyczarPrivateKey {
   String getKeyGenAlgorithm() {
     return KEY_GEN_ALGORITHM;
   }
-
 
   @Override
   KeyType getType() {
@@ -78,6 +82,37 @@ class RsaPrivateKey extends KeyczarPrivateKey {
   void setPublic(KeyczarPublicKey pub) throws KeyczarException {
     publicKey = (RsaPublicKey) pub;
     publicKey.init();
+  }
+  
+  static RsaPrivateKey read(String input) throws KeyczarException {
+    RsaPrivateKey key = Util.gson().fromJson(input, RsaPrivateKey.class);
+    if (key.getType() != KeyType.RSA_PRIV) {
+      throw new KeyczarException("Incorrect type. Received: " + key.getType());
+    }
+    if (!Arrays.equals(key.hash(), key.getPublic().hash())) {
+      throw new KeyczarException("Key hash does not match");
+    }
+    key.init();
+    key.getPublic().init();
+    return key;
+  }
+  
+  static RsaPrivateKey generate() throws KeyczarException {
+    RsaPrivateKey key = new RsaPrivateKey();
+    try {
+      KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_GEN_ALGORITHM);
+      kpg.initialize(key.getType().defaultSize());
+      KeyPair pair = kpg.generateKeyPair();
+      key.jcePrivateKey = pair.getPrivate();
+      key.getPublic().set(pair.getPublic().getEncoded());
+    } catch (GeneralSecurityException e) {
+      throw new KeyczarException(e);
+    }
+    key.hash = key.getPublic().hash();
+    key.pkcs8 = Base64Coder.encode(key.jcePrivateKey.getEncoded());
+    key.init();
+    key.getPublic().init();
+    return key;
   }
 
   private class RsaPrivateStream implements SigningStream, VerifyingStream,
@@ -228,4 +263,5 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       return verifyingStream.verify(sig);
     }
   }
+
 }

@@ -31,6 +31,8 @@ import com.google.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.SecureRandom;
 
@@ -38,18 +40,15 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-
 /**
- * Wrapping class for AES keys
+ * Wrapping class for AES keys. Currently the default is to use CBC mode
  * 
  * @author steveweis@gmail.com (Steve Weis)
  */
 class AesKey extends KeyczarKey {
   private Key aesKey;
   private int blockSize;
-  private Integer hashCodeObject;
-  private int hashCode;
-  
+
   private static final String AES_ALGORITHM = "AES";
   // Default mode is CBC
   private static final CipherMode DEFAULT_MODE = CipherMode.CBC;
@@ -61,34 +60,20 @@ class AesKey extends KeyczarKey {
   @Expose private KeyType type = KeyType.AES;
 
   @Override
-  public Integer hashKey() {
-    return hashCodeObject;
-  }
-  
-  @Override
-  public int hashCode() {
-    return hashCode;
-  }
-
-  @Override
   public String toString() {
     return Util.gson().toJson(this);
   }
 
-  @Override
-  void generate() throws KeyczarException {
-    byte[] aesBytes = Util.rand(getType().defaultSize() / 8);
-    aesKeyString = Base64Coder.encode(aesBytes);
-    mode = DEFAULT_MODE;
-    type = getType();
-    hmacKey.generate();
-    byte[] fullHash = Util.prefixHash(aesBytes, hmacKey.hash());
-    System.arraycopy(fullHash, 0, hash, 0, hash.length);
-  }
-
-  @Override
-  Stream getStream() throws KeyczarException {
-    return new AesStream();
+  static AesKey generate() throws KeyczarException {
+    AesKey key = new AesKey();
+    byte[] aesBytes = Util.rand(key.getType().defaultSize() / 8);
+    key.aesKeyString = Base64Coder.encode(aesBytes);
+    key.mode = DEFAULT_MODE;
+    key.hmacKey.generate();
+    byte[] fullHash = Util.prefixHash(aesBytes, key.hmacKey.hash());
+    System.arraycopy(fullHash, 0, key.hash, 0, key.hash.length);
+    key.init();
+    return key;
   }
 
   @Override
@@ -101,36 +86,34 @@ class AesKey extends KeyczarKey {
     return hash;
   }
 
-  @Override
-  void read(String input) throws KeyczarException {
-    AesKey copy = Util.gson().fromJson(input, AesKey.class);
-    if (copy.type != getType()) {
-      throw new KeyczarException("Invalid type in input: " + copy.type);
+  static AesKey read(String input) throws KeyczarException {
+    AesKey key = Util.gson().fromJson(input, AesKey.class);
+    if (key.getType() != KeyType.AES) {
+      throw new KeyczarException("Invalid type in input: " + key.type);
     }
-    hash = copy.hash;
-    type = copy.type;
-    mode = copy.mode;
-    aesKeyString = copy.aesKeyString;
-    hmacKey = copy.hmacKey;
-    hmacKey.init();
+    key.hmacKey.init();
 
     // Check that the hash is correct
-    byte[] aesBytes = Base64Coder.decode(aesKeyString);
-    byte[] fullHash = Util.prefixHash(aesBytes, hmacKey.hash());
-    for (int i = 0; i < hash.length; i++) {
-      if (hash[i] != fullHash[i]) {
+    byte[] aesBytes = Base64Coder.decode(key.aesKeyString);
+    byte[] fullHash = Util.prefixHash(aesBytes, key.hmacKey.hash());
+    for (int i = 0; i < key.hash.length; i++) {
+      if (key.hash[i] != fullHash[i]) {
         throw new KeyczarException("Hash does not match");
       }
     }
-    init();
+    key.init();
+    return key;
   }
 
   private void init() throws KeyczarException {
     byte[] aesBytes = Base64Coder.decode(aesKeyString);
-    hashCode = Util.toInt(hash);
-    hashCodeObject = new Integer(hashCode);
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
     blockSize = aesBytes.length;
+  }
+
+  @Override
+  Stream getStream() throws KeyczarException {
+    return new AesStream();
   }
 
   private class AesStream implements EncryptingStream, DecryptingStream {
@@ -138,7 +121,6 @@ class AesKey extends KeyczarKey {
     private Cipher decryptingCipher;
     private SigningStream signStream;
     boolean ivRead = false;
-    private SecureRandom randomGenerator = new SecureRandom();
 
     public AesStream() throws KeyczarException  {
       // The JCE Cipher.init() call essentially reallocates a new Cipher object
@@ -181,7 +163,7 @@ class AesKey extends KeyczarKey {
     public int initEncrypt(ByteBuffer output) throws KeyczarException {
       // Generate a random value and encrypt it. This will be the IV.
       byte[] ivPreImage = new byte[blockSize];
-      randomGenerator.nextBytes(ivPreImage);
+      Util.rand(ivPreImage);
       try {
         return encryptingCipher.update(ByteBuffer.wrap(ivPreImage), output);
       } catch (javax.crypto.ShortBufferException e) {
@@ -191,7 +173,7 @@ class AesKey extends KeyczarKey {
 
     @Override
     public int updateDecrypt(ByteBuffer input, ByteBuffer output)
-    throws KeyczarException {
+        throws KeyczarException {
       if (ivRead) {
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[blockSize];
@@ -211,6 +193,7 @@ class AesKey extends KeyczarKey {
     throws KeyczarException {
       try {
         return encryptingCipher.update(input, output);
+        //return encryptingCipher.update(input, output);
       } catch (javax.crypto.ShortBufferException e) {
         throw new ShortBufferException(e);
       }
@@ -218,7 +201,7 @@ class AesKey extends KeyczarKey {
 
     @Override
     public int doFinalDecrypt(ByteBuffer input, ByteBuffer output)
-    throws KeyczarException {
+        throws KeyczarException {
       if (ivRead) {
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[blockSize];
@@ -235,7 +218,7 @@ class AesKey extends KeyczarKey {
 
     @Override
     public int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
-    throws KeyczarException {
+        throws KeyczarException {
       try {
         return encryptingCipher.doFinal(input, output);
       } catch (GeneralSecurityException e) {
