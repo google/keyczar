@@ -17,7 +17,16 @@
 package com.google.keyczar.enums;
 
 import com.google.gson.annotations.Expose;
-
+/**
+ * Encodes different modes of operation:
+ *   Cipher Block Chaining (CBC) with initial value (IV)
+ *   Counter (CTR) with IV
+ *   Electronic Code Book (ECB), no IV
+ *   DET-CBC, CBC without IV
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
 public enum CipherMode {
   CBC(0, "AES/CBC/PKCS5Padding", true),
   CTR(1, "AES/CTR/NoPadding", true),

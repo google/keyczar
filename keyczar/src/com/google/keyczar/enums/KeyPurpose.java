@@ -16,7 +16,16 @@
 
 package com.google.keyczar.enums;
 
-// TODO: Write JavaDocs
+// TODO: Finish JavaDocs
+/**
+ * Encodes different possible uses of a key: 
+ *   Decrypt and Encrypt
+ *   Encrypt Only
+ *   Sign and Verify
+ *   Verify Only
+ *   Test
+ */
+
 public enum KeyPurpose {
   DECRYPT_AND_ENCRYPT(0), ENCRYPT(1), SIGN_AND_VERIFY(2), TEST(127), VERIFY(3);
 
@@ -40,7 +49,7 @@ public enum KeyPurpose {
       return SIGN_AND_VERIFY;
     case 3:
       return VERIFY;
-    case 255:
+    case 255: // TODO: Fix -- should this be 127? to match constructor call?
       return TEST;
     }
     return null;
