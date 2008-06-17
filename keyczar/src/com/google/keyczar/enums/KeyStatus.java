@@ -16,14 +16,25 @@
 
 package com.google.keyczar.enums;
 
-// TODO: Write JavaDocs
 /**
  * Encodes different possible statuses of keys:
- *   Primary: This key can verify or decrypt existing data and can sign or 
+ * <ul>
+ *   <li>Primary: This key can verify or decrypt existing data and can sign or 
  *   encrypt new data.
- *   Active:  This key can only verify or decrypt existing data.
- *   Scheduled for Revocation: This key can only verify or decrypt existing 
+ *   <li>Active:  This key can only verify or decrypt existing data.
+ *   <li>Scheduled for Revocation: This key can only verify or decrypt existing 
  *   data and may be revoked at any time.
+ * </ul>
+ * 
+ * <p>JSON Representation is one of the strings:
+ * <ul>
+ *   <li>"PRIMARY"
+ *   <li>"ACTIVE"
+ *   <li>"SCHEDULE_FOR_REVOCATION"
+ * </ul>
+ * 
+ *  @author steveweis@gmail.com (Steve Weis)
+ *  
  */
 public enum KeyStatus {
   ACTIVE(1), PRIMARY(0), SCHEDULED_FOR_REVOCATION(2);

@@ -52,14 +52,14 @@ public enum CipherMode {
 
   static CipherMode getMode(int value) {
     switch (value) {
-    case 0:
-      return CBC;
-    case 1:
-      return CTR;
-    case 2:
-      return ECB;
-    case 3:
-      return DET_CBC;
+      case 0:
+        return CBC;
+      case 1:
+        return CTR;
+      case 2:
+        return ECB;
+      case 3:
+        return DET_CBC;
     }
     return null;
   }

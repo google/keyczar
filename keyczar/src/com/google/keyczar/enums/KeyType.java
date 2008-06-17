@@ -18,16 +18,27 @@ package com.google.keyczar.enums;
 
 import com.google.gson.annotations.Expose;
 
-// TODO: Write JavaDocs
 /**
  * Encodes different types of keys each with (default size, output size):
- *   AES:         (128, 0)
- *   HMAC SHA1:   (256, 20)
- *   DSA Private: (1024, 48)
- *   DSA Public:  (1024, 48)
- *   RSA Private: (2048, 256)
- *   RSA Public:  (2048, 256)
- *   Test:        (1, 0)
+ * <ul>
+ *   <li>AES:         (128, 0)
+ *   <li>HMAC SHA1:   (256, 20)
+ *   <li>DSA Private: (1024, 48)
+ *   <li>DSA Public:  (1024, 48)
+ *   <li>RSA Private: (2048, 256)
+ *   <li>RSA Public:  (2048, 256)
+ *   <li>Test:        (1, 0)
+ * </ul>
+ * 
+ * <p>JSON Representation currently supports these strings:
+ * <ul>
+ *   <li>"AES"
+ *   <li>"HMAC_SHA1"
+ *   <li>"DSA_PRIV"
+ *   <li>"DSA_PUB"
+ * </ul>
+ *  @author steveweis@gmail.com (Steve Weis)
+ *  
  */
 public enum KeyType {
   AES(0, 128, 0), DSA_PRIV(2, 1024, 48), DSA_PUB(3, 1024, 48), HMAC_SHA1(1,
@@ -59,20 +70,20 @@ public enum KeyType {
 
   static KeyType getType(int value) {
     switch (value) {
-    case 0:
-      return AES;
-    case 1:
-      return HMAC_SHA1;
-    case 2:
-      return DSA_PRIV;
-    case 3:
-      return DSA_PUB;
-    case 4:
-      return DSA_PRIV;
-    case 5:
-      return DSA_PUB;
-    case 127:
-      return TEST;
+      case 0:
+        return AES;
+      case 1:
+        return HMAC_SHA1;
+      case 2:
+        return DSA_PRIV;
+      case 3:
+        return DSA_PUB;
+      case 4:
+        return DSA_PRIV;
+      case 5:
+        return DSA_PUB;
+      case 127:
+        return TEST;
     }
     return null;
   }

@@ -24,7 +24,26 @@ import com.google.keyczar.util.Util;
 import java.util.ArrayList;
 import java.util.List;
 
-// TODO: Write JavaDocs
+/**
+ * Encodes metadata for a set of keys which consists of the following:
+ * <ul>  
+ *   <li>a string-valued name,
+ *   <li>a KeyPurpose,
+ *   <li>a KeyType, and
+ *   <li>a set of KeyVersion values.
+ * </ul>
+ * 
+ * <p>JSON Representation consists of the following fields:
+ * <ul>  
+ *   <li>"name": a String name, 
+ *   <li>"purpose": JSON representation of KeyPurpose value, 
+ *   <li>"type": JSON representation of KeyType value,
+ *   <li>"versions": JSON representation of an array of KeyVersion values.
+ * </ul>
+ *            
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
 class KeyMetadata {
   @Expose private String name = "";
   @Expose private KeyPurpose purpose = KeyPurpose.TEST;

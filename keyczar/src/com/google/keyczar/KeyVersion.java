@@ -21,7 +21,24 @@ import com.google.keyczar.enums.KeyStatus;
 import com.google.keyczar.util.Util;
 
 
-// TODO: Write JavaDocs
+/**
+ * A key version consists of the following:
+ * <ul>
+ *   <li>an integer value version number, counting from 1,
+ *   <li>a KeyStatus, and
+ *   <li>a boolean representing whether this key is exportable 
+ *       outside of Keyczar.
+ * </ul>  
+ * <p>JSON Representation consists of the following fields:
+ * <ul>
+ *   <li>"status": JSON representation of KeyStatus value,
+ *   <li>"versionNumber": integer version number,
+ *   <li>"exportable": boolean value.    
+ * </ul>
+ * 
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
 class KeyVersion {
   @Expose private boolean exportable = false;
   @Expose private KeyStatus status = KeyStatus.ACTIVE;
