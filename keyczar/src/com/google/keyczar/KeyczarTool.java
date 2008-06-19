@@ -30,9 +30,11 @@ import java.util.Iterator;
 
 
 /**
- * Command line tool for generating Keyczar key files
+ * Command line tool for generating Keyczar key files.
  * 
  * @author steveweis@gmail.com (Steve Weis)
+ * @author arkajit.dey@gmail.com (Arkajit Dey)
+ * 
  */
 public class KeyczarTool {
   static String asymmetricFlag;
@@ -53,6 +55,10 @@ public class KeyczarTool {
         addKey();
       } else if (args[0].equals("pubkey")) {
         publicKeys();
+      } else if (args[0].equals("setstatus")) {
+        setStatus();
+      } else { // unsupported command
+        printUsage();
       }
     }
   }
@@ -67,7 +73,14 @@ public class KeyczarTool {
     genericKeyczar.addVersion(statusFlag);
     genericKeyczar.write(locationFlag);
   }
-
+  
+  /**
+   * Creates a new KeyMetadata object, deciding its name, purpose and type
+   * based on command line flags. Outputs its JSON representation in a file 
+   * named meta in the directory given by the --location flag.
+   * 
+   * @throws KeyczarException
+   */
   private static void create() throws KeyczarException {
     KeyMetadata kmd = null;
     if (purposeFlag == null) {
@@ -76,36 +89,35 @@ public class KeyczarTool {
     }
     if (locationFlag == null) {
       throw new KeyczarException("Must define a key set location with the "
-          + "--location flag");
+          + "--location flag.");
     }
     switch (purposeFlag) {
-    case TEST:
-      kmd = new KeyMetadata(nameFlag, KeyPurpose.TEST, KeyType.TEST);
-      break;
-    case SIGN_AND_VERIFY:
-      if (asymmetricFlag != null) {
-        if (asymmetricFlag.equalsIgnoreCase("rsa")) {
+      case TEST:
+        kmd = new KeyMetadata(nameFlag, KeyPurpose.TEST, KeyType.TEST);
+        break;
+      case SIGN_AND_VERIFY:
+        if (asymmetricFlag != null) {
+          if (asymmetricFlag.equalsIgnoreCase("rsa")) { // RSA
+            kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
+                KeyType.RSA_PRIV);
+          } else { // Default to DSA
+            kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
+                KeyType.DSA_PRIV);
+          }
+        } else { // HMAC-SHA1
           kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
-              KeyType.RSA_PRIV);
-        } else {
-          // Default to DSA
-          kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
-              KeyType.DSA_PRIV);
+              KeyType.HMAC_SHA1);
         }
-      } else {
-        kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
-            KeyType.HMAC_SHA1);
-      }
-      break;
-    case DECRYPT_AND_ENCRYPT:
-      if (asymmetricFlag != null) {
-        kmd = new KeyMetadata(nameFlag, KeyPurpose.DECRYPT_AND_ENCRYPT,
-            KeyType.RSA_PRIV);
-      } else {
-        kmd = new KeyMetadata(nameFlag, KeyPurpose.DECRYPT_AND_ENCRYPT,
-            KeyType.AES);
-      }
-      break;
+        break;
+      case DECRYPT_AND_ENCRYPT:
+        if (asymmetricFlag != null) { // Default to RSA
+          kmd = new KeyMetadata(nameFlag, KeyPurpose.DECRYPT_AND_ENCRYPT,
+              KeyType.RSA_PRIV);
+        } else { // AES
+          kmd = new KeyMetadata(nameFlag, KeyPurpose.DECRYPT_AND_ENCRYPT,
+              KeyType.AES);
+        }
+        break;
     }
     if (kmd == null) {
       throw new KeyczarException("Unsupported purpose: " + purposeFlag);
@@ -125,30 +137,26 @@ public class KeyczarTool {
   }
 
   private static void printUsage() {
-    // TODO: Clean this up
-    System.out.print("Usage:");
-    System.out.println("\t\"KeyczarTool command flags\"");
-    System.out.println("Commands:");
-    System.out
-        .println("create --name=name --location=location --purpose=purpose");
-    System.out.println("\tCreates a new key store");
-    System.out.println("addkey --location=location --status=status ");
-    System.out
-        .println("\tpubkey --location=location --destination=destination");
-    System.out
-        .println("\tExport a key set at the given location as a set of public keys at a given destination.");
-    System.out.println("Flags:");
-    System.out.println("\t--name : Define the name of a keystore. Optional.");
-    System.out.println("\t--location : Define the file location of a keystore");
-    System.out
-        .println("\t--destination : Define the destination location of a keystore");
-    System.out.println("\t--purpose : Define the purpose of a keystore. "
-        + "Must be sign, crypt, or test.");
-    System.out.println("\t--status : Define the status of a new key. "
-        + "Must be primary, active, or scheduled_for_revocation. Optional.");
-
+    // TODO: document --asymmetric flag, setstatus command
+    String msg = "Usage:\t\"KeyczarTool command flags\"\n" +
+                 "Commands:\n" + 
+                 "create --name=name --location=location --purpose=purpose\n" +
+                 "\tCreates a new key store\n" + 
+                 "addkey --location=location --status=status\n" + 
+                 "pubkey --location=location --destination=destination\n" +
+                 "\tExport a key set at the given location as a set of " + 
+                   "public keys at a given destination.\n" + 
+                 "Flags:\n" + 
+                 "\t--name : Define the name of a keystore. Optional.\n" + 
+                 "\t--location : Define the file location of a keystore\n" + 
+                 "\t--destination : Define the destination location of " + 
+                   "a keystore.\n" + 
+                 "\t--purpose : Define the purpose of a keystore." + 
+                   " Must be sign, crypt, or test.\n" + 
+                 "\t--status : Define the status of a new key. Must be " +
+                   "primary, active, or scheduled_for_revocation. Optional.";
+    System.out.println(msg);
   }
-
 
   private static void publicKeys() throws KeyczarException {
     if (locationFlag == null) {
@@ -167,8 +175,7 @@ public class KeyczarTool {
     HashMap<String, String> params = new HashMap<String, String>();
     for (String arg : args) {
       if (arg.startsWith("--")) {
-        // Trim off the leading dashes
-        arg = arg.substring(2);
+        arg = arg.substring(2); // Trim off the leading dashes
         String[] nameValuePair = arg.split("=");
         if (nameValuePair.length == 2) {
           params.put(nameValuePair[0], nameValuePair[1]);
@@ -188,26 +195,20 @@ public class KeyczarTool {
       destinationFlag += File.separator;
     }
 
-    if (params.get("purpose") != null) {
-      if (params.get("purpose").equals("sign")) {
-        purposeFlag = KeyPurpose.SIGN_AND_VERIFY;
-      } else if (params.get("purpose").equals("crypt")) {
-        purposeFlag = KeyPurpose.DECRYPT_AND_ENCRYPT;
-      } else if (params.get("purpose").equals("test")) {
-        purposeFlag = KeyPurpose.TEST;
-      }
-    }
-
-    if (params.get("status") != null) {
-      if (params.get("status").equals("primary")) {
-        statusFlag = KeyStatus.PRIMARY;
-      } else if (params.get("status").equals("active")) {
-        statusFlag = KeyStatus.ACTIVE;
-      } else if (params.get("status").equals("scheduled_for_revocation")) {
-        statusFlag = KeyStatus.SCHEDULED_FOR_REVOCATION;
-      }
-    }
+    purposeFlag = KeyPurpose.getPurpose(params.get("purpose"));
+    //TODO: What about other purposes? ENCRYPT, VERIFY not included originally
+    // also invalid purpose makes flag null, OK?
+    statusFlag = KeyStatus.getStatus(params.get("status")); // default ACTIVE
     asymmetricFlag = params.get("asymmetric");
+  }
+  
+  private static void setStatus() throws KeyczarException {
+    if (locationFlag == null) {
+      throw new KeyczarException("Must define a key set location with the "
+          + "--location flag");
+    }
+    
+    //TODO(arkajit.dey): finish implementing setStatus() method
   }
 
   private static class GenericKeyczar extends Keyczar {

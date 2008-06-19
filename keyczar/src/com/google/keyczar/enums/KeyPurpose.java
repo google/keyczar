@@ -35,22 +35,34 @@ package com.google.keyczar.enums;
  * </ul>
  *   
  *  @author steveweis@gmail.com (Steve Weis)
+ *  @author arkajit.dey@gmail.com (Arkajit Dey)
  *  
  */
 public enum KeyPurpose {
-  DECRYPT_AND_ENCRYPT(0), ENCRYPT(1), SIGN_AND_VERIFY(2), TEST(127), VERIFY(3);
+  DECRYPT_AND_ENCRYPT(0, "crypt"), 
+  ENCRYPT(1, "encrypt"), 
+  SIGN_AND_VERIFY(2, "sign"),
+  VERIFY(3, "verify"),
+  TEST(127, "test");
 
   private int value;
+  private String name;
 
-  private KeyPurpose(int v) {
+  private KeyPurpose(int v, String s) {
     value = v;
+    name = s;
   }
 
   int getValue() {
     return value;
   }
+  
+  String getName() {
+    return name;
+  }
 
-  static KeyPurpose getPurpose(int value) {
+  // TODO: public visibility seems to make more sense? (vs. default)
+  public static KeyPurpose getPurpose(int value) {
     switch (value) {
       case 0:
         return DECRYPT_AND_ENCRYPT;
@@ -62,6 +74,23 @@ public enum KeyPurpose {
         return VERIFY;
       case 127: // TODO: Changed from 255 to 127 to match constructor call. OK?
         return TEST;
+    }
+    return null;
+  }
+  
+  public static KeyPurpose getPurpose(String name) {
+    if (name != null) {
+      if (name.equalsIgnoreCase(DECRYPT_AND_ENCRYPT.getName())) {
+        return DECRYPT_AND_ENCRYPT;
+      } else if (name.equalsIgnoreCase(ENCRYPT.getName())) {
+        return ENCRYPT;
+      } else if (name.equalsIgnoreCase(SIGN_AND_VERIFY.getName())) {
+        return SIGN_AND_VERIFY;
+      } else if (name.equalsIgnoreCase(VERIFY.getName())) {
+        return VERIFY;
+      } else if (name.equalsIgnoreCase(TEST.getName())) {
+        return TEST;
+      }
     }
     return null;
   }

@@ -34,30 +34,53 @@ package com.google.keyczar.enums;
  * </ul>
  * 
  *  @author steveweis@gmail.com (Steve Weis)
+ *  @author arkajit.dey@gmail.com (Arkajit Dey)
  *  
  */
 public enum KeyStatus {
-  ACTIVE(1), PRIMARY(0), SCHEDULED_FOR_REVOCATION(2);
+  PRIMARY(0, "primary"), 
+  ACTIVE(1, "active"),
+  SCHEDULED_FOR_REVOCATION(2, "scheduled_for_revocation");
 
   private int value;
+  private String name;
 
-  private KeyStatus(int v) {
+  private KeyStatus(int v, String s) {
     value = v;
+    name = s;
   }
 
   int getValue() {
     return value;
   }
-
-  static KeyStatus getStatus(int value) {
+  
+  String getName() {
+    return name;
+  }
+  
+  //TODO: public visibility seems to make more sense? (vs. default)
+  public static KeyStatus getStatus(int value) {
     switch (value) {
-    case 0:
-      return PRIMARY;
-    case 1:
-      return ACTIVE;
-    case 2:
-      return SCHEDULED_FOR_REVOCATION;
+      case 0:
+        return PRIMARY;
+      case 1:
+        return ACTIVE;
+      case 2:
+        return SCHEDULED_FOR_REVOCATION;
     }
     return null;
+  }
+  
+  public static KeyStatus getStatus(String name) {
+    if (name != null) {
+      if (name.equalsIgnoreCase(PRIMARY.getName())) {
+        return PRIMARY;
+      } else if (name.equalsIgnoreCase(ACTIVE.getName())) {
+        return ACTIVE;
+      } else if (name.equalsIgnoreCase(SCHEDULED_FOR_REVOCATION.getName())) {
+        return SCHEDULED_FOR_REVOCATION;
+      }
+    }
+    return ACTIVE; // default status
   }
 }
