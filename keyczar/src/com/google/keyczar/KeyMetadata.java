@@ -68,6 +68,12 @@ class KeyMetadata {
   boolean addVersion(KeyVersion version) {
     return versions.add(version);
   }
+  
+  // FIXME: need to change version number scheme, otherwise removing version
+  // messes up sequential numbering
+  boolean removeVersion(KeyVersion version) {
+    return versions.remove(version);
+  }
 
   String getName() {
     return name;

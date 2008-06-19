@@ -201,44 +201,18 @@ abstract class Keyczar {
     }
   }
   
-  /**
-   * Updates the status of key with given version number to the given status.
-   * Can't change directly from PRIMARY to SCHEDULED_FOR_REVOCATION and 
-   * vice versa.
-   * 
-   * @param versionNumber integer version number to update
-   * @param status new desired KeyStatus
-   * @throws KeyczarException if status or versionNumber are invalid or if
-   * requested status change is illegal.
-   */
-  @Deprecated
-  //TODO: promote and demote used now, but keep around for testing purposes?
-  void setStatus(int versionNumber, KeyStatus status) throws KeyczarException {
-    if (status == null) {
-      throw new KeyczarException("Invalid status.");
-    }
+  void revoke(int versionNumber) throws KeyczarException {
     KeyVersion version = kmd.getVersion(versionNumber);
     if (version == null) {
       throw new KeyczarException("No such version number: " + versionNumber);
     }
-    KeyStatus oldStatus = version.getStatus();
-    switch(oldStatus) { // All transitions legal for ACTIVE key
-      case PRIMARY:
-        if (status == KeyStatus.SCHEDULED_FOR_REVOCATION) {
-          throw new KeyczarException("Illegal status change - can't change" + 
-              "primary key directly to be scheduled for revocation.");
-        }
-        break;
-      case SCHEDULED_FOR_REVOCATION:
-        if (status == KeyStatus.PRIMARY) {
-          throw new KeyczarException("Illegal status change - can't change" + 
-              "a key scheduled for revocation directly to primary key.");
-        }
-        break;
+    if (version.getStatus() == KeyStatus.SCHEDULED_FOR_REVOCATION) {
+      //TODO(arkajit): implement this! but change version # scheme first!
+    } else {
+      throw new KeyczarException("Can't revoke key if not scheduled to be.");
     }
-    version.setStatus(status); // legal status change, including no change
   }
-
+  
   KeyczarKey getKey(byte[] hash) {
     return hashMap.get(new KeyHash(hash));
   }

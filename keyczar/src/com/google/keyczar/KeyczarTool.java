@@ -208,8 +208,12 @@ public class KeyczarTool {
     genericKeyczar.publicKeyExport(destinationFlag);
   }
 
-  private static void revoke() {
+  private static void revoke() throws KeyczarException {
     // TODO(arkajit): implement me! only allow those scheduled to be revoked!
+    // Need new version # scheme, otherwise revoking shifts list indices in KMD
+    GenericKeyczar genericKeyczar = createGenericKeyczar();
+    genericKeyczar.revoke(versionFlag);
+    genericKeyczar.write(locationFlag);
   }
 
   /**
