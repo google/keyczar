@@ -80,9 +80,15 @@ class KeyMetadata {
   KeyType getType() {
     return type;
   }
-
-  KeyVersion getVersion(int index) {
-    return versions.get(index);
+  
+  /**
+   * Returns the version corresponding to the version number.
+   * @param versionNumber should be in range [1,N] for N versions.
+   * @return KeyVersion corresponding to given number, or null if illegal
+   */
+  KeyVersion getVersion(int versionNumber) {
+    return (0 < versionNumber && versionNumber <= versions.size()) ? 
+        versions.get(versionNumber-1) : null;
   }
 
   List<KeyVersion> getVersions() {

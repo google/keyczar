@@ -26,25 +26,42 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 
 
 /**
- * Command line tool for generating Keyczar key files.
+ * Command line tool for generating Keyczar key files. The following commands
+ * are supported:
+ * <ul>
+ *   <li>create: create a new key store
+ *   <li>addkey: add new key to existing store
+ *   <li>pubkey: export a public key set from existing private key store
+ *   <li>promote: promote status of a key version in existing store
+ *   <li>demote: demote status of a key version in existing store
+ * </ul>
  * 
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  * 
  */
+//TODO(arkajit): add revoke command: revoke --location=loc --version=num
 public class KeyczarTool {
   static String asymmetricFlag;
   static String destinationFlag;
   static String locationFlag;
   static String nameFlag;
+  static int versionFlag = -1; // default if not set
   static KeyPurpose purposeFlag;
-  static KeyStatus statusFlag = KeyStatus.ACTIVE;
+  static KeyStatus statusFlag = KeyStatus.ACTIVE; // default if not set
 
-  public static void main(String[] args) throws Exception {
+  /**
+   * Uses setFlags() to parse command line arguments and delegates to the
+   * appropriate command function or prints the usage instructions if command
+   * syntax is invalid.
+   * 
+   * @param args from the command line
+   * @throws KeyczarException for illegal commands.
+   */
+  public static void main(String[] args) throws KeyczarException {
     if (args.length == 0) {
       printUsage();
     } else {
@@ -55,21 +72,27 @@ public class KeyczarTool {
         addKey();
       } else if (args[0].equals("pubkey")) {
         publicKeys();
-      } else if (args[0].equals("setstatus")) {
-        setStatus();
+      } else if (args[0].equals("promote")) {
+        promote();
+      } else if (args[0].equals("demote")) {
+        demote();
+      } else if (args[0].equals("revoke")) {
+        revoke();
       } else { // unsupported command
         printUsage();
       }
     }
   }
 
+  /**
+   * Adds key of given status to key set and pushes update to meta file. 
+   * Requires location and status flags.
+   * 
+   * @throws KeyczarException if location flag is not set or
+   * key type is unsupported
+   */
   private static void addKey() throws KeyczarException {
-    // Read existing metadata
-    if (locationFlag == null) {
-      throw new KeyczarException("Must define a key set location with the "
-          + "--location flag");
-    }
-    GenericKeyczar genericKeyczar = new GenericKeyczar(locationFlag);
+    GenericKeyczar genericKeyczar = createGenericKeyczar();
     genericKeyczar.addVersion(statusFlag);
     genericKeyczar.write(locationFlag);
   }
@@ -77,9 +100,9 @@ public class KeyczarTool {
   /**
    * Creates a new KeyMetadata object, deciding its name, purpose and type
    * based on command line flags. Outputs its JSON representation in a file 
-   * named meta in the directory given by the --location flag.
+   * named meta in the directory given by the location flag.
    * 
-   * @throws KeyczarException
+   * @throws KeyczarException if location or purpose flags are not set
    */
   private static void create() throws KeyczarException {
     KeyMetadata kmd = null;
@@ -136,41 +159,99 @@ public class KeyczarTool {
     }
   }
 
-  private static void printUsage() {
-    // TODO: document --asymmetric flag, setstatus command
-    String msg = "Usage:\t\"KeyczarTool command flags\"\n" +
-                 "Commands:\n" + 
-                 "create --name=name --location=location --purpose=purpose\n" +
-                 "\tCreates a new key store\n" + 
-                 "addkey --location=location --status=status\n" + 
-                 "pubkey --location=location --destination=destination\n" +
-                 "\tExport a key set at the given location as a set of " + 
-                   "public keys at a given destination.\n" + 
-                 "Flags:\n" + 
-                 "\t--name : Define the name of a keystore. Optional.\n" + 
-                 "\t--location : Define the file location of a keystore\n" + 
-                 "\t--destination : Define the destination location of " + 
-                   "a keystore.\n" + 
-                 "\t--purpose : Define the purpose of a keystore." + 
-                   " Must be sign, crypt, or test.\n" + 
-                 "\t--status : Define the status of a new key. Must be " +
-                   "primary, active, or scheduled_for_revocation. Optional.";
-    System.out.println(msg);
-  }
-
-  private static void publicKeys() throws KeyczarException {
-    if (locationFlag == null) {
-      throw new KeyczarException("Must define a key set location with the "
-          + "--location flag");
+  /**
+   * If the version flag is set, promotes the status of given key version.
+   * Pushes update to meta file. Requires location and version flags.
+   * 
+   * @throws KeyczarException if location or version flag is not set
+   * or promotion is illegal.
+   */
+  
+  private static void promote() throws KeyczarException {
+    if (versionFlag < 0) {
+      throw new KeyczarException("Illegal or missing version number.");
     }
+    GenericKeyczar genericKeyczar = createGenericKeyczar();
+    genericKeyczar.promote(versionFlag);
+    genericKeyczar.write(locationFlag);
+  }
+  
+
+  /**
+   * If the version flag is set, demotes the status of given key version.
+   * Pushes update to meta file. Requires location and version flags.
+   * 
+   * @throws KeyczarException if location or version flag is not set
+   * or demotion is illegal.
+   */
+  private static void demote() throws KeyczarException {
+    if (versionFlag < 0) {
+      throw new KeyczarException("Illegal or missing version number.");
+    }
+    GenericKeyczar genericKeyczar = createGenericKeyczar();
+    genericKeyczar.demote(versionFlag);
+    genericKeyczar.write(locationFlag);
+  }
+  
+  /**
+   * Creates and exports public key files to given destination based on 
+   * private key set at given location.
+   * 
+   * @throws KeyczarException if location or destination flag is not set.
+   */
+  private static void publicKeys() throws KeyczarException {
     if (destinationFlag == null) {
       throw new KeyczarException("Must define a public key set location with"
           + " the --destination flag");
     }
-    GenericKeyczar genericKeyczar = new GenericKeyczar(locationFlag);
+    GenericKeyczar genericKeyczar = createGenericKeyczar();
     genericKeyczar.publicKeyExport(destinationFlag);
   }
 
+  private static void revoke() {
+    // TODO(arkajit): implement me! only allow those scheduled to be revoked!
+  }
+
+  /**
+   * Prints the usage instructions with list of commands and flags.
+   */
+  private static void printUsage() {
+    String msg = "Usage:\t\"KeyczarTool command flags\"\n" +
+                 "Commands:\n" + 
+                 "create --name=name --location=location --purpose=purpose " +
+                     "--asymmetric=rsa|dsa\n" +
+                 "\tCreates a new key store.\n" + 
+                 "addkey --location=location --status=status\n" +
+                 "\tAdds new key with given status to given location.\n" + 
+                 "pubkey --location=location --destination=destination\n" +
+                 "\tExport a key set at the given location as a set of " + 
+                     "public keys at a given destination.\n" + 
+                 "promote --location=location --version=versionNumber\n" +
+                 "\tPromote status of given key version at given location.\n" +
+                 "demote --loation=location --version=versionNumber\n" +
+                 "\tDemote status of given key version at given location.\n" +
+                 "Flags:\n" + 
+                 "\t--name : Define the name of a keystore. Optional.\n" + 
+                 "\t--location : Define the file location of a keystore\n" + 
+                 "\t--destination : Define the destination location of " + 
+                     "a keystore.\n" + 
+                 "\t--purpose : Define the purpose of a keystore." + 
+                     " Must be sign, crypt, or test.\n" + 
+                 "\t--status : Define the status of a new key. Must be " +
+                     "primary, active, or scheduled_for_revocation. Optional.\n" +
+                 "\t--version : The version number of key to update.\n" +
+                 "\t--asymmetric : Dictate use of asymmetric algorithm. " +
+                     "Must be rsa or blank. Optional.\n\t\t\t" +
+                     "For sign, defaults to DSA unless rsa indicated. " +
+                     "For crypt, uses RSA.";
+    System.out.println(msg);
+  }
+  
+  /**
+   * Parses command line arguments and sets appropriate flags.
+   * 
+   * @param args from the command line
+   */
   private static void setFlags(String[] args) {
     HashMap<String, String> params = new HashMap<String, String>();
     for (String arg : args) {
@@ -196,21 +277,37 @@ public class KeyczarTool {
     }
 
     purposeFlag = KeyPurpose.getPurpose(params.get("purpose"));
-    //TODO: What about other purposes? ENCRYPT, VERIFY not included originally
-    // also invalid purpose makes flag null, OK?
     statusFlag = KeyStatus.getStatus(params.get("status")); // default ACTIVE
     asymmetricFlag = params.get("asymmetric");
+    try {
+      versionFlag = Integer.parseInt(params.get("version"));
+    } catch (NumberFormatException e) {
+      versionFlag = -1; // mark flag as unset, handle above
+    }
   }
   
-  private static void setStatus() throws KeyczarException {
+  /**
+   * Creates a GenericKeyczar object based on locationFlag if it is set.
+   * @return GenericKeyczar if locationFlag set
+   * @throws KeyczarException if locationFlag not set
+   */
+
+  private static GenericKeyczar createGenericKeyczar() throws KeyczarException {
     if (locationFlag == null) {
       throw new KeyczarException("Must define a key set location with the "
           + "--location flag");
     }
-    
-    //TODO(arkajit.dey): finish implementing setStatus() method
+    return new GenericKeyczar(locationFlag);
   }
 
+  /**
+   * Wrapper class to access Keyczar utility methods of reading and manipulating
+   * key metadata files. Also contains additional utility methods for pushing
+   * updates to meta files on disk and exporting public key sets.
+   *
+   * @author steveweis@gmail.com (Steve Weis)
+   * 
+   */
   private static class GenericKeyczar extends Keyczar {
     GenericKeyczar(String location) throws KeyczarException {
       super(location);
@@ -220,31 +317,45 @@ public class KeyczarTool {
     boolean isAcceptablePurpose(KeyPurpose purpose) {
       return true;
     }
-
+    
+    /**
+     * For the managed key set, exports a set of public keys at given location.
+     * Client's key must be a private key for DSA or RSA. For DSA private key,
+     * purpose must be SIGN_AND_VERIFY. For RSA private key, purpose can also
+     * be DECRYPT_AND_ENCRYPT.
+     * 
+     * @param destination String pathname of directory to export key set to
+     * @throws KeyczarException if unable to export key set.
+     */
     void publicKeyExport(String destination) throws KeyczarException {
       KeyMetadata kmd = getMetadata();
       // Can only export if type is DSA_PRIV and purpose is SIGN_AND_VERIFY
       KeyMetadata publicKmd = null;
-      if (kmd.getType() == KeyType.DSA_PRIV
-          && kmd.getPurpose() == KeyPurpose.SIGN_AND_VERIFY) {
-        publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY,
-            KeyType.DSA_PUB);
-      } else if (kmd.getType() == KeyType.RSA_PRIV) {
-        if (kmd.getPurpose() == KeyPurpose.DECRYPT_AND_ENCRYPT) {
-          publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.ENCRYPT,
-              KeyType.RSA_PUB);
-        } else if (kmd.getPurpose() == KeyPurpose.SIGN_AND_VERIFY) {
-          publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY,
-              KeyType.RSA_PUB);
-        }
+      switch(kmd.getType()) {
+        case DSA_PRIV: // DSA Private Key
+          if (kmd.getPurpose() == KeyPurpose.SIGN_AND_VERIFY) {
+            publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY,
+                KeyType.DSA_PUB);
+          }
+          break;
+        case RSA_PRIV: // RSA Private Key
+          switch(kmd.getPurpose()) {
+            case DECRYPT_AND_ENCRYPT: 
+              publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.ENCRYPT,
+                  KeyType.RSA_PUB);
+              break;
+            case SIGN_AND_VERIFY: 
+              publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY,
+                  KeyType.RSA_PUB);
+              break;
+          }
+          break;
       }
       if (publicKmd == null) {
         throw new KeyczarException("Cannot export public keys for key type: "
             + kmd.getType() + " and purpose " + kmd.getPurpose());
       }
-      Iterator<KeyVersion> versions = getVersions();
-      while (versions.hasNext()) {
-        KeyVersion version = versions.next();
+      for (KeyVersion version : getVersions()) {
         KeyczarKey publicKey = ((KeyczarPrivateKey) getKey(version))
             .getPublic();
         writeFile(publicKey.toString(), destination
@@ -254,17 +365,30 @@ public class KeyczarTool {
       writeFile(publicKmd.toString(), destination + KeyczarFileReader.META_FILE);
     }
 
+    /**
+     * Pushes updated KeyMetadata and KeyVersion info to files at given
+     * directory location. Version files are named by their number and the
+     * meta file is named meta.
+     * 
+     * @param location String pathname of directory to write to
+     * @throws KeyczarException if unable to write to given location.
+     */
     void write(String location) throws KeyczarException {
       writeFile(getMetadata().toString(), location
           + KeyczarFileReader.META_FILE);
-      Iterator<KeyVersion> versions = getVersions();
-      while (versions.hasNext()) {
-        KeyVersion version = versions.next();
+      for (KeyVersion version : getVersions()) {
         writeFile(getKey(version).toString(), location
             + version.getVersionNumber());
       }
     }
 
+    /**
+     * Utility function to write given data to a file at given location.
+     * 
+     * @param data String data to be written
+     * @param location String pathname of destination file
+     * @throws KeyczarException if unable to write to file.
+     */
     private void writeFile(String data, String location)
         throws KeyczarException {
       File outputFile = new File(location);

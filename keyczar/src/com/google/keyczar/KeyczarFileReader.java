@@ -23,12 +23,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-
-
 /**
  * Reads metadata and key files from the given location.
  * 
- * @author sweis@google.com (Your Name Here)
+ * @author sweis@google.com (Steve Weis)
  * 
  */
 class KeyczarFileReader implements KeyczarReader {

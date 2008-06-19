@@ -22,6 +22,7 @@ import com.google.keyczar.interfaces.Stream;
 
 import java.nio.ByteBuffer;
 
+//TODO: Write JavaDocs
 abstract class KeyczarKey {
   void copyHeader(ByteBuffer dest) {
     dest.put(Keyczar.VERSION);
@@ -38,20 +39,27 @@ abstract class KeyczarKey {
    * @return A hash of this key material
    */
   abstract byte[] hash();
-
+  
+  /**
+   * Generates private key of the desired type. Cannot generate public
+   * key, instead must export public key set from private keys.
+   * @param type KeyType desired
+   * @return KeyczarKey of desired type
+   * @throws KeyczarException for unsupported key types
+   */
   static KeyczarKey genKey(KeyType type) throws KeyczarException {
     switch (type) {
-    case AES:
-      return AesKey.generate();
-    case HMAC_SHA1:
-      return HmacKey.generate();
-    case DSA_PRIV:
-      return DsaPrivateKey.generate();
-    case RSA_PRIV:
-      return RsaPrivateKey.generate();
-    case RSA_PUB: case DSA_PUB:
-      throw new KeyczarException("Public keys of type " + type +
-          " must be exported from private keys");
+      case AES:
+        return AesKey.generate();
+      case HMAC_SHA1:
+        return HmacKey.generate();
+      case DSA_PRIV:
+        return DsaPrivateKey.generate();
+      case RSA_PRIV:
+        return RsaPrivateKey.generate();
+      case RSA_PUB: case DSA_PUB:
+        throw new KeyczarException("Public keys of type " + type +
+            " must be exported from private keys");
     }
 
     throw new KeyczarException("Unsupported key type: " + type);

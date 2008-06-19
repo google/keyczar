@@ -37,7 +37,8 @@ import com.google.keyczar.util.Util;
  * </ul>
  * 
  * @author steveweis@gmail.com (Steve Weis)
- *
+ * @author arkajit.dey@gmail.com (Arkajit Dey)
+ * 
  */
 class KeyVersion {
   @Expose private boolean exportable = false;
@@ -79,9 +80,13 @@ class KeyVersion {
   boolean isExportable() {
     return exportable;
   }
-
+  
+  /**
+   * Updates the status of this KeyVersion to given status if not null.
+   * @param status
+   */
   void setStatus(KeyStatus status) {
-    this.status = status;
+    this.status = (status == null) ? this.status : status;
   }
 
   static KeyVersion read(String jsonString) {
