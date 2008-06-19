@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.security.keyczar.uriutil;
+package com.google.security.keyczar.experimental;
 
 import static org.junit.Assert.assertTrue;
 
 import com.google.keyczar.exceptions.KeyczarException;
-import com.google.keyczar.uriutil.UriSigner;
+import com.google.keyczar.experimental.UriSigner;
 
 import org.junit.Test;
 

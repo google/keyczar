@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.keyczar.uriutil;
+package com.google.keyczar.experimental;
 
 import com.google.keyczar.Signer;
 import com.google.keyczar.exceptions.KeyczarException;

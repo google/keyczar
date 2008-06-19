@@ -61,7 +61,6 @@ public enum KeyPurpose {
     return name;
   }
 
-  // TODO: public visibility seems to make more sense? (vs. default)
   public static KeyPurpose getPurpose(int value) {
     switch (value) {
       case 0:
@@ -72,7 +71,7 @@ public enum KeyPurpose {
         return SIGN_AND_VERIFY;
       case 3:
         return VERIFY;
-      case 127: // TODO: Changed from 255 to 127 to match constructor call. OK?
+      case 127:
         return TEST;
     }
     return null;

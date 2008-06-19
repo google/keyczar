@@ -58,7 +58,6 @@ public enum KeyStatus {
     return name;
   }
   
-  //TODO: public visibility seems to make more sense? (vs. default)
   public static KeyStatus getStatus(int value) {
     switch (value) {
       case 0:

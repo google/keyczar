@@ -228,15 +228,7 @@ class AesKey extends KeyczarKey {
 
     @Override
     public int maxOutputSize(int inputLen) {
-      switch (mode) {
-      case ECB:
-        return blockSize;
-      case CTR:
-        return inputLen + blockSize / 2;
-      case CBC:
-      default:
-        return (inputLen / blockSize + 2) * blockSize;
-      }
+      return mode.getOutputSize(blockSize, inputLen);
     }
   }
 }

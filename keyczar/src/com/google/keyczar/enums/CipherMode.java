@@ -63,4 +63,18 @@ public enum CipherMode {
     }
     return null;
   }
+  
+  public int getOutputSize(int blockSize, int inputLength) {
+    if (this == CBC) {
+      return (inputLength / blockSize + 2) * blockSize;
+    } else if (this == ECB) {
+      return blockSize;
+    } else if (this == CTR) {
+      return inputLength + blockSize / 2;
+    } else if (this == DET_CBC) {
+      return (inputLength / blockSize + 1) * blockSize;
+    } else {
+      return 0;
+    }
+  }
 }
