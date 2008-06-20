@@ -16,13 +16,16 @@
 
 package com.google.security.keyczar;
 
+import com.google.keyczar.KeyczarTool;
 import com.google.keyczar.MockKeyczarReader;
 import com.google.keyczar.enums.KeyPurpose;
+import com.google.keyczar.enums.KeyStatus;
 import com.google.keyczar.enums.KeyType;
-import com.google.keyczar.interfaces.KeyczarReader;
+import com.google.keyczar.exceptions.KeyczarException;
 
 import junit.framework.TestCase;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -39,11 +42,17 @@ import org.junit.Test;
  */
 public class KeyczarToolTest extends TestCase {
   
-  KeyczarReader mock;
+  MockKeyczarReader mock;
   
   @Override
-  public final void setUp() {
-    mock = new MockKeyczarReader("TEST", KeyPurpose.TEST, KeyType.TEST);
+  public final void setUp() throws KeyczarException {
+    mock = new MockKeyczarReader("TEST", KeyPurpose.TEST, KeyType.AES);
+    // TODO: using AES for now b/c no genKey method for TEST yet
+    mock.addKey(42, KeyStatus.PRIMARY);
+    mock.addKey(77, KeyStatus.ACTIVE);
+    
+    String[] args = {""};
+    KeyczarTool.main(args);
   }
   
   @Test
@@ -62,8 +71,14 @@ public class KeyczarToolTest extends TestCase {
   }
   
   @Test
-  public final void testPromote() {
-    
+  public final void testPromote() throws KeyczarException {
+    //FIXME: doesn't work yet
+    String[] args = {"promote", "--version=77"};
+    KeyczarTool.setReader(mock); // use mock reader
+    KeyczarTool.main(args);
+    Assert.assertEquals(mock.getStatus(77), KeyStatus.PRIMARY);
+    Assert.assertEquals(mock.getStatus(42), KeyStatus.ACTIVE);
+    KeyczarTool.setReader(null); // remove mock reader
   }
   
   @Test

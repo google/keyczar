@@ -62,7 +62,7 @@ public class KeyczarTool {
    * 
    * @param reader
    */
-  public void setReader(KeyczarReader reader) {
+  public static void setReader(KeyczarReader reader) {
     mock = reader;
   }
 
@@ -293,7 +293,7 @@ public class KeyczarTool {
         }
       }
     }
-    nameFlag = params.get("name");
+    
     locationFlag = params.get("location");
     if (locationFlag != null && !locationFlag.endsWith(File.separator)) {
       locationFlag += File.separator;
@@ -304,6 +304,7 @@ public class KeyczarTool {
       destinationFlag += File.separator;
     }
 
+    nameFlag = params.get("name");
     purposeFlag = KeyPurpose.getPurpose(params.get("purpose"));
     statusFlag = KeyStatus.getStatus(params.get("status")); // default ACTIVE
     asymmetricFlag = params.get("asymmetric");
@@ -316,11 +317,15 @@ public class KeyczarTool {
   
   /**
    * Creates a GenericKeyczar object based on locationFlag if it is set.
+   * Alternatively, it can use the mock KeyczarReader if it is set.
+   * 
    * @return GenericKeyczar if locationFlag set
    * @throws KeyczarException if locationFlag not set
    */
-
   private static GenericKeyczar createGenericKeyczar() throws KeyczarException {
+    if (mock != null) {
+      return new GenericKeyczar(mock);
+    }
     if (locationFlag == null) {
       throw new KeyczarException("Must define a key set location with the "
           + "--location flag");
