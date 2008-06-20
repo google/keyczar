@@ -20,6 +20,7 @@ import com.google.keyczar.enums.KeyPurpose;
 import com.google.keyczar.enums.KeyStatus;
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.interfaces.KeyczarReader;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -53,6 +54,17 @@ public class KeyczarTool {
   static int versionFlag = -1; // default if not set
   static KeyPurpose purposeFlag;
   static KeyStatus statusFlag = KeyStatus.ACTIVE; // default if not set
+  static KeyczarReader mock = null;
+  //TODO(arkajit): do automated testing, mock objects
+  
+  /**
+   * Sets the mock KeyczarReader used only for testing.
+   * 
+   * @param reader
+   */
+  public void setReader(KeyczarReader reader) {
+    mock = reader;
+  }
 
   /**
    * Uses setFlags() to parse command line arguments and delegates to the
@@ -167,7 +179,6 @@ public class KeyczarTool {
    * @throws KeyczarException if location or version flag is not set
    * or promotion is illegal.
    */
-  
   private static void promote() throws KeyczarException {
     if (versionFlag < 0) {
       throw new KeyczarException("Illegal or missing version number.");
@@ -176,7 +187,6 @@ public class KeyczarTool {
     genericKeyczar.promote(versionFlag);
     genericKeyczar.write(locationFlag);
   }
-  
 
   /**
    * If the version flag is set, demotes the status of given key version.
@@ -323,9 +333,13 @@ public class KeyczarTool {
    * updates to meta files on disk and exporting public key sets.
    *
    * @author steveweis@gmail.com (Steve Weis)
-   * 
+   * @author arkajit.dey@gmail.com (Arkajit Dey)
    */
   private static class GenericKeyczar extends Keyczar {
+    GenericKeyczar(KeyczarReader reader) throws KeyczarException {
+      super(reader);
+    }
+    
     GenericKeyczar(String location) throws KeyczarException {
       super(location);
     }
