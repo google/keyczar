@@ -37,13 +37,14 @@ import java.util.HashMap;
  *   <li>pubkey: export a public key set from existing private key store
  *   <li>promote: promote status of a key version in existing store
  *   <li>demote: demote status of a key version in existing store
+ *   <li>revoke: revoke key version in existing store (if scheduled to be)
  * </ul>
  * 
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  * 
  */
-//TODO(arkajit): add revoke command: revoke --location=loc --version=num
+
 public class KeyczarTool {
   static String asymmetricFlag;
   static String destinationFlag;
@@ -208,12 +209,22 @@ public class KeyczarTool {
     genericKeyczar.publicKeyExport(destinationFlag);
   }
 
+  /**
+   * If the version flag is set, revokes the key of the given version.
+   * Pushes update to meta file. Deletes old key file. Requires location
+   * and version flags.
+   * 
+   * @throws KeyczarException if location or version flag is not set or if
+   * unable to delete revoked key file.
+   */
   private static void revoke() throws KeyczarException {
-    // TODO(arkajit): implement me! only allow those scheduled to be revoked!
-    // Need new version # scheme, otherwise revoking shifts list indices in KMD
     GenericKeyczar genericKeyczar = createGenericKeyczar();
     genericKeyczar.revoke(versionFlag);
-    genericKeyczar.write(locationFlag);
+    genericKeyczar.write(locationFlag); // update meta files, key files
+    File revokedVersion = new File(locationFlag+versionFlag);
+    if (!revokedVersion.delete()) { // delete old key file
+      throw new KeyczarException("Unable to delete revoked key file.");
+    }
   }
 
   /**
@@ -232,8 +243,10 @@ public class KeyczarTool {
                      "public keys at a given destination.\n" + 
                  "promote --location=location --version=versionNumber\n" +
                  "\tPromote status of given key version at given location.\n" +
-                 "demote --loation=location --version=versionNumber\n" +
+                 "demote --location=location --version=versionNumber\n" +
                  "\tDemote status of given key version at given location.\n" +
+                 "revoke --location=location --version=versionNumber\n" +
+                 "\tRevoke given key at given location if scheduled to be.\n" +
                  "Flags:\n" + 
                  "\t--name : Define the name of a keystore. Optional.\n" + 
                  "\t--location : Define the file location of a keystore\n" + 

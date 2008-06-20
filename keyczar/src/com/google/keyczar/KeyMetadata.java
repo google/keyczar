@@ -22,7 +22,9 @@ import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.util.Util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Encodes metadata for a set of keys which consists of the following:
@@ -49,6 +51,9 @@ class KeyMetadata {
   @Expose private KeyPurpose purpose = KeyPurpose.TEST;
   @Expose private KeyType type = KeyType.TEST;
   @Expose private ArrayList<KeyVersion> versions = new ArrayList<KeyVersion>();
+  private Map<Integer, KeyVersion> versionMap = 
+      new HashMap<Integer, KeyVersion>(); // link version number to version
+  
 
   private KeyMetadata() {
     // For GSON
@@ -65,14 +70,36 @@ class KeyMetadata {
     return Util.gson().toJson(this);
   }
 
+  /**
+   * Adds given key version to key set.
+   * 
+   * @param version KeyVersion of key to be added
+   * @return true if add was successful, false if version number collides
+   */
   boolean addVersion(KeyVersion version) {
-    return versions.add(version);
+    int versionNumber = version.getVersionNumber();
+    if (!versionMap.containsKey(versionNumber)) {
+      versionMap.put(versionNumber, version);
+      versions.add(version);
+      return true;
+    }
+    return false;
   }
   
-  // FIXME: need to change version number scheme, otherwise removing version
-  // messes up sequential numbering
-  boolean removeVersion(KeyVersion version) {
-    return versions.remove(version);
+  /**
+   * Removes given key version from key set.
+   * 
+   * @param versionNumber integer version number of key to be removed
+   * @return true if remove was successful
+   */
+  boolean removeVersion(int versionNumber) {
+    if (versionMap.containsKey(versionNumber)) {
+      KeyVersion version = versionMap.get(versionNumber);
+      versions.remove(version);
+      versionMap.remove(versionNumber);
+      return true;
+    }
+    return false;
   }
 
   String getName() {
@@ -89,12 +116,12 @@ class KeyMetadata {
   
   /**
    * Returns the version corresponding to the version number.
-   * @param versionNumber should be in range [1,N] for N versions.
-   * @return KeyVersion corresponding to given number, or null if illegal
+   * 
+   * @param versionNumber
+   * @return KeyVersion corresponding to given number, or null if nonexistent
    */
   KeyVersion getVersion(int versionNumber) {
-    return (0 < versionNumber && versionNumber <= versions.size()) ? 
-        versions.get(versionNumber-1) : null;
+    return versionMap.get(versionNumber);
   }
 
   List<KeyVersion> getVersions() {
@@ -102,6 +129,10 @@ class KeyMetadata {
   }
 
   static KeyMetadata read(String jsonString) {
-    return Util.gson().fromJson(jsonString, KeyMetadata.class);
+    KeyMetadata kmd = Util.gson().fromJson(jsonString, KeyMetadata.class);
+    for (KeyVersion version : kmd.getVersions()) {
+      kmd.versionMap.put(version.getVersionNumber(), version);
+    } //FIXME: can we initialize the version map from JSON too?
+    return kmd;
   }
 }

@@ -112,12 +112,21 @@ abstract class Keyczar {
     return kmd.toString();
   }
 
+  /**
+   * TODO: Make this javadoc better.
+   * Adds a new KeyczarKey (new version) to the key store.
+   * 
+   * @param version KeyVersion
+   * @param key KeyczarKey
+   */
   void addKey(KeyVersion version, KeyczarKey key) {
     hashMap.put(new KeyHash(key.hash()), key);
     versionMap.put(version, key);
     kmd.addVersion(version);
   }
 
+  // Commands For KeyczarTool only
+  // TODO: if only for KeyCzarTool, maybe move to GenericKeyczar?
   /**
    * Adds a new key version with given status and next available version 
    * number to key set. Generates a new key of same type (repeated until hash
@@ -126,8 +135,6 @@ abstract class Keyczar {
    * @param status KeyStatus desired for new key version
    * @throws KeyczarException if key type is unsupported.
    */
-  // For KeyczarTool only
-  // TODO: if only for KeyCzarTool, maybe move to GenericKeyczar?
   void addVersion(KeyStatus status) throws KeyczarException {
     KeyVersion version = new KeyVersion(numVersions() + 1, status, false);
     if (status == KeyStatus.PRIMARY) {
@@ -151,12 +158,8 @@ abstract class Keyczar {
    * @throws KeyczarException if invalid version number or trying to promote
    * a primary key.
    */
-  //TODO: also used in KeyczarTool, does it belong in GenericKeyczar?
   void promote(int versionNumber) throws KeyczarException {
-    KeyVersion version = kmd.getVersion(versionNumber);
-    if (version == null) {
-      throw new KeyczarException("No such version number: " + versionNumber);
-    }
+    KeyVersion version = getVersion(versionNumber);
     switch (version.getStatus()) {
       case PRIMARY:
         throw new KeyczarException("Can't promote a primary key.");
@@ -181,12 +184,8 @@ abstract class Keyczar {
    * @throws KeyczarException if invalid version number or trying to demote
    * a key scheduled for revocation.
    */
-  //TODO: also used in KeyczarTool, does it belong in GenericKeyczar?
   void demote(int versionNumber) throws KeyczarException {
-    KeyVersion version = kmd.getVersion(versionNumber);
-    if (version == null) {
-      throw new KeyczarException("No such version number: " + versionNumber);
-    }
+    KeyVersion version = getVersion(versionNumber);
     switch (version.getStatus()) {
       case PRIMARY:
         version.setStatus(KeyStatus.ACTIVE);
@@ -201,16 +200,35 @@ abstract class Keyczar {
     }
   }
   
+  /**
+   * Revokes the key with given version number if it is scheduled to be revoked.
+   * 
+   * @param versionNumber integer version number to be revoked
+   * @throws KeyczarException if version number nonexistent or key is not
+   * scheduled for revocation.
+   */
   void revoke(int versionNumber) throws KeyczarException {
+    KeyVersion version = getVersion(versionNumber);
+    if (version.getStatus() == KeyStatus.SCHEDULED_FOR_REVOCATION) {
+      kmd.removeVersion(versionNumber);
+    } else {
+      throw new KeyczarException("Can't revoke key if not scheduled to be.");
+    }
+  }
+
+  /**
+   * Returns the version corresponding to the version number if it exists.
+   * 
+   * @param versionNumber
+   * @return KeyVersion if it exists
+   * @throws KeyczarException if version number doesn't exist
+   */
+   KeyVersion getVersion(int versionNumber) throws KeyczarException {
     KeyVersion version = kmd.getVersion(versionNumber);
     if (version == null) {
       throw new KeyczarException("No such version number: " + versionNumber);
     }
-    if (version.getStatus() == KeyStatus.SCHEDULED_FOR_REVOCATION) {
-      //TODO(arkajit): implement this! but change version # scheme first!
-    } else {
-      throw new KeyczarException("Can't revoke key if not scheduled to be.");
-    }
+    return version;
   }
   
   KeyczarKey getKey(byte[] hash) {

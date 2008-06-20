@@ -64,9 +64,20 @@ class KeyVersion {
     return Util.gson().toJson(this);
   }
 
-  boolean equals(KeyVersion v) {
-    return getVersionNumber() == v.getVersionNumber()
-        && getStatus() == v.getStatus() && isExportable() == v.isExportable();
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof KeyVersion)) {
+      return false;
+    }
+    KeyVersion v = (KeyVersion) o;
+    return getVersionNumber() == v.getVersionNumber();
+    // only depend on version number, otherwise changing status changes identity
+  }
+  
+  @Override
+  public int hashCode() {
+    return versionNumber % 1000; // identity depends only on version number
+    //TODO: come up with a better hash function?
   }
 
   KeyStatus getStatus() {
