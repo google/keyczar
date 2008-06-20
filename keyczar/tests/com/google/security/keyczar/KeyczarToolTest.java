@@ -17,6 +17,8 @@
 package com.google.security.keyczar;
 
 import com.google.keyczar.MockKeyczarReader;
+import com.google.keyczar.enums.KeyPurpose;
+import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.interfaces.KeyczarReader;
 
 import junit.framework.TestCase;
@@ -28,6 +30,7 @@ import org.junit.Test;
  * 
  * Rough Strategy: mock out KeyczarReader, use to influence creation of a
  * GenericKeyCzar that reads metadata and key info from our mock.
+ * Should also be mocking KeyMetadata?
  * 
  * Need different idea to test create().
  * 
@@ -40,7 +43,7 @@ public class KeyczarToolTest extends TestCase {
   
   @Override
   public final void setUp() {
-    mock = new MockKeyczarReader();
+    mock = new MockKeyczarReader("TEST", KeyPurpose.TEST, KeyType.TEST);
   }
   
   @Test

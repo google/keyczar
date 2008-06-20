@@ -47,11 +47,11 @@ import java.util.Map;
  *
  */
 class KeyMetadata {
-  @Expose private String name = "";
-  @Expose private KeyPurpose purpose = KeyPurpose.TEST;
-  @Expose private KeyType type = KeyType.TEST;
-  @Expose private ArrayList<KeyVersion> versions = new ArrayList<KeyVersion>();
-  private Map<Integer, KeyVersion> versionMap = 
+  @Expose protected String name = "";
+  @Expose protected KeyPurpose purpose = KeyPurpose.TEST;
+  @Expose protected KeyType type = KeyType.TEST;
+  @Expose protected ArrayList<KeyVersion> versions = new ArrayList<KeyVersion>();
+  protected Map<Integer, KeyVersion> versionMap = 
       new HashMap<Integer, KeyVersion>(); // link version number to version
   
 
