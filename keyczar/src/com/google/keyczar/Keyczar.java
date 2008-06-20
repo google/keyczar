@@ -53,8 +53,7 @@ abstract class Keyczar {
     public int hashCode() {
       return (data[0] & 0xFF) << 24 | (data[1] & 0xFF) << 16 | 
         (data[2] & 0xFF) << 8  | (data[3] & 0xFF);
-      // TODO: Check -- changed (data[2] & 0xFF) << 24 to ... << 8. OK?
-      // Also is & 0xFF necessary? doesn't seem to change the value at all?
+      // CHECK: is & 0xFF necessary? doesn't seem to change the value at all?
       // But removing & 0xFF them seems to break last test in CrypterTest, why?
     }
   }
@@ -113,7 +112,7 @@ abstract class Keyczar {
   }
 
   /**
-   * TODO: Make this javadoc better.
+   * JAVADOC: make this better
    * Adds a new KeyczarKey (new version) to the key store.
    * 
    * @param version KeyVersion
@@ -250,8 +249,6 @@ abstract class Keyczar {
     return getKey(primaryVersion);
   }
 
-  //TODO: changed from returning Iterator to Set and using for-each construct
-  // in rest of code instead - OK? any reason to keep Iterator?
   Set<KeyVersion> getVersions() {
     return Collections.unmodifiableSet(versionMap.keySet());
   }

@@ -80,6 +80,6 @@ public enum KeyStatus {
         return SCHEDULED_FOR_REVOCATION;
       }
     }
-    return ACTIVE; // TODO: default status
+    return ACTIVE; // default status
   }
 }

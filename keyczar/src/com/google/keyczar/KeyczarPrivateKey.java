@@ -33,8 +33,7 @@ import java.util.Arrays;
 abstract class KeyczarPrivateKey extends KeyczarKey {
   protected PrivateKey jcePrivateKey;
   
-  @Expose
-  protected byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
+  @Expose protected byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   @Expose protected String pkcs8;
 
   @Override
@@ -48,6 +47,11 @@ abstract class KeyczarPrivateKey extends KeyczarKey {
 
   abstract String getKeyGenAlgorithm();
 
+  /**
+   * Get the public key paired with this private key.
+   * 
+   * @return KeyczarPublicKey associated with this KeyczarPrivateKey
+   */
   abstract KeyczarPublicKey getPublic();
 
   @Override

@@ -44,7 +44,8 @@ public class Encrypter extends Keyczar {
   
   /**
    * Initialize a new Encrypter with a KeyczarReader. The corresponding key set
-   * must have a purpose of either {@link com.google.keyczar.enums.KeyPurpose#ENCRYPT} or
+   * must have a purpose of either 
+   * {@link com.google.keyczar.enums.KeyPurpose#ENCRYPT} or
    * {@link com.google.keyczar.enums.KeyPurpose#DECRYPT_AND_ENCRYPT}.
    * 
    * @param reader A reader to read keys from
@@ -121,7 +122,7 @@ public class Encrypter extends Keyczar {
    * not contain a primary encrypting key, or the output buffer is too small.
    */
   public void encrypt(ByteBuffer input, ByteBuffer output)
-  throws KeyczarException {
+      throws KeyczarException {
     KeyczarKey encryptingKey = getPrimaryKey();
     if (encryptingKey == null) {
       throw new NoPrimaryKeyException() ;

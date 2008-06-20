@@ -16,6 +16,13 @@
 
 package com.google.keyczar.exceptions;
 
+/**
+ * Base class of all possible exceptions thrown by Keyczar.
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
+
 public class KeyczarException extends Exception {
   private static final long serialVersionUID = 7893435087558002323L;
 

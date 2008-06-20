@@ -44,13 +44,14 @@ import java.util.Map;
  * </ul>
  *            
  * @author steveweis@gmail.com (Steve Weis)
- *
+ * @author arkajit.dey@gmail.com (Arkajit Dey)
+ * 
  */
 class KeyMetadata {
   @Expose protected String name = "";
   @Expose protected KeyPurpose purpose = KeyPurpose.TEST;
   @Expose protected KeyType type = KeyType.TEST;
-  @Expose protected ArrayList<KeyVersion> versions = new ArrayList<KeyVersion>();
+  @Expose protected List<KeyVersion> versions = new ArrayList<KeyVersion>();
   protected Map<Integer, KeyVersion> versionMap = 
       new HashMap<Integer, KeyVersion>(); // link version number to version
   
@@ -128,6 +129,13 @@ class KeyMetadata {
     return versions;
   }
 
+  /**
+   * Parses JSON string to create a KeyMetadata object. Initializes it with
+   * versions listed in the JSON array.
+   * 
+   * @param jsonString
+   * @return KeyMetadata corresponding to JSON input
+   */
   static KeyMetadata read(String jsonString) {
     KeyMetadata kmd = Util.gson().fromJson(jsonString, KeyMetadata.class);
     for (KeyVersion version : kmd.getVersions()) {

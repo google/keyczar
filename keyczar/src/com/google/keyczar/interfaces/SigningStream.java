@@ -21,17 +21,22 @@ import com.google.keyczar.exceptions.KeyczarException;
 import java.nio.ByteBuffer;
 
 
-// TODO: Write JavaDocs
+// JAVADOC
 public interface SigningStream extends Stream {
-  // TODO: Write JavaDocs
+  
+  /**
+   * Return the size of the signature or digest in number of bytes.
+   * 
+   * @return size of signature in bytes
+   */
   int digestSize();
 
-  // TODO: Write JavaDocs
+  // JAVADOC
   void initSign() throws KeyczarException;
 
-  // TODO: Write JavaDocs
+  // JAVADOC
   void sign(ByteBuffer output) throws KeyczarException;
 
-  // TODO: Write JavaDocs
+  // JAVADOC
   void updateSign(ByteBuffer input) throws KeyczarException;
 }

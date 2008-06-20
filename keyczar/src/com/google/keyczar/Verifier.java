@@ -58,7 +58,8 @@ public class Verifier extends Keyczar {
   /**
    * Initialize a new Verifier with a key set location. This will attempt to
    * read the keys using a KeyczarFileReader. The corresponding key set
-   * must have a purpose of either {@link com.google.keyczar.enums.KeyPurpose#VERIFY} or
+   * must have a purpose of either 
+   * {@link com.google.keyczar.enums.KeyPurpose#VERIFY} or
    * {@link com.google.keyczar.enums.KeyPurpose#SIGN_AND_VERIFY}
    *  
    * @param fileLocation Directory containing a key set
@@ -142,6 +143,7 @@ public class Verifier extends Keyczar {
 
   @Override
   boolean isAcceptablePurpose(KeyPurpose purpose) {
-    return (purpose == KeyPurpose.VERIFY || purpose == KeyPurpose.SIGN_AND_VERIFY);
+    return (purpose == KeyPurpose.VERIFY || 
+            purpose == KeyPurpose.SIGN_AND_VERIFY);
   }
 }

@@ -21,23 +21,29 @@ import com.google.keyczar.exceptions.KeyczarException;
 import java.nio.ByteBuffer;
 
 
-// TODO: Write JavaDocs
+// JAVADOC
 public interface EncryptingStream extends Stream {
 
-  // TODO: Write JavaDocs
+  // JAVADOC
   int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException;
 
-  // TODO: Write JavaDocs
+  // JAVADOC
   SigningStream getSigningStream() throws KeyczarException;
 
-  // TODO: Write JavaDocs
+  // JAVADOC
   int initEncrypt(ByteBuffer output) throws KeyczarException;
 
-  // TODO: Write JavaDocs
+  /**
+   * Given the length of an input, return the maximum possible length of
+   * the output (including headers, the actual ciphertext, and the signature).
+   * 
+   * @param inputLen
+   * @return maximum length of output
+   */
   int maxOutputSize(int inputLen);
 
-  // TODO: Write JavaDocs
+  // JAVADOC
   int updateEncrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException;
 }

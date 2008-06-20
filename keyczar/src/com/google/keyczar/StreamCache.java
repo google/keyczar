@@ -20,7 +20,13 @@ import com.google.keyczar.interfaces.Stream;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
+/**
+ * Caches StreamQueue objects for KeyczarKeys so they can reused.
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ * @param <T>
+ */
 class StreamCache<T extends Stream> {
   private final ConcurrentHashMap<KeyczarKey, StreamQueue<T>> cacheMap = 
     new ConcurrentHashMap<KeyczarKey, StreamQueue<T>>();
@@ -37,7 +43,6 @@ class StreamCache<T extends Stream> {
     StreamQueue<T> queue = cacheMap.get(key);
     if (queue != null) {
       return queue;
-
     }
     StreamQueue<T> freshQueue = new StreamQueue<T>(); 
     queue = cacheMap.putIfAbsent(key, freshQueue);
@@ -49,6 +54,13 @@ class StreamCache<T extends Stream> {
   }
 }
 
+/**
+ * A thread-safe queue for Streams and their derived classes.
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ * @param <T>
+ */
 class StreamQueue<T extends Stream> extends ConcurrentLinkedQueue<T> {
 
 }

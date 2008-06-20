@@ -47,7 +47,8 @@ import javax.crypto.ShortBufferException;
  * 
  */
 class RsaPrivateKey extends KeyczarPrivateKey {
-  private static final String CRYPT_ALGORITHM = "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
+  private static final String CRYPT_ALGORITHM = 
+      "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
   private static final String KEY_GEN_ALGORITHM = "RSA";
   
   @Expose private RsaPublicKey publicKey;
@@ -214,7 +215,6 @@ class RsaPrivateKey extends KeyczarPrivateKey {
 
     @Override
     public int maxOutputSize(int inputLen) {
-      // TODO Auto-generated method stub
       return getType().getOutputSize() * 2;
     }
 

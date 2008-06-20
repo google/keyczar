@@ -22,7 +22,17 @@ import com.google.keyczar.interfaces.Stream;
 
 import java.nio.ByteBuffer;
 
-//TODO: Write JavaDocs
+/**
+ * Common base wrapper class for different types of KeyczarKeys (e.g. AesKey).
+ * Allows generating arbitrary key types or parsing key info from JSON
+ * string representations. Binds each key to a hash identifier and exposes
+ * the Stream used to access the key material.
+ * 
+ * CHECK: explanation ok? makes sense?
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
 abstract class KeyczarKey {
   void copyHeader(ByteBuffer dest) {
     dest.put(Keyczar.VERSION);
@@ -31,18 +41,24 @@ abstract class KeyczarKey {
 
   abstract Stream getStream() throws KeyczarException;
 
+  /**
+   * Return this key's type
+   * 
+   * @return KeyType of this key
+   */
   abstract KeyType getType();
 
   /**
    * Return this key's hash value
    * 
-   * @return A hash of this key material
+   * @return A byte array hash of this key material
    */
   abstract byte[] hash();
   
   /**
    * Generates private key of the desired type. Cannot generate public
    * key, instead must export public key set from private keys.
+   * 
    * @param type KeyType desired
    * @return KeyczarKey of desired type
    * @throws KeyczarException for unsupported key types
@@ -65,6 +81,16 @@ abstract class KeyczarKey {
     throw new KeyczarException("Unsupported key type: " + type);
   }
   
+  /**
+   * Converts a JSON string representation of a KeyczarKey into the appropriate
+   * KeyczarKey object.
+   * 
+   * @param type KeyType being read from JSON input
+   * @param key JSON String representation of a KeyczarKey
+   * @return KeyczareKey of given type
+   * @throws KeyczarException if type mismatch with JSON input or unsupported
+   * key type
+   */
   static KeyczarKey readKey(KeyType type, String key) throws KeyczarException {
     switch (type) {
     case AES:

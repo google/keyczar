@@ -55,7 +55,7 @@ public class KeyczarTool {
   static KeyPurpose purposeFlag;
   static KeyStatus statusFlag = KeyStatus.ACTIVE; // default if not set
   static KeyczarReader mock = null;
-  //TODO(arkajit): do automated testing, mock objects
+  //TODO: do automated testing, mock objects
   
   /**
    * Sets the mock KeyczarReader used only for testing.
@@ -265,7 +265,8 @@ public class KeyczarTool {
                  "\t--purpose : Define the purpose of a keystore." + 
                      " Must be sign, crypt, or test.\n" + 
                  "\t--status : Define the status of a new key. Must be " +
-                     "primary, active, or scheduled_for_revocation. Optional.\n" +
+                     "primary, active, or scheduled_for_revocation. Optional." +
+                     " Defaults to active.\n" +
                  "\t--version : The version number of key to update.\n" +
                  "\t--asymmetric : Dictate use of asymmetric algorithm. " +
                      "Must be rsa or blank. Optional.\n\t\t\t" +
