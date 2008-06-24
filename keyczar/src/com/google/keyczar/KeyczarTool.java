@@ -54,10 +54,10 @@ public class KeyczarTool {
   static String locationFlag;
   static String nameFlag;
   static int versionFlag = -1; // default if not set
+  static int sizeFlag = -1; // default if not set
   static KeyPurpose purposeFlag;
   static KeyStatus statusFlag = KeyStatus.ACTIVE; // default if not set
   static MockKeyczarReader mock = null;
-  //TODO: do automated testing, mock objects
   
   /**
    * Sets the mock KeyczarReader used only for testing.
@@ -108,7 +108,11 @@ public class KeyczarTool {
    */
   private static void addKey() throws KeyczarException {
     GenericKeyczar genericKeyczar = createGenericKeyczar();
-    genericKeyczar.addVersion(statusFlag);
+    if (sizeFlag == -1) { // use default size
+      genericKeyczar.addVersion(statusFlag);
+    } else { // use given size
+      genericKeyczar.addVersion(statusFlag, sizeFlag);
+    }
     updateGenericKeyczar(genericKeyczar);
   }
   
@@ -256,8 +260,8 @@ public class KeyczarTool {
                  "create --name=name --location=location --purpose=purpose " +
                      "--asymmetric=rsa|dsa\n" +
                  "\tCreates a new key store.\n" + 
-                 "addkey --location=location --status=status\n" +
-                 "\tAdds new key with given status to given location.\n" + 
+                 "addkey --location=location --status=status --size=size\n" +
+                 "\tAdds new key with given status, size to given location.\n" + 
                  "pubkey --location=location --destination=destination\n" +
                  "\tExport a key set at the given location as a set of " + 
                      "public keys at a given destination.\n" + 
@@ -278,10 +282,16 @@ public class KeyczarTool {
                      "primary, active, or scheduled_for_revocation. Optional." +
                      " Defaults to active.\n" +
                  "\t--version : The version number of key to update.\n" +
+                 "\t--size : Key size in bits. Overrides default. Optional.\n" +
                  "\t--asymmetric : Dictate use of asymmetric algorithm. " +
                      "Must be rsa or blank. Optional.\n\t\t\t" +
                      "For sign, defaults to DSA unless rsa indicated. " +
-                     "For crypt, uses RSA.";
+                     "For crypt, uses RSA.\n" +
+                 "Key Sizes: (default first)\n" +
+                 "AES : 128\n" +
+                 "HMAC-SHA1 : 256\n" +
+                 "DSA : 1024\n" +
+                 "RSA : 2048, 1024, 768, 512\n";
     System.out.println(msg);
   }
   
@@ -292,6 +302,7 @@ public class KeyczarTool {
    */
   private static void setFlags(String[] args) {
     HashMap<String, String> params = new HashMap<String, String>();
+    
     for (String arg : args) {
       if (arg.startsWith("--")) {
         arg = arg.substring(2); // Trim off the leading dashes
@@ -322,6 +333,11 @@ public class KeyczarTool {
       versionFlag = Integer.parseInt(params.get("version"));
     } catch (NumberFormatException e) {
       versionFlag = -1; // mark flag as unset, handle above
+    }
+    try {
+      sizeFlag = Integer.parseInt(params.get("size"));
+    } catch (NumberFormatException e) {
+      sizeFlag = -1; // mark flag as unset, handle above
     }
   }
   

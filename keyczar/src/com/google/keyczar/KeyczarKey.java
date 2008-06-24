@@ -36,6 +36,9 @@ import java.util.Arrays;
  *
  */
 abstract class KeyczarKey {
+  
+  int size = getType().defaultSize();
+  
   void copyHeader(ByteBuffer dest) {
     dest.put(Keyczar.VERSION);
     dest.put(hash());
@@ -71,6 +74,10 @@ abstract class KeyczarKey {
    * @return A byte array hash of this key material
    */
   abstract byte[] hash();
+  
+  int size() {
+    return size;
+  }
   
   /**
    * Generates private key of the desired type. Cannot generate public

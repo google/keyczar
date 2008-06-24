@@ -81,6 +81,15 @@ public class MockKeyczarReader implements KeyczarReader {
     return kmd.addVersion(new KeyVersion(versionNumber, status, false));
   }
   
+  public boolean addKey(int versionNumber, KeyStatus status, int size) 
+      throws KeyczarException {
+    kmd.getType().setKeySize(size);
+    KeyczarKey key = KeyczarKey.genKey(kmd.getType());
+    kmd.getType().resetDefaultKeySize();
+    keys.put(versionNumber, key);
+    return kmd.addVersion(new KeyVersion(versionNumber, status, false));
+  }
+  
   public KeyStatus getStatus(int versionNumber) {
     return kmd.getVersion(versionNumber).getStatus();
   }
@@ -103,5 +112,9 @@ public class MockKeyczarReader implements KeyczarReader {
   
   public int numKeys() {
     return keys.size();
+  }
+  
+  public int getKeySize(int versionNumber) {
+    return keys.get(versionNumber).size();
   }
 }

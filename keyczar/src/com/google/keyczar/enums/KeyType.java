@@ -18,15 +18,20 @@ package com.google.keyczar.enums;
 
 import com.google.gson.annotations.Expose;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
- * Encodes different types of keys each with (default size, output size):
+ * Encodes different types of keys each with (default size, output size). Some
+ * have multiple acceptable sizes given in a list with the first as default. 
  * <ul>
- *   <li>AES:         (128, 0)
- *   <li>HMAC SHA1:   (256, 20)
+ *   <li>AES:         ((128, 192, 256), 0)
+ *   <li>HMAC-SHA1:   (256, 20)
  *   <li>DSA Private: (1024, 48)
  *   <li>DSA Public:  (1024, 48)
- *   <li>RSA Private: (2048, 256)
- *   <li>RSA Public:  (2048, 256)
+ *   <li>RSA Private: ((2048, 1024, 768, 512), 256)
+ *   <li>RSA Public:  ((2048, 1024, 768, 512), 256)
  *   <li>Test:        (1, 0)
  * </ul>
  * 
@@ -37,31 +42,84 @@ import com.google.gson.annotations.Expose;
  *   <li>"DSA_PRIV"
  *   <li>"DSA_PUB"
  * </ul>
+ * 
  *  @author steveweis@gmail.com (Steve Weis)
+ *  @author arkajit.dey@gmail.com (Arkajit Dey)
  *  
  */
 public enum KeyType {
-  AES(0, 128, 0), DSA_PRIV(2, 1024, 48), DSA_PUB(3, 1024, 48), HMAC_SHA1(1,
-      256, 20), RSA_PRIV(4, 2048, 256), RSA_PUB(5, 2048, 256), TEST(127, 1, 0);
+  AES("AES", 0, Arrays.asList(128, 192, 256), 0), 
+  HMAC_SHA1("HMAC-SHA1",1, Arrays.asList(256), 20), 
+  DSA_PRIV("DSA Private", 2, Arrays.asList(1024), 48), 
+  DSA_PUB("DSA Public", 3, Arrays.asList(1024), 48), 
+  RSA_PRIV("RSA Private", 4, Arrays.asList(2048, 1024, 768, 512), 256), 
+  RSA_PUB("RSA Public", 5, Arrays.asList(2048, 1024, 768, 512), 256), 
+  TEST("Test", 127, Arrays.asList(1), 0);
 
-  private int defaultSize;
+  private int keySize;
   private int outputSize;
-  @Expose
-  private int value;
+  private List<Integer> acceptableSizes;
+  private String name;
+  @Expose private int value;
 
-  private KeyType(int v, int defaultSize, int outputSize) {
+  /**
+   * Takes a list of acceptable sizes for key lengths. The first one is assumed
+   * to be the default size.
+   * 
+   * @param v
+   * @param sizes
+   * @param outputSize
+   */
+  private KeyType(String n, int v, List<Integer> sizes, int outputSize) {
+    name = n;
     value = v;
-    this.defaultSize = defaultSize;
+    this.acceptableSizes = sizes;
+    this.keySize = sizes.get(0);
     this.outputSize = outputSize;
   }
 
-  // Returns default size in bits
+  /**
+   * Returns the default (recommended) key size.
+   * 
+   * @return default key size in bits
+   */
   public int defaultSize() {
-    return defaultSize;
+    return acceptableSizes.get(0);
+  }
+  
+  /**
+   * Returns currently used key size.
+   * 
+   * @return key size in bits currently being used
+   */
+  public int keySize() {
+    return keySize;
   }
 
   public int getOutputSize() {
     return outputSize;
+  }
+  
+  /**
+   * Changes the key size to be used to given size if acceptable.
+   * 
+   * @param newKeySize
+   */
+  public void setKeySize(int newKeySize) {
+    if (acceptableSizes.contains(newKeySize)) {
+      keySize = newKeySize;
+    }
+  }
+  
+  /**
+   * Resets the key size to the default length.
+   */
+  public void resetDefaultKeySize() {
+    keySize = acceptableSizes.get(0);
+  }
+  
+  public List<Integer> getAcceptableSizes() {
+    return Collections.unmodifiableList(acceptableSizes);
   }
 
   int getValue() {
@@ -86,5 +144,10 @@ public enum KeyType {
         return TEST;
     }
     return null;
+  }
+  
+  @Override
+  public String toString() {
+    return name;
   }
 }

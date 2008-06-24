@@ -29,20 +29,17 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * TODO: automate KeyczarTool testing
  * 
- * Rough Strategy: mock out KeyczarReader, use to influence creation of a
+ * Mocks out KeyczarReader and uses it to influence the creation of a
  * GenericKeyCzar that reads metadata and key info from our mock.
- * Should also be mocking KeyMetadata?
- * 
- * Need different idea to test create().
  * 
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  * 
  */
 public class KeyczarToolTest extends TestCase {
   
-  MockKeyczarReader mock, pubMock;
+  MockKeyczarReader mock;
+  MockKeyczarReader pubMock;
   
   @Override
   public final void setUp() throws KeyczarException {
@@ -50,6 +47,10 @@ public class KeyczarToolTest extends TestCase {
     mock.addKey(42, KeyStatus.PRIMARY);
     mock.addKey(77, KeyStatus.ACTIVE);
     mock.addKey(99, KeyStatus.SCHEDULED_FOR_REVOCATION);
+    
+    pubMock = new MockKeyczarReader("PUBLIC-TEST", 
+        KeyPurpose.DECRYPT_AND_ENCRYPT, KeyType.RSA_PRIV);
+    
     KeyczarTool.setReader(mock); // use mock reader
   }
   
@@ -76,12 +77,17 @@ public class KeyczarToolTest extends TestCase {
   }
   
   @Test
+  public final void testAddKeySizeFlag() throws KeyczarException {
+    String[] args = {"addkey", "--status=active", "--size=192"};
+    KeyczarTool.main(args);
+    Assert.assertEquals(192, mock.getKeySize(4)); // adding fourth key
+  }
+  
+  @Test
   public final void testPublicKeys() throws KeyczarException {
-    pubMock = new MockKeyczarReader("PUBLIC-TEST", 
-        KeyPurpose.DECRYPT_AND_ENCRYPT, KeyType.RSA_PRIV);
-    pubMock.addKey(33, KeyStatus.PRIMARY);
+    pubMock.addKey(33, KeyStatus.PRIMARY, 512); // use 512-bit keys for speed
+    KeyczarTool.setReader(pubMock); // use pubMock reader instead
     Assert.assertFalse(pubMock.exportedPublicKeySet());
-    KeyczarTool.setReader(pubMock);
     String[] args = {"pubkey"};
     KeyczarTool.main(args);
     Assert.assertTrue(pubMock.exportedPublicKeySet());
@@ -115,6 +121,7 @@ public class KeyczarToolTest extends TestCase {
   @Override
   public final void tearDown() {
     KeyczarTool.setReader(null); // remove mock reader
-    pubMock = mock = null;
+    mock = null;
+    pubMock = null;
   }
 }

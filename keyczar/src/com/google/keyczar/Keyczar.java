@@ -112,8 +112,8 @@ abstract class Keyczar {
   }
 
   /**
-   * JAVADOC: make this better
-   * Adds a new KeyczarKey (new version) to the key store.
+   * Adds a new KeyczarKey (new version) to the key store. Associates it
+   * with given version. Adds new KeyVersion to the key set.
    * 
    * @param version KeyVersion
    * @param key KeyczarKey
@@ -126,15 +126,28 @@ abstract class Keyczar {
 
   // Commands For KeyczarTool only
   // TODO: if only for KeyCzarTool, maybe move to GenericKeyczar?
+  
+  /**
+   * Uses default key size to add a new key version.
+   * 
+   * @param status KeyStatus desired for new key version
+   */
+  void addVersion(KeyStatus status) throws KeyczarException {
+    addVersion(status, kmd.getType().defaultSize());
+  }
+  
   /**
    * Adds a new key version with given status and next available version 
    * number to key set. Generates a new key of same type (repeated until hash
-   * identifier is unique) for this version.
+   * identifier is unique) for this version. Uses supplied key size in lieu
+   * of the default key size. If this is an unacceptable key size, defaults
+   * to the default key size.
    * 
    * @param status KeyStatus desired for new key version
+   * @param keySize desired key size in bits
    * @throws KeyczarException if key type is unsupported.
    */
-  void addVersion(KeyStatus status) throws KeyczarException {
+  void addVersion(KeyStatus status, int keySize) throws KeyczarException {
     KeyVersion version = new KeyVersion(numVersions() + 1, status, false);
     if (status == KeyStatus.PRIMARY) {
       if (primaryVersion != null) {
@@ -143,9 +156,19 @@ abstract class Keyczar {
       primaryVersion = version;
     }
     KeyczarKey key;
+    kmd.getType().setKeySize(keySize);
+    if (keySize < kmd.getType().defaultSize()) { // print a warning statement
+      System.out.println("WARNING: " + keySize + "-bit key size is less than " +
+          "the recommended default key size of " + kmd.getType().defaultSize() + 
+          " bits for " + kmd.getType().toString() + " keys.");
+    }
     do { // Make sure no keys collide on their identifiers
       key = KeyczarKey.genKey(kmd.getType());
     } while (getKey(key.hash()) != null);
+    kmd.getType().resetDefaultKeySize(); //TODO: bit clunky, any workaround
+    // avoiding programmer having to reset default size each time?
+    // maybe automatically reset after any calls to KeyType.keySize()?
+    // this would only allow one time changes to keySize
     addKey(version, key);
   }
   

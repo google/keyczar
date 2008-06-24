@@ -102,7 +102,9 @@ class RsaPrivateKey extends KeyczarPrivateKey {
     RsaPrivateKey key = new RsaPrivateKey();
     try {
       KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_GEN_ALGORITHM);
-      kpg.initialize(key.getType().defaultSize());
+      key.size = key.getType().keySize();
+      key.publicKey.size = key.size;
+      kpg.initialize(key.size());
       KeyPair pair = kpg.generateKeyPair();
       key.jcePrivateKey = pair.getPrivate();
       key.getPublic().set(pair.getPublic().getEncoded());
