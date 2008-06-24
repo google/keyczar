@@ -27,11 +27,17 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
+/**
+ * A wrapper for a public key associated with a X.509 certificate.
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
 abstract class KeyczarPublicKey extends KeyczarKey {
   private PublicKey jcePublicKey;
   
   @Expose private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
-  @Expose private KeyType type = getType();
+  @SuppressWarnings("unused") @Expose private KeyType type = getType();
   @Expose String x509;
 
   public PublicKey getJcePublicKey() {

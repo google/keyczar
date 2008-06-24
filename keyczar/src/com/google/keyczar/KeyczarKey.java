@@ -19,6 +19,7 @@ package com.google.keyczar;
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.interfaces.Stream;
+import com.google.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -28,8 +29,6 @@ import java.util.Arrays;
  * Allows generating arbitrary key types or parsing key info from JSON
  * string representations. Binds each key to a hash identifier and exposes
  * the Stream used to access the key material.
- * 
- * CHECK: explanation ok? makes sense?
  *
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
@@ -56,7 +55,7 @@ abstract class KeyczarKey {
   
   @Override
   public int hashCode() {
-    return this.hash().hashCode(); // CHECK: is this OK?
+    return Util.toInt(this.hash());
   }
 
   abstract Stream getStream() throws KeyczarException;

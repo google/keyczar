@@ -30,6 +30,13 @@ import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 
+/**
+ * A wrapper for a private key paired asymmetrically with a public key.
+ * Encodes info using PCKS #8 standard.
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
 abstract class KeyczarPrivateKey extends KeyczarKey {
   protected PrivateKey jcePrivateKey;
   
