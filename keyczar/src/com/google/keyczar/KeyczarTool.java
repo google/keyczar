@@ -26,7 +26,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 
 /**
@@ -54,7 +56,7 @@ public class KeyczarTool {
   static int versionFlag = -1; // default if not set
   static KeyPurpose purposeFlag;
   static KeyStatus statusFlag = KeyStatus.ACTIVE; // default if not set
-  static KeyczarReader mock = null;
+  static MockKeyczarReader mock = null;
   //TODO: do automated testing, mock objects
   
   /**
@@ -62,7 +64,7 @@ public class KeyczarTool {
    * 
    * @param reader
    */
-  public static void setReader(KeyczarReader reader) {
+  public static void setReader(MockKeyczarReader reader) {
     mock = reader;
   }
 
@@ -107,7 +109,7 @@ public class KeyczarTool {
   private static void addKey() throws KeyczarException {
     GenericKeyczar genericKeyczar = createGenericKeyczar();
     genericKeyczar.addVersion(statusFlag);
-    genericKeyczar.write(locationFlag);
+    updateGenericKeyczar(genericKeyczar);
   }
   
   /**
@@ -122,10 +124,6 @@ public class KeyczarTool {
     if (purposeFlag == null) {
       throw new KeyczarException("Must define a key set purpose with the "
           + "--purpose flag. Valid purposes are sign, crypt, and test.");
-    }
-    if (locationFlag == null) {
-      throw new KeyczarException("Must define a key set location with the "
-          + "--location flag.");
     }
     switch (purposeFlag) {
       case TEST:
@@ -158,17 +156,25 @@ public class KeyczarTool {
     if (kmd == null) {
       throw new KeyczarException("Unsupported purpose: " + purposeFlag);
     }
-    File file = new File(locationFlag + KeyczarFileReader.META_FILE);
-    if (file.exists()) {
-      throw new KeyczarException("File already exists: " + file);
-    }
-
-    try {
-      FileOutputStream metaOutput = new FileOutputStream(file);
-      metaOutput.write(kmd.toString().getBytes());
-      metaOutput.close();
-    } catch (IOException e) {
-      throw new KeyczarException("Unable to write to : " + file.toString(), e);
+    if (mock == null) {
+      if (locationFlag == null) {
+        throw new KeyczarException("Must define a key set location with the "
+            + "--location flag.");
+      }
+      File file = new File(locationFlag + KeyczarFileReader.META_FILE);
+      if (file.exists()) {
+        throw new KeyczarException("File already exists: " + file);
+      }
+      try {
+        FileOutputStream metaOutput = new FileOutputStream(file);
+        metaOutput.write(kmd.toString().getBytes());
+        metaOutput.close();
+      } catch (IOException e) {
+        throw new KeyczarException("Unable to write to : " + 
+            file.toString(), e);
+      }
+    } else { // for testing purposes, update mock kmd
+      mock.setMetadata(kmd);
     }
   }
 
@@ -185,7 +191,7 @@ public class KeyczarTool {
     }
     GenericKeyczar genericKeyczar = createGenericKeyczar();
     genericKeyczar.promote(versionFlag);
-    genericKeyczar.write(locationFlag);
+    updateGenericKeyczar(genericKeyczar);
   }
 
   /**
@@ -201,7 +207,7 @@ public class KeyczarTool {
     }
     GenericKeyczar genericKeyczar = createGenericKeyczar();
     genericKeyczar.demote(versionFlag);
-    genericKeyczar.write(locationFlag);
+    updateGenericKeyczar(genericKeyczar);
   }
   
   /**
@@ -211,7 +217,7 @@ public class KeyczarTool {
    * @throws KeyczarException if location or destination flag is not set.
    */
   private static void publicKeys() throws KeyczarException {
-    if (destinationFlag == null) {
+    if (mock == null && destinationFlag == null) { // only if not testing
       throw new KeyczarException("Must define a public key set location with"
           + " the --destination flag");
     }
@@ -230,10 +236,14 @@ public class KeyczarTool {
   private static void revoke() throws KeyczarException {
     GenericKeyczar genericKeyczar = createGenericKeyczar();
     genericKeyczar.revoke(versionFlag);
-    genericKeyczar.write(locationFlag); // update meta files, key files
-    File revokedVersion = new File(locationFlag+versionFlag);
-    if (!revokedVersion.delete()) { // delete old key file
-      throw new KeyczarException("Unable to delete revoked key file.");
+    updateGenericKeyczar(genericKeyczar); // update meta files, key files
+    if (mock == null) { // not necessary for testing
+      File revokedVersion = new File(locationFlag + versionFlag);
+      if (!revokedVersion.delete()) { // delete old key file
+        throw new KeyczarException("Unable to delete revoked key file.");
+      }
+    } else {
+      mock.removeKey(versionFlag);
     }
   }
 
@@ -332,6 +342,18 @@ public class KeyczarTool {
     }
     return new GenericKeyczar(locationFlag);
   }
+  
+  private static void updateGenericKeyczar(GenericKeyczar genericKeyczar) 
+      throws KeyczarException {
+    if (mock != null) {
+      mock.setMetadata(genericKeyczar.getMetadata()); // update metadata
+      for (KeyVersion version : genericKeyczar.getVersions()) {
+        mock.setKey(version.getVersionNumber(), genericKeyczar.getKey(version));
+      } // update key data
+    } else {
+      genericKeyczar.write(locationFlag);
+    }
+  }
 
   /**
    * Wrapper class to access Keyczar utility methods of reading and manipulating
@@ -359,7 +381,7 @@ public class KeyczarTool {
      * For the managed key set, exports a set of public keys at given location.
      * Client's key must be a private key for DSA or RSA. For DSA private key,
      * purpose must be SIGN_AND_VERIFY. For RSA private key, purpose can also
-     * be DECRYPT_AND_ENCRYPT.
+     * be DECRYPT_AND_ENCRYPT.KeyczarTool
      * 
      * @param destination String pathname of directory to export key set to
      * @throws KeyczarException if unable to export key set.
@@ -392,14 +414,24 @@ public class KeyczarTool {
         throw new KeyczarException("Cannot export public keys for key type: "
             + kmd.getType() + " and purpose " + kmd.getPurpose());
       }
+      
       for (KeyVersion version : getVersions()) {
-        KeyczarKey publicKey = ((KeyczarPrivateKey) getKey(version))
-            .getPublic();
-        writeFile(publicKey.toString(), destination
-            + version.getVersionNumber());
+        KeyczarKey publicKey =
+          ((KeyczarPrivateKey) getKey(version)).getPublic();
+        if (mock == null) {
+          writeFile(publicKey.toString(), destination
+              + version.getVersionNumber());
+        } else { // for testing, update mock object
+          mock.setPublicKey(version.getVersionNumber(), publicKey);
+        }
         publicKmd.addVersion(version);
       }
-      writeFile(publicKmd.toString(), destination + KeyczarFileReader.META_FILE);
+      if (mock == null) {
+        writeFile(publicKmd.toString(), destination
+            + KeyczarFileReader.META_FILE);
+      } else { // for testing, update mock public kmd
+        mock.setPublicKeyMetadata(publicKmd);
+      }
     }
 
     /**

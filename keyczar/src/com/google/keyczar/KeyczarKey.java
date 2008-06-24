@@ -21,6 +21,7 @@ import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.interfaces.Stream;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * Common base wrapper class for different types of KeyczarKeys (e.g. AesKey).
@@ -31,12 +32,28 @@ import java.nio.ByteBuffer;
  * CHECK: explanation ok? makes sense?
  *
  * @author steveweis@gmail.com (Steve Weis)
+ * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
 abstract class KeyczarKey {
   void copyHeader(ByteBuffer dest) {
     dest.put(Keyczar.VERSION);
     dest.put(hash());
+  }
+  
+  @Override
+  public boolean equals(Object o) {
+    try {
+      KeyczarKey key = (KeyczarKey) o;
+      return Arrays.equals(key.hash(), this.hash());
+    } catch (ClassCastException e) {
+      return false;
+    }
+  }
+  
+  @Override
+  public int hashCode() {
+    return this.hash().hashCode(); // CHECK: is this OK?
   }
 
   abstract Stream getStream() throws KeyczarException;

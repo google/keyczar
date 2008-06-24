@@ -69,7 +69,7 @@ class AesKey extends KeyczarKey {
     byte[] aesBytes = Util.rand(key.getType().defaultSize() / 8);
     key.aesKeyString = Base64Coder.encode(aesBytes);
     key.mode = DEFAULT_MODE;
-    key.hmacKey.generate();
+    key.hmacKey = HmacKey.generate(); // CHECK: changed this, OK?
     byte[] fullHash = Util.prefixHash(aesBytes, key.hmacKey.hash());
     System.arraycopy(fullHash, 0, key.hash, 0, key.hash.length);
     key.init();

@@ -42,58 +42,79 @@ import org.junit.Test;
  */
 public class KeyczarToolTest extends TestCase {
   
-  MockKeyczarReader mock;
+  MockKeyczarReader mock, pubMock;
   
   @Override
   public final void setUp() throws KeyczarException {
-    mock = new MockKeyczarReader("TEST", KeyPurpose.TEST, KeyType.AES);
-    // TODO: using AES for now b/c no genKey method for TEST yet
+    mock = new MockKeyczarReader("TEST", KeyPurpose.ENCRYPT, KeyType.AES);
     mock.addKey(42, KeyStatus.PRIMARY);
     mock.addKey(77, KeyStatus.ACTIVE);
-    
-    String[] args = {""};
+    mock.addKey(99, KeyStatus.SCHEDULED_FOR_REVOCATION);
+    KeyczarTool.setReader(mock); // use mock reader
+  }
+  
+  @Test
+  public final void testCreate() throws KeyczarException {
+    String[] args = {"create", "--name=create-test", "--purpose=test"};
+    Assert.assertEquals("TEST", mock.name());
+    Assert.assertEquals(KeyPurpose.ENCRYPT, mock.purpose());
+    Assert.assertEquals(KeyType.AES, mock.type());
     KeyczarTool.main(args);
+    Assert.assertEquals("create-test", mock.name());
+    Assert.assertEquals(KeyPurpose.TEST, mock.purpose());
+    Assert.assertEquals(KeyType.TEST, mock.type());
   }
   
   @Test
-  public final void testCreate() {
-    
+  public final void testAddKey() throws KeyczarException {
+    Assert.assertEquals(3, mock.numKeys());
+    String[] args = {"addkey", "--status=primary"};
+    KeyczarTool.main(args);
+    Assert.assertEquals(4, mock.numKeys());
+    Assert.assertEquals(KeyStatus.ACTIVE, mock.getStatus(42));
+    // can only have one primary key, old primary key should be demoted
   }
   
   @Test
-  public final void testAddKey() {
-    
-  }
-  
-  @Test
-  public final void testPublicKeys() {
-    
+  public final void testPublicKeys() throws KeyczarException {
+    pubMock = new MockKeyczarReader("PUBLIC-TEST", 
+        KeyPurpose.DECRYPT_AND_ENCRYPT, KeyType.RSA_PRIV);
+    pubMock.addKey(33, KeyStatus.PRIMARY);
+    Assert.assertFalse(pubMock.exportedPublicKeySet());
+    KeyczarTool.setReader(pubMock);
+    String[] args = {"pubkey"};
+    KeyczarTool.main(args);
+    Assert.assertTrue(pubMock.exportedPublicKeySet());
+    Assert.assertTrue(pubMock.hasPublicKey(33));
   }
   
   @Test
   public final void testPromote() throws KeyczarException {
-    //FIXME: doesn't work yet
     String[] args = {"promote", "--version=77"};
-    KeyczarTool.setReader(mock); // use mock reader
     KeyczarTool.main(args);
-    Assert.assertEquals(mock.getStatus(77), KeyStatus.PRIMARY);
-    Assert.assertEquals(mock.getStatus(42), KeyStatus.ACTIVE);
-    KeyczarTool.setReader(null); // remove mock reader
+    Assert.assertEquals(KeyStatus.PRIMARY, mock.getStatus(77));
+    Assert.assertEquals(KeyStatus.ACTIVE, mock.getStatus(42));
   }
   
   @Test
-  public final void testDemote() {
-    
+  public final void testDemote() throws KeyczarException {
+    String[] args = {"demote", "--version=77"};
+    KeyczarTool.main(args);
+    Assert.assertEquals(KeyStatus.SCHEDULED_FOR_REVOCATION, 
+        mock.getStatus(77));
   }
   
   @Test
-  public final void testRevoke() {
-    
+  public final void testRevoke() throws KeyczarException {
+    String[] args = {"revoke", "--version=99"};
+    Assert.assertTrue(mock.existsVersion(99));
+    KeyczarTool.main(args);
+    Assert.assertFalse(mock.existsVersion(99));
   }
   
   @Override
   public final void tearDown() {
-    
+    KeyczarTool.setReader(null); // remove mock reader
+    pubMock = mock = null;
   }
-
 }
