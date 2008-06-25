@@ -1,31 +1,30 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- WARNING: Eclipse auto-generated file.
               Any modifications will be overwritten.
               To include a user specific buildfile here, simply create one in the same
               directory with the processing instruction <?eclipse.ant.import?>
               as the first entry and export the buildfile again. -->
-<project basedir="." default="build" name="Keyczar">
+<project basedir="." default="build" name="Keyczar-Java">
     <property environment="env"/>
-    <property name="ECLIPSE_HOME" value="../../../../opt/eclipse"/>
     <property name="junit.output.dir" value="junit"/>
     <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="1.6"/>
-    <property name="source" value="1.6"/>
+    <property name="target" value="1.5"/>
+    <property name="source" value="1.5"/>
     <path id="JUnit 4.libraryclasspath">
-        <pathelement location="${ECLIPSE_HOME}/plugins/org.junit4_4.3.1/junit.jar"/>
+        <pathelement location="../../../Desktop/eclipse/plugins/org.junit4_4.3.1/junit.jar"/>
     </path>
-    <path id="Keyczar.classpath">
+    <path id="Keyczar-Java.classpath">
         <pathelement location="bin"/>
         <path refid="JUnit 4.libraryclasspath"/>
-        <pathelement location="third_party/gson/gson-1.0.jar"/>
+        <pathelement location="third_party/gson/gson.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
         <copy includeemptydirs="false" todir="bin">
-            <fileset dir="src" excludes="**/BUILD, **/OWNERS, **/*.launch, **/*.java"/>
+            <fileset dir="src" excludes="**/*.launch, **/*.java"/>
         </copy>
         <copy includeemptydirs="false" todir="bin">
-            <fileset dir="tests" excludes="**/BUILD, **/OWNERS, **/*.launch, **/*.java"/>
+            <fileset dir="tests" excludes="**/*.launch, **/*.java"/>
         </copy>
     </target>
     <target name="clean">
@@ -38,11 +37,11 @@
         <echo message="${ant.project.name}: ${ant.file}"/>
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
             <src path="src"/>
-            <classpath refid="Keyczar.classpath"/>
+            <classpath refid="Keyczar-Java.classpath"/>
         </javac>
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
             <src path="tests"/>
-            <classpath refid="Keyczar.classpath"/>
+            <classpath refid="Keyczar-Java.classpath"/>
         </javac>
     </target>
     <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
@@ -59,72 +58,13 @@
         <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
         <antcall target="build"/>
     </target>
-    <target name="UriSignerTest">
+    <target name="AllTests">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="com.google.keyczar.uriutil.UriSignerTest" todir="${junit.output.dir}"/>
-            <classpath refid="Keyczar.classpath"/>
+            <test name="com.google.security.keyczar.AllTests" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar-Java.classpath"/>
         </junit>
-    </target>
-    <target name="CrypterTest (1)">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="com.google.keyczar.CrypterTest" todir="${junit.output.dir}"/>
-            <classpath refid="Keyczar.classpath"/>
-        </junit>
-    </target>
-    <target name="ThreadTest">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="com.google.keyczar.ThreadTest" todir="${junit.output.dir}"/>
-            <classpath refid="Keyczar.classpath"/>
-        </junit>
-    </target>
-    <target name="UtilTest">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="keyczar.internal.UtilTest" todir="${junit.output.dir}"/>
-            <classpath refid="Keyczar.classpath"/>
-        </junit>
-    </target>
-    <target name="KeyczarTool addkey">
-        <java classname="com.google.keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="addkey  --location=/home/sweis/temp --status=primary"/>
-            <classpath refid="Keyczar.classpath"/>
-        </java>
-    </target>
-    <target name="KeyczarTool create signing">
-        <java classname="com.google.keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="create --name=Testing --purpose=sign --location=/home/sweis/temp --asymmetric"/>
-            <classpath refid="Keyczar.classpath"/>
-        </java>
-    </target>
-    <target name="KeyczarTool create crypting">
-        <java classname="com.google.keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="create --name=Testing --purpose=crypt --location=/home/sweis/workspace/Keyczar/testdata/rsa/ --asymmetric"/>
-            <classpath refid="Keyczar.classpath"/>
-        </java>
-    </target>
-    <target name="KeyczarTool pubkey">
-        <java classname="com.google.keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="pubkey  --location=/home/sweis/temp --destination=/home/sweis/temp/public"/>
-            <classpath refid="Keyczar.classpath"/>
-        </java>
-    </target>
-    <target name="KeyczarTool create signing rsa">
-        <java classname="com.google.keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="create --name=Testing --purpose=sign --location=/home/sweis/temp --asymmetric=rsa"/>
-            <classpath refid="Keyczar.classpath"/>
-        </java>
-    </target>
-    <target name="CryptPerformanceTest">
-        <java classname="com.google.keyczar.CryptPerformanceTest" failonerror="true" fork="yes">
-            <classpath refid="Keyczar.classpath"/>
-        </java>
     </target>
     <target name="junitreport">
         <junitreport todir="${junit.output.dir}">
