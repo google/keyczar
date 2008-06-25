@@ -16,10 +16,6 @@
 
 package com.google.security.keyczar;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import com.google.keyczar.Signer;
 import com.google.keyczar.Verifier;
 import com.google.keyczar.exceptions.BadVersionException;
@@ -27,11 +23,19 @@ import com.google.keyczar.exceptions.KeyNotFoundException;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.exceptions.ShortSignatureException;
 
+import junit.framework.TestCase;
+
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-public class SignerTest {
+/**
+ * Tests Signer class for signing and verifying with HMAC, RSA, and DSA.
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
+public class SignerTest extends TestCase {
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test input";
   private byte[] inputBytes = input.getBytes();
@@ -185,5 +189,4 @@ public class SignerTest {
     sig[1] ^= 45;
      
   }
-
 }

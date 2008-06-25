@@ -16,16 +16,23 @@
 
 package com.google.security.keyczar;
 
-import static org.junit.Assert.assertEquals;
-
 import com.google.keyczar.Crypter;
 import com.google.keyczar.exceptions.KeyNotFoundException;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.exceptions.ShortCiphertextException;
 
+import junit.framework.TestCase;
+
 import org.junit.Test;
 
-public class CrypterTest {
+/**
+ * Tests Crypter class for encrypting and decrypting with RSA and AES. 
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
+
+public class CrypterTest extends TestCase {
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
   private String aesActiveCiphertext = 
