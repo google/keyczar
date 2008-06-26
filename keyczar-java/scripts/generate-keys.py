@@ -1,8 +1,5 @@
 #script to generate all keys
 import os
-#TODO: try jython to access Crypter & Signer
-#from com.google.keyczar import Crypter
-#from com.google.keyczar import Signer
 
 gsonPath = "/usr/local/google/users/arkajit/eclipse/workspaces/keymaster/" + \
            "Keyczar-Java/third_party/gson/gson.jar"
@@ -52,19 +49,27 @@ def pubKey(loc, dest):
   os.chdir(binPath)
   os.system(cmd + " pubkey" + args)
 
-#generate private key sets
-print "Generating private key sets..."
-for (loc, purpose, asymmetric) in keyFiles:
-  cleanUp(loc)
-  create(name="test", loc=loc, purpose=purpose, asymmetric=asymmetric)
-  addKey(loc)
-  addKey(loc, "primary")
+def useKey(loc, dest, data="This is a test"):
+  args = createFlags(loc=loc, dest=dest)
+  os.chdir(binPath)
+  os.system(cmd + ' usekey "' + data + '"' + args)
+  
 
-#export public key sets
-print "Exporting public key sets..."
-for (loc, dest) in pubKeyFiles:
-  cleanUp(dest)
-  pubKey(loc, dest)
+#print useKey("../testdata/aes/", "../testdata/aes/output")
 
-print "Done!"
+##generate private key sets
+#print "Generating private key sets..."
+#for (loc, purpose, asymmetric) in keyFiles:
+#  cleanUp(loc)
+#  create(name="test", loc=loc, purpose=purpose, asymmetric=asymmetric)
+#  addKey(loc, "primary")
+#  addKey(loc, "primary")
+#
+##export public key sets
+#print "Exporting public key sets..."
+#for (loc, dest) in pubKeyFiles:
+#  cleanUp(dest)
+#  pubKey(loc, dest)
+#
+#print "Done!"
   

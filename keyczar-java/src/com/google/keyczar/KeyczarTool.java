@@ -93,10 +93,34 @@ public class KeyczarTool {
         demote();
       } else if (args[0].equals("revoke")) {
         revoke();
+      } else if (args[0].equals("usekey") && args.length > 2) {
+        useKey(args[1]);
       } else { // unsupported command
         printUsage();
       }
     }
+  }
+
+  private static void useKey(String msg) throws KeyczarException {
+    GenericKeyczar genericKeyczar = createGenericKeyczar();
+    if (destinationFlag == null) {
+      throw new KeyczarException("Must define a public key set location with"
+          + " the --destination flag");
+    }
+    String answer = "";
+    switch (genericKeyczar.getMetadata().getPurpose()) {
+      case DECRYPT_AND_ENCRYPT: 
+        Crypter crypter = new Crypter(locationFlag);
+        answer = crypter.encrypt(msg);
+        break;
+      case SIGN_AND_VERIFY:
+        Signer signer = new Signer(locationFlag);
+        answer = signer.sign(msg);
+        break;
+      default:
+        throw new KeyczarException("Unsupported purpose!");
+    }
+    genericKeyczar.writeFile(answer, destinationFlag);
   }
 
   /**
