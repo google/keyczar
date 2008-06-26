@@ -25,6 +25,8 @@ import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.VerifyingStream;
 import com.google.keyczar.util.Base64Coder;
 
+import org.apache.log4j.Logger;
+
 import java.nio.ByteBuffer;
 
 
@@ -39,6 +41,7 @@ import java.nio.ByteBuffer;
 * @author steveweis@gmail.com (Steve Weis)
 */
 public class Verifier extends Keyczar {
+  private static final Logger logger = Logger.getLogger(Verifier.class);
   private static final StreamCache<VerifyingStream> VERIFY_CACHE
     = new StreamCache<VerifyingStream>();
 
@@ -94,6 +97,7 @@ public class Verifier extends Keyczar {
    */
   public boolean verify(ByteBuffer data, ByteBuffer signature)
       throws KeyczarException {
+    logger.info("Verifying " + data.remaining() + " bytes");
     if (signature.remaining() < HEADER_SIZE) {
       throw new ShortSignatureException(signature.remaining());
     }

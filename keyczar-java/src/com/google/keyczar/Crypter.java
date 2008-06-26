@@ -27,6 +27,8 @@ import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.VerifyingStream;
 import com.google.keyczar.util.Base64Coder;
 
+import org.apache.log4j.Logger;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -35,7 +37,8 @@ import java.nio.ByteBuffer;
  * 
  * @author steveweis@gmail.com (Steve Weis)
  */
-public class Crypter extends Encrypter { 
+public class Crypter extends Encrypter {
+  private static final Logger logger = Logger.getLogger(Crypter.class);
   private static final StreamCache<DecryptingStream> CRYPT_CACHE
     = new StreamCache<DecryptingStream>();
   
@@ -95,6 +98,7 @@ public class Crypter extends Encrypter {
    */
   public void decrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
+    logger.info("Decrypting " + input.remaining() + " bytes");
     if (input.remaining() < HEADER_SIZE) {
       throw new ShortCiphertextException(input.remaining());
     }

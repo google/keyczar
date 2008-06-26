@@ -22,6 +22,12 @@ import com.google.security.keyczar.experimental.UriSignerTest;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+
+import java.util.Map;
+
 /**
  * Suite of all unit tests.
  * 
@@ -29,6 +35,10 @@ import junit.framework.TestSuite;
  *
  */
 public class AllTests extends TestSuite {
+  static {
+    PropertyConfigurator.configure("./tests/log4j.properties");
+  }
+  
   public static Test suite() {
     TestSuite suite = new TestSuite();
     suite.addTestSuite(CrypterTest.class);

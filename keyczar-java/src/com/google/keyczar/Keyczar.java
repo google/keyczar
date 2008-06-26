@@ -21,6 +21,8 @@ import com.google.keyczar.enums.KeyStatus;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.interfaces.KeyczarReader;
 
+import org.apache.log4j.Logger;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
@@ -34,6 +36,8 @@ import java.util.Set;
  * 
  */
 abstract class Keyczar {
+  private static final Logger logger = Logger.getLogger(Keyczar.class);
+
   private class KeyHash {
     private byte[] data;
     
@@ -90,6 +94,7 @@ abstract class Keyczar {
       }
       KeyczarKey key = KeyczarKey.readKey(kmd.getType(),
           reader.getKey(version.getVersionNumber()));
+      logger.info("Read version: " + version);
       hashMap.put(new KeyHash(key.hash()), key);
       versionMap.put(version, key);
     }
@@ -170,6 +175,7 @@ abstract class Keyczar {
     // maybe automatically reset after any calls to KeyType.keySize()?
     // this would only allow one time changes to keySize
     addKey(version, key);
+    logger.info("Created new version: " + version);
   }
   
   /**
@@ -182,6 +188,7 @@ abstract class Keyczar {
    */
   void promote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
+    logger.info("Promoting version: " + version);
     switch (version.getStatus()) {
       case PRIMARY:
         throw new KeyczarException("Can't promote a primary key.");
@@ -208,6 +215,7 @@ abstract class Keyczar {
    */
   void demote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
+    logger.info("Demoting version: " + version);
     switch (version.getStatus()) {
       case PRIMARY:
         version.setStatus(KeyStatus.ACTIVE);

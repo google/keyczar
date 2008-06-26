@@ -25,6 +25,8 @@ import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.util.Base64Coder;
 
+import org.apache.log4j.Logger;
+
 import java.nio.ByteBuffer;
 
 
@@ -39,6 +41,7 @@ import java.nio.ByteBuffer;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public class Encrypter extends Keyczar {  
+  private static final Logger logger = Logger.getLogger(Encrypter.class);
   private final StreamQueue<EncryptingStream> ENCRYPT_QUEUE =
     new StreamQueue<EncryptingStream>();
   
@@ -123,6 +126,7 @@ public class Encrypter extends Keyczar {
    */
   public void encrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
+    logger.info("Encrypting " + input.remaining() + " bytes");
     KeyczarKey encryptingKey = getPrimaryKey();
     if (encryptingKey == null) {
       throw new NoPrimaryKeyException() ;

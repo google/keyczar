@@ -24,8 +24,9 @@ import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.util.Base64Coder;
 
-import java.nio.ByteBuffer;
+import org.apache.log4j.Logger;
 
+import java.nio.ByteBuffer;
 
 /**
  * Signers may both encrypt and decrypt data using sets of symmetric or private
@@ -37,6 +38,7 @@ import java.nio.ByteBuffer;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public class Signer extends Verifier {
+  private static final Logger logger = Logger.getLogger(Signer.class);
   private final StreamQueue<SigningStream> SIGN_QUEUE =
     new StreamQueue<SigningStream>();
 
@@ -106,6 +108,7 @@ public class Signer extends Verifier {
    * JCE exception occurs. 
    */
   public void sign(ByteBuffer input, ByteBuffer output) throws KeyczarException {
+    logger.info("Signing " + input.remaining() + " bytes");
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
       throw new NoPrimaryKeyException();
