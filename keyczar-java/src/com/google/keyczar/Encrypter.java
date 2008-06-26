@@ -42,6 +42,7 @@ import java.nio.ByteBuffer;
  */
 public class Encrypter extends Keyczar {  
   private static final Logger logger = Logger.getLogger(Encrypter.class);
+  static final int ENCRYPT_CHUNK_SIZE = 1024;
   private final StreamQueue<EncryptingStream> ENCRYPT_QUEUE =
     new StreamQueue<EncryptingStream>();
   
@@ -119,7 +120,7 @@ public class Encrypter extends Keyczar {
   /**
    * Encrypt the given input ByteBuffer.
    * 
-   * @param input The input buffer to encrypt.
+   * @param input The input buffer to encrypt. Will not be modified
    * @param output The buffer to write the output ciphertext to.
    * @throws KeyczarException If there is a JCE exception, the key set does
    * not contain a primary encrypting key, or the output buffer is too small.
@@ -135,24 +136,38 @@ public class Encrypter extends Keyczar {
     if (cryptStream == null) {
       cryptStream = (EncryptingStream) encryptingKey.getStream();
     }
+    // Initialize the signing stream
     SigningStream signStream = cryptStream.getSigningStream();
-
+    signStream.initSign();
+    
     // Write the key header
     output.mark();
+    ByteBuffer outputToSign = output.asReadOnlyBuffer();
     encryptingKey.copyHeader(output);
 
     // Write the IV. May be an empty array of zero length
     cryptStream.initEncrypt(output);
-    cryptStream.doFinalEncrypt(input, output);
-
-    // The output ciphertext is between output.mark() and output.limit()
-    output.limit(output.position());
-
-    // Sign the ciphertext output
-    signStream.initSign();
-    output.reset();
-    signStream.updateSign(output);
-    output.limit(output.limit() + signStream.digestSize());
+    
+    ByteBuffer inputCopy = input.asReadOnlyBuffer();
+    while (inputCopy.remaining() > ENCRYPT_CHUNK_SIZE) {
+      ByteBuffer inputChunk = inputCopy.slice();
+      inputChunk.limit(ENCRYPT_CHUNK_SIZE);
+      cryptStream.updateEncrypt(inputChunk, output);
+      inputCopy.position(inputCopy.position() + ENCRYPT_CHUNK_SIZE);
+      
+      outputToSign.limit(output.position());
+      signStream.updateSign(outputToSign);
+      outputToSign.position(output.position());
+    }
+    
+    // Sign any remaining plaintext
+    cryptStream.doFinalEncrypt(inputCopy, output);
+    output.limit(output.position() + signStream.digestSize());
+    
+    // Set the limit on the output to sign
+    outputToSign.limit(output.position());
+    signStream.updateSign(outputToSign);
+    // Sign the final block of ciphertext output
     signStream.sign(output);
     ENCRYPT_QUEUE.add(cryptStream);
   }

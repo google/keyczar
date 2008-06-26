@@ -38,6 +38,7 @@ import java.nio.ByteBuffer;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public class Crypter extends Encrypter {
+  private static final int DECRYPT_CHUNK_SIZE = 1024;
   private static final Logger logger = Logger.getLogger(Crypter.class);
   private static final StreamCache<DecryptingStream> CRYPT_CACHE
     = new StreamCache<DecryptingStream>();
@@ -90,7 +91,7 @@ public class Crypter extends Encrypter {
    * Decrypt the given ciphertext input ByteBuffer and write the decrypted
    * plaintext to the output ByteBuffer 
    *  
-   * @param input The input ciphertext
+   * @param input The input ciphertext. Will not be modified.
    * @param output The output buffer to write the decrypted plaintext
    * @throws KeyczarException If the input is malformed, the ciphertext
    * signature does not verify, the decryption key is not found, or a JCE
@@ -98,54 +99,71 @@ public class Crypter extends Encrypter {
    */
   public void decrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
-    logger.info("Decrypting " + input.remaining() + " bytes");
-    if (input.remaining() < HEADER_SIZE) {
-      throw new ShortCiphertextException(input.remaining());
+    ByteBuffer inputCopy = input.asReadOnlyBuffer();
+    logger.info("Decrypting " + inputCopy.remaining() + " bytes");
+    if (inputCopy.remaining() < HEADER_SIZE) {
+      throw new ShortCiphertextException(inputCopy.remaining());
     }
-    input.mark();
-    byte version = input.get();
+    byte version = inputCopy.get();
     if (version != VERSION) {
       throw new BadVersionException(version);
     }
 
     byte[] hash = new byte[KEY_HASH_SIZE];
-    input.get(hash);
+    inputCopy.get(hash);
     KeyczarKey key = getKey(hash);
     if (key == null) {
       throw new KeyNotFoundException(hash);
     }
-
+    
+    // The input to decrypt is now positioned at the start of the ciphertext
+    inputCopy.mark();
+    
     DecryptingStream cryptStream = CRYPT_CACHE.get(key); 
     if (cryptStream == null) {
       cryptStream = (DecryptingStream) key.getStream();
     }
-    VerifyingStream verifyStream = cryptStream.getVerifyingStream();
-
-    // Set the read limit to the end of the ciphertext
-    if (verifyStream.digestSize() > 0) {
-      if (input.remaining() < verifyStream.digestSize()) {
-        throw new ShortCiphertextException(input.remaining());
-      }
-
-      input.position(input.limit() - verifyStream.digestSize());
-      ByteBuffer signature = input.slice();
-
-      // Reset the position of the input to the header
-      input.reset();
-      input.limit(input.limit() - verifyStream.digestSize());
-      verifyStream.initVerify();
-      verifyStream.updateVerify(input);
-      if (!verifyStream.verify(signature)) {
-        throw new InvalidSignatureException();
-      }
-      // Rewind back to the start of the ciphertext
-      input.reset();
-      input.position(input.position() + HEADER_SIZE);
+    
+    VerifyingStream verifyStream = cryptStream.getVerifyingStream();    
+    if (inputCopy.remaining() < verifyStream.digestSize()) {
+      throw new ShortCiphertextException(inputCopy.remaining());
     }
-
-    cryptStream.initDecrypt(input);
+    
+    // Slice off the signature into another buffer
+    inputCopy.position(inputCopy.limit() - verifyStream.digestSize());
+    ByteBuffer signature = inputCopy.slice();
+    
+    // Reset the position of the input to start of the ciphertext
+    inputCopy.reset();
+    inputCopy.limit(inputCopy.limit() - verifyStream.digestSize());
+    
+    // Initialize the crypt stream. This may read an IV if any.
+    cryptStream.initDecrypt(inputCopy);
+    
+    // Verify the header and IV if any
+    ByteBuffer headerAndIvToVerify = input.asReadOnlyBuffer();
+    headerAndIvToVerify.limit(inputCopy.position());
+    verifyStream.initVerify();
+    verifyStream.updateVerify(headerAndIvToVerify);
+    
     output.mark();
-    cryptStream.doFinalDecrypt(input, output);
+    // This will process large input in chunks, rather than all at once. This
+    // avoids making two passes through memory. 
+    while (inputCopy.remaining() > DECRYPT_CHUNK_SIZE) {
+      ByteBuffer ciphertextChunk = inputCopy.slice();
+      ciphertextChunk.limit(DECRYPT_CHUNK_SIZE);
+      cryptStream.updateDecrypt(ciphertextChunk, output);
+      ciphertextChunk.rewind();
+      verifyStream.updateVerify(ciphertextChunk);
+      inputCopy.position(inputCopy.position() + DECRYPT_CHUNK_SIZE);
+    }
+    inputCopy.mark();
+    verifyStream.updateVerify(inputCopy);
+    if (!verifyStream.verify(signature)) {
+      throw new InvalidSignatureException();
+    }
+    inputCopy.reset();
+    cryptStream.doFinalDecrypt(inputCopy, output);
     output.limit(output.position());
     CRYPT_CACHE.put(key, cryptStream);
   }
