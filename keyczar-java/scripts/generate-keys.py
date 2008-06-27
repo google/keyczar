@@ -50,27 +50,26 @@ def pubKey(loc, dest):
   os.chdir(binPath)
   os.system(cmd + " pubkey" + args)
 
-def useKey(loc, dest, data="This is a test"):
+def useKey(loc, dest, data="This is some test data"):
   args = createFlags(loc=loc, dest=dest)
   os.chdir(binPath)
   os.system(cmd + ' usekey "' + data + '"' + args)
-  
 
-print useKey("../testdata/aes/", "../testdata/aes/output")
+#generate private key sets
+print "Generating private key sets and golden outputs..."
+for (loc, purpose, asymmetric) in keyFiles:
+  cleanUp(loc)
+  create(name="test", loc=loc, purpose=purpose, asymmetric=asymmetric)
+  addKey(loc, "primary")
+  useKey(loc, loc+"1out")
+  addKey(loc, "primary")
+  useKey(loc, loc+"2out")
 
-##generate private key sets
-#print "Generating private key sets..."
-#for (loc, purpose, asymmetric) in keyFiles:
-#  cleanUp(loc)
-#  create(name="test", loc=loc, purpose=purpose, asymmetric=asymmetric)
-#  addKey(loc, "primary")
-#  addKey(loc, "primary")
-#
-##export public key sets
-#print "Exporting public key sets..."
-#for (loc, dest) in pubKeyFiles:
-#  cleanUp(dest)
-#  pubKey(loc, dest)
-#
-#print "Done!"
+#export public key sets
+print "Exporting public key sets..."
+for (loc, dest) in pubKeyFiles:
+  cleanUp(dest)
+  pubKey(loc, dest)
+
+print "Done!"
   
