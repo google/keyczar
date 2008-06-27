@@ -130,8 +130,10 @@ abstract class Keyczar {
   }
 
   // Commands For KeyczarTool only
-  // TODO: if only for KeyCzarTool, maybe move to GenericKeyczar?
-  
+  // TODO(arkajit.dey): if only for KeyCzarTool, maybe move to GenericKeyczar?
+  // sweis: Then we need to make kmd package readable. I prefer having it
+  // private. Plus, we may want to dynamically add new key versions in the
+  // future.
   /**
    * Uses default key size to add a new key version.
    * 
