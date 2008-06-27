@@ -20,19 +20,60 @@ import com.google.keyczar.exceptions.KeyczarException;
 
 import java.nio.ByteBuffer;
 
-
-// JAVADOC
+/**
+ * Encrypting streams are able to encrypt and sign data.
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
 public interface EncryptingStream extends Stream {
-
-  // JAVADOC
-  int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
-      throws KeyczarException;
-
-  // JAVADOC
+  
+  /**
+   * Returns a Signing Stream able to sign ciphertexts produced by this
+   * EncryptingStream.
+   * 
+   * @return A Signg Stream associated with this stream
+   */
   SigningStream getSigningStream() throws KeyczarException;
 
-  // JAVADOC
+  /**
+   * Initializes this stream for encryption. May write some header material to
+   * the output, for example an IV. This must be called before
+   * updateEncrypt() or doFinalEncrypt().
+   * 
+   * @param output The output where any IV material will be written.
+   * @return The number of bytes written to the output.
+   * @throws KeyczarException If there is any error initializing this Stream;
+   *                          typically this would be a Java JCE exception.
+   */
   int initEncrypt(ByteBuffer output) throws KeyczarException;
+
+  /**
+   * Update with more input to encrypt. Write any encrypted output to the given
+   * output buffer. Some encrypted output may be buffered and not written out
+   * until the next call to updateEncrypt() or doFinalEncrypt().
+   * 
+   * @param input The input to encrypt.
+   * @param output The encrypted output, if any. 
+   * @return The number of bytes written to the output.
+   * @throws KeyczarException If a Java JCE error occurs or the output buffer
+   *                          is too small.
+   */
+  int updateEncrypt(ByteBuffer input, ByteBuffer output)
+      throws KeyczarException;
+  
+  /**
+   * Do the final encrypt operation. Reads any remaining bytes from the input,
+   * encrypts them, and writes the ciphertext to the output.
+   * 
+   * @param input The input to encrypt.
+   * @param output The encrypted output, if any. 
+   * @return The number of bytes written to the output.
+   * @throws KeyczarException If a Java JCE error occurs or the output buffer
+   *                          is too small.
+   */
+  int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
+      throws KeyczarException;
 
   /**
    * Given the length of an input, return the maximum possible length of
@@ -42,8 +83,4 @@ public interface EncryptingStream extends Stream {
    * @return maximum length of output
    */
   int maxOutputSize(int inputLen);
-
-  // JAVADOC
-  int updateEncrypt(ByteBuffer input, ByteBuffer output)
-      throws KeyczarException;
 }

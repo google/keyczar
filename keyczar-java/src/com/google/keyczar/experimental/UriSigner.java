@@ -65,7 +65,7 @@ public class UriSigner {
    * Entire URI is signed.
    * 
    * @param uri to be signed
-   * @param sigParam, String name of signature parameter
+   * @param sigParam String name of signature parameter
    * @return signed uri with signature in given parameter
    * @throws KeyczarException
    */

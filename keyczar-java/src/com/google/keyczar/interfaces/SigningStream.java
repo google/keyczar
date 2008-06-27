@@ -20,9 +20,37 @@ import com.google.keyczar.exceptions.KeyczarException;
 
 import java.nio.ByteBuffer;
 
-
-// JAVADOC
+/**
+ * Signing streams are able to sign data
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
 public interface SigningStream extends Stream {
+  
+  /**
+   * Initializes this stream for signing. 
+   * 
+   * @throws KeyczarException If any Java JCE errors occur
+   */
+  void initSign() throws KeyczarException;
+
+  /**
+   * Update the signature with the given input.
+   * 
+   * @param input The input to sign.
+   * @throws KeyczarException If any Java JCE errors occur
+   */
+  void updateSign(ByteBuffer input) throws KeyczarException;
+  
+  /**
+   * Sign the updated input and output the signature in the given buffer.
+   * 
+   * @param output The output where the signature will be written.
+   * @throws KeyczarException If any Java JCE errors occur or the output buffer
+   *                          is too small.
+   */
+  void sign(ByteBuffer output) throws KeyczarException;
   
   /**
    * Return the size of the signature or digest in number of bytes.
@@ -30,13 +58,4 @@ public interface SigningStream extends Stream {
    * @return size of signature in bytes
    */
   int digestSize();
-
-  // JAVADOC
-  void initSign() throws KeyczarException;
-
-  // JAVADOC
-  void sign(ByteBuffer output) throws KeyczarException;
-
-  // JAVADOC
-  void updateSign(ByteBuffer input) throws KeyczarException;
 }

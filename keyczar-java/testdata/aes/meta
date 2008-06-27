@@ -1,1 +1,1 @@
-{"name":"Testing","purpose":"DECRYPT_AND_ENCRYPT","type":"AES","versions":[{"versionNumber":1,"status":"PRIMARY","exportable":false},{"versionNumber":2,"status":"ACTIVE","exportable":false}]}
+{"name":"test","purpose":"DECRYPT_AND_ENCRYPT","type":"AES","versions":[{"exportable":false,"status":"ACTIVE","versionNumber":1},{"exportable":false,"status":"PRIMARY","versionNumber":2}]}

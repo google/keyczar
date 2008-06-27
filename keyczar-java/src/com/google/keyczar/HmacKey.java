@@ -150,7 +150,7 @@ class HmacKey extends KeyczarKey {
 
     @Override
     public boolean verify(ByteBuffer signature) {
-      byte[] sigBytes = new byte[digestSize()];
+      byte[] sigBytes = new byte[signature.remaining()];
       signature.get(sigBytes);
 
       return Arrays.equals(hmac.doFinal(), sigBytes);

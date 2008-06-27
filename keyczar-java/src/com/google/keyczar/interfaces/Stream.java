@@ -16,6 +16,12 @@
 
 package com.google.keyczar.interfaces;
 
+/**
+ * This is a placeholder class that is extended by various stream types
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
 public interface Stream {
 
 }

@@ -20,17 +20,40 @@ import com.google.keyczar.exceptions.KeyczarException;
 
 import java.nio.ByteBuffer;
 
-
+/**
+ * Verifying Streams are able to verify data that has been signed by 
+ * {@link SigningStream} objects.
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ *
+ */
 public interface VerifyingStream extends Stream {
-  // TODO: Write JavaDocs
+  /**
+   * @return The size of digests that this stream will verify.
+   */
   int digestSize();
 
-  // TODO: Write JavaDocs
+  /**
+   * Initialize this stream for verification. This must be called before 
+   * updateVerify().
+   * 
+   * @throws KeyczarException If a Java JCE error occurs.
+   */
   void initVerify() throws KeyczarException;
 
-  // TODO: Write JavaDocs
+  /**
+   * Update the data which has been signed.
+   * 
+   * @param input Data which has been signed.
+   * @throws KeyczarException If a Java JCE error occurs.
+   */
   void updateVerify(ByteBuffer input) throws KeyczarException;
 
-  // TODO: Write JavaDocs
+  /**
+   * Verify that the given signautre is a valid signautre on the updated data.
+   * @param signature The signature to verify
+   * @return Whether the given signature is valid.
+   * @throws KeyczarException If a Java JCE error occurs.
+   */
   boolean verify(ByteBuffer signature) throws KeyczarException;
 }
