@@ -1,11 +1,12 @@
 #script to generate all keys
 import os
 
-gsonPath = "/usr/local/google/users/arkajit/eclipse/workspaces/keymaster/" + \
-           "Keyczar-Java/third_party/gson/gson.jar"
-binPath = "/usr/local/google/users/arkajit/eclipse/workspaces/keymaster/" + \
-           "Keyczar-Java/bin/"
-paths = binPath + ":" + gsonPath
+cwd = os.getcwd()
+
+gsonPath = cwd + "/../third_party/gson/gson.jar"
+log4jPath = cwd + "/../third_party/log4j/log4j-1.2.15.jar"
+binPath = cwd + "/../bin/"
+paths = binPath + ":" + gsonPath + ":" + log4jPath
 cmd = "java -cp " + paths + " com.google.keyczar.KeyczarTool"
 
 keyFiles = [("../testdata/aes/", "crypt", None),
