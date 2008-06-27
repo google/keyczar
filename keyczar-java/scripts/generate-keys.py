@@ -55,7 +55,7 @@ def useKey(loc, dest, data="This is a test"):
   os.system(cmd + ' usekey "' + data + '"' + args)
   
 
-#print useKey("../testdata/aes/", "../testdata/aes/output")
+print useKey("../testdata/aes/", "../testdata/aes/output")
 
 ##generate private key sets
 #print "Generating private key sets..."
