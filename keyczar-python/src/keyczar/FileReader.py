@@ -1,14 +1,6 @@
 import KeyData
+import Reader
 import simplejson
-
-class Reader:
-  "Place holder"
-
-  def metadata(self):
-    pass
-  
-  def key(self, version):
-    pass
 
 class FileReader(Reader):
   def __init__(self, location):
@@ -16,9 +8,8 @@ class FileReader(Reader):
     
   def metadata(self):
     metadata = simplejson.loads(open(self.location + "/meta").read())
-    return KeyData.KeyMetadata(metadata['name'], metadata['purpose'], metadata['type'], metadata['versions'])
+    return KeyData.KeyMetadata.read(metadata)
 
   def key(self, version):
     keyData = simplejson.loads(open(self.location + "/" + str(version)).read())
-    print keyData
-    return KeyData.Key(keyData['type'], keyData['hash'])
+    return KeyData.Key.read(keyData)

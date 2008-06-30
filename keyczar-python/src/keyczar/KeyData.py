@@ -1,13 +1,13 @@
 class KeyType: 
   def __init__(self, name, id, sizes, outputSize):
-    self.name = name
+    self._name = name
     self.id = id
     self.sizes = sizes
     self.size = sizes[0]  #default size
     self.outputSize = outputSize
 
   def __str__(self):
-    return self.name
+    return self._name
   
   def outputSize(self):
     return self.outputSize
@@ -36,8 +36,9 @@ class KeyTypes:
            DSA_PUB.id : DSA_PUB, RSA_PRIV.id : RSA_PRIV, RSA_PUB.id : RSA_PUB}
   
   def getType(value):
-    if types.has_key(value):
-      return types[value]
+    if KeyTypes.types.has_key(value):
+      return KeyTypes.types[value]
+  getType = staticmethod(getType)
 
 class Key:
   """Parent class for Keyczar Keys"""
@@ -57,13 +58,46 @@ class Key:
   
   def hash(self):
     return self.hash
+  
+  def read(data):
+    """
+    Return Key object constructed from JSON dictionary.
+    
+    @param data dictionary read from JSON file
+    @return Key object
+    """
+    return Key(data['type'], data['hash'])
+  read = staticmethod(read)
 
 class KeyMetadata:
   def __init__(self, name, purpose, type, versions):
-    self.name = name
-    self.purpose = purpose
-    self.type = type
-    self.versions = versions
+    self._name = name
+    self._purpose = purpose
+    self._type = type
+    self._versions = versions
     
   def __str__(self):
-    return "%s - %s - %s" % (self.name, self.purpose, self.type)
+    return "%s - %s - %s" % (self._name, self._purpose, self._type)
+  
+  def name(self):
+    return self._name
+  
+  def purpose(self):
+    return self._purpose
+  
+  def type(self):
+    return self._type
+  
+  def versions(self):
+    return self._versions
+  
+  def read(kmd):
+    """
+    Return KeyMetadata object constructed from JSON dictionary.
+    
+    @param kmd dictionary read from JSON file
+    @return KeyMetadata object
+    """
+    return KeyMetadata(kmd['name'], kmd['purpose'], 
+                       kmd['type'], kmd['versions'])
+  read = staticmethod(read)
