@@ -1,0 +1,13 @@
+#TeXlipse project settings
+#Mon Jun 30 09:44:52 PDT 2008
+builderNum=0
+outputDir=
+makeIndSty=
+bibrefDir=
+outputFormat=pdf
+tempDir=tmp
+mainTexFile=keyczar.tex
+outputFile=keyczar.pdf
+langSpell=en
+markDer=true
+srcDir=

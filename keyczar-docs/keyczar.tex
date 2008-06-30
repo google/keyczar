@@ -1,0 +1,167 @@
+
+\documentclass{llncs}
+
+\title{Keyczar: A Cryptographic Toolkit}
+\author{Arkajit Dey\inst{1} and Stephen Weis\inst{2}}
+
+\institute{Stanford University, Stanford, CA, USA 94305
+\and
+Google Inc., Mountain View, CA, USA 94043}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Keyczar's goal is to make it easier for application developers to safely use
+cryptography. Keyczar defaults to safe algorithms, key lengths, and
+modes, and prevents developers from inadvertently exposing key material. It
+uses a simple, extensible key versioning system that allows developers to
+easily rotate and retire keys. 
+\end{abstract}
+
+\section{Introduction and Philosophy}
+
+The motivation for Keyczar grew out of a need to make cryptography easier to
+use for developers. Developers often can make simple mistakes when using
+cryptography that can create security vulnerabilities. For instance, developers
+may use obsolete algorithms, weak key lengths, improper cipher modes, or
+unsafely compose cryptographic operations. Another common developer mistake is
+to fail to provision for key rotation or even to hard-code keys in source
+code.
+
+Keyczar's goal is to address these issues by providing a simple application
+programming interface (API) for developers that handles basic cryptographic
+details. Keyczar also provides a simple key versioning and management system
+based on directories of human-readable flat files, which will be refered to as
+{\it keysets}. 
+\section{Using KeyczarTool}
+
+All Keyczar keys are generated with the stand-alone
+{\tt KeyczarTool} utility located in the {\tt com.google.keyczar} Java package.
+
+\subsection{KeyczarTool create}
+KeyczarTool must first create a new keyset using the {\tt create} command. A
+newly created keyset will initially contain just a metadata file, described in
+section \ref{metadata}.
+
+{\tt KeyczarTool create} requires {\tt location} and {\tt purpose} command-line
+flags that specify the location of the key set and its purpose. Valid purposes
+are currently {\tt crypt} and {\tt sign}. The create command may also take
+an optional {\tt name} flag to give a newly created keyset a name. If the {\tt
+asymmetric} flag is specified, the newly created set will contain asymmetric
+keys.
+
+Some example {\tt create} commands:
+\begin{itemize}
+\item Create a symmetric signing (HMAC) keyset: \\
+{\tt KeyczarTool create --location=/path/to/keyset --purpose=sign}
+\item Create a symmetric crypting (AES) keyset named ``Test'': \\
+{\tt KeyczarTool create --location=/path/to/keyset --purpose=crypt --name=Test}
+\item Create an asymmetric signing (DSA) keyset: \\
+{\tt KeyczarTool create --location=/path/to/keyset --purpose=sign --asymmetric} 
+\end{itemize}
+
+\subsection{KeyczarTool addkey}
+
+All Keyczar keys are created using the {\tt addkey} command. This command
+requites a keyset {\tt location} flag and may optionally have {\tt status} and
+{\tt size} flags. Section \ref{status} describes the meaning of the status
+values, but briefly they are {\it primary}, {\it active}, and {\it
+scheduled\_for\_revocation}. The default status is {\it active}. User-specified
+key sizes are supported, although it is recommneded that on default or larger
+key  sizes are used.
+
+The {\tt addkey} command will create a new file in the keyset directory with an
+integer version number that is one greater than the currently largest version.
+Version numbers start from 1 and are described in Section \ref{versions}. For
+example, if the current keyset contains the key file {\tt 1}, a new key version
+will be created in the file {\tt 2}. Some example {\tt addkey} commands:
+\begin{itemize}
+\item Create a new primary key: \\
+{\tt KeyczarTool addkey --location=/path/to/keyset --status=primary}
+\item Create a new active key: \\
+{\tt KeyczarTool addkey --location=/path/to/keyset} 
+\end{itemize}
+
+\subsection{KeyczarTool pubkey}
+
+Public keys in Keyczar are exported from existing asymmetric key sets. The
+{\tt pubkey} command requires both an existing {\tt location} flag and a {\tt
+destination} where public keys will be exported. If the keyset under {\tt
+location} was not created with an {\tt asymmetric} flag, then a {\tt pubkey}
+command will fail. An example {\tt pubkey} command works as follows: \\
+{\tt KeyczarTool pubkey --location=/path/to/keyset --destination=/path/to/dest}
+
+\subsection{KeyczarTool promote, demote, and revoke}
+
+The {\tt promote}, {\tt demote}, and {\tt revoke} commands are used to change
+key status values. Each of these commands require a {\tt location} and {\tt
+version} flag. 
+
+Promoting an {\it active} key will raise its status to
+{\it primary}, and promoting a {\it scheduled\_for\_revocation} status will make
+it {\it primary}. There can only be a single {\it primary} key in a given key
+set. 
+
+Similarly, {\tt demote} will lower a {\it primary} key to {\it active},
+and an {\it active} key to {\it scheduled\_for\_revocation}. The {\tt revoke}
+command will only work for {\it scheduled\_for\_revocation} status values.
+The {\tt revoke} command will permenantly delete key material, so should be
+used with caution.
+
+Some example {\tt promote}, {\tt demote}, and {\tt revoke} commands. Suppose
+that key version 1 initially has an {\it active} status:
+\begin{itemize}
+\item Promote {\it active} version 1 to {\it primary}: \\
+{\tt KeyczarTool promote --location=/path/to/keyset --version=1}
+\item Demote {\it primary} version 1 back to {\it active}: \\
+{\tt KeyczarTool demote --location=/path/to/keyset --version=1}
+\item Demote {\it active} version 1 to {\it scheduled\_for\_revocation}: \\
+{\tt KeyczarTool demote --location=/path/to/keyset --version=1}
+\item Revoke the {\it scheduled\_for\_revocation} version 1:  
+\item {\tt KeyczarTool revoke --location=/path/to/keyset --version=1}
+\end{itemize}
+
+
+
+
+\section{Using Java Keyczar}
+
+\section{Using Python Keyczar}
+
+\section{Keys}
+\subsection{Key Metadata}\label{metadata}
+\subsection{Identifying Headers}
+\subsection{Versions}\label{versions}
+\subsection{Statuses}\label{status}
+\subsection{Formats}
+\subsubsection{HMAC}
+\subsubsection{AES}
+\subsubsection{RSA}
+\subsubsection{DSA}
+
+
+
+\section{Output Formats}
+\subsection{Ciphertext}
+\subsection{Signatures}
+
+\section{Licenses and Dependencies}
+
+Keyczar is available under an Apache 2.0 license \cite{apache2}. Java Keyczar
+depends on the Google GSON package \cite{google-gson}. It also relies on the
+Java's {\tt javax.crypto} package, which may not be available in  all locales
+due to local laws and regulations.
+
+Python Keyczar depends on the Python Cryptography Toolkit \cite{python-crypto}
+and simplejson \cite{simplejson}. 
+
+\section{Acknowledgements}
+
+Thanks to Ben Laurie, Marius Schilder, and Neil Daswani for their
+contributions.
+
+\bibliography{keyczar}
+\bibliographystyle{acm}
+
+\end{document}
