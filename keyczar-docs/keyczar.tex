@@ -1,10 +1,11 @@
-
 \documentclass{llncs}
+
+\usepackage{fullpage} % uses full 8.5x11 page
 
 \title{Keyczar: A Cryptographic Toolkit}
 \author{Arkajit Dey\inst{1} and Stephen Weis\inst{2}}
 
-\institute{Stanford University, Stanford, CA, USA 94305
+\institute{Massachusetts Institute of Technology, Cambridge, MA, USA 02139
 \and
 Google Inc., Mountain View, CA, USA 94043}
 
@@ -33,7 +34,7 @@ Keyczar's goal is to address these issues by providing a simple application
 programming interface (API) for developers that handles basic cryptographic
 details. Keyczar also provides a simple key versioning and management system
 based on directories of human-readable flat files, which will be refered to as
-{\it keysets}. 
+\emph{keysets}. 
 \section{Using KeyczarTool}
 
 All Keyczar keys are generated with the stand-alone
