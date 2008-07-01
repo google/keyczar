@@ -1,3 +1,5 @@
+#!/usr/bin/python2.4
+#
 # Copyright 2008 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +26,7 @@ class NameId(object):
     self.id = id
   
 class KeyType(NameId):
+  
   """ An 'enum' defining different key types and their properties.
 
   Defines the following Key Types:
@@ -34,17 +37,20 @@ class KeyType(NameId):
     RSA Private
     RSA Public
   """
+  
+  sizes = property(lambda self: self.__sizes)  # clients can't modify sizes
+  
   def __init__(self, name, id, sizes, output_size):
     NameId.__init__(name, id)
-    self.sizes = sizes
+    self.__sizes = sizes
     self.output_size = output_size
-    self.default_size = self.sizes[0]
+    self.default_size = self.__sizes[0]
 
   def __str__(self):
     return self.name
   
   def IsValidSize(self, size):
-    return size in self.sizes
+    return size in self.__sizes
   
 
 AES = KeyType("AES", 0, [128, 192, 256], 0)

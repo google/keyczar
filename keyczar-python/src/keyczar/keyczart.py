@@ -14,12 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Keyczar Cryptography Toolkit
+"""
+Keyczart(ool) is a utility for creating and managing Keyczar keysets.
 
-Collection of tools for managing and using cryptographic keys. Goal is to make
-it easier for developers to use application-layer cryptography.
-
-
-@author steveweis@gmail.com (Steve Weis)
 @author arkajit.dey@gmail.com (Arkajit Dey)
 """
+
+import keyczar
+
+import sys
+
+class KeyczarTool:
+  pass
+
+def usage():
+  print "Usage: "
+
+def main(argv):
+  pass
+
+if __name__ == '__main__':
+  sys.exit(main(sys.argv[1:]))  # sys.argv[0] is name of program

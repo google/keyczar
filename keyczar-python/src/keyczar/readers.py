@@ -1,3 +1,5 @@
+#!/usr/bin/python2.4
+#
 # Copyright 2008 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,12 +45,12 @@ class Reader(object):
 
 class FileReader(Reader):
   def __init__(self, location):
-    self.location = location
+    self.__loc = location
     
   def GetMetadata(self):
-    metadata = simplejson.loads(open(self.location + "/meta").Read())
+    metadata = simplejson.loads(open(self.__loc + "/meta").Read())
     return keydata.KeyMetadata.Read(metadata)
 
   def GetKey(self, version):
-    keyData = simplejson.loads(open(self.location + "/" + str(version)).Read())
+    keyData = simplejson.loads(open(self.__loc + "/" + str(version)).Read())
     return keys.Key.Read(keyData)

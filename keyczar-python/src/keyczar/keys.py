@@ -1,3 +1,5 @@
+#!/usr/bin/python2.4
+#
 # Copyright 2008 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +23,10 @@ of base class Key.
 @author: arkajit.dey@gmail.com (Arkajit Dey)
 """
 
+import keyinfo
+
 class Key(object):
+  
   """Parent class for Keyczar Keys."""
   
   def __init__(self, type, hash):
@@ -29,18 +34,17 @@ class Key(object):
     self.hash = hash
     self.size = type.default_size # initially default
     
-  size = property(__GetSize, __SetSize, doc="""The size of the key in bits.""")
+  size = property(lambda self: self.size, __SetSize, 
+                  doc="""The size of the key in bits.""")
     
   def __str__(self):
     return "(%s %s)" % (self.type, self.hash)  
-  
-  def __GetSize(self):
-    return self.size
   
   def __SetSize(self, new_size):
     if self.type.IsAcceptableSize(new_size):
       self.size = new_size
 
+  @staticmethod
   def Read(data):
     """Return Key object constructed from JSON dictionary.
     
@@ -51,10 +55,22 @@ class Key(object):
       A Key object
     """
     return Key(data['type'], data['hash'])
-  Read = staticmethod(Read)
+
+def GenKey(type):
+  pass
+
+def ReadKey(type, key):
+  pass
+
+class AesKey(Key):
+  pass
+
+class HmacKey(Key):
+  pass
 
 class PrivateKey(Key):
-  """Represents private keys in Keyczar."""
+  
+  """Represents private keys in Keyczar for asymmetric key pairs."""
   
   def __init__(self, type, hash, pkcs8):
     Key.__init__(type, hash)
@@ -67,8 +83,21 @@ class PrivateKey(Key):
     pass
 
 class PublicKey(Key):
-  """Represents public keys in Keyczar."""
+  
+  """Represents public keys in Keyczar for asymmetric key pairs."""
   
   def __init__(self, type, hash, x509):
     Key.__init__(type, hash)
     self.x509 = x509
+
+class DsaPrivateKey(PrivateKey):
+  pass
+
+class RsaPrivateKey(PrivateKey):
+  pass
+
+class DsaPublicKey(PublicKey):
+  pass
+
+class RsaPublicKey(PublicKey):
+  pass

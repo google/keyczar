@@ -1,3 +1,5 @@
+#!/usr/bin/python2.4
+#
 # Copyright 2008 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +15,35 @@
 # limitations under the License.
 
 import readers
+import keydata
+import keyinfo
 
 class Keyczar(object):
+  
   """Abstract Keyczar class"""
     
   def __init__(self, reader):
     self.metadata = reader.GetMetadata()
     self.keys = []
+  
+  @staticmethod
+  def Read(location):
+    """ Return a Keyczar object created from FileReader at given location. """
+    return Keyczar(readers.FileReader(location))
+
+class GenericKeyczar(Keyczar):
+  pass
+
+class Encrypter(Keyczar):
+  pass
+
+class Verifier(Keyczar):
+  pass
+
+class Crypter(Encrypter):
+  pass
+
+class Signer(Verifier):
+  pass
+
+

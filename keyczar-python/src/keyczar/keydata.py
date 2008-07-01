@@ -1,3 +1,5 @@
+#!/usr/bin/python2.4
+#
 # Copyright 2008 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +26,7 @@ class KeyMetadata(object):
   def __str__(self):
     return "%s - %s - %s" % (self.name, self.purpose, self.type)
   
+  @staticmethod
   def Read(kmd):
     """Return KeyMetadata object constructed from JSON dictionary.
     
@@ -35,7 +38,6 @@ class KeyMetadata(object):
     """
     return KeyMetadata(kmd['name'], kmd['purpose'], 
                        kmd['type'], kmd['versions'])
-  Read = staticmethod(Read)
 
 class KeyVersion(object):
   def __init__(self, v, s, export):
