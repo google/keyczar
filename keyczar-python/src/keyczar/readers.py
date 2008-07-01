@@ -19,7 +19,7 @@ A Reader supports reading GetMetadata and GetKey info for GetKey sets.
 @author arkajit.dey@gmail.com (Arkajit Dey)
 """
 
-import kmd
+import keydata
 import keys
 import simplejson
 
@@ -47,7 +47,7 @@ class FileReader(Reader):
     
   def GetMetadata(self):
     metadata = simplejson.loads(open(self.location + "/meta").Read())
-    return kmd.KeyMetadata.Read(metadata)
+    return keydata.KeyMetadata.Read(metadata)
 
   def GetKey(self, version):
     keyData = simplejson.loads(open(self.location + "/" + str(version)).Read())

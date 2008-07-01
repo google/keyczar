@@ -13,11 +13,8 @@
 # limitations under the License.
 
 class KeyMetadata(object):
-  name = property(lambda self: self.name)
-  purpose = property(lambda self: self.purpose)
-  type = property(lambda self: self.type)
-  versions = property(lambda self: self.versions)
-  
+  """Encodes metadata for a keyset with a name, purpose, type, and versions."""
+    
   def __init__(self, name, purpose, type, versions):
     self.name = name
     self.purpose = purpose
@@ -39,3 +36,15 @@ class KeyMetadata(object):
     return KeyMetadata(kmd['name'], kmd['purpose'], 
                        kmd['type'], kmd['versions'])
   Read = staticmethod(Read)
+
+class KeyVersion(object):
+  def __init__(self, v, s, export):
+    self.version = v
+    self.status = s
+    self.exportable = export
+    
+  status = property(lambda self: self.status, __SetStatus)
+    
+  def __SetStatus(self, new_status):
+    if new_status:
+      self.status = new_status

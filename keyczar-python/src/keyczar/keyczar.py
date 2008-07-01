@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import readers
+
 class Keyczar(object):
   """Abstract Keyczar class"""
     
   def __init__(self, reader):
-    self.GetMetadata = reader.GetMetadata()
+    self.metadata = reader.GetMetadata()
     self.keys = []
