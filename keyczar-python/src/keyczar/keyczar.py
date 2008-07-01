@@ -12,12 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Keyczar Cryptography Toolkit
-
-Collection of tools for managing and using cryptographic keys. Goal is to make
-it easier for developers to use application-layer cryptography.
-
-
-@author steveweis@gmail.com (Steve Weis)
-@author arkajit.dey@gmail.com (Arkajit Dey)
-"""
+class Keyczar:
+  """Abstract Keyczar class"""
+    
+  def __init__(self, reader):
+    self.metadata = reader.metadata()
+    self.keys = []
