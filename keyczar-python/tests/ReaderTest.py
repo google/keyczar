@@ -1,9 +1,9 @@
-from keyczar.FileReader import FileReader
+from keyczar import readers
 import os
 import simplejson
 
 testdata = os.getcwd() + "/../testdata"
-reader = FileReader(testdata + "/aes")
+reader = readers.FileReader(testdata + "/aes")
 
 print reader.GetMetadata()
 print reader.GetKey(1)

@@ -18,10 +18,10 @@
 
 Identifies a key by its hash and type. Includes several subclasses
 of base class Key.
-
-@author: steveweis@gmail.com (Steve Weis) 
-@author: arkajit.dey@gmail.com (Arkajit Dey)
 """
+
+__author__ = """steveweis@gmail.com (Steve Weis), 
+                arkajit.dey@gmail.com (Arkajit Dey)"""
 
 import keyinfo
 
@@ -30,19 +30,19 @@ class Key(object):
   """Parent class for Keyczar Keys."""
   
   def __init__(self, type, hash):
-    self.type = type
+    self.type = keyinfo.GetType(type)
     self.hash = hash
-    self.size = type.default_size # initially default
-    
-  size = property(lambda self: self.size, __SetSize, 
-                  doc="""The size of the key in bits.""")
+    self.__size = self.type.default_size  # initially default
     
   def __str__(self):
     return "(%s %s)" % (self.type, self.hash)  
   
   def __SetSize(self, new_size):
-    if self.type.IsAcceptableSize(new_size):
-      self.size = new_size
+    if self.type.IsValidSize(new_size):
+      self.__size = new_size
+  
+  size = property(lambda self: self.__size, __SetSize, 
+                  doc="""The size of the key in bits.""")
 
   @staticmethod
   def Read(data):

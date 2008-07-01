@@ -18,8 +18,7 @@
 
 Collection of tools for managing and using cryptographic keys. Goal is to make
 it easier for developers to use application-layer cryptography.
-
-
-@author steveweis@gmail.com (Steve Weis)
-@author arkajit.dey@gmail.com (Arkajit Dey)
 """
+
+__author__ = """steveweis@gmail.com (Steve Weis), 
+                arkajit.dey@gmail.com (Arkajit Dey)"""

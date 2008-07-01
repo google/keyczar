@@ -14,11 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Keyczart(ool) is a utility for creating and managing Keyczar keysets.
+"""Keyczart(ool) is a utility for creating and managing Keyczar keysets."""
 
-@author arkajit.dey@gmail.com (Arkajit Dey)
-"""
+__author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
 
 import keyczar
 

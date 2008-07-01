@@ -1,4 +1,7 @@
+#!/usr/bin/python2.4
+#
 # for random testing
+
 from Crypto.Hash import MD5
 from Crypto.Cipher import AES
 hash=MD5.new()

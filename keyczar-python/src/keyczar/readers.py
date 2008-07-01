@@ -14,12 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" 
-A Reader supports reading GetMetadata and GetKey info for GetKey sets. 
+"""A Reader supports reading GetMetadata and GetKey info for key sets."""
 
-@author steveweis@gmail.com (Steve Weis)
-@author arkajit.dey@gmail.com (Arkajit Dey)
-"""
+__author__ = """steveweis@gmail.com (Steve Weis), 
+                arkajit.dey@gmail.com (Arkajit Dey)"""
 
 import keydata
 import keys
@@ -48,9 +46,9 @@ class FileReader(Reader):
     self.__loc = location
     
   def GetMetadata(self):
-    metadata = simplejson.loads(open(self.__loc + "/meta").Read())
+    metadata = simplejson.loads(open(self.__loc + "/meta").read())
     return keydata.KeyMetadata.Read(metadata)
 
   def GetKey(self, version):
-    keyData = simplejson.loads(open(self.__loc + "/" + str(version)).Read())
+    keyData = simplejson.loads(open(self.__loc + "/" + str(version)).read())
     return keys.Key.Read(keyData)

@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Defines several 'enums' encoding information about keys.
+"""Defines several 'enums' encoding information about keys."""
 
-@author: steveweis@gmail.com (Steve Weis) 
-@author: arkajit.dey@gmail.com (Arkajit Dey)
-"""
+__author__ = """steveweis@gmail.com (Steve Weis), 
+                arkajit.dey@gmail.com (Arkajit Dey)"""
 
 class NameId(object):
   def __init__(self, name, id):
@@ -41,7 +40,7 @@ class KeyType(NameId):
   sizes = property(lambda self: self.__sizes)  # clients can't modify sizes
   
   def __init__(self, name, id, sizes, output_size):
-    NameId.__init__(name, id)
+    NameId.__init__(self, name, id)
     self.__sizes = sizes
     self.output_size = output_size
     self.default_size = self.__sizes[0]
@@ -59,12 +58,12 @@ DSA_PRIV = KeyType("DSA Private", 2, [1024], 48)
 DSA_PUB = KeyType("DSA Public", 3, [1024], 48)
 RSA_PRIV = KeyType("RSA Private", 4, [2048, 1024, 768, 512], 256)
 RSA_PUB = KeyType("RSA Public", 4, [2048, 1024, 768, 512], 256)
-types = {AES.id: AES, HMAC_SHA1.id: HMAC_SHA1, DSA_PRIV.id: DSA_PRIV, 
-         DSA_PUB.id: DSA_PUB, RSA_PRIV.id: RSA_PRIV, RSA_PUB.id: RSA_PUB}
+types = {"AES": AES, "HMAC_SHA1": HMAC_SHA1, "DSA_PRIV": DSA_PRIV, 
+         "DSA_PUB": DSA_PUB, "RSA_PRIV": RSA_PRIV, "RSA_PUB": RSA_PUB}
 
-def GetType(value):
-  if value in types:
-    return types[value]
+def GetType(name):
+  if name in types:
+    return types[name]
     
 class KeyStatus(NameId):
   pass
@@ -86,26 +85,26 @@ DECRYPT_AND_ENCRYPT = KeyPurpose("crypt", 0)
 ENCRYPT = KeyPurpose("encrypt", 1)
 SIGN_AND_VERIFY = KeyPurpose("sign", 2)
 VERIFY = KeyPurpose("verify", 3)
-purposes = {DECRYPT_AND_ENCRYPT.id: DECRYPT_AND_ENCRYPT, ENCRYPT.id: ENCRYPT,
-            SIGN_AND_VERIFY.id: SIGN_AND_VERIFY, VERIFY.id: VERIFY}
+purposes = {"DECRYPT_AND_ENCRYPT": DECRYPT_AND_ENCRYPT, "ENCRYPT": ENCRYPT,
+            "SIGN_AND_VERIFY": SIGN_AND_VERIFY, "VERIFY": VERIFY}
 
-def GetPurpose(value):
-  if value in purposes:
-    return purposes[value]
+def GetPurpose(name):
+  if name in purposes:
+    return purposes[name]
   
 class CipherMode(NameId):
-  def __init__(self, name, id, useIv, output_size_fn):
-    NameId.__init__(name, id)
-    self.useIv = useIv
-    self.get_output_size = output_size_fn
+  def __init__(self, name, id, use_iv, OutputSizeFn):
+    NameId.__init__(self, name, id)
+    self.use_iv = use_iv
+    self.GetOutputSize = OutputSizeFn
     
 CBC = CipherMode("AES/CBC/PKCS5Padding", 0, True, lambda b, i: (i/b + 2) * b)
 CTR = CipherMode("AES/CTR/NoPadding", 1, True, lambda b, i: i + b / 2)
 ECB = CipherMode("AES/ECB/NoPadding", 2, False, lambda b, i: b)
 DET_CBC = CipherMode("AES/CBC/PKCS5Padding", 3, False, 
                      lambda b, i: (i / b + 1) * b)
-modes = {CBC.id: CBC, CTR.id: CTR, ECB.id: ECB, DET_CBC.id: DET_CBC}
+modes = {"CBC": CBC, "CTR": CTR, "ECB": ECB, "DET_CBC": DET_CBC}
 
-def GetMode(value):
-  if value in modes:
-    return modes[value]
+def GetMode(name):
+  if name in modes:
+    return modes[name]

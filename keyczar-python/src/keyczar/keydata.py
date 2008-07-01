@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+__author__ = """steveweis@gmail.com (Steve Weis), 
+                arkajit.dey@gmail.com (Arkajit Dey)"""
+
 class KeyMetadata(object):
   """Encodes metadata for a keyset with a name, purpose, type, and versions."""
     
@@ -45,8 +48,8 @@ class KeyVersion(object):
     self.status = s
     self.exportable = export
     
-  status = property(lambda self: self.status, __SetStatus)
-    
   def __SetStatus(self, new_status):
     if new_status:
       self.status = new_status
+      
+  status = property(lambda self: self.status, __SetStatus)
