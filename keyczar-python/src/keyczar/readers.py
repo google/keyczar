@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """ 
-A Reader supports reading metadata and key info for key sets. 
+A Reader supports reading GetMetadata and GetKey info for GetKey sets. 
 
 @author steveweis@gmail.com (Steve Weis)
 @author arkajit.dey@gmail.com (Arkajit Dey)
@@ -23,21 +23,21 @@ import kmd
 import keys
 import simplejson
 
-class Reader:
+class Reader(object):
   """ Interface providing supported methods (no implementation). """
 
-  def metadata(self):
-    """Return the KeyMetadata for the key set being read.
+  def GetMetadata(self):
+    """Return the KeyMetadata for the GetKey set being Read.
     
     @return KeyMetadata object
     """
     pass
   
-  def key(self, version):
-    """Return the Key corresponding to the given version.
+  def GetKey(self, version):
+    """Return the GetKey corresponding to the given version.
     
     @param version, the integer version number
-    @return Key object
+    @return GetKey object
     """
     pass
 
@@ -45,10 +45,10 @@ class FileReader(Reader):
   def __init__(self, location):
     self.location = location
     
-  def metadata(self):
-    metadata = simplejson.loads(open(self.location + "/meta").read())
-    return kmd.KeyMetadata.read(metadata)
+  def GetMetadata(self):
+    metadata = simplejson.loads(open(self.location + "/meta").Read())
+    return kmd.KeyMetadata.Read(metadata)
 
-  def key(self, version):
-    keyData = simplejson.loads(open(self.location + "/" + str(version)).read())
-    return keys.Key.read(keyData)
+  def GetKey(self, version):
+    keyData = simplejson.loads(open(self.location + "/" + str(version)).Read())
+    return keys.Key.Read(keyData)

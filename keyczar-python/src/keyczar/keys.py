@@ -21,39 +21,37 @@ of base class Key.
 @author: arkajit.dey@gmail.com (Arkajit Dey)
 """
 
-import keytype
-
-class Key:
+class Key(object):
   """Parent class for Keyczar Keys."""
-
+  
   def __init__(self, type, hash):
     self.type = type
     self.hash = hash
-    self.size = type.default_size() # initially default
+    self.size = type.default_size # initially default
+    
+  size = property(__GetSize, __SetSize, doc="""The size of the key in bits.""")
     
   def __str__(self):
     return "(%s %s)" % (self.type, self.hash)  
-
-  def type(self):
-    return self.type
   
-  def size(self):
+  def __GetSize(self):
     return self.size
   
-  def hash(self):
-    return self.hash
-  
-  def read(data):
+  def __SetSize(self, new_size):
+    if self.type.IsAcceptableSize(new_size):
+      self.size = new_size
+
+  def Read(data):
     """Return Key object constructed from JSON dictionary.
     
     Args:
-      data: dictionary read from JSON file
+      data: dictionary Read from JSON file
     
     Returns:
       A Key object
     """
     return Key(data['type'], data['hash'])
-  read = staticmethod(read)
+  Read = staticmethod(Read)
 
 class PrivateKey(Key):
   """Represents private keys in Keyczar."""
@@ -62,10 +60,10 @@ class PrivateKey(Key):
     Key.__init__(type, hash)
     self.pkcs8 = pkcs8
     
-  def getPublic(self):
+  def GetPublic(self):
     pass
   
-  def setPublic(self):
+  def SetPublic(self):
     pass
 
 class PublicKey(Key):

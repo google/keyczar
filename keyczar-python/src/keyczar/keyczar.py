@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class Keyczar:
+class Keyczar(object):
   """Abstract Keyczar class"""
     
   def __init__(self, reader):
-    self.metadata = reader.metadata()
+    self.GetMetadata = reader.GetMetadata()
     self.keys = []

@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class KeyMetadata:
+class KeyMetadata(object):
+  name = property(lambda self: self.name)
+  purpose = property(lambda self: self.purpose)
+  type = property(lambda self: self.type)
+  versions = property(lambda self: self.versions)
+  
   def __init__(self, name, purpose, type, versions):
     self.name = name
     self.purpose = purpose
@@ -22,27 +27,15 @@ class KeyMetadata:
   def __str__(self):
     return "%s - %s - %s" % (self.name, self.purpose, self.type)
   
-  def name(self):
-    return self.name
-  
-  def purpose(self):
-    return self.purpose
-  
-  def type(self):
-    return self.type
-  
-  def versions(self):
-    return self.versions
-  
-  def read(kmd):
+  def Read(kmd):
     """Return KeyMetadata object constructed from JSON dictionary.
     
     Args:
-      kmd: dictionary read from JSON file
+      kmd: dictionary Read from JSON file
     
     Returns: 
       A KeyMetadata object
     """
     return KeyMetadata(kmd['name'], kmd['purpose'], 
                        kmd['type'], kmd['versions'])
-  read = staticmethod(read)
+  Read = staticmethod(Read)
