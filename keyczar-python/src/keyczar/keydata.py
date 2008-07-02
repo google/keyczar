@@ -25,7 +25,7 @@ class KeyMetadata(object):
     self.name = name
     self.purpose = purpose
     self.type = type
-    self.__versions = {}
+    self.__versions = {}  # dictionary from version nums to KeyVersions
     
   versions = property(lambda self: self.__versions.values())
     

@@ -19,14 +19,14 @@
 __author__ = """steveweis@gmail.com (Steve Weis), 
                 arkajit.dey@gmail.com (Arkajit Dey)"""
 
-class NameId(object):
+class _NameId(object):
   def __init__(self, name, id):
     self.name = name
     self.id = id
   
-class KeyType(NameId):
+class KeyType(_NameId):
   
-  """ An 'enum' defining different key types and their properties.
+  """An 'enum' defining different key types and their properties.
 
   Defines the following Key Types:
     AES
@@ -40,7 +40,7 @@ class KeyType(NameId):
   sizes = property(lambda self: self.__sizes)  # clients can't modify sizes
   
   def __init__(self, name, id, sizes, output_size):
-    NameId.__init__(self, name, id)
+    _NameId.__init__(self, name, id)
     self.__sizes = sizes
     self.output_size = output_size
     self.default_size = self.__sizes[0]
@@ -65,7 +65,7 @@ def GetType(name):
   if name in types:
     return types[name]
     
-class KeyStatus(NameId):
+class KeyStatus(_NameId):
   pass
 
 PRIMARY = KeyStatus("primary", 0)
@@ -78,7 +78,7 @@ def GetStatus(value):
   if value in statuses:
     return statuses[value]
 
-class KeyPurpose(NameId):
+class KeyPurpose(_NameId):
   pass
 
 DECRYPT_AND_ENCRYPT = KeyPurpose("crypt", 0)
@@ -92,9 +92,9 @@ def GetPurpose(name):
   if name in purposes:
     return purposes[name]
   
-class CipherMode(NameId):
+class CipherMode(_NameId):
   def __init__(self, name, id, use_iv, OutputSizeFn):
-    NameId.__init__(self, name, id)
+    _NameId.__init__(self, name, id)
     self.use_iv = use_iv
     self.GetOutputSize = OutputSizeFn
     

@@ -24,6 +24,7 @@ __author__ = """steveweis@gmail.com (Steve Weis),
                 arkajit.dey@gmail.com (Arkajit Dey)"""
 
 import keyinfo
+import errors
 
 class Key(object):
   
@@ -57,16 +58,48 @@ class Key(object):
     return Key(data['type'], data['hash'])
 
 def GenKey(type):
-  pass
+  try:
+    return {keyinfo.AES: AesKey.Generate,
+            keyinfo.HMAC_SHA1: HmacKey.Generate,
+            keyinfo.DSA_PRIV: DsaPrivateKey.Generate,
+            keyinfo.RSA_PRIV: RsaPrivateKey.Generate}[type]()
+  except KeyError:
+    if type == keyinfo.DSA_PUB or type == keyinfo.RSA_PUB:
+      msg = "Public keys of type %s must be exported from private keys."
+    else:
+      msg = "Unsupported key type: %s"
+    raise errors.KeyczarError(msg % type)
 
 def ReadKey(type, key):
-  pass
+  try:
+    return {keyinfo.AES: AesKey.Read,
+            keyinfo.HMAC_SHA1: HmacKey.Read,
+            keyinfo.DSA_PRIV: DsaPrivateKey.Read,
+            keyinfo.RSA_PRIV: RsaPrivateKey.Read,
+            keyinfo.DSA_PUB: DsaPublicKey.Read,
+            keyinfo.RSA_PUB: RsaPublicKey.Read}[type](key)
+  except KeyError:
+    raise errors.KeyczarError("Unsupported key type: %s" % type)
 
 class AesKey(Key):
-  pass
+  
+  @staticmethod
+  def Generate():
+    pass
+  
+  @staticmethod
+  def Read(key):
+    pass
 
 class HmacKey(Key):
-  pass
+  
+  @staticmethod
+  def Generate():
+    pass
+  
+  @staticmethod
+  def Read(key):
+    pass
 
 class PrivateKey(Key):
   
@@ -91,13 +124,33 @@ class PublicKey(Key):
     self.x509 = x509
 
 class DsaPrivateKey(PrivateKey):
-  pass
+  
+  @staticmethod
+  def Generate():
+    pass
+  
+  @staticmethod
+  def Read(key):
+    pass
 
 class RsaPrivateKey(PrivateKey):
-  pass
+  
+  @staticmethod
+  def Generate():
+    pass
+  
+  @staticmethod
+  def Read(key):
+    pass
 
 class DsaPublicKey(PublicKey):
-  pass
+  
+  @staticmethod
+  def Read(key):
+    pass
 
 class RsaPublicKey(PublicKey):
-  pass
+  
+  @staticmethod
+  def Read(key):
+    pass

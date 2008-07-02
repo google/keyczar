@@ -20,7 +20,7 @@ __author__ = """steveweis@gmail.com (Steve Weis),
 import readers
 import keydata
 import keyinfo
-import exceptions
+import errors
 
 class Keyczar(object):
   
@@ -31,11 +31,12 @@ class Keyczar(object):
     self.keys = {}
     self.primary_version = None
     if not self.IsAcceptablePurpose(self.metadata.purpose):
-      raise KeyczarException("Unacceptable purpose: " + self.metadata.purpose)
+      raise errors.KeyczarError("Unacceptable purpose: " + 
+                                self.metadata.purpose)
     for version in self.metadata.versions:
       if version.status == keyinfo.PRIMARY:
         if self.primary_version is not None:
-          raise KeyczarException(
+          raise errors.KeyczarError(
               "Key sets may only have a single primary version")
         self.primary_version = version
       key = reader.GetKey(version.version_number)

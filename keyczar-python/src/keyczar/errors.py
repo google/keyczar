@@ -18,63 +18,63 @@
 
 __author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
 
-class KeyczarException(Exception):
+class KeyczarError(Exception):
   """Indicates exceptions raised by a Keyczar class."""
 
-class BadVersionException(KeyczarException):
+class BadVersionError(KeyczarError):
   
   """Indicates a bad version number was received."""
   
   def __init__(self, version):
-    KeyczarException.__init__(self, 
+    KeyczarError.__init__(self, 
                               "Received a bad version number: " + str(version))
 
-class Base64DecodingException(KeyczarException):
+class Base64DecodingError(KeyczarError):
   """Indicates an error while performing Base 64 decoding."""
 
-class InvalidSignatureException(KeyczarException):
+class InvalidSignatureError(KeyczarError):
   
   """Indicates an invalid ciphertext signature."""
   
   def __init__(self):
-    KeyczarException.__init__(self, "Invalid ciphertext signature")
+    KeyczarError.__init__(self, "Invalid ciphertext signature")
 
-class KeyNotFoundException(KeyczarException):
+class KeyNotFoundError(KeyczarError):
   
   """Indicates a key with a certain hash id was not found."""
   
   def __init__(self, hash):
-    KeyczarException.__init__(self, 
+    KeyczarError.__init__(self, 
                               "Key with hash identifier %s not found." % hash)
 
-class ShortBufferException(KeyczarException):
+class ShortBufferError(KeyczarError):
   
   """Indicates a buffer with insufficient capacity."""
   
   def __init__(self, given, needed):
-    KeyczarException.__init__(self, "Short Buffer. Given %s bytes. Need: %s" 
+    KeyczarError.__init__(self, "Short Buffer. Given %s bytes. Need: %s" 
                                     % (given, needed))
 
-class ShortCiphertextException(KeyczarException):
+class ShortCiphertextError(KeyczarError):
   
   """Indicates a ciphertext too short to be valid."""
   
   def __init__(self, length):
-    KeyczarException.__init__(self, 
+    KeyczarError.__init__(self, 
             "Input of length %s is too short to be valid ciphertext." % length)
 
-class ShortSignatureException(KeyczarException):
+class ShortSignatureError(KeyczarError):
   
   """Indicates a signature too short to be valid."""
   
   def __init__(self, length):
-    KeyczarException.__init__(self, 
+    KeyczarError.__init__(self, 
               "Input of length %s is too short to be valid signature." % length)
 
 
-class NoPrimaryKeyException(KeyNotFoundException):
+class NoPrimaryKeyError(KeyNotFoundError):
   
   """Indicates missing primary key."""
   
   def __init__(self):
-    KeyczarException.__init__(self, "No primary key found")
+    KeyczarError.__init__(self, "No primary key found")
