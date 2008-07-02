@@ -15,9 +15,9 @@
  */
 
 
-package com.google.security.keyczar;
+package com.google.keyczar;
 
-import com.google.security.keyczar.experimental.UriSignerTest;
+import com.google.keyczar.experimental.UriSignerTest;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;

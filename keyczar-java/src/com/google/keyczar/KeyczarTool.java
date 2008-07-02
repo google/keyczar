@@ -52,6 +52,7 @@ public class KeyczarTool {
   static String asymmetricFlag;
   static String destinationFlag;
   static String locationFlag;
+  static String encrypterFlag;
   static String nameFlag;
   static int versionFlag = -1; // default if not set
   static int sizeFlag = -1; // default if not set
@@ -137,7 +138,12 @@ public class KeyczarTool {
     } else { // use given size
       genericKeyczar.addVersion(statusFlag, sizeFlag);
     }
-    updateGenericKeyczar(genericKeyczar);
+    if (encrypterFlag != null) {
+      Encrypter encrypter = new Encrypter(encrypterFlag);
+      
+    } else {
+      updateGenericKeyczar(genericKeyczar);
+    }
   }
   
   /**
@@ -267,6 +273,10 @@ public class KeyczarTool {
     updateGenericKeyczar(genericKeyczar); // update meta files, key files
     if (mock == null) { // not necessary for testing
       File revokedVersion = new File(locationFlag + versionFlag);
+      // TODO: Can we do anything to ensure that the file can't just be
+      // undeleted? Maybe overwrite it with zeros first, although that might not
+      // make a difference if the current version is cached. Probably better to
+      // keep all key material encrypted on disk.
       if (!revokedVersion.delete()) { // delete old key file
         throw new KeyczarException("Unable to delete revoked key file.");
       }
@@ -279,13 +289,16 @@ public class KeyczarTool {
    * Prints the usage instructions with list of commands and flags.
    */
   private static void printUsage() {
+    // TODO: Move this to an external file
     String msg = "Usage:\t\"KeyczarTool command flags\"\n" +
-                 "Commands:\n" + 
-                 "create --name=name --location=location --purpose=purpose " +
-                     "--asymmetric=rsa|dsa\n" +
+                 "Commands (optional paramters in [brackets]):\n" + 
+                 "create --location=location --purpose=purpose [--name=name]" +
+                     "[--asymmetric=rsa|dsa]\n" +
                  "\tCreates a new key store.\n" + 
-                 "addkey --location=location --status=status --size=size\n" +
-                 "\tAdds new key with given status, size to given location.\n" + 
+                 "addkey --location=location [--status=status]" +
+                 " [--size=size] [--encrypter=encrypterLocation]\n" +
+                 "\tAdds new key with given status, size to given location." +
+                 "The default status is ACTIVE.\n" + 
                  "pubkey --location=location --destination=destination\n" +
                  "\tExport a key set at the given location as a set of " + 
                      "public keys at a given destination.\n" + 
@@ -305,6 +318,8 @@ public class KeyczarTool {
                  "\t--status : Define the status of a new key. Must be " +
                      "primary, active, or scheduled_for_revocation. Optional." +
                      " Defaults to active.\n" +
+                     "\t--crypter : The location of a crypter to be used for" +
+                     " encrypting new keys \n" + 
                  "\t--version : The version number of key to update.\n" +
                  "\t--size : Key size in bits. Overrides default. Optional.\n" +
                  "\t--asymmetric : Dictate use of asymmetric algorithm. " +
@@ -353,6 +368,7 @@ public class KeyczarTool {
     purposeFlag = KeyPurpose.getPurpose(params.get("purpose"));
     statusFlag = KeyStatus.getStatus(params.get("status")); // default ACTIVE
     asymmetricFlag = params.get("asymmetric");
+    encrypterFlag = params.get("encrypter");
     try {
       versionFlag = Integer.parseInt(params.get("version"));
     } catch (NumberFormatException e) {
@@ -385,11 +401,18 @@ public class KeyczarTool {
   
   private static void updateGenericKeyczar(GenericKeyczar genericKeyczar) 
       throws KeyczarException {
+    updateGenericKeyczar(genericKeyczar, null);
+  }
+  
+  private static void updateGenericKeyczar(GenericKeyczar genericKeyczar, 
+      Encrypter encrypter) throws KeyczarException {
     if (mock != null) {
       mock.setMetadata(genericKeyczar.getMetadata()); // update metadata
       for (KeyVersion version : genericKeyczar.getVersions()) {
         mock.setKey(version.getVersionNumber(), genericKeyczar.getKey(version));
       } // update key data
+    } else if (encrypter != null) {
+      genericKeyczar.writeEncrypted(locationFlag, encrypter);
     } else {
       genericKeyczar.write(locationFlag);
     }
@@ -487,6 +510,17 @@ public class KeyczarTool {
           + KeyczarFileReader.META_FILE);
       for (KeyVersion version : getVersions()) {
         writeFile(getKey(version).toString(), location
+            + version.getVersionNumber());
+      }
+    }
+    
+    void writeEncrypted(String location, Encrypter encrypter)
+      throws KeyczarException {
+      KeyMetadata kmd = getMetadata();
+      kmd.setEncrypted(true);
+      writeFile(kmd.toString(), location + KeyczarFileReader.META_FILE);
+      for (KeyVersion version : getVersions()) {
+        writeFile(encrypter.encrypt(getKey(version).toString()), location
             + version.getVersionNumber());
       }
     }

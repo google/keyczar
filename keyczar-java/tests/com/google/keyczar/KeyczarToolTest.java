@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.security.keyczar;
+package com.google.keyczar;
 
 import com.google.keyczar.KeyczarTool;
 import com.google.keyczar.MockKeyczarReader;

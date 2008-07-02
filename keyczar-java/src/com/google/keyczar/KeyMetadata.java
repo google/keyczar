@@ -48,10 +48,12 @@ import java.util.Map;
  * 
  */
 class KeyMetadata {
-  @Expose protected String name = "";
-  @Expose protected KeyPurpose purpose = KeyPurpose.TEST;
-  @Expose protected KeyType type = KeyType.TEST;
-  @Expose protected List<KeyVersion> versions = new ArrayList<KeyVersion>();
+  @Expose String name = "";
+  @Expose KeyPurpose purpose = KeyPurpose.TEST;
+  @Expose KeyType type = KeyType.TEST;
+  @Expose List<KeyVersion> versions = new ArrayList<KeyVersion>();
+  @Expose boolean encrypted = false;
+
   protected Map<Integer, KeyVersion> versionMap = 
       new HashMap<Integer, KeyVersion>(); // link version number to version
   
@@ -113,6 +115,14 @@ class KeyMetadata {
 
   KeyType getType() {
     return type;
+  }
+  
+  void setEncrypted(boolean encrypted) {
+    this.encrypted = encrypted;
+  }
+  
+  boolean getEncrypted() {
+    return encrypted;
   }
   
   /**

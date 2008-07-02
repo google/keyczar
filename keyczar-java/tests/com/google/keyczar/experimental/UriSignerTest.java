@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.security.keyczar.experimental;
+package com.google.keyczar.experimental;
 
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.experimental.UriSigner;
