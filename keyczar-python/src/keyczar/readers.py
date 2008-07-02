@@ -27,19 +27,17 @@ class Reader(object):
   """ Interface providing supported methods (no implementation). """
 
   def GetMetadata(self):
-    """Return the KeyMetadata for the GetKey set being Read.
+    """Return the KeyMetadata for the GetKey set being Read. Abstract method.
     
     @return KeyMetadata object
     """
-    pass
   
   def GetKey(self, version):
-    """Return the GetKey corresponding to the given version.
+    """Return the GetKey corresponding to the given version. Abstract method.
     
     @param version, the integer version number
     @return GetKey object
     """
-    pass
 
 class FileReader(Reader):
   def __init__(self, location):
@@ -49,6 +47,6 @@ class FileReader(Reader):
     metadata = simplejson.loads(open(self.__loc + "/meta").read())
     return keydata.KeyMetadata.Read(metadata)
 
-  def GetKey(self, version):
-    keyData = simplejson.loads(open(self.__loc + "/" + str(version)).read())
+  def GetKey(self, version_num):
+    keyData = simplejson.loads(open(self.__loc + "/" + str(version_num)).read())
     return keys.Key.Read(keyData)

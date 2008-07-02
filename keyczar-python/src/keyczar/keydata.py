@@ -18,16 +18,32 @@ __author__ = """steveweis@gmail.com (Steve Weis),
                 arkajit.dey@gmail.com (Arkajit Dey)"""
 
 class KeyMetadata(object):
+  
   """Encodes metadata for a keyset with a name, purpose, type, and versions."""
     
-  def __init__(self, name, purpose, type, versions):
+  def __init__(self, name, purpose, type):
     self.name = name
     self.purpose = purpose
     self.type = type
-    self.versions = versions
+    self.__versions = {}
+    
+  versions = property(lambda self: self.__versions.values())
     
   def __str__(self):
     return "%s - %s - %s" % (self.name, self.purpose, self.type)
+  
+  def AddVersion(self, version):
+    num = version.version_number
+    if num not in self.__versions:
+      self.__versions[num] = version
+      return True
+    return False
+  
+  def RemoveVersion(self, version_num):
+    return self.__versions.pop(version_num, False)  # return False if not found
+  
+  def GetVersion(self, version_number):
+    return self.__versions.get(version_number)
   
   @staticmethod
   def Read(kmd):
@@ -39,17 +55,16 @@ class KeyMetadata(object):
     Returns: 
       A KeyMetadata object
     """
-    return KeyMetadata(kmd['name'], kmd['purpose'], 
-                       kmd['type'], kmd['versions'])
+    return KeyMetadata(kmd['name'], kmd['purpose'], kmd['type'])
 
 class KeyVersion(object):
   def __init__(self, v, s, export):
-    self.version = v
-    self.status = s
+    self.version_number = v
+    self.__status = s
     self.exportable = export
     
   def __SetStatus(self, new_status):
     if new_status:
-      self.status = new_status
+      self.__status = new_status
       
-  status = property(lambda self: self.status, __SetStatus)
+  status = property(lambda self: self.__status, __SetStatus)

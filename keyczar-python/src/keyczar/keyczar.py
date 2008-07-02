@@ -20,6 +20,7 @@ __author__ = """steveweis@gmail.com (Steve Weis),
 import readers
 import keydata
 import keyinfo
+import exceptions
 
 class Keyczar(object):
   
@@ -27,12 +28,29 @@ class Keyczar(object):
     
   def __init__(self, reader):
     self.metadata = reader.GetMetadata()
-    self.keys = []
+    self.keys = {}
+    self.primary_version = None
+    if not self.IsAcceptablePurpose(self.metadata.purpose):
+      raise KeyczarException("Unacceptable purpose: " + self.metadata.purpose)
+    for version in self.metadata.versions:
+      if version.status == keyinfo.PRIMARY:
+        if self.primary_version is not None:
+          raise KeyczarException(
+              "Key sets may only have a single primary version")
+        self.primary_version = version
+      key = reader.GetKey(version.version_number)
+      self.keys[version] = self.keys[key.hash] = key
+  
+  def __str__(self):
+    return str(self.metadata)
   
   @staticmethod
   def Read(location):
     """ Return a Keyczar object created from FileReader at given location. """
     return Keyczar(readers.FileReader(location))
+  
+  def IsAcceptablePurpose(self, purpose):
+    """Indicates whether purpose is valid. Abstract method."""
 
 class GenericKeyczar(Keyczar):
   pass
