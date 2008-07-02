@@ -52,7 +52,7 @@ public class KeyczarTool {
   static String asymmetricFlag;
   static String destinationFlag;
   static String locationFlag;
-  static String encrypterFlag;
+  static String crypterFlag;
   static String nameFlag;
   static int versionFlag = -1; // default if not set
   static int sizeFlag = -1; // default if not set
@@ -109,13 +109,19 @@ public class KeyczarTool {
           + " the --destination flag");
     }
     String answer = "";
+    KeyczarReader reader = new KeyczarFileReader(locationFlag);
+    if (crypterFlag != null) {
+      Crypter keyCrypter = new Crypter(crypterFlag);
+      reader = new KeyczarEncryptedReader(reader, keyCrypter);
+    }
+    
     switch (genericKeyczar.getMetadata().getPurpose()) {
       case DECRYPT_AND_ENCRYPT: 
-        Crypter crypter = new Crypter(locationFlag);
+        Crypter crypter = new Crypter(reader);
         answer = crypter.encrypt(msg);
         break;
       case SIGN_AND_VERIFY:
-        Signer signer = new Signer(locationFlag);
+        Signer signer = new Signer(reader);
         answer = signer.sign(msg);
         break;
       default:
@@ -138,9 +144,9 @@ public class KeyczarTool {
     } else { // use given size
       genericKeyczar.addVersion(statusFlag, sizeFlag);
     }
-    if (encrypterFlag != null) {
-      Encrypter encrypter = new Encrypter(encrypterFlag);
-      
+    if (crypterFlag != null) {
+      Encrypter encrypter = new Encrypter(crypterFlag);
+      updateGenericKeyczar(genericKeyczar, encrypter);
     } else {
       updateGenericKeyczar(genericKeyczar);
     }
@@ -368,7 +374,8 @@ public class KeyczarTool {
     purposeFlag = KeyPurpose.getPurpose(params.get("purpose"));
     statusFlag = KeyStatus.getStatus(params.get("status")); // default ACTIVE
     asymmetricFlag = params.get("asymmetric");
-    encrypterFlag = params.get("encrypter");
+    crypterFlag = params.get("crypter");
+    
     try {
       versionFlag = Integer.parseInt(params.get("version"));
     } catch (NumberFormatException e) {
@@ -396,7 +403,12 @@ public class KeyczarTool {
       throw new KeyczarException("Must define a key set location with the "
           + "--location flag");
     }
-    return new GenericKeyczar(locationFlag);
+    KeyczarReader reader = new KeyczarFileReader(locationFlag);
+    if (crypterFlag != null) {
+      Crypter keyDecrypter = new Crypter(crypterFlag);
+      reader = new KeyczarEncryptedReader(reader, keyDecrypter);
+    }
+    return new GenericKeyczar(reader);
   }
   
   private static void updateGenericKeyczar(GenericKeyczar genericKeyczar) 
@@ -514,8 +526,15 @@ public class KeyczarTool {
       }
     }
     
+    /**
+     * Encrypts the key files before writing them out to disk
+     * 
+     * @param location Location of key set
+     * @param encrypter The encrypter object used to encrypt keys
+     * @throws KeyczarException If unable to write to a given location
+     */
     void writeEncrypted(String location, Encrypter encrypter)
-      throws KeyczarException {
+        throws KeyczarException {
       KeyMetadata kmd = getMetadata();
       kmd.setEncrypted(true);
       writeFile(kmd.toString(), location + KeyczarFileReader.META_FILE);

@@ -9,11 +9,12 @@ binPath = cwd + "/../bin/"
 paths = binPath + ":" + gsonPath + ":" + log4jPath
 cmd = "java -cp " + paths + " com.google.keyczar.KeyczarTool"
 
-keyFiles = [("../testdata/aes/", "crypt", None),
-            ("../testdata/rsa/", "crypt", "rsa"),
-            ("../testdata/hmac/", "sign", None),
-            ("../testdata/dsa/", "sign", "dsa"),
-            ("../testdata/rsa-sign/", "sign", "rsa")]
+keyFiles = [("../testdata/aes/", "crypt", None, None),
+            ("../testdata/rsa/", "crypt", "rsa", None),
+            ("../testdata/aes-crypted/", "crypt", None, "../testdata/aes/"),
+            ("../testdata/hmac/", "sign", None, None),
+            ("../testdata/dsa/", "sign", "dsa", None),
+            ("../testdata/rsa-sign/", "sign", "rsa", None)]
 
 pubKeyFiles = [("../testdata/dsa/", "../testdata/dsa.public/"),
                ("../testdata/rsa-sign/", "../testdata/rsa-sign.public/")]
@@ -24,7 +25,7 @@ def cleanUp(directory):
     if not os.path.isdir(filePath): os.remove(filePath)
 
 def createFlags(loc, name=None, dest=None, purpose=None, status=None, 
-                version=None, asymmetric=None):
+                version=None, asymmetric=None, crypter=None):
   flags = " "
   if name is not None: flags += "--name="+name+" "
   if loc is not None: flags += "--location="+loc+" "
@@ -33,6 +34,7 @@ def createFlags(loc, name=None, dest=None, purpose=None, status=None,
   if status is not None: flags += "--status="+status+" "
   if version is not None: flags += "--version="+version+" "
   if asymmetric is not None: flags += "--asymmetric="+asymmetric+" "
+  if crypter is not None: flags += "--crypter="+crypter+" "
   return flags[:-1]
 
 def create(loc, purpose, name=None, asymmetric=None):
@@ -40,8 +42,8 @@ def create(loc, purpose, name=None, asymmetric=None):
   os.chdir(binPath)
   os.system(cmd + " create" + args)
 
-def addKey(loc, status="active"):
-  args = createFlags(loc=loc, status=status)
+def addKey(loc, status="active", crypter=None):
+  args = createFlags(loc=loc, status=status, crypter=crypter)
   os.chdir(binPath)
   os.system(cmd + " addkey" + args)
 
@@ -50,20 +52,20 @@ def pubKey(loc, dest):
   os.chdir(binPath)
   os.system(cmd + " pubkey" + args)
 
-def useKey(loc, dest, data="This is some test data"):
-  args = createFlags(loc=loc, dest=dest)
+def useKey(loc, dest, crypter, data="This is some test data"):
+  args = createFlags(loc=loc, dest=dest, crypter=crypter)
   os.chdir(binPath)
   os.system(cmd + ' usekey "' + data + '"' + args)
 
 #generate private key sets
 print "Generating private key sets and golden outputs..."
-for (loc, purpose, asymmetric) in keyFiles:
+for (loc, purpose, asymmetric, crypter) in keyFiles:
   cleanUp(loc)
   create(name="test", loc=loc, purpose=purpose, asymmetric=asymmetric)
-  addKey(loc, "primary")
-  useKey(loc, loc+"1out")
-  addKey(loc, "primary")
-  useKey(loc, loc+"2out")
+  addKey(loc=loc, status="primary", crypter=crypter)
+  useKey(loc=loc, dest=loc+"1out", crypter=crypter)
+  addKey(loc=loc, status="primary", crypter=crypter)
+  useKey(loc=loc, dest=loc+"2out", crypter=crypter)
 
 #export public key sets
 print "Exporting public key sets..."

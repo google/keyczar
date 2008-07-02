@@ -121,7 +121,7 @@ class KeyMetadata {
     this.encrypted = encrypted;
   }
   
-  boolean getEncrypted() {
+  boolean isEncrypted() {
     return encrypted;
   }
   

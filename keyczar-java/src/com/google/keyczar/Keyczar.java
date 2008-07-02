@@ -19,6 +19,7 @@ package com.google.keyczar;
 import com.google.keyczar.enums.KeyPurpose;
 import com.google.keyczar.enums.KeyStatus;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.interfaces.EncryptedReader;
 import com.google.keyczar.interfaces.KeyczarReader;
 
 import org.apache.log4j.Logger;
@@ -83,6 +84,11 @@ abstract class Keyczar {
     kmd = KeyMetadata.read(reader.getMetadata());
     if (!isAcceptablePurpose(kmd.getPurpose())) {
       throw new KeyczarException("Unacceptable purpose: " + kmd.getPurpose());
+    }
+    
+    if (kmd.isEncrypted() && !(reader instanceof EncryptedReader)) {
+      throw new KeyczarException("Must use an EncryptedReader to read " +
+          "encrypted key sets.");
     }
     for (KeyVersion version : kmd.getVersions()) {
       if (version.getStatus() == KeyStatus.PRIMARY) {

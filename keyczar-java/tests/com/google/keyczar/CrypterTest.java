@@ -20,6 +20,7 @@ import com.google.keyczar.Crypter;
 import com.google.keyczar.exceptions.KeyNotFoundException;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.exceptions.ShortCiphertextException;
+import com.google.keyczar.interfaces.KeyczarReader;
 
 import junit.framework.TestCase;
 
@@ -40,7 +41,12 @@ public class CrypterTest extends TestCase {
   private String input = "This is some test data";
   
   private final void testDecrypt(String subDir) throws Exception {
-    Crypter crypter = new Crypter(TEST_DATA + subDir);
+    testDecrypt(new KeyczarFileReader(TEST_DATA + subDir), subDir);
+  }
+
+  private final void testDecrypt(KeyczarReader reader, String subDir)
+      throws Exception {
+    Crypter crypter = new Crypter(reader);
     RandomAccessFile activeInput =
       new RandomAccessFile(TEST_DATA + subDir + "/1out", "r");
     String activeCiphertext = activeInput.readLine(); 
@@ -58,6 +64,17 @@ public class CrypterTest extends TestCase {
   @Test
   public final void testAesDecrypt() throws Exception {
     testDecrypt("/aes");
+  }
+  
+  @Test 
+  public final void testAesEncryptedKeyDecrypt() throws Exception {
+    // Test reading and using encrypted keys
+    KeyczarFileReader fileReader =
+      new KeyczarFileReader(TEST_DATA + "/aes-crypted");
+    Crypter keyDecrypter = new Crypter(TEST_DATA + "/aes");
+    KeyczarEncryptedReader reader =
+      new KeyczarEncryptedReader(fileReader, keyDecrypter);
+    testDecrypt(reader, "/aes-crypted");
   }
   
   @Test
