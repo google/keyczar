@@ -35,7 +35,7 @@ programming interface (API) for developers that handles basic cryptographic
 details. Keyczar also provides a simple key versioning and management system
 based on directories of human-readable flat files, which will be refered to as
 \emph{keysets}. 
-\section{Using KeyczarTool}
+\section{Using KeyczarTool}\label{keytool}
 
 All Keyczar keys are generated with the stand-alone
 {\tt KeyczarTool} utility located in the {\tt com.google.keyczar} Java package.
@@ -68,7 +68,7 @@ All Keyczar keys are created using the {\tt addkey} command. This command
 requites a keyset {\tt location} flag and may optionally have {\tt status} and
 {\tt size} flags. Section \ref{status} describes the meaning of the status
 values, but briefly they are {\it primary}, {\it active}, and {\it
-scheduled\_for\_revocation}. The default status is {\it active}. User-specified
+scheduled for revocation}. The default status is {\it active}. User-specified
 key sizes are supported, although it is recommneded that on default or larger
 key  sizes are used.
 
@@ -100,13 +100,13 @@ key status values. Each of these commands require a {\tt location} and {\tt
 version} flag. 
 
 Promoting an {\it active} key will raise its status to
-{\it primary}, and promoting a {\it scheduled\_for\_revocation} status will make
+{\it primary}, and promoting a {\it scheduled for revocation} status will make
 it {\it primary}. There can only be a single {\it primary} key in a given key
 set. 
 
 Similarly, {\tt demote} will lower a {\it primary} key to {\it active},
-and an {\it active} key to {\it scheduled\_for\_revocation}. The {\tt revoke}
-command will only work for {\it scheduled\_for\_revocation} status values.
+and an {\it active} key to {\it scheduled for revocation}. The {\tt revoke}
+command will only work for {\it scheduled for revocation} status values.
 The {\tt revoke} command will permenantly delete key material, so should be
 used with caution.
 
@@ -117,31 +117,239 @@ that key version 1 initially has an {\it active} status:
 {\tt KeyczarTool promote --location=/path/to/keyset --version=1}
 \item Demote {\it primary} version 1 back to {\it active}: \\
 {\tt KeyczarTool demote --location=/path/to/keyset --version=1}
-\item Demote {\it active} version 1 to {\it scheduled\_for\_revocation}: \\
+\item Demote {\it active} version 1 to {\it scheduled for revocation}: \\
 {\tt KeyczarTool demote --location=/path/to/keyset --version=1}
-\item Revoke the {\it scheduled\_for\_revocation} version 1:  
+\item Revoke the {\it scheduled for revocation} version 1:  
 \item {\tt KeyczarTool revoke --location=/path/to/keyset --version=1}
 \end{itemize}
 
-
-
-
 \section{Using Java Keyczar}
+
+The {\tt com.google.keyczar} package contains four public classes that
+developers will use for cryptographic functions: {\tt Crypter}, {\tt
+Encrypter}, {\tt Signer}, and {\tt Verifier}. All four classes are children
+of the abstract {\tt Keyczar} class and may be constructed either with a {\tt
+KeyczarReader} or a simple String location of a keyset:
+\begin{itemize}
+  \item Constructor: {\tt Keyczar(KeyczarReader reader)}
+  \item Constructor: {\tt Keyczar(String keySetLocation)}
+\end{itemize} 
+
+\subsection{KeyczarReaders}
+
+The {\tt KeyczarReader} interface may be implemented by any class that reads
+key material from a keyset. Keyczar includes a {\tt KeyczarFileReader} class
+that is used by the {\tt Keyczar(String keySetLocation)} constructor to read
+files from the local disk. Developers may implement their own {\tt
+KeyczarReaders} to read from arbitrary sources and pass them to {\tt
+Keyczar} constructors.
+
+\subsection{Encrypters}
+
+The {\tt Encypter} class is only able to encrypt data. {\tt Encrypter} objects
+will be initialized by passing it the location of a crypting key set.
+{\tt Encrypters} can encrypt plaintext encoded in UTF-8 Strings, byte arrays, or
+ByteBuffers. {\tt Encrypters} must be initialized with a keyset containing a
+{\it primary} status key to encrypt any data.
+\begin{itemize}
+  \item {\tt String encrypt(String input)}: Encrypt a string and return a
+  WebSafeBase64 output ciphertext.
+  \item {\tt byte[] encrypt(byte[] input)}: Encrypt a byte array and return the
+  ciphertext as a byte array.
+  \item {\tt int encrypt(ByteBuffer input, ByteBuffer output)}: Encrypt the
+  contents of the input buffer and write the ciphertext to the output. Return
+  the number of bytes written.
+\end{itemize}
+
+\subsection{Crypters}
+
+The {\tt Crypter} class is a child of {\tt Encrypter} and is also able to
+decrypt data. {\tt Crypter} objects may only be initialized by crypting key sets
+that contain keys able to decrypt, namely symmetric keys or private keys. {\tt
+Crypters} cannot be initialzied with public keys. {\tt Crypters} can decrypt
+ciphertext in WebSafeBase64 encoded Strings, byte arrays, or ByteBuffers.
+\begin{itemize}
+  \item {\tt String decrypt(String input)}: Decrypt a WebSafeBase64 string and
+  return a UTF-8 encoded plaintext output.
+  \item {\tt byte[] decrypt(byte[] input)}: Decrypt a ciphertext byte array and
+  return the plaintext as a byte array.
+  \item {\tt int decrypt(ByteBuffer input, ByteBuffer output)}: Decrypt the
+  input ByteBuffer and write its output into the given output ByteBuffer.
+  Return the number of bytes written.
+\end{itemize}
+
+\subsection{Verifiers}
+
+The {\tt Verifier} class is only able to verify signatures. {\tt Verifier}
+objects may be initialized by passing it the location of any signing key set.
+It can verify signatures in WebSafeBase64 format, as byte arrays, or in
+ByteBuffers:
+\begin{itemize}
+  \item {\tt boolean verify(String data, String signature)}: Verifies a
+  WebSafeBase64 encoded signature on the given UTF-8 String of data. Returns a
+  boolean representing whether the signature is valid.
+  \item {\tt boolean verify(byte[] data, byte[] signature)}: Verifies a
+  signature in a byte array on the given byte array of data. Returns a
+  boolean representing whether the signature is valid. 
+  \item {\tt boolean verify(ByteBuffer data, ByteBuffer signature}: Verifies a
+  signauture in a ByteBuffer on the given ByteBuffer of data. Returns a boolean
+  representing whether the signature is valid.
+\end{itemize}
+
+\subsection{Signers}
+
+The {\tt Signer} class is a child of the {\tt Verifier} class and is also able
+to generate signatures by signing data. {\tt Signer} objects may only be
+initialized by keysets that are able to sign, namely symmetric keys and private
+keys. {\tt Signers} may not be initialized by public keys and may sign data in
+UTF-8 Strings, byte arrays, or ByteBuffers. {\tt Signers} must be initialized
+with a keyset containing a {\it primary} status key to sign any data.
+\begin{itemize}
+  \item {\tt String sign(String data)}: Signs a UTF-8 string of data and
+  returns a signatures as a WebSafeBase64 string.
+  \item {\tt byte[] sign(byte[] data)}: Signs a byte array of data and returns
+  a signature in a byte array.
+  \item {\tt int sign(ByteBuffer data, ByteBuffer signature}: Signs a
+  ByteBuffer of input and writes the signature to the output ByteBuffer.
+  Returns the number of bytes written.
+\end{itemize}
+
+\subsection{Example: Putting KeyczarTool and Java Keyczar Together}
+
+The following command-line commands would create a new AES encrypting key:
+\begin{verbatim}
+KeyczarTool create --location=/aeskeys --purpose=crypt
+KeyczarTool addkey --location=/aeskeys --status=primary
+\end{verbatim}
+
+Then within a Java program, the following code would encrypt a string of data:
+\begin{verbatim}
+KeyczarCrypter crypter = new KeyczarCrypter(``/aeskeys'');
+String ciphertext = crypter.encrypt(``Some data to encrypt'');
+\end{verbatim}
+
+This same ciphertext would be decrypted with a call to {\tt Crypter.decrypt()}:
+\begin{verbatim}
+String plaintext = crypter.decrypt(ciphertext);
+\end{verbatim}
+
+Using public keys is similar:
+\begin{verbatim}
+KeyczarTool create --location=/rsakeys --purpose=crypt --asymmetric
+KeyczarTool addkey --location=/rsakeys --status=primary
+KeyczarTool pubkey --location=/rsakeys --destination=/rsa-publickeys
+\end{verbatim}
+
+Then in Java, we can encrypt using the public key set, but need the private key
+set to decrypt:
+\begin{verbatim}
+// Initialize an Encrypter with the public keys
+KeyczarEncypter encrypter = new KeyczarEncrypter(``/rsa-publickeykeys'');
+String ciphertext = encrypter.encrypt(``Some data to encrypt'');
+... 
+// Initialize a Crypter with the private keys
+KeyczarCrypter crypter = new KeyczarCrypter(``/rsakeys'');
+String plaintext = crypter.decrypt(ciphertext);
+\end{verbatim}
+
+
+
+Signing and verifying is similarily easy:
+\begin{verbatim}
+KeyczarTool create --location=/hmackeys --purpose=sign
+KeyczarTool addkey --location=/hmackeys --status=primary
+\end{verbatim}
+
+In Java:
+\begin{verbatim}
+KeyczarSigner signer = new KeyczarSigner(``/hmackeys'');
+String signature = signer.sign(``Some data to sign'');
+boolean verified = signer.verify(``Some data to sign'', signature);
+\end{verbatim}
+
 
 \section{Using Python Keyczar}
 
+Python Keyczar is in development.
+
 \section{Keys}
-\subsection{Key Metadata}\label{metadata}
-\subsection{Identifying Headers}
-\subsection{Versions}\label{versions}
+
 \subsection{Statuses}\label{status}
-\subsection{Formats}
+
+As described in Section \ref{keytool}, Keyczar keys may have one of three
+status values: {\it primary}, {\it active}, {\it scheduled for revocation}.
+Keys with a primary status value are used to generate new cryptomaterial, that
+is, signatures or ciphertexts. Keys of all status values may be used to verify
+or decrypt legacy data, but are not used to generate new data.
+
+The idea is that a key will start its life as a primary key and be used to
+generate cryptographic output. That key can be rotated by generating a new
+primary key value, and changing the existing primary key to be active. Active
+keys will be kept around to verify and decrypt existing data, until they are
+scheduled for revocation. A key that is scheduled for revocation is identical
+to an active key, except its usage statistics are collected by default. When a
+key that is scheduled for revocation is no longer used, it can be safely
+revoked and removed from a key set entirely.
+
+\subsection{Key Metadata}\label{metadata}
+
+Each Keyczar keyset contains a metadata file that contains information about
+that set's purpose, key type, and a list of key version information (see
+Section \ref{versions}). Valid purposes are encrypting, verifying, encrypting
+and decrypting, and signing and verifying. Having the purpose value in the
+metadata prevents a key from being used for an inappropriate purpose. For
+example, an RSA key that is typically used for encrypting shouldn't also be
+used for signing.
+
+These purposes correspond to their respective public and symmetric/private
+keys, and are usable by the Keyczar classes specified in the table below: 
+
+
+
+\begin{tabular}{ l | l | l }
+{\bf Purpose} &  {\bf Public, Private, or Symmetric } & {\bf Class used by} \\
+\hline Encrypting & Public & Encrypter or Crypter \\ \hline
+Encrypting and Decrypting & Private or Symmetric & Crypter \\ \hline
+Verifying & Public & Verifier or Signer \\ \hline 
+Verifying and Signing & Private or Symmetric & Signer \\ \hline
+\end{tabular}
+
+Each metadata file contains a specific key type that only that set can contain.
+Currently, the valid key types are:
+\begin{itemize}
+  \item AES
+  \item HMAC-SHA1
+  \item DSA Private
+  \item DSA Public
+  \item RSA Private
+  \item RSA Public
+\end{itemize}
+
+Finally, the metadata will contain a list of version information, which is
+described in Section \ref{versions}.
+
+\subsection{Versions}\label{versions}
+
+Each key metadata (see Section \ref{metadata}) contains a list of version
+numbers corresponding to the keys contained in a given keyset. Each version
+specifies an integral version number, a status of either {\it active}, {\it
+primary}, or {\it scheduled for revocation}, and a boolean specifying whether
+the key is exportable outside of Keyczar.
+
+By default, key version numbers start from 1 and increase montonically.
+However, key version numbers may be any positive, non-zero integral values.
+
+\subsection{Identifying Headers}
+
+
+
+\subsection{Formats}\label{formats}
 \subsubsection{HMAC}
 \subsubsection{AES}
-\subsubsection{RSA}
-\subsubsection{DSA}
-
-
+\subsubsection{Private RSA}
+\subsubsection{Public RSA}
+\subsubsection{Private DSA}
+\subsubsection{Public DSA}
 
 \section{Output Formats}
 \subsection{Ciphertext}
