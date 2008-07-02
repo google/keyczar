@@ -2,7 +2,7 @@ from keyczar import readers
 import os
 import simplejson
 
-testdata = os.getcwd() + "/../testdata"
+testdata = os.getcwd() + "/../../testdata"
 reader = readers.FileReader(testdata + "/aes")
 
 print reader.GetMetadata()

@@ -14,23 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Keyczart(ool) is a utility for creating and managing Keyczar keysets."""
-
 __author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
 
+import unittest
 from keyczar import keyczar
 #FIXME: want to import keyczar module in keyczar package
 
-import sys
-
-class KeyczarTool:
-  pass
-
-def usage():
-  print "Usage: "
-
-def main(argv):
-  pass
-
-if __name__ == '__main__':
-  sys.exit(main(sys.argv[1:]))  # sys.argv[0] is name of program
+class CrypterTest(unittest.TestCase):
+  
+  def setUp(self):
+    self.input = "This is some test data"
+  
+  def testAesDecrypt(self):
+    pass
+  
+  def testRsaDecrypt(self):
+    pass
+  
+  def testAesEncryptAndDecrypt(self):
+    pass
+  
+  def testRsaEncryptAndDecrypt(self):
+    pass
+  
+  def testBadAesCiphertexts(self):
+    pass
+  
+  def tearDown(self):
+    pass
