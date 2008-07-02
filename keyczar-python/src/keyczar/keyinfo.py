@@ -24,6 +24,9 @@ class _NameId(object):
     self.name = name
     self.id = id
   
+  def __str__(self):
+    return self.name
+  
 class KeyType(_NameId):
   
   """An 'enum' defining different key types and their properties.
@@ -66,7 +69,7 @@ def GetType(name):
     return types[name]
     
 class KeyStatus(_NameId):
-  pass
+  """Encodes the different possible statuses of a key."""
 
 PRIMARY = KeyStatus("primary", 0)
 ACTIVE = KeyStatus("active", 1)
@@ -79,7 +82,7 @@ def GetStatus(value):
     return statuses[value]
 
 class KeyPurpose(_NameId):
-  pass
+  """Encodes the different possible purposes for which a key can be used."""
 
 DECRYPT_AND_ENCRYPT = KeyPurpose("crypt", 0)
 ENCRYPT = KeyPurpose("encrypt", 1)

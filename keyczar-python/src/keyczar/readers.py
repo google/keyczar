@@ -18,10 +18,8 @@
 
 __author__ = """steveweis@gmail.com (Steve Weis), 
                 arkajit.dey@gmail.com (Arkajit Dey)"""
-
-import keydata
-import keys
-import simplejson
+                
+import os
 
 class Reader(object):
   """ Interface providing supported methods (no implementation). """
@@ -29,24 +27,22 @@ class Reader(object):
   def GetMetadata(self):
     """Return the KeyMetadata for the GetKey set being Read. Abstract method.
     
-    @return KeyMetadata object
+    @return JSON string representation of KeyMetadata object
     """
   
   def GetKey(self, version):
-    """Return the GetKey corresponding to the given version. Abstract method.
+    """Return the key corresponding to the given version. Abstract method.
     
     @param version, the integer version number
-    @return GetKey object
+    @return JSON string representation of a Key object
     """
 
 class FileReader(Reader):
   def __init__(self, location):
-    self.__loc = location
+    self.__location = location
     
   def GetMetadata(self):
-    metadata = simplejson.loads(open(self.__loc + "/meta").read())
-    return keydata.KeyMetadata.Read(metadata)
+    return open(os.path.join(self.__location, "meta")).read()
 
-  def GetKey(self, version_num):
-    keyData = simplejson.loads(open(self.__loc + "/" + str(version_num)).read())
-    return keys.Key.Read(keyData)
+  def GetKey(self, version_number):
+    return open(os.path.join(self.__location, str(version_number))).read()

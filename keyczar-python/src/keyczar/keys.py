@@ -23,8 +23,9 @@ of base class Key.
 __author__ = """steveweis@gmail.com (Steve Weis), 
                 arkajit.dey@gmail.com (Arkajit Dey)"""
 
-import keyinfo
 import errors
+import keyinfo
+import simplejson
 
 class Key(object):
   
