@@ -16,6 +16,9 @@
 
 __author__ = """steveweis@gmail.com (Steve Weis), 
                 arkajit.dey@gmail.com (Arkajit Dey)"""
+                
+import keyinfo
+import simplejson
 
 class KeyMetadata(object):
   
@@ -40,22 +43,34 @@ class KeyMetadata(object):
     return False
   
   def RemoveVersion(self, version_num):
-    return self.__versions.pop(version_num, False)  # return False if not found
+    """Removes version with given version number and returns it if it exists.
+    
+    Args:
+      version_num: integer version number to remove
+    
+    Returns:
+      KeyVersion: the removed version if it exists or None.
+    """
+    return self.__versions.pop(version_num, None)
   
   def GetVersion(self, version_number):
     return self.__versions.get(version_number)
   
   @staticmethod
-  def Read(kmd):
-    """Return KeyMetadata object constructed from JSON dictionary.
+  def Read(json_string):
+    """Return KeyMetadata object constructed from JSON string representation.
     
     Args:
-      kmd: dictionary Read from JSON file
+      json_string: a JSON representation of a KeyMetadata object
     
     Returns: 
       A KeyMetadata object
     """
-    return KeyMetadata(kmd['name'], kmd['purpose'], kmd['type'])
+    meta = simplejson.loads(json_string)
+    kmd = KeyMetadata(meta['name'], meta['purpose'], meta['type'])
+    for version in meta['versions']:
+      kmd.AddVersion(KeyVersion.Read(version))
+    return kmd
 
 class KeyVersion(object):
   def __init__(self, v, s, export):
@@ -68,3 +83,17 @@ class KeyVersion(object):
       self.__status = new_status
       
   status = property(lambda self: self.__status, __SetStatus)
+  
+  @staticmethod
+  def Read(version):
+    """Return KeyVersion object constructed from dictionary derived from JSON.
+    
+    Args:
+      version: a dictionary obtained from a JSON string representation.
+    
+    Returns: 
+      A KeyVersion object
+    """
+    return KeyVersion(version['versionNumber'], version['status'], 
+                      version['exportable'])
+    

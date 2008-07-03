@@ -20,6 +20,7 @@ __author__ = """steveweis@gmail.com (Steve Weis),
 import readers
 import keydata
 import keyinfo
+import keys
 import errors
 
 class Keyczar(object):
@@ -27,13 +28,13 @@ class Keyczar(object):
   """Abstract Keyczar base class."""
     
   def __init__(self, reader):
-    self.metadata = reader.GetMetadata()
-    self.keys = {}  # maps both KeyVersions and hash ids to keys
-    self.primary_version = None
+    self.metadata = keydata.KeyMetadata.Read(reader.GetMetadata())
+    self.__keys = {}  # maps both KeyVersions and hash ids to keys
+    self.primary_version = None  # default if no primary key
     
     if not self.IsAcceptablePurpose(self.metadata.purpose):
-      raise errors.KeyczarError("Unacceptable purpose: " + 
-                                self.metadata.purpose)
+      raise errors.KeyczarError("Unacceptable purpose: %s" 
+                                % self.metadata.purpose)
       
     for version in self.metadata.versions:
       if version.status == keyinfo.PRIMARY:
@@ -41,12 +42,15 @@ class Keyczar(object):
           raise errors.KeyczarError(
               "Key sets may only have a single primary version")
         self.primary_version = version
-      key = reader.GetKey(version.version_number)
-      self.keys[version] = self.keys[key.hash] = key
+      key = keys.ReadKey(self.metadata.type, 
+                         reader.GetKey(version.version_number))
+      self.__keys[version] = self.__keys[key.hash] = key
     
-  versions = property(lambda self: [k for k in self.keys.keys() 
+  versions = property(lambda self: [k for k in self.__keys.keys() 
                                     if isinstance(k, keyinfo.KeyVersion)],
                       doc="""List of versions in key set.""")
+  primary_key = property(lambda self: self.GetKey(self.primary_version),
+                         doc="""The primary key for this key set.""")
   
   def __str__(self):
     return str(self.metadata)
@@ -58,6 +62,17 @@ class Keyczar(object):
   
   def IsAcceptablePurpose(self, purpose):
     """Indicates whether purpose is valid. Abstract method."""
+  
+  def GetKey(self, id):
+    """Returns the key associated with the given id, a hash or a version.
+    
+    Args:
+      id: Either the hash identifier of the key or its KeyVersion.
+    
+    Returns:
+      Key: The key associated with this id.
+    """
+    return self.__keys.get(id)
   
   def AddVersion(self, status, size=None):
     """Adds a new key version with given status to key set.
@@ -113,18 +128,102 @@ class Keyczar(object):
     """
 
 class GenericKeyczar(Keyczar):
-  pass
+  
+  """To be used by Keyczart."""
+  
+  @staticmethod
+  def Read(location):
+    """Return a GenericKeyczar created from FileReader at given location."""
+    return GenericKeyczar(readers.FileReader(location))
+
+  def IsAcceptablePurpose(self, purpose):
+    """All purposes ok for Keyczart."""
+    return True
+  
+  def PublicKeyExport(self, destination):
+    """Export the public keys corresponding to our key set to destination."""
 
 class Encrypter(Keyczar):
-  pass
+  
+  """Capable of encrypting only."""
+  
+  @staticmethod
+  def Read(location):
+    """Return an Encrypter created from FileReader at given location."""
+    return Encrypter(readers.FileReader(location))
+  
+  def IsAcceptablePurpose(self, purpose):
+    """Only valid if purpose includes encrypting."""
+    return purpose == keyinfo.ENCRYPT or purpose == keyinfo.DECRYPT_AND_ENCRYPT
+  
+  def CiphertextSize(self, input_length):
+    """Return the size of the ciphertext for an input of given length."""
+  
+  def Encrypt(self, data):
+    """Encrypt the data and return the ciphertext."""
 
 class Verifier(Keyczar):
-  pass
+  
+  """Capable of verifying only."""
+  
+  @staticmethod
+  def Read(location):
+    """Return a Verifier created from FileReader at given location."""
+    return Verifier(readers.FileReader(location))
+  
+  def IsAcceptablePurpose(self, purpose):
+    """Only valid if purpose includes verifying."""
+    return purpose == keyinfo.VERIFY or purpose == keyinfo.SIGN_AND_VERIFY
+  
+  def Verify(self, data, sig):
+    """Verifies whether the signature corresponds to the given data.
+    
+    Args:
+      data:
+      sig:
+    
+    Returns:
+      True if sig corresponds to data, False otherwise.
+    """
 
 class Crypter(Encrypter):
-  pass
+  
+  """Capable of encrypting and decrypting."""
+  
+  @staticmethod
+  def Read(location):
+    """Return a Crypter created from FileReader at given location."""
+    return Crypter(readers.FileReader(location))
+  
+  def IsAcceptablePurpose(self, purpose):
+    """Only valid if purpose includes decrypting"""
+    return purpose == keyinfo.DECRYPT_AND_ENCRYPT
+  
+  def Decrypt(self, ciphertext):
+    """Decrypts the given ciphertext and returns the plaintext."""
 
 class Signer(Verifier):
-  pass
-
-
+  
+  """Capable of both signing and verifying."""
+  
+  @staticmethod
+  def Read(location):
+    """Return a Signer created from FileReader at given location."""
+    return Signer(readers.FileReader(location))
+  
+  def IsAcceptablePurpose(self, purpose):
+    """Only valid if purpose includes signing."""
+    return purpose == keyinfo.SIGN_AND_VERIFY
+  
+  def DigestSize(self):
+    """Return the size of signatures produced by this Signer."""
+  
+  def Sign(self, data):
+    """Sign given data and return corresponding signature.
+    
+    Args:
+      data:
+    
+    Returns:
+      Signature on the data.
+    """

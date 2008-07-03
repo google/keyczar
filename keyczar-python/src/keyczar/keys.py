@@ -46,18 +46,6 @@ class Key(object):
   size = property(lambda self: self.__size, __SetSize, 
                   doc="""The size of the key in bits.""")
 
-  @staticmethod
-  def Read(data):
-    """Return Key object constructed from JSON dictionary.
-    
-    Args:
-      data: dictionary Read from JSON file
-    
-    Returns:
-      A Key object
-    """
-    return Key(data['type'], data['hash'])
-
 def GenKey(type):
   try:
     return {keyinfo.AES: AesKey.Generate,

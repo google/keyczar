@@ -16,11 +16,15 @@
 
 __author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
 
-import unittest
 from keyczar import keyczar
 #FIXME: want to import keyczar module in keyczar package
 
+import unittest
+import os
+
 class CrypterTest(unittest.TestCase):
+  
+  TEST_DATA = os.path.join(os.getcwd(), "..", "..", "testdata")
   
   def setUp(self):
     self.input = "This is some test data"
@@ -32,7 +36,10 @@ class CrypterTest(unittest.TestCase):
     pass
   
   def testAesEncryptAndDecrypt(self):
-    pass
+    crypter = keyczar.Crypter.Read(os.path.join(CrypterTest.TEST_DATA, "aes"))
+    ciphertext = crypter.Encrypt(self.input)
+    plaintext = crypter.Decrypt(ciphertext)
+    self.assertEquals(self.input, plaintext)
   
   def testRsaEncryptAndDecrypt(self):
     pass
