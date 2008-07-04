@@ -25,7 +25,12 @@ __author__ = """steveweis@gmail.com (Steve Weis),
 
 import errors
 import keyinfo
+
 import simplejson
+from Crypto.Util.randpool import RandomPool
+
+import base64
+import sha
 
 class Key(object):
   
@@ -46,12 +51,14 @@ class Key(object):
   size = property(lambda self: self.__size, __SetSize, 
                   doc="""The size of the key in bits.""")
 
-def GenKey(type):
+def GenKey(type, size=None):
+  if size is None:
+    size = type.default_size
   try:
     return {keyinfo.AES: AesKey.Generate,
             keyinfo.HMAC_SHA1: HmacKey.Generate,
             keyinfo.DSA_PRIV: DsaPrivateKey.Generate,
-            keyinfo.RSA_PRIV: RsaPrivateKey.Generate}[type]()
+            keyinfo.RSA_PRIV: RsaPrivateKey.Generate}[type](size)
   except KeyError:
     if type == keyinfo.DSA_PUB or type == keyinfo.RSA_PUB:
       msg = "Public keys of type %s must be exported from private keys."
@@ -73,7 +80,7 @@ def ReadKey(type, key):
 class AesKey(Key):
   
   @staticmethod
-  def Generate():
+  def Generate(size=None):
     pass
   
   @staticmethod
@@ -82,13 +89,26 @@ class AesKey(Key):
 
 class HmacKey(Key):
   
+  def __init__(self, hash, key_string):
+    Key.__init__(self, keyinfo.HMAC_SHA1, hash)
+    self.key_string = key_string
+  
   @staticmethod
-  def Generate():
-    pass
+  def Generate(size=None):
+    if size is None:
+      size = keyinfo.HMAC_SHA1.default_size
+    rp = RandomPool(256)
+    key_bytes = rp.get_bytes(size / 8)
+    key_string = base64.urlsafe_b64encode(key_bytes)
+    sha_hash = sha.new(key_bytes)  # FIXME: Need to prepend chr(len(key_bytes))
+    hash = base64.urlsafe_b64encode(sha_hash.digest()[:4])  # first 4 bytes only
+    key = HmacKey(hash, key_string)
+    key.size = size
+    return key
   
   @staticmethod
   def Read(key):
-    pass
+    hmac = simplejson.loads(key)
 
 class PrivateKey(Key):
   
@@ -115,7 +135,7 @@ class PublicKey(Key):
 class DsaPrivateKey(PrivateKey):
   
   @staticmethod
-  def Generate():
+  def Generate(size=None):
     pass
   
   @staticmethod
@@ -125,7 +145,7 @@ class DsaPrivateKey(PrivateKey):
 class RsaPrivateKey(PrivateKey):
   
   @staticmethod
-  def Generate():
+  def Generate(size=None):
     pass
   
   @staticmethod

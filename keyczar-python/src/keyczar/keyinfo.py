@@ -53,7 +53,6 @@ class KeyType(_NameId):
   
   def IsValidSize(self, size):
     return size in self.__sizes
-  
 
 AES = KeyType("AES", 0, [128, 192, 256], 0)
 HMAC_SHA1 = KeyType("HMAC-SHA1", 1, [256], 20)

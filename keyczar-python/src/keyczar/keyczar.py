@@ -26,11 +26,16 @@ import errors
 class Keyczar(object):
   
   """Abstract Keyczar base class."""
+  
+  VERSION = 1
+  KEY_HASH_SIZE = 4
+  HEADER_SIZE = 2 + KEY_HASH_SIZE
     
   def __init__(self, reader):
     self.metadata = keydata.KeyMetadata.Read(reader.GetMetadata())
     self.__keys = {}  # maps both KeyVersions and hash ids to keys
     self.primary_version = None  # default if no primary key
+    self.default_size = self.metadata.type.default_size
     
     if not self.IsAcceptablePurpose(self.metadata.purpose):
       raise errors.KeyczarError("Unacceptable purpose: %s" 
@@ -70,9 +75,13 @@ class Keyczar(object):
       id: Either the hash identifier of the key or its KeyVersion.
     
     Returns:
-      Key: The key associated with this id.
+      Key: The key associated with this id or None if id doesn't exist.
     """
     return self.__keys.get(id)
+  
+  def __AddKey(self, version, key):
+    self.__keys[version] = self.__keys[key.hash] = key
+    self.metadata.AddVersion(version)
   
   def AddVersion(self, status, size=None):
     """Adds a new key version with given status to key set.
@@ -90,6 +99,28 @@ class Keyczar(object):
     Raises:
       KeyczarError: If key type unsupported
     """
+    if size is None:
+      size = self.default_size
+
+    version = keydata.KeyVersion(len(self.versions)+1, status, False)
+    
+    if status == keyinfo.PRIMARY:
+      if self.primary_version is not None:
+        self.primary_version.status = keyinfo.ACTIVE
+      self.primary_version = version
+    
+    if size < self.default_size:
+      print("WARNING: %d-bit key size is less than recommended default key" +
+            "size of %d bits for %s keys."
+            % (size, self.default_size, str(self.metadata.type)))
+    
+    # Make sure no keys collide on their identifiers
+    while True:
+      key = keys.GenKey(self.metadata.type, size)
+      if self.GetKey(key.hash) is None:
+        break
+    
+    self.__AddKey(version, key)
   
   def Promote(self, version_number):
     """Promotes the status of key with given version number.
@@ -102,6 +133,16 @@ class Keyczar(object):
     Raises:
       KeyczarError: If invalid version number or trying to promote a primary key
     """
+    version = self.metadata.GetVersion(version_number)
+    if version.status == keyinfo.PRIMARY:
+      raise errors.KeyczarError("Can't promote a primary key.")
+    elif version.status == keyinfo.ACTIVE:
+      version.status = keyinfo.PRIMARY
+      if self.primary_version is not None:
+        self.primary_version.status = keyinfo.ACTIVE  # only one primary key
+      self.primary_version = version
+    elif version.status == keyinfo.SCHEDULED_FOR_REVOCATION:
+      version.status = keyinfo.ACTIVE
   
   def Demote(self, version_number):
     """Demotes the status of key with given version number.
@@ -115,6 +156,14 @@ class Keyczar(object):
       KeyczarError: If invalid version number or trying to demote a key
           scheduled for revocation. Should use Revoke instead.
     """
+    version = self.metadata.GetVersion(version_number)
+    if version.status == keyinfo.PRIMARY:
+      version.status = keyinfo.ACTIVE
+      self.primary_version = None  # no more primary keys in the set
+    elif version.status == keyinfo.ACTIVE:
+      version.status = keyinfo.SCHEDULED_FOR_REVOCATION
+    elif version.status == keyinfo.SCHEDULED_FOR_REVOCATION:
+      raise errors.KeyczarError("Can't demote a key scheduled for revocation.")
   
   def Revoke(self, version_number):
     """Revokes the key with given version number if scheduled to be revoked.
@@ -126,6 +175,11 @@ class Keyczar(object):
       KeyczarError: If invalid version number or key is not scheduled
           for revocation.
     """
+    version = self.metadata.GetVersion(version_number)
+    if version.status == keyinfo.SCHEDULED_FOR_REVOCATION:
+      self.metadata.RemoveVersion(version)
+    else:
+      raise errors.KeyczarError("Can't revoke key if not scheduled to be.")
 
 class GenericKeyczar(Keyczar):
   

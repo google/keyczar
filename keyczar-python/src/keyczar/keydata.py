@@ -18,6 +18,7 @@ __author__ = """steveweis@gmail.com (Steve Weis),
                 arkajit.dey@gmail.com (Arkajit Dey)"""
                 
 import keyinfo
+import errors
 import simplejson
 
 class KeyMetadata(object):
@@ -42,19 +43,34 @@ class KeyMetadata(object):
       return True
     return False
   
-  def RemoveVersion(self, version_num):
+  def RemoveVersion(self, version_number):
     """Removes version with given version number and returns it if it exists.
     
     Args:
-      version_num: integer version number to remove
+      version_number: integer version number to remove
     
     Returns:
       KeyVersion: the removed version if it exists or None.
     """
-    return self.__versions.pop(version_num, None)
+    return self.__versions.pop(version_number, None)
   
   def GetVersion(self, version_number):
-    return self.__versions.get(version_number)
+    """Returns the version corresponding to the given version number.
+    
+    Args:
+      version_number: integer version number of desired KeyVersion
+    
+    Returns:
+      KeyVersion: the corresponding version if it exists
+    
+    Raises:
+      KeyczarError: If the version number is non-existent.
+    """
+    version = self.__versions.get(version_number)
+    if version is None:
+      raise errors.KeyczarError("No such version number: %d" % version_number)
+    else:
+      return version
   
   @staticmethod
   def Read(json_string):
