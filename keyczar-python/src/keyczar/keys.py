@@ -84,7 +84,7 @@ def ReadKey(type, key):
   except KeyError:
     raise errors.KeyczarError("Unsupported key type: %s" % type)
 
-class AesKey(Key):
+class AesKey(SymmetricKey):
   
   def __init__(self, hash, key_string):
     SymmetricKey.__init__(self, keyinfo.AES, hash, key_string)
@@ -98,8 +98,9 @@ class AesKey(Key):
     
     key_bytes = util.RandBytes(size / 8)
     key_string = base64.urlsafe_b64encode(key_bytes)
-    hmac_key = HmacKey.Generate(size)
-    full_hash = util.PrefixHash([key_bytes, hmac_key.hash])
+    hmac_key = HmacKey.Generate(size) 
+    full_hash = util.Hash([util.IntToBytes(len(key_bytes)), key_bytes, 
+                           base64.urlsafe_b64decode(hmac_key.hash)])
     hash = base64.urlsafe_b64encode(full_hash[:4])  # first 4 bytes only
     
     key = AesKey(hash, key_string)
@@ -128,7 +129,7 @@ class HmacKey(SymmetricKey):
     
     key_bytes = util.RandBytes(size / 8)
     key_string = base64.urlsafe_b64encode(key_bytes)
-    full_hash = util.PrefixHash([key_bytes])
+    full_hash = util.Hash([util.IntToBytes(len(key_bytes)), key_bytes])
     hash = base64.urlsafe_b64encode(full_hash[:4])  # first 4 bytes only
     
     key = HmacKey(hash, key_string)

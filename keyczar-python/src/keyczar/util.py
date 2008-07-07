@@ -30,8 +30,8 @@ def RandBytes(n):
   rp = RandomPool(256)
   return rp.getBytes(n)
 
-def PrefixHash(inputs):
+def Hash(inputs):
   md = sha.new()
   for i in inputs:
-    md.update(IntToBytes(len(i)) + i)
+    md.update(i)
   return md.digest()
