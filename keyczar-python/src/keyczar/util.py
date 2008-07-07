@@ -28,7 +28,7 @@ def IntToBytes(n):
 
 def RandBytes(n):
   rp = RandomPool(256)
-  return rp.getBytes(n)
+  return rp.get_bytes(n)
 
 def Hash(inputs):
   md = sha.new()

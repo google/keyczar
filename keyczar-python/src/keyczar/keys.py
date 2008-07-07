@@ -36,7 +36,7 @@ class Key(object):
   """Parent class for Keyczar Keys."""
   
   def __init__(self, type, hash):
-    self.type = keyinfo.GetType(type)
+    self.type = type
     self.hash = hash
     self.__size = self.type.default_size  # initially default
     
@@ -57,6 +57,9 @@ class SymmetricKey(Key):
   def __init__(self, type, hash, key_string):
     Key.__init__(self, type, hash)
     self.key_string = key_string
+  
+  def __str__(self):
+    return "(%s %s %s)" % (self.type, self.hash, self.key_string)
 
 def GenKey(type, size=None):
   if size is None:
@@ -112,7 +115,8 @@ class AesKey(SymmetricKey):
   def Read(key):
     aes = simplejson.loads(key)
     aes_key = AesKey(aes['hash'], aes['aesKeyString'])
-    aes_key.hmac_key = HmacKey.Read(aes['hmacKey'])
+    hmac = aes['hmacKey']
+    aes_key.hmac_key = HmacKey(hmac['hash'], hmac['hmacKeyString'])
     aes_key.mode = keyinfo.GetMode(aes['mode'])
     return aes_key
     

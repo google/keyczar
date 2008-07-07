@@ -49,7 +49,8 @@ class Keyczar(object):
         self.primary_version = version
       key = keys.ReadKey(self.metadata.type, 
                          reader.GetKey(version.version_number))
-      self.__keys[version] = self.__keys[key.hash] = key
+      self.__keys[version] = key
+      self.__keys[key.hash] = key
     
   versions = property(lambda self: [k for k in self.__keys.keys() 
                                     if isinstance(k, keyinfo.KeyVersion)],

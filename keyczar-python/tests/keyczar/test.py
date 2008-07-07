@@ -4,6 +4,10 @@
 
 from Crypto.Hash import MD5
 from Crypto.Cipher import AES
+from keyczar import keys
+from keyczar import keyinfo
+
+
 hash=MD5.new()
 hash.update('message')
 print hash.hexdigest()
@@ -13,3 +17,5 @@ cipher = aes.encrypt("FoofFoofFoofFoof")
 print cipher
 aes = AES.new("0123456789ABCDEF", AES.MODE_CBC, "0000000000000000")
 print aes.decrypt(cipher)
+
+print keys.GenKey(keyinfo.AES)
