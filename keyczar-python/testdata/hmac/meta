@@ -1,0 +1,1 @@
+{"name":"test","purpose":"SIGN_AND_VERIFY","type":"HMAC_SHA1","versions":[{"exportable":false,"status":"ACTIVE","versionNumber":1},{"exportable":false,"status":"PRIMARY","versionNumber":2}],"encrypted":false}

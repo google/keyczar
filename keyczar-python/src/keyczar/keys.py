@@ -25,12 +25,11 @@ __author__ = """steveweis@gmail.com (Steve Weis),
 
 import errors
 import keyinfo
+import util
 
 import simplejson
-from Crypto.Util.randpool import RandomPool
 
 import base64
-import sha
 
 class Key(object):
   
@@ -50,6 +49,14 @@ class Key(object):
   
   size = property(lambda self: self.__size, __SetSize, 
                   doc="""The size of the key in bits.""")
+
+class SymmetricKey(Key):
+  
+  """Parent class for symmetric keys such as AES, HMAC-SHA1"""
+  
+  def __init__(self, type, hash, key_string):
+    Key.__init__(self, type, hash)
+    self.key_string = key_string
 
 def GenKey(type, size=None):
   if size is None:
@@ -79,29 +86,51 @@ def ReadKey(type, key):
 
 class AesKey(Key):
   
+  def __init__(self, hash, key_string):
+    SymmetricKey.__init__(self, keyinfo.AES, hash, key_string)
+    self.mode = keyinfo.CBC
+    self.hmac_key = None  # generate one upon creation
+  
   @staticmethod
   def Generate(size=None):
-    pass
+    if size is None:
+      size = keyinfo.AES.default_size
+    
+    key_bytes = util.RandBytes(size / 8)
+    key_string = base64.urlsafe_b64encode(key_bytes)
+    hmac_key = HmacKey.Generate(size)
+    full_hash = util.PrefixHash([key_bytes, hmac_key.hash])
+    hash = base64.urlsafe_b64encode(full_hash[:4])  # first 4 bytes only
+    
+    key = AesKey(hash, key_string)
+    key.hmac_key = hmac_key
+    key.size = size
+    return key
   
   @staticmethod
   def Read(key):
-    pass
+    aes = simplejson.loads(key)
+    aes_key = AesKey(aes['hash'], aes['aesKeyString'])
+    aes_key.hmac_key = HmacKey.Read(aes['hmacKey'])
+    aes_key.mode = keyinfo.GetMode(aes['mode'])
+    return aes_key
+    
 
-class HmacKey(Key):
+class HmacKey(SymmetricKey):
   
   def __init__(self, hash, key_string):
-    Key.__init__(self, keyinfo.HMAC_SHA1, hash)
-    self.key_string = key_string
+    SymmetricKey.__init__(self, keyinfo.HMAC_SHA1, hash, key_string)
   
   @staticmethod
   def Generate(size=None):
     if size is None:
       size = keyinfo.HMAC_SHA1.default_size
-    rp = RandomPool(256)
-    key_bytes = rp.get_bytes(size / 8)
+    
+    key_bytes = util.RandBytes(size / 8)
     key_string = base64.urlsafe_b64encode(key_bytes)
-    sha_hash = sha.new(key_bytes)  # FIXME: Need to prepend chr(len(key_bytes))
-    hash = base64.urlsafe_b64encode(sha_hash.digest()[:4])  # first 4 bytes only
+    full_hash = util.PrefixHash([key_bytes])
+    hash = base64.urlsafe_b64encode(full_hash[:4])  # first 4 bytes only
+    
     key = HmacKey(hash, key_string)
     key.size = size
     return key
@@ -109,6 +138,7 @@ class HmacKey(Key):
   @staticmethod
   def Read(key):
     hmac = simplejson.loads(key)
+    return HmacKey(hmac['hash'], hmac['hmacKeyString'])
 
 class PrivateKey(Key):
   

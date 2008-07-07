@@ -83,7 +83,8 @@ class KeyMetadata(object):
       A KeyMetadata object
     """
     meta = simplejson.loads(json_string)
-    kmd = KeyMetadata(meta['name'], meta['purpose'], meta['type'])
+    kmd = KeyMetadata(meta['name'], keyinfo.GetPurpose(meta['purpose']), 
+                      keyinfo.GetType(meta['type']))
     for version in meta['versions']:
       kmd.AddVersion(KeyVersion.Read(version))
     return kmd
@@ -110,6 +111,7 @@ class KeyVersion(object):
     Returns: 
       A KeyVersion object
     """
-    return KeyVersion(version['versionNumber'], version['status'], 
+    return KeyVersion(int(version['versionNumber']),
+                      keyinfo.GetStatus(version['status']),
                       version['exportable'])
     
