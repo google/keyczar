@@ -26,10 +26,14 @@ __author__ = """steveweis@gmail.com (Steve Weis),
 import errors
 import keyinfo
 import util
+import keyczar
 
 import simplejson
+from Crypto.Cipher import AES
 
 import base64
+import sha
+import hmac
 
 class Key(object):
   
@@ -58,6 +62,12 @@ class Key(object):
                   doc="""The size of the key in bits.""")
   
   key_string = property(__GetKeyString, doc="""The key as a string.""")
+  
+  def Header(self):
+    """Return the 6-byte header string including version, format, and hash."""
+    return (util.IntToBytes(keyczar.Keyczar.VERSION) + 
+            util.IntToBytes(keyczar.Keyczar.FORMAT) + 
+            base64.urlsafe_b64decode(self.hash))
 
 class SymmetricKey(Key):
   
@@ -103,7 +113,8 @@ class AesKey(SymmetricKey):
     SymmetricKey.__init__(self, keyinfo.AES, hash, key_string)
     self.mode = keyinfo.CBC
     self.hmac_key = None  # generate one upon creation
-    self.block_size = len(base64.urlsafe_b64decode(key_string))
+    self.key_bytes = base64.urlsafe_b64decode(key_string)
+    self.block_size = len(self.key_bytes)
   
   @staticmethod
   def Generate(size=None):
@@ -130,6 +141,14 @@ class AesKey(SymmetricKey):
     aes_key.hmac_key = HmacKey(hmac['hash'], hmac['hmacKeyString'])
     aes_key.mode = keyinfo.GetMode(aes['mode'])
     return aes_key
+  
+  def Encrypt(self, data):
+    #TODO: finish this -- need a way to generate random IVs and remember them.
+    aes = AES.new(self.key_bytes, AES.MODE_CBC, "0"*self.block_size)
+    return base64.urlsafe_b64encode(self.Header() + aes.encrypt(data))
+  
+  def Decrypt(self, ciph):
+    """Decrypts the given ciphertext."""
     
 
 class HmacKey(SymmetricKey):
@@ -153,8 +172,17 @@ class HmacKey(SymmetricKey):
   
   @staticmethod
   def Read(key):
-    hmac = simplejson.loads(key)
-    return HmacKey(hmac['hash'], hmac['hmacKeyString'])
+    mac = simplejson.loads(key)
+    return HmacKey(mac['hash'], mac['hmacKeyString'])
+  
+  def Sign(self, msg):
+    """Return a signature on the message."""
+    mac = hmac.new(self.key_string, msg, sha)
+    return base64.urlsafe_b64encode(mac.digest())
+  
+  def Verify(self, msg, sig):
+    """Return true if the signature corresponds to the message."""
+    return self.Sign(msg) == sig
 
 class PrivateKey(Key):
   

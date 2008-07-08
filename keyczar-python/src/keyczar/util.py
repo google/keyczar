@@ -27,10 +27,12 @@ def IntToBytes(n):
   return "".join([chr(b) for b in bytes])  # byte array to byte string
 
 def RandBytes(n):
+  """Return n random bytes."""
   rp = RandomPool(256)
   return rp.get_bytes(n)
 
 def Hash(inputs):
+  """Return a SHA-1 hash over a list of inputs."""
   md = sha.new()
   for i in inputs:
     md.update(i)

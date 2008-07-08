@@ -18,4 +18,10 @@ print cipher
 aes = AES.new("0123456789ABCDEF", AES.MODE_CBC, "0000000000000000")
 print aes.decrypt(cipher)
 
-print keys.GenKey(keyinfo.AES)
+hmac = keys.GenKey(keyinfo.HMAC_SHA1)
+print hmac
+
+msg = "Hello World"
+sig = hmac.Sign(msg)
+print sig
+print hmac.Verify(msg, sig)

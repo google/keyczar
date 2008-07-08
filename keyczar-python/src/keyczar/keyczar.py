@@ -30,6 +30,7 @@ class Keyczar(object):
   """Abstract Keyczar base class."""
   
   VERSION = 1
+  FORMAT = 1
   KEY_HASH_SIZE = 4
   HEADER_SIZE = 2 + KEY_HASH_SIZE
     
