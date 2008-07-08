@@ -41,14 +41,23 @@ class Key(object):
     self.__size = self.type.default_size  # initially default
     
   def __str__(self):
-    return "(%s %s)" % (self.type, self.hash)  
+    return "(%s %s %s)" % (self.type, self.hash, self.key_string)
   
   def __SetSize(self, new_size):
     if self.type.IsValidSize(new_size):
       self.__size = new_size
   
+  def _GetKeyString(self):
+    """Return the key as a string. Abstract method."""
+  
+  def __GetKeyString(self):
+    """Return the key as a string."""
+    return self._GetKeyString()  # indirection allows subclass overriding
+  
   size = property(lambda self: self.__size, __SetSize, 
                   doc="""The size of the key in bits.""")
+  
+  key_string = property(__GetKeyString, doc="""The key as a string.""")
 
 class SymmetricKey(Key):
   
@@ -56,10 +65,11 @@ class SymmetricKey(Key):
   
   def __init__(self, type, hash, key_string):
     Key.__init__(self, type, hash)
-    self.key_string = key_string
+    self.__key_string = key_string
   
-  def __str__(self):
-    return "(%s %s %s)" % (self.type, self.hash, self.key_string)
+  def _GetKeyString(self):
+    """Return the key as a string."""
+    return self.__key_string
 
 def GenKey(type, size=None):
   if size is None:
@@ -93,6 +103,7 @@ class AesKey(SymmetricKey):
     SymmetricKey.__init__(self, keyinfo.AES, hash, key_string)
     self.mode = keyinfo.CBC
     self.hmac_key = None  # generate one upon creation
+    self.block_size = len(base64.urlsafe_b64decode(key_string))
   
   @staticmethod
   def Generate(size=None):
@@ -101,7 +112,7 @@ class AesKey(SymmetricKey):
     
     key_bytes = util.RandBytes(size / 8)
     key_string = base64.urlsafe_b64encode(key_bytes)
-    hmac_key = HmacKey.Generate(size) 
+    hmac_key = HmacKey.Generate()  # use default HMAC-SHA1 key size
     full_hash = util.Hash([util.IntToBytes(len(key_bytes)), key_bytes, 
                            base64.urlsafe_b64decode(hmac_key.hash)])
     hash = base64.urlsafe_b64encode(full_hash[:4])  # first 4 bytes only
@@ -158,6 +169,9 @@ class PrivateKey(Key):
   
   def SetPublic(self):
     pass
+  
+  def _GetKeyString(self):
+    return self.pkcs8
 
 class PublicKey(Key):
   
@@ -166,6 +180,9 @@ class PublicKey(Key):
   def __init__(self, type, hash, x509):
     Key.__init__(type, hash)
     self.x509 = x509
+  
+  def _GetKeyString(self):
+    return self.x509
 
 class DsaPrivateKey(PrivateKey):
   

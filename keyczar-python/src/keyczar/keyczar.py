@@ -23,6 +23,8 @@ import keyinfo
 import keys
 import errors
 
+from Crypto.Cipher import AES
+
 class Keyczar(object):
   
   """Abstract Keyczar base class."""
@@ -216,6 +218,13 @@ class Encrypter(Keyczar):
   
   def Encrypt(self, data):
     """Encrypt the data and return the ciphertext."""
+    encrypting_key = self.primary_key
+    if encrypting_key is None:
+      raise errors.NoPrimaryKeyError()
+    key_string = encrypting_key.key_string
+    #aes = AES.new(encrypting_key.key_string, AES.MODE_CBC, "0000000000000000")
+    #TODO: need different Encrypt methods for each type of key
+    #abstract some kind of interface? similar to the stream interface methods?
 
 class Verifier(Keyczar):
   
