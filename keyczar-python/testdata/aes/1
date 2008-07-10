@@ -1,1 +1,1 @@
-{"aesKeyString":"CrOgKTc1zAAojXKHGw-VIA","hash":[-16,10,-118,-119],"hmacKey":{"hash":[-4,-16,33,-63],"hmacKeyString":"sWaQnZWToMMSLTK8WaAVyaB9kGH55egm6gEuGj6FUdU","type":"HMAC_SHA1"},"mode":"CBC","type":"AES"}
+{"aesKeyString":"CrOgKTc1zAAojXKHGw-VIA","hash":"8AqKiQ","hmacKey":{"hash":"_PAhwQ","hmacKeyString":"sWaQnZWToMMSLTK8WaAVyaB9kGH55egm6gEuGj6FUdU","type":"HMAC_SHA1"},"mode":"CBC","type":"AES"}

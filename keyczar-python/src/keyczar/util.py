@@ -18,8 +18,11 @@
 
 __author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
 
+import errors
+
 from Crypto.Util.randpool import RandomPool
 import sha
+import base64
 
 def IntToBytes(n):
   """Return byte string of 4 big-endian ordered bytes representing n."""
@@ -37,3 +40,45 @@ def Hash(inputs):
   for i in inputs:
     md.update(i)
   return md.digest()
+
+def Encode(s):
+  """Return Base64 encoding of s. Suppress padding characters (=).
+  
+  Uses URL-safe alphabet: - replaces +, _ replaces /. Will convert s of type
+  unicode to string type first.
+  
+  Parameters:
+    s: string to encode as Base64
+  
+  Returns:
+    Base64 representation of s.
+  """
+  return base64.urlsafe_b64encode(str(s)).replace("=", "")
+  
+
+def Decode(s):
+  """Return decoded version of given Base64 string. Ignore whitespace.
+  
+  Uses URL-safe alphabet: - replaces +, _ replaces /. Will convert s of type
+  unicode to string type first.
+  
+  Parameters:
+    s: Base64 string to decode
+  
+  Returns:
+    original string that was encoded as Base64
+  
+  Raises:
+    Base64DecodingError: If length of string (ignoring whitespace) is one more
+      than a multiple of four.
+  """
+  s = str(s.replace(" ", ""))  # kill whitespace, make string (not unicode)
+  d = len(s) % 4
+  if d == 1:
+    raise errors.Base64DecodingError()
+  elif d == 2:
+    s += "=="
+  elif d == 3:
+    s += "="
+  return base64.urlsafe_b64decode(s)
+    

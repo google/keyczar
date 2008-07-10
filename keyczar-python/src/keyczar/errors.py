@@ -29,6 +29,14 @@ class BadVersionError(KeyczarError):
     KeyczarError.__init__(self, 
                               "Received a bad version number: " + str(version))
 
+class BadFormatError(KeyczarError):
+  
+  """Indicates a bad format number was received."""
+  
+  def __init__(self, format):
+    KeyczarError.__init__(self, 
+                              "Received a bad format number: " + str(format))
+
 class Base64DecodingError(KeyczarError):
   """Indicates an error while performing Base 64 decoding."""
 

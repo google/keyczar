@@ -22,17 +22,18 @@ import keydata
 import keyinfo
 import keys
 import errors
+import util
 
 from Crypto.Cipher import AES
+
+VERSION = 1
+FORMAT = 1
+KEY_HASH_SIZE = 4
+HEADER_SIZE = 2 + KEY_HASH_SIZE
 
 class Keyczar(object):
   
   """Abstract Keyczar base class."""
-  
-  VERSION = 1
-  FORMAT = 1
-  KEY_HASH_SIZE = 4
-  HEADER_SIZE = 2 + KEY_HASH_SIZE
     
   def __init__(self, reader):
     self.metadata = keydata.KeyMetadata.Read(reader.GetMetadata())
@@ -218,15 +219,23 @@ class Encrypter(Keyczar):
     """Return the size of the ciphertext for an input of given length."""
   
   def Encrypt(self, data):
-    """Encrypt the data and return the ciphertext."""
+    """Encrypt the data and return the ciphertext.
+    
+    Parameters:
+      data: String message to encrypt
+    
+    Returns:
+      ciphertext encoded as a Base64 string
+      
+    Raises:
+      NoPrimaryKeyError: If no primary key can be found to encrypt.
+      KeyczarError: If primary key is not capable of encryption.
+    """
     encrypting_key = self.primary_key
     if encrypting_key is None:
       raise errors.NoPrimaryKeyError()
-    key_string = encrypting_key.key_string
-    #aes = AES.new(encrypting_key.key_string, AES.MODE_CBC, "0000000000000000")
-    #TODO: need different Encrypt methods for each type of key
-    #abstract some kind of interface? similar to the stream interface methods?
-
+    return util.Encode(encrypting_key.Encrypt(data))
+    
 class Verifier(Keyczar):
   
   """Capable of verifying only."""
@@ -265,8 +274,39 @@ class Crypter(Encrypter):
     return purpose == keyinfo.DECRYPT_AND_ENCRYPT
   
   def Decrypt(self, ciphertext):
-    """Decrypts the given ciphertext and returns the plaintext."""
-
+    """Decrypts the given ciphertext and returns the plaintext.
+    
+    Parameters:
+      ciphertext: Base64 encoded string ciphertext to be decrypted.
+      
+    Returns:
+      Plaintext String message
+    
+    Raises:
+      ShortCiphertextError: If length is too short to have Header, IV, & Sig.
+      BadVersionError: If header specifies an illegal version.
+      BadFormatError: If header specifies an illegal format.
+      KeyNotFoundError: If key specified in header doesn't exist.
+      InvalidSignatureError: If the signature can't be verified. 
+    """
+    data_bytes = util.Decode(ciphertext)
+    if len(data_bytes) < HEADER_SIZE:
+      raise errors.ShortCiphertextError()
+    
+    version = ord(data_bytes[0])
+    format = ord(data_bytes[1])
+    if version != VERSION:
+      raise errors.BadVersionError()
+    if format != FORMAT:
+      raise errors.BadFormatError()
+    
+    hash = util.Encode(data_bytes[2:2+KEY_HASH_SIZE])
+    key = self.GetKey(hash)
+    if key is None:
+      raise errors.KeyNotFoundError()
+    
+    return key.decrypt(data_bytes)
+    
 class Signer(Verifier):
   
   """Capable of both signing and verifying."""

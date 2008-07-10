@@ -31,9 +31,13 @@ import keyczar
 import simplejson
 from Crypto.Cipher import AES
 
-import base64
 import sha
 import hmac
+
+#TODO: Note that simplejson deals in Unicode strings. So perhaps we should
+#modify all Read() methods to wrap data obtained from simplejson with str().
+#Currently, only problem arose with base64 conversions -- this was dealt with
+#directly in the encode/decode methods. Luckily 'hello' == u'hello'.
 
 class Key(object):
   
@@ -65,9 +69,9 @@ class Key(object):
   
   def Header(self):
     """Return the 6-byte header string including version, format, and hash."""
-    return (util.IntToBytes(keyczar.Keyczar.VERSION) + 
-            util.IntToBytes(keyczar.Keyczar.FORMAT) + 
-            base64.urlsafe_b64decode(self.hash))
+    return (util.IntToBytes(keyczar.VERSION) + 
+            util.IntToBytes(keyczar.FORMAT) + 
+            util.Decode(self.hash))
 
 class SymmetricKey(Key):
   
@@ -113,7 +117,8 @@ class AesKey(SymmetricKey):
     SymmetricKey.__init__(self, keyinfo.AES, hash, key_string)
     self.mode = keyinfo.CBC
     self.hmac_key = None  # generate one upon creation
-    self.key_bytes = base64.urlsafe_b64decode(key_string)
+    print key_string
+    self.key_bytes = util.Decode(key_string)
     self.block_size = len(self.key_bytes)
   
   @staticmethod
@@ -122,11 +127,11 @@ class AesKey(SymmetricKey):
       size = keyinfo.AES.default_size
     
     key_bytes = util.RandBytes(size / 8)
-    key_string = base64.urlsafe_b64encode(key_bytes)
+    key_string = util.Encode(key_bytes)
     hmac_key = HmacKey.Generate()  # use default HMAC-SHA1 key size
     full_hash = util.Hash([util.IntToBytes(len(key_bytes)), key_bytes, 
-                           base64.urlsafe_b64decode(hmac_key.hash)])
-    hash = base64.urlsafe_b64encode(full_hash[:4])  # first 4 bytes only
+                           util.Decode(hmac_key.hash)])
+    hash = util.Encode(full_hash[:keyczar.KEY_HASH_SIZE])
     
     key = AesKey(hash, key_string)
     key.hmac_key = hmac_key
@@ -143,14 +148,46 @@ class AesKey(SymmetricKey):
     return aes_key
   
   def Encrypt(self, data):
-    #TODO: finish this -- need a way to generate random IVs and remember them.
-    aes = AES.new(self.key_bytes, AES.MODE_CBC, "0"*self.block_size)
-    return base64.urlsafe_b64encode(self.Header() + aes.encrypt(data))
-  
-  def Decrypt(self, ciph):
-    """Decrypts the given ciphertext."""
+    """Return ciphertext byte string containing Header|IV|Ciph|Sig.
     
-
+    Parameters:
+      data: String plaintext to be encrypted.
+    
+    Returns:
+      Raw byte string ciphertext formatted to have Header|IV|Ciph|Sig.
+    """
+    iv_bytes = util.RandBytes(self.block_size)
+    ciph_bytes = AES.new(self.key_bytes, AES.MODE_CBC, iv_bytes).encrypt(data)
+    msg_bytes = self.Header() + iv_bytes + ciph_bytes
+    sig_bytes = self.hmac_key.Sign(msg_bytes)  # Sign bytes
+    return msg_bytes + sig_bytes
+  
+  def Decrypt(self, input_bytes):
+    """Decrypts the given ciphertext.
+    
+    Parameters:
+      data_bytes: Raw byte string formatted as Header|IV|Ciph|Sig where Sig
+      is the signature over the entire payload (Header|IV|Ciph).
+    
+    Returns:
+      Plaintext String message
+    
+    Raises:
+      ShortCiphertextError: If the ciphertext is too short to have an IV & Sig.
+      InvalidSignatureError: If the signature doesn't correspond to the payload.
+    """    
+    data_bytes = input_bytes[keyczar.HEADER_SIZE:]  # remove header
+    if len(data_bytes) < self.block_size + sha.digest_size:  # IV + sig
+      raise errors.ShortCiphertextError()
+    
+    iv_bytes = data_bytes[:self.block_size]  # first block of bytes is the IV
+    ciph_bytes = data_bytes[self.block_size:-sha.digest_size]
+    sig_bytes = data_bytes[-sha.digest_size:]  # last 20 bytes are sig
+    if not self.hmac_key.Verify(input_bytes[:-sha.digest_size], sig_bytes):
+      raise errors.InvalidSignatureError()
+    
+    return AES.new(self.key_bytes, AES.MODE_CBC, iv_bytes).decrypt(ciph_bytes)
+    
 class HmacKey(SymmetricKey):
   
   def __init__(self, hash, key_string):
@@ -162,9 +199,9 @@ class HmacKey(SymmetricKey):
       size = keyinfo.HMAC_SHA1.default_size
     
     key_bytes = util.RandBytes(size / 8)
-    key_string = base64.urlsafe_b64encode(key_bytes)
+    key_string = util.Encode(key_bytes)
     full_hash = util.Hash([util.IntToBytes(len(key_bytes)), key_bytes])
-    hash = base64.urlsafe_b64encode(full_hash[:4])  # first 4 bytes only
+    hash = util.Encode(full_hash[:keyczar.KEY_HASH_SIZE])
     
     key = HmacKey(hash, key_string)
     key.size = size
@@ -176,13 +213,27 @@ class HmacKey(SymmetricKey):
     return HmacKey(mac['hash'], mac['hmacKeyString'])
   
   def Sign(self, msg):
-    """Return a signature on the message."""
-    mac = hmac.new(self.key_string, msg, sha)
-    return base64.urlsafe_b64encode(mac.digest())
+    """Return raw byte string of signature on the message.
+    
+    Parameters:
+      msg: String message to be signed
+    
+    Returns:
+      Raw byte string signature.
+    """
+    return hmac.new(self.key_string, msg, sha).digest()
   
-  def Verify(self, msg, sig):
-    """Return true if the signature corresponds to the message."""
-    return self.Sign(msg) == sig
+  def Verify(self, msg, sig_bytes):
+    """Return true if the signature corresponds to the message.
+    
+    Parameters:
+      msg: String message that has been signed
+      sig_bytes: Raw byte string of the signature.
+    
+    Returns:
+      True if signature is valid for message. False otherwise.
+    """
+    return self.Sign(msg) == sig_bytes
 
 class PrivateKey(Key):
   
