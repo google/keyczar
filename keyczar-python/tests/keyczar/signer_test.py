@@ -16,9 +16,13 @@
 
 __author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
 
-import unittest
 from keyczar import keyczar
 #FIXME: want to import keyczar module in keyczar package
+
+import unittest
+import os
+
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 
 class SignerTest(unittest.TestCase):
   

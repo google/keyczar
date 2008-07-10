@@ -73,8 +73,8 @@ class KeyStatus(_NameId):
 PRIMARY = KeyStatus("primary", 0)
 ACTIVE = KeyStatus("active", 1)
 SCHEDULED_FOR_REVOCATION = KeyStatus("scheduled_for_revocation", 2)
-statuses = {PRIMARY.id: PRIMARY, ACTIVE.id: ACTIVE, 
-            SCHEDULED_FOR_REVOCATION.id: SCHEDULED_FOR_REVOCATION}
+statuses = {"PRIMARY": PRIMARY, "ACTIVE": ACTIVE, 
+            "SCHEDULED_FOR_REVOCATION": SCHEDULED_FOR_REVOCATION}
 
 def GetStatus(value):
   if value in statuses:

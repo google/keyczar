@@ -69,9 +69,7 @@ class Key(object):
   
   def Header(self):
     """Return the 6-byte header string including version, format, and hash."""
-    return (util.IntToBytes(keyczar.VERSION) + 
-            util.IntToBytes(keyczar.FORMAT) + 
-            util.Decode(self.hash))
+    return (chr(keyczar.VERSION) + chr(keyczar.FORMAT) + util.Decode(self.hash))
 
 class SymmetricKey(Key):
   
@@ -117,7 +115,6 @@ class AesKey(SymmetricKey):
     SymmetricKey.__init__(self, keyinfo.AES, hash, key_string)
     self.mode = keyinfo.CBC
     self.hmac_key = None  # generate one upon creation
-    print key_string
     self.key_bytes = util.Decode(key_string)
     self.block_size = len(self.key_bytes)
   

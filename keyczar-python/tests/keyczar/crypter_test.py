@@ -22,12 +22,12 @@ from keyczar import keyczar
 import unittest
 import os
 
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
+
 class CrypterTest(unittest.TestCase):
   
-  TEST_DATA = os.path.join(os.getcwd(), "..", "..", "testdata")
-  
   def setUp(self):
-    self.input = "This is some test data"
+    self.input = "May the Force be with you always"
   
   def testAesDecrypt(self):
     pass
@@ -36,7 +36,7 @@ class CrypterTest(unittest.TestCase):
     pass
   
   def testAesEncryptAndDecrypt(self):
-    crypter = keyczar.Crypter.Read(os.path.join(CrypterTest.TEST_DATA, "aes"))
+    crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
     ciphertext = crypter.Encrypt(self.input)
     plaintext = crypter.Decrypt(ciphertext)
     self.assertEquals(self.input, plaintext)

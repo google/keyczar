@@ -101,6 +101,9 @@ class KeyVersion(object):
       
   status = property(lambda self: self.__status, __SetStatus)
   
+  def __str__(self):
+    return "(%d, %s, %s)" % (self.version_number, self.status, self.exportable)
+  
   @staticmethod
   def Read(version):
     """Return KeyVersion object constructed from dictionary derived from JSON.

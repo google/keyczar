@@ -296,16 +296,16 @@ class Crypter(Encrypter):
     version = ord(data_bytes[0])
     format = ord(data_bytes[1])
     if version != VERSION:
-      raise errors.BadVersionError()
+      raise errors.BadVersionError(version)
     if format != FORMAT:
-      raise errors.BadFormatError()
+      raise errors.BadFormatError(format)
     
     hash = util.Encode(data_bytes[2:2+KEY_HASH_SIZE])
     key = self.GetKey(hash)
     if key is None:
       raise errors.KeyNotFoundError()
     
-    return key.decrypt(data_bytes)
+    return key.Decrypt(data_bytes)
     
 class Signer(Verifier):
   
