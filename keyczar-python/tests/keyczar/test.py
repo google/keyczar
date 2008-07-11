@@ -6,7 +6,12 @@ from Crypto.Hash import MD5
 from Crypto.Cipher import AES
 from keyczar import keys
 from keyczar import keyinfo
+from keyczar import keyczar
+from keyczar import util
 
+import os
+
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 
 hash=MD5.new()
 hash.update('message')
@@ -25,3 +30,8 @@ msg = "Hello World"
 sig = hmac.Sign(msg)
 print sig
 print hmac.Verify(msg, sig)
+
+crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
+print "Primary", crypter.Encrypt("Hello Google")  # primary
+activeAes = crypter.GetKey("8AqKiQ")  # active
+print "Active", util.Encode(activeAes.Encrypt("Hello Google"))

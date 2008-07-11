@@ -135,6 +135,33 @@ class AesKey(SymmetricKey):
     key.size = size
     return key
   
+  def __Pad(self, data):
+    """Returns the data padded using PKCS5.
+    
+    For a block size B and data with N bytes in the last block, PKCS5
+    pads the data with B-N bytes of the value B-N.
+    
+    Parameters:
+      data: String to be padded
+    
+    Returns:
+      PKCS5 padded string
+    """
+    pad = self.block_size - len(data) % self.block_size
+    return data + pad * chr(pad)
+  
+  def __UnPad(self, padded):
+    """Returns the unpadded version of a data padded using PKCS5.
+    
+    Params:
+      padded: String padded with PKCS5
+    
+    Returns:
+      original, unpadded string
+    """
+    pad = ord(padded[-1])
+    return padded[:-pad]
+  
   @staticmethod
   def Read(key):
     aes = simplejson.loads(key)
@@ -153,6 +180,7 @@ class AesKey(SymmetricKey):
     Returns:
       Raw byte string ciphertext formatted to have Header|IV|Ciph|Sig.
     """
+    data = self.__Pad(data)
     iv_bytes = util.RandBytes(self.block_size)
     ciph_bytes = AES.new(self.key_bytes, AES.MODE_CBC, iv_bytes).encrypt(data)
     msg_bytes = self.Header() + iv_bytes + ciph_bytes
@@ -175,7 +203,7 @@ class AesKey(SymmetricKey):
     """    
     data_bytes = input_bytes[keyczar.HEADER_SIZE:]  # remove header
     if len(data_bytes) < self.block_size + sha.digest_size:  # IV + sig
-      raise errors.ShortCiphertextError()
+      raise errors.ShortCiphertextError(len(data_bytes))
     
     iv_bytes = data_bytes[:self.block_size]  # first block of bytes is the IV
     ciph_bytes = data_bytes[self.block_size:-sha.digest_size]
@@ -183,7 +211,8 @@ class AesKey(SymmetricKey):
     if not self.hmac_key.Verify(input_bytes[:-sha.digest_size], sig_bytes):
       raise errors.InvalidSignatureError()
     
-    return AES.new(self.key_bytes, AES.MODE_CBC, iv_bytes).decrypt(ciph_bytes)
+    plain = AES.new(self.key_bytes, AES.MODE_CBC, iv_bytes).decrypt(ciph_bytes)
+    return self.__UnPad(plain)
     
 class HmacKey(SymmetricKey):
   

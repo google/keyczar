@@ -291,7 +291,7 @@ class Crypter(Encrypter):
     """
     data_bytes = util.Decode(ciphertext)
     if len(data_bytes) < HEADER_SIZE:
-      raise errors.ShortCiphertextError()
+      raise errors.ShortCiphertextError(len(data_bytes))
     
     version = ord(data_bytes[0])
     format = ord(data_bytes[1])
@@ -303,7 +303,7 @@ class Crypter(Encrypter):
     hash = util.Encode(data_bytes[2:2+KEY_HASH_SIZE])
     key = self.GetKey(hash)
     if key is None:
-      raise errors.KeyNotFoundError()
+      raise errors.KeyNotFoundError(hash)
     
     return key.Decrypt(data_bytes)
     
