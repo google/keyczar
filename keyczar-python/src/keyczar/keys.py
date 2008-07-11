@@ -30,6 +30,7 @@ import keyczar
 
 import simplejson
 from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
 
 import sha
 import hmac
@@ -69,7 +70,7 @@ class Key(object):
   
   def Header(self):
     """Return the 6-byte header string including version, format, and hash."""
-    return (chr(keyczar.VERSION) + chr(keyczar.FORMAT) + util.Decode(self.hash))
+    return chr(keyczar.VERSION) + chr(keyczar.FORMAT) + util.Decode(self.hash)
 
 class SymmetricKey(Key):
   
@@ -119,10 +120,8 @@ class AesKey(SymmetricKey):
     self.block_size = len(self.key_bytes)
   
   @staticmethod
-  def Generate(size=None):
-    if size is None:
-      size = keyinfo.AES.default_size
-    
+  def Generate(size=keyinfo.AES.default_size):
+    """Return a newly generated AES key."""
     key_bytes = util.RandBytes(size / 8)
     key_string = util.Encode(key_bytes)
     hmac_key = HmacKey.Generate()  # use default HMAC-SHA1 key size
@@ -134,6 +133,15 @@ class AesKey(SymmetricKey):
     key.hmac_key = hmac_key
     key.size = size
     return key
+  
+  @staticmethod
+  def Read(key):
+    aes = simplejson.loads(key)
+    aes_key = AesKey(aes['hash'], aes['aesKeyString'])
+    hmac = aes['hmacKey']
+    aes_key.hmac_key = HmacKey(hmac['hash'], hmac['hmacKeyString'])
+    aes_key.mode = keyinfo.GetMode(aes['mode'])
+    return aes_key
   
   def __Pad(self, data):
     """Returns the data padded using PKCS5.
@@ -162,15 +170,6 @@ class AesKey(SymmetricKey):
     pad = ord(padded[-1])
     return padded[:-pad]
   
-  @staticmethod
-  def Read(key):
-    aes = simplejson.loads(key)
-    aes_key = AesKey(aes['hash'], aes['aesKeyString'])
-    hmac = aes['hmacKey']
-    aes_key.hmac_key = HmacKey(hmac['hash'], hmac['hmacKeyString'])
-    aes_key.mode = keyinfo.GetMode(aes['mode'])
-    return aes_key
-  
   def Encrypt(self, data):
     """Return ciphertext byte string containing Header|IV|Ciph|Sig.
     
@@ -191,7 +190,7 @@ class AesKey(SymmetricKey):
     """Decrypts the given ciphertext.
     
     Parameters:
-      data_bytes: Raw byte string formatted as Header|IV|Ciph|Sig where Sig
+      input_bytes: Raw byte string formatted as Header|IV|Ciph|Sig where Sig
       is the signature over the entire payload (Header|IV|Ciph).
     
     Returns:
@@ -220,10 +219,8 @@ class HmacKey(SymmetricKey):
     SymmetricKey.__init__(self, keyinfo.HMAC_SHA1, hash, key_string)
   
   @staticmethod
-  def Generate(size=None):
-    if size is None:
-      size = keyinfo.HMAC_SHA1.default_size
-    
+  def Generate(size=keyinfo.HMAC_SHA1.default_size):
+    """Return a newly generated HMAC-SHA1 key."""    
     key_bytes = util.RandBytes(size / 8)
     key_string = util.Encode(key_bytes)
     full_hash = util.Hash([util.IntToBytes(len(key_bytes)), key_bytes])
@@ -265,15 +262,10 @@ class PrivateKey(Key):
   
   """Represents private keys in Keyczar for asymmetric key pairs."""
   
-  def __init__(self, type, hash, pkcs8):
+  def __init__(self, type, hash, pkcs8, pub):
     Key.__init__(type, hash)
     self.pkcs8 = pkcs8
-    
-  def GetPublic(self):
-    pass
-  
-  def SetPublic(self):
-    pass
+    self.public_key = pub
   
   def _GetKeyString(self):
     return self.pkcs8
@@ -292,8 +284,8 @@ class PublicKey(Key):
 class DsaPrivateKey(PrivateKey):
   
   @staticmethod
-  def Generate(size=None):
-    pass
+  def Generate(size=keyinfo.DSA_PRIV.default_size):
+    """Return a newly generated DSA private key."""
   
   @staticmethod
   def Read(key):
@@ -302,12 +294,35 @@ class DsaPrivateKey(PrivateKey):
 class RsaPrivateKey(PrivateKey):
   
   @staticmethod
-  def Generate(size=None):
-    pass
+  def Generate(size=keyinfo.RSA_PRIV.default_size):
+    """Return a newly generated RSA private key."""
+    key_pair = RSA.generate(size, util.RandBytes)
+    pub_key = key_pair.publickey()
+    #FIXME: need a way to generate from pkcs8 data
   
   @staticmethod
   def Read(key):
     pass
+  
+  def Encrypt(self, data):
+    """Return ciphertext byte string containing Header|Ciphertext
+    
+    Parameters:
+      data: String plaintext to be encrypted.
+    
+    Returns:
+      Raw byte string ciphertext formatted to have Header|Ciphertext
+    """
+  
+  def Decrypt(self, input_bytes):
+    """Decrypts the given ciphertext.
+    
+    Parameters:
+      input_bytes: Raw byte string formatted as Header|Ciphertext.
+    
+    Returns:
+      Plaintext String message
+    """
 
 class DsaPublicKey(PublicKey):
   

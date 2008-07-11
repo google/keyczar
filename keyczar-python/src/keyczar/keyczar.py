@@ -65,6 +65,29 @@ class Keyczar(object):
   def __str__(self):
     return str(self.metadata)
   
+  def _ParseHeader(self, header):
+    """Parse the header and verify version, format info. Return key if exists.
+    
+    Params:
+      header: the bytes of the header of Keyczar output
+      
+    Returns:
+      hash: the 4 byte key hash identifier as a Base64 string
+    
+    Raises:
+      BadVersionError: If header specifies an illegal version.
+      BadFormatError: If header specifies an illegal format.
+      KeyNotFoundError: If key specified in header doesn't exist.
+    """
+    version = ord(header[0])
+    format = ord(header[1])
+    if version != VERSION:
+      raise errors.BadVersionError(version)
+    if format != FORMAT:
+      raise errors.BadFormatError(format)
+    hash = util.Encode(header[2:])
+    return self.GetKey(hash)
+  
   @staticmethod
   def Read(location):
     """Return a Keyczar object created from FileReader at given location."""
@@ -81,8 +104,14 @@ class Keyczar(object):
     
     Returns:
       Key: The key associated with this id or None if id doesn't exist.
+    
+    Raises:
+      KeyNotFoundError: If key with given id doesn't exist.
     """
-    return self.__keys.get(id)
+    try:
+      return self.__keys[id]
+    except KeyError:
+      raise errors.KeyNotFoundError(id)
   
   def __AddKey(self, version, key):
     self.__keys[version] = self.__keys[key.hash] = key
@@ -122,7 +151,7 @@ class Keyczar(object):
     # Make sure no keys collide on their identifiers
     while True:
       key = keys.GenKey(self.metadata.type, size)
-      if self.GetKey(key.hash) is None:
+      if self.__keys.get(key.hash) is None:
         break
     
     self.__AddKey(version, key)
@@ -215,9 +244,6 @@ class Encrypter(Keyczar):
     """Only valid if purpose includes encrypting."""
     return purpose == keyinfo.ENCRYPT or purpose == keyinfo.DECRYPT_AND_ENCRYPT
   
-  def CiphertextSize(self, input_length):
-    """Return the size of the ciphertext for an input of given length."""
-  
   def Encrypt(self, data):
     """Encrypt the data and return the ciphertext.
     
@@ -253,17 +279,22 @@ class Verifier(Keyczar):
     """Verifies whether the signature corresponds to the given data.
     
     Args:
-      data:
-      sig:
+      data: message that has been signed with sig
+      sig: Base64 string formatted as Header|Signature
     
     Returns:
       True if sig corresponds to data, False otherwise.
     """
+    sig_bytes = util.Decode(sig)
+    if len(sig_bytes) < HEADER_SIZE:
+      raise errors.ShortSignatureError(len(sig_bytes))
+    key = self._ParseHeader(sig_bytes[:HEADER_SIZE])
+    return key.Verify(data, sig_bytes[HEADER_SIZE:])
 
 class Crypter(Encrypter):
   
   """Capable of encrypting and decrypting."""
-  
+
   @staticmethod
   def Read(location):
     """Return a Crypter created from FileReader at given location."""
@@ -292,19 +323,7 @@ class Crypter(Encrypter):
     data_bytes = util.Decode(ciphertext)
     if len(data_bytes) < HEADER_SIZE:
       raise errors.ShortCiphertextError(len(data_bytes))
-    
-    version = ord(data_bytes[0])
-    format = ord(data_bytes[1])
-    if version != VERSION:
-      raise errors.BadVersionError(version)
-    if format != FORMAT:
-      raise errors.BadFormatError(format)
-    
-    hash = util.Encode(data_bytes[2:2+KEY_HASH_SIZE])
-    key = self.GetKey(hash)
-    if key is None:
-      raise errors.KeyNotFoundError(hash)
-    
+    key = self._ParseHeader(data_bytes[:HEADER_SIZE])
     return key.Decrypt(data_bytes)
     
 class Signer(Verifier):
@@ -320,15 +339,16 @@ class Signer(Verifier):
     """Only valid if purpose includes signing."""
     return purpose == keyinfo.SIGN_AND_VERIFY
   
-  def DigestSize(self):
-    """Return the size of signatures produced by this Signer."""
-  
   def Sign(self, data):
     """Sign given data and return corresponding signature.
     
     Args:
-      data:
+      data: String message to be signed.
     
     Returns:
-      Signature on the data.
+      Signature on the data encoded as a Base64 string.
     """
+    signing_key = self.primary_key
+    if signing_key is None:
+      raise errors.NoPrimaryKeyError()
+    return util.Encode(signing_key.Header() + signing_key.Sign(data))

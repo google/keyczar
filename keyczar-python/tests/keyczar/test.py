@@ -31,7 +31,13 @@ sig = hmac.Sign(msg)
 print sig
 print hmac.Verify(msg, sig)
 
+input = "Hello Google"
 crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
-print "Primary", crypter.Encrypt("Hello Google")  # primary
+print "Primary", crypter.Encrypt(input)  # primary
 activeAes = crypter.GetKey("8AqKiQ")  # active
-print "Active", util.Encode(activeAes.Encrypt("Hello Google"))
+print "Active", util.Encode(activeAes.Encrypt(input))
+
+signer = keyczar.Signer.Read(os.path.join(TEST_DATA, "hmac"))
+print "Primary Sign", signer.Sign(input)
+activeHmac = signer.GetKey("vAOFlA")
+print "Active Sign", util.Encode(activeHmac.Header() + activeHmac.Sign(input))

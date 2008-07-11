@@ -24,8 +24,6 @@ import unittest
 import os
 
 TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
-AES = os.path.join(TEST_DATA, "aes")
-RSA = os.path.join(TEST_DATA, "rsa")
 
 class CrypterTest(unittest.TestCase):
   
@@ -33,38 +31,39 @@ class CrypterTest(unittest.TestCase):
     self.input = "Hello Google"
   
   def __testDecrypt(self, subdir):
-    crypter = keyczar.Crypter.Read(subdir)
-    active_ciphertext = open(os.path.join(subdir, "1out")).read()
-    primary_ciphertext = open(os.path.join(subdir, "2out")).read()
+    path = os.path.join(TEST_DATA, subdir)
+    crypter = keyczar.Crypter.Read(path)
+    active_ciphertext = open(os.path.join(path, "1out")).read()
+    primary_ciphertext = open(os.path.join(path, "2out")).read()
     active_decrypted = crypter.Decrypt(active_ciphertext)
     self.assertEquals(self.input, active_decrypted)
     primary_decrypted = crypter.Decrypt(primary_ciphertext)
     self.assertEquals(self.input, primary_decrypted)
   
   def __testEncryptAndDecrypt(self, subdir):
-    crypter = keyczar.Crypter.Read(subdir)
+    crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, subdir))
     ciphertext = crypter.Encrypt(self.input)
     plaintext = crypter.Decrypt(ciphertext)
     self.assertEquals(self.input, plaintext)
   
   def testAesDecrypt(self):
-    self.__testDecrypt(AES)
+    self.__testDecrypt("aes")
     
   def testRsaDecrypt(self):
-    self.__testDecrypt(RSA)
+    self.__testDecrypt("rsa")
   
   def testAesEncryptAndDecrypt(self):
-    self.__testEncryptAndDecrypt(AES)
+    self.__testEncryptAndDecrypt("aes")
   
   def testRsaEncryptAndDecrypt(self):
-    self.__testEncryptAndDecrypt(RSA)
+    self.__testEncryptAndDecrypt("rsa")
   
   def testBadAesCiphertexts(self):
-    crypter = keyczar.Crypter.Read(AES)
+    crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
     ciphertext = util.Decode(crypter.Encrypt(self.input))  # in bytes
     bad = util.Encode(chr(0))
     char = chr(ord(ciphertext[2]) ^ 44)  # Munge key hash info in ciphertext
-    ciphertext = util.Encode(ciphertext.replace(ciphertext[2], char, 1))
+    ciphertext = util.Encode(ciphertext[:2]+char+ciphertext[3:])
     self.assertRaises(errors.ShortCiphertextError, crypter.Decrypt, bad)
     self.assertRaises(errors.KeyNotFoundError, crypter.Decrypt, ciphertext)
   

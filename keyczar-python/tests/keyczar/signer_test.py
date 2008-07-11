@@ -17,7 +17,8 @@
 __author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
 
 from keyczar import keyczar
-#FIXME: want to import keyczar module in keyczar package
+from keyczar import errors
+from keyczar import util
 
 import unittest
 import os
@@ -27,37 +28,77 @@ TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 class SignerTest(unittest.TestCase):
   
   def setUp(self):
-    self.input = "This is some test data"
+    self.input = "Hello Google"
   
+  def __signInput(self, subdir):
+    signer = keyczar.Signer.Read(os.path.join(TEST_DATA, subdir))
+    sig = signer.Sign(self.input)
+    return (signer, sig)
+  
+  def __readGoldenOutput(self, subdir):
+    path = os.path.join(TEST_DATA, subdir)
+    signer = keyczar.Signer.Read(path)
+    active_sig = open(os.path.join(path, "1out")).read()
+    primary_sig = open(os.path.join(path, "2out")).read()
+    return (signer, active_sig, primary_sig)
+  
+  def __testSignAndVerify(self, subdir):
+    (signer, sig) = self.__signInput(subdir)
+    self.assertTrue(signer.Verify(self.input, sig))
+    self.assertFalse(signer.Verify("Wrong string", sig))
+  
+  def __testSignerVerify(self, subdir):
+    (signer, active_sig, primary_sig) = self.__readGoldenOutput(subdir)
+    self.assertTrue(signer.Verify(self.input, active_sig))
+    self.assertTrue(signer.Verify(self.input, primary_sig))
+  
+  def __testBadVerify(self, subdir):
+    (signer, active_sig, primary_sig) = self.__readGoldenOutput(subdir)
+    self.assertFalse(signer.Verify("Wrong string", active_sig))
+    self.assertFalse(signer.Verify("Wrong string", primary_sig))
+    self.assertFalse(signer.Verify(self.input, primary_sig[:-4]+"Junk"))
+    
   def testHmacSignAndVerify(self):
-    pass
+    self.__testSignAndVerify("hmac")
   
   def testHmacVerify(self):
-    pass
+    self.__testSignerVerify("hmac")
   
   def testBadHmacVerify(self):
-    pass
+    self.__testBadVerify("hmac")
   
   def testDsaSignAndVerify(self):
-    pass
+    self.__testSignAndVerify("dsa")
   
   def testDsaSignerVerify(self):
-    pass
+    self.__testSignerVerify("dsa")
   
   def testBadDsaVerify(self):
-    pass
+    self.__testBadVerify("dsa")
   
   def testRsaSignAndVerify(self):
-    pass
+    self.__testSignAndVerify("rsa-sign")
   
   def testRsaSignerVerify(self):
-    pass
+    self.__testSignerVerify("rsa-sign")
   
   def testBadRsaVerify(self):
-    pass
+    self.__testBadVerify("dsa")
   
   def testHmacBadSigs(self):
-    pass
-  
+    (signer, sig) = self.__signInput("hmac")
+    sig_bytes = util.Decode(sig)
+    self.assertRaises(errors.ShortSignatureError, signer.Verify, 
+                      self.input, "AB")
+    bad_sig = util.Encode(chr(23) + sig_bytes[1:])
+    self.assertRaises(errors.BadVersionError, signer.Verify, 
+                      self.input, bad_sig)
+    bad_sig = util.Encode(sig_bytes[0] + chr(23) + sig_bytes[2:])
+    self.assertRaises(errors.BadFormatError, signer.Verify, self.input, bad_sig)
+    char = chr(ord(sig_bytes[2]) ^ 45)  # Munge key hash info in sig 
+    bad_sig = util.Encode(sig_bytes[:2] + char + sig_bytes[3:])
+    self.assertRaises(errors.KeyNotFoundError, signer.Verify, 
+                      self.input, bad_sig)
+    
   def tearDown(self):
-    pass
+    self.input = None
