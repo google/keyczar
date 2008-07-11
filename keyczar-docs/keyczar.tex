@@ -65,9 +65,9 @@ Some example {\tt create} commands:
 \subsection{KeyczarTool addkey}
 
 All Keyczar keys are created using the {\tt addkey} command. This command
-requites a keyset {\tt location} flag and may optionally have {\tt status} and
-{\tt size} flags. Section \ref{status} describes the meaning of the status
-values, but briefly they are {\it primary}, {\it active}, and {\it
+requites a keyset {\tt location} flag and may optionally have {\tt status},
+{\tt crypter} and {\tt size} flags. Section \ref{status} describes the meaning
+of the status values, but briefly they are {\it primary}, {\it active}, and {\it
 scheduled for revocation}. The default status is {\it active}. User-specified
 key sizes are supported, although it is recommneded that on default or larger
 key  sizes are used.
@@ -82,6 +82,16 @@ will be created in the file {\tt 2}. Some example {\tt addkey} commands:
 {\tt KeyczarTool addkey --location=/path/to/keyset --status=primary}
 \item Create a new active key: \\
 {\tt KeyczarTool addkey --location=/path/to/keyset} 
+\end{itemize}
+
+Keyczar supports encrypted keysets. The {\tt crypter} flag may be used to
+encrypt a key set when adding a new key. It will specify the location of an
+existing keyset which will be used to encrypt a newly generated key: 
+ 
+\begin{itemize}
+\item Create a new active key and encrypt it with another keyset: \\
+{\tt KeyczarTool addkey --location=/path/to/keyset
+--crypter=/path/to/crypting/keys}
 \end{itemize}
 
 \subsection{KeyczarTool pubkey}
@@ -304,8 +314,6 @@ used for signing.
 These purposes correspond to their respective public and symmetric/private
 keys, and are usable by the Keyczar classes specified in the table below: 
 
-
-
 \begin{tabular}{ l | l | l }
 {\bf Purpose} &  {\bf Public, Private, or Symmetric } & {\bf Class used by} \\
 \hline Encrypting & Public & Encrypter or Crypter \\ \hline
@@ -339,21 +347,168 @@ the key is exportable outside of Keyczar.
 By default, key version numbers start from 1 and increase montonically.
 However, key version numbers may be any positive, non-zero integral values.
 
-\subsection{Identifying Headers}
+\subsection{Output Headers} \label{header}
 
+Each Keyczar output is tagged with a Keyczar-specific header. The header format
+is as follows:
 
+\begin{tabular}{| l | l |}
+\hline
+Format & Key Hash \\ \hline
+1 byte & 4 bytes \\ \hline
+\end{tabular}
 
-\subsection{Formats}\label{formats}
+\subsubsection{Version Byte}
+
+The first byte of all output is a single byte representing the version of
+keyczar that generated it. The current version byte is 1. All other values are
+reserved.
+
+\subsubsection{Key hash}\label{keyhash}
+
+Each header includes 4-byte truncated SHA-1 hash of the raw key
+material itself. The following values will be hashed for each key type:
+\begin{itemize}
+  \item HMAC: 4-byte integer value representing the length of the HMAC key,
+  followed by the actual HMAC key bytes.
+  \item AES: 4-byte integer value representing the length of the AES key,
+  followed by the acutal AES key bytes, followed by the 4-byte KeyHash of the
+  attached HMAC key.
+  \item DSA Public: 4-byte integer value representing the length of the X.509
+  representation of this key, followed by the X.509 representation.
+  \item DSA Private: Same as DSA Public.
+  \item RSA Public: 4-byte integer value representing the length of the X.509
+  representation of this key, followed by the X.509 representation.  \item
+  \item RSA Private: Same as RSA Public. 
+\end{itemize}
+
+The SHA-1 output on each of these values is truncated to the first four bytes.
+For example: The truncated 4-byte truncated SHA-1 values:
+\begin{enumerate}
+  \item The 4-byte truncated hash of SHA-1("") = {\tt da39a3ee 5e6b4b0d 3255bfef
+  95601890 afd80709} encoded in hexadecimal is {\tt da39a3ee.}
+  \item The truncated hash of SHA-1("The quick brown fox jumps over the lazy
+  dog") = {\tt 2fd4e1c6 7a2d28fc ed849ee1 bb76e739 1b93eb12 is 2fd4e1c6} is
+  {\tt 2fd4e1c6 }.
+\end{enumerate}
+
+\subsection{Key Formats}\label{formats}
+
+All key files are kept in JSON format. All JSON representations contain
+``type'' and ``hash'' values. The hash value is the key hash described in
+Section \ref{keyhash}. Each key type has its own individual fields as well.
+
 \subsubsection{HMAC}
+
+HMAC keys have the type ``HMAC\_SHA1" and contain an additional
+``hmacKeyString'' field which is a Base64 representation of the raw HMAC key
+bytes. 
+
 \subsubsection{AES}
-\subsubsection{Private RSA}
+
+AES keys have the type ``AES" and contain an additional
+``aesKeyString'' field which is a Base64 representation of the raw HMAC key bytes. AES keys also have an attached HMAC
+key, which is kept in a ``hmacKey'' field. AES keys also have an additional
+``mode'' field which currently only supports ``CBC''.
+
 \subsubsection{Public RSA}
-\subsubsection{Private DSA}
+
+Public RSA keys have an ``x509'' field containing the Base64 representation of
+a X.509 public key certificate. 
+
+\subsubsection{Private RSA}
+
+Private RSA keys contain a public RSA key, and a ``pkcs8'' field containing a
+Base64 representation of a PKCS8 encoded RSA private key. 
+
 \subsubsection{Public DSA}
 
+Public DSA keys have an ``x509'' field containing the Base64 representation of
+a X.509 public key certificate. 
+
+\subsubsection{Private DSA}
+
+Private DSA keys contain a public DSA key, and a ``pkcs8'' field containing a
+Base64 representation of a PKCS8 encoded DSA private key. 
+
 \section{Output Formats}
-\subsection{Ciphertext}
+
 \subsection{Signatures}
+
+A Keyczar signature consists of a header (described in Section \ref{header})
+followed by a algorithm-dependent signature:
+
+\begin{tabular}{| c | c |}
+\hline
+Header & Sign(header $|$ M) \\
+\hline 5 bytes & Algorithm-dependent length \\ \hline
+\end{tabular}
+
+(Note: $|$ represents string concatenation.)
+
+For example, HMAC keys will produce a 20-byte output, so have the form:
+
+\begin{tabular}{| c | c |}
+\hline
+Header & HMAC-SHA1(header $|$ M) \\ \hline
+5 bytes & 20 bytes \\ \hline
+\end{tabular}
+
+\subsection{Ciphertext}
+
+A Keyczar ciphertext contains a header (described in Section \ref{header}), an
+IV (if needed), the algorithm-dependent ciphertext, and a signature on the
+preceding fields (for symmetric keys only):
+
+\begin{tabular}{| c | c | c | c |}
+\hline
+Header & IV (if any) & Encrypt(M) & Sign(header $|$ IV $|$ M) (if any) \\ \hline
+5 bytes & Algorithm-dependent & Algorithm-depndent & Algorithm-depndent \\
+\hline
+\end{tabular}
+
+\vspace{1mm}
+
+For example, 128-bit AES keys (which have an attached HMAC key) used in CBC
+mode would produce the following output:
+
+\begin{tabular}{| c | c | c | c |}
+\hline
+Header & IV & AES-CBC(M) & HMAC-SHA1(header $|$ IV $|$ M) \\ \hline
+5 bytes & 16 bytes & Algorithm-dependent & 20 bytes \\
+\hline
+\end{tabular}
+
+In contrast, RSA ciphertexts neither use IVs nor are signed. Thus, the RSA
+ciphertext format is:
+
+\begin{tabular}{| c | c | c | c |}
+\hline
+Header & RSA-OAEP(M)  \\ \hline
+5 bytes & Single RSA block  \\
+\hline
+\end{tabular}
+
+
+\section{Algorithm Details}
+
+These are the default key lengths, algorithms, and padding modes used:
+
+\begin{itemize}
+  \item HMAC: Default keys are 256 bits. SHA1 used as the hash
+  algorithm.
+  \item AES: Default keys are 128 bits. 192 and 256 bit keys are also. CBC mode
+  with PKCS\#5 padding is used by default.
+  \item DSA: DSA-SHA1 signing algorithm used by default. Default key size is
+  1024 bits.
+  \item RSA Encryption: RSA-OAEP encryption is used. Default key size is 2048
+  bits. 1024, 768, and 512 bit keys are also supported.
+  \item RSA Signatures: RSA-SHA1 signing is used. Default key size is 2048
+  bits. 1024, 768, and 512 bit keys are also supported.
+\end{itemize}
+
+
+\section{Samples and Test Vectors}
 
 \section{Licenses and Dependencies}
 
