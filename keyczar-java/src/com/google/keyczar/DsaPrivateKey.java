@@ -89,10 +89,8 @@ class DsaPrivateKey extends KeyczarPrivateKey {
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
-    key.hash = key.getPublic().hash();
     key.pkcs8 = Base64Coder.encode(key.jcePrivateKey.getEncoded());
     key.init();
-    key.getPublic().init();
     return key;
   }
   
@@ -101,11 +99,7 @@ class DsaPrivateKey extends KeyczarPrivateKey {
     if (key.getType() != KeyType.DSA_PRIV) {
       throw new KeyczarException("Incorrect type. Received: " + key.getType());
     }
-    if (!Arrays.equals(key.hash(), key.getPublic().hash())) {
-      throw new KeyczarException("Key hash does not match");
-    }
     key.init();
-    key.getPublic().init();
     return key;
   }
 

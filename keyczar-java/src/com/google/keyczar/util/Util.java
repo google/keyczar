@@ -56,7 +56,7 @@ public class Util {
    * @param input The integer to convert to a byte array.
    * @return A byte array representation of an integer.
    */
-  static byte[] fromInt(int input) {
+  public static byte[] fromInt(int input) {
     byte[] output = new byte[4];
     writeInt(input, output, 0);
     return output;

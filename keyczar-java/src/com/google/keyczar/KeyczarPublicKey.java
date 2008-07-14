@@ -36,9 +36,10 @@ import java.security.spec.X509EncodedKeySpec;
 abstract class KeyczarPublicKey extends KeyczarKey {
   private PublicKey jcePublicKey;
   
-  @Expose private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   @SuppressWarnings("unused") @Expose private KeyType type = getType();
   @Expose String x509;
+  
+  private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
   public PublicKey getJcePublicKey() {
     return jcePublicKey;
@@ -61,6 +62,8 @@ abstract class KeyczarPublicKey extends KeyczarKey {
     try {
       KeyFactory kf = KeyFactory.getInstance(getKeyGenAlgorithm());
       jcePublicKey = kf.generatePublic(new X509EncodedKeySpec(x509Bytes));
+      byte[] fullHash = Util.prefixHash(x509Bytes);
+      System.arraycopy(fullHash, 0, hash, 0, hash.length);      
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }

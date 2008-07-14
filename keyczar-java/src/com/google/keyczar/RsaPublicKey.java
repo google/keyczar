@@ -68,13 +68,6 @@ class RsaPublicKey extends KeyczarPublicKey {
     if (key.getType() != KeyType.RSA_PUB) {
       throw new KeyczarException("Incorrect type. Received: " + key.getType());
     }
-    byte[] fullHash = Util.prefixHash(Base64Coder.decode(key.x509));
-    byte[] keyHash = key.hash();
-    for (int i = 0; i < keyHash.length; i++) {
-      if (keyHash[i] != fullHash[i]) {
-        throw new KeyczarException("Key hash does not match");
-      }
-    }
     key.init();
     return key;
   }

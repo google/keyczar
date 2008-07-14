@@ -44,9 +44,10 @@ class HmacKey extends KeyczarKey {
   private Key hmacKey;
   private static final String MAC_ALGORITHM = "HMACSHA1";
   
-  @Expose private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   @Expose private String hmacKeyString;
   @Expose private KeyType type = KeyType.HMAC_SHA1;
+  
+  private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
   @Override
   public String toString() {
@@ -63,8 +64,6 @@ class HmacKey extends KeyczarKey {
     key.size = key.getType().keySize();
     byte[] keyBytes = Util.rand(key.size() / 8);
     key.hmacKeyString = Base64Coder.encode(keyBytes);
-    byte[] fullHash = Util.prefixHash(keyBytes);
-    System.arraycopy(fullHash, 0, key.hash, 0, key.hash.length);
     key.init();
     return key;
   }
@@ -72,11 +71,7 @@ class HmacKey extends KeyczarKey {
   void init() throws KeyczarException {
     byte[] keyBytes = Base64Coder.decode(hmacKeyString);
     byte[] fullHash = Util.prefixHash(keyBytes);
-    for (int i = 0; i < hash.length; i++) {
-      if (hash[i] != fullHash[i]) {
-        throw new KeyczarException("Hash does not match");
-      }
-    }
+    System.arraycopy(fullHash, 0, hash, 0, hash.length);
     hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
   }
 

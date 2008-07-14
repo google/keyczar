@@ -40,8 +40,9 @@ import java.util.Arrays;
 abstract class KeyczarPrivateKey extends KeyczarKey {
   protected PrivateKey jcePrivateKey;
   
-  @Expose protected byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   @Expose protected String pkcs8;
+  
+  protected byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
   @Override
   public String toString() {
@@ -71,6 +72,8 @@ abstract class KeyczarPrivateKey extends KeyczarKey {
     try {
       KeyFactory kf = KeyFactory.getInstance(getKeyGenAlgorithm());
       jcePrivateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(pkcs8Bytes));
+      getPublic().init();
+      hash = getPublic().hash();
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }

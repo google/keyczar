@@ -54,10 +54,11 @@ class AesKey extends KeyczarKey {
   private static final CipherMode DEFAULT_MODE = CipherMode.CBC;
 
   @Expose private String aesKeyString = "";
-  @Expose private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   @Expose private HmacKey hmacKey = new HmacKey();
   @Expose private CipherMode mode = DEFAULT_MODE;
   @Expose private KeyType type = KeyType.AES;
+  
+  private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
   @Override
   public String toString() {
@@ -71,8 +72,6 @@ class AesKey extends KeyczarKey {
     key.aesKeyString = Base64Coder.encode(aesBytes);
     key.mode = DEFAULT_MODE;
     key.hmacKey = HmacKey.generate(); // CHECK: changed this, OK?
-    byte[] fullHash = Util.prefixHash(aesBytes, key.hmacKey.hash());
-    System.arraycopy(fullHash, 0, key.hash, 0, key.hash.length);
     key.init();
     return key;
   }
@@ -93,15 +92,6 @@ class AesKey extends KeyczarKey {
       throw new KeyczarException("Invalid type in input: " + key.type);
     }
     key.hmacKey.init();
-
-    // Check that the hash is correct
-    byte[] aesBytes = Base64Coder.decode(key.aesKeyString);
-    byte[] fullHash = Util.prefixHash(aesBytes, key.hmacKey.hash());
-    for (int i = 0; i < key.hash.length; i++) {
-      if (key.hash[i] != fullHash[i]) {
-        throw new KeyczarException("Hash does not match");
-      }
-    }
     key.init();
     return key;
   }
@@ -110,6 +100,8 @@ class AesKey extends KeyczarKey {
     byte[] aesBytes = Base64Coder.decode(aesKeyString);
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
     blockSize = aesBytes.length;
+    byte[] fullHash = Util.prefixHash(aesBytes, hmacKey.hash());
+    System.arraycopy(fullHash, 0, hash, 0, hash.length);
   }
 
   @Override
