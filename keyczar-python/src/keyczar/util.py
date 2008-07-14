@@ -31,7 +31,7 @@ def IntToBytes(n):
 
 def RandBytes(n):
   """Return n random bytes."""
-  rp = RandomPool(256)
+  rp = RandomPool(512)
   return rp.get_bytes(n)
 
 def Hash(inputs):

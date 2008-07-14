@@ -9,5 +9,6 @@
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 2.4</pydev_property>
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
 <path>/usr/lib/python2.4/site-packages/simplejson-1.9.1-py2.4-linux-x86_64.egg</path>
+<path>/usr/lib/python2.4/site-packages/M2Crypto-0.18.2-py2.4-linux-x86_64.egg</path>
 </pydev_pathproperty>
 </pydev_project>
