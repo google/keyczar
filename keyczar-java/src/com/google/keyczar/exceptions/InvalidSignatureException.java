@@ -20,6 +20,6 @@ public class InvalidSignatureException extends KeyczarException {
   private static final long serialVersionUID = -9209043556761224393L;
 
   public InvalidSignatureException() {
-    super("Invalid ciphertext signature");
+    super(Messages.getString("InvalidSignatureException"));
   }
 }

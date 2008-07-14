@@ -25,7 +25,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-
 /**
  * A miscellaneous utility class. Includes random number generation, int-to-byte 
  * conversion, etc.

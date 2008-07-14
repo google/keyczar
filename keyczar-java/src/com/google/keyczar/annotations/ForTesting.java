@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.google.keyczar.exceptions;
 
-public class ShortBufferException extends KeyczarException {
-  private static final long serialVersionUID = -3056628233532649L;
+package com.google.keyczar.annotations;
 
-  public ShortBufferException(int given, int needed) {
-    super(Messages.getString("InputBufferTooShort", given, needed)); 
-  }
-  
-  public ShortBufferException(Throwable cause) {
-    super(cause);
-  }
+/**
+ * Indicates that a class or method is for testing purposes only
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ */
+public @interface ForTesting {
+
 }

@@ -20,6 +20,6 @@ public class BadVersionException extends KeyczarException {
   private static final long serialVersionUID = 7164364283899332453L;
 
   public BadVersionException(byte badVersion) {
-    super("Received a bad version number: " + badVersion);
+    super(Messages.getString("BadVersionNumber", badVersion));
   }
 }

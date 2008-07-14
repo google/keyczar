@@ -20,6 +20,6 @@ public class NoPrimaryKeyException extends KeyNotFoundException {
   private static final long serialVersionUID = 2435853068538255446L;
 
   public NoPrimaryKeyException() {
-    super("No primary key found");
+    super(Messages.getString("NoPrimaryKeyFound"));
   }
 }

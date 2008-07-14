@@ -20,6 +20,6 @@ public class ShortSignatureException extends KeyczarException {
   private static final long serialVersionUID = 4756259412053573790L;
 
   public ShortSignatureException(int len) {
-    super("Input of length " + len + " is too short to be valid signature.");
+    super(Messages.getString("SignatureTooShort", len));
   }
 }
