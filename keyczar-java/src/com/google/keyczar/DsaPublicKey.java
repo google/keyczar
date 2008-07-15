@@ -18,6 +18,8 @@ package com.google.keyczar;
 
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.exceptions.UnsupportedTypeException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.Stream;
 import com.google.keyczar.interfaces.VerifyingStream;
 import com.google.keyczar.util.Base64Coder;
@@ -38,8 +40,8 @@ import java.util.Arrays;
  * 
  */
 class DsaPublicKey extends KeyczarPublicKey {
-  private static final String KEY_GEN_ALGORITHM = "DSA";
-  private static final String SIG_ALGORITHM = "SHA1withDSA";
+  private static final String KEY_GEN_ALGORITHM = "DSA"; //$NON-NLS-1$
+  private static final String SIG_ALGORITHM = "SHA1withDSA"; //$NON-NLS-1$
 
   @Override
   public Stream getStream() throws KeyczarException {
@@ -59,7 +61,7 @@ class DsaPublicKey extends KeyczarPublicKey {
   static DsaPublicKey read(String input) throws KeyczarException {
     DsaPublicKey key = Util.gson().fromJson(input, DsaPublicKey.class);
     if (key.getType() != KeyType.DSA_PUB) {
-      throw new KeyczarException("Incorrect type. Received: " + key.getType());
+      throw new UnsupportedTypeException(key.getType());
     }
     key.init();
     return key;

@@ -16,6 +16,8 @@
 
 package com.google.keyczar.exceptions;
 
+import com.google.keyczar.i18n.Messages;
+
 /**
  * Exception thrown when key with a particular hash is not found.
  *

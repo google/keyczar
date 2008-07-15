@@ -19,6 +19,7 @@ package com.google.keyczar;
 import com.google.gson.annotations.Expose;
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.exceptions.UnsupportedTypeException;
 import com.google.keyczar.interfaces.DecryptingStream;
 import com.google.keyczar.interfaces.EncryptingStream;
 import com.google.keyczar.interfaces.SigningStream;
@@ -48,12 +49,12 @@ import javax.crypto.ShortBufferException;
  */
 class RsaPrivateKey extends KeyczarPrivateKey {
   private static final String CRYPT_ALGORITHM = 
-      "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
-  private static final String KEY_GEN_ALGORITHM = "RSA";
+      "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING"; //$NON-NLS-1$
+  private static final String KEY_GEN_ALGORITHM = "RSA"; //$NON-NLS-1$
   
   @Expose private RsaPublicKey publicKey;
 
-  private static final String SIG_ALGORITHM = "SHA1withRSA";
+  private static final String SIG_ALGORITHM = "SHA1withRSA"; //$NON-NLS-1$
 
   private RsaPrivateKey() {
     publicKey = new RsaPublicKey();
@@ -88,7 +89,7 @@ class RsaPrivateKey extends KeyczarPrivateKey {
   static RsaPrivateKey read(String input) throws KeyczarException {
     RsaPrivateKey key = Util.gson().fromJson(input, RsaPrivateKey.class);
     if (key.getType() != KeyType.RSA_PRIV) {
-      throw new KeyczarException("Incorrect type. Received: " + key.getType());
+      throw new UnsupportedTypeException(key.getType());
     }
     key.init();
     return key;

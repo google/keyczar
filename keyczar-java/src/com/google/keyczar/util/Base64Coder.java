@@ -17,6 +17,7 @@
 package com.google.keyczar.util;
 
 import com.google.keyczar.exceptions.Base64DecodingException;
+import com.google.keyczar.i18n.Messages;
 
 /**
  * A web-safe Base64 encoding and decoding utility class. See RFC 3548
@@ -90,7 +91,8 @@ public class Base64Coder {
     int outputLen = inputBlocks * 3;
     switch (remainder) {
     case 1:
-      throw new Base64DecodingException("Input source is of illegal length.");
+      throw new Base64DecodingException(
+          Messages.getString("Base64Coder.IllegalLength", inLen));
     case 2:
       outputLen += 1;
       break;
@@ -176,7 +178,8 @@ public class Base64Coder {
 
   private static byte getByte(int i) throws Base64DecodingException {
     if (i < 0 || i > 127 || DECODE[i] == -1) {
-      throw new Base64DecodingException("Illegal character in Base64 string");
+      throw new Base64DecodingException(
+          Messages.getString("Base64Coder.IllegalCharacter", i));
     }
     return DECODE[i];
   }

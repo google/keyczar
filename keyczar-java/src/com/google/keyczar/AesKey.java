@@ -21,6 +21,8 @@ import com.google.keyczar.enums.CipherMode;
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.exceptions.ShortBufferException;
+import com.google.keyczar.exceptions.UnsupportedTypeException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.DecryptingStream;
 import com.google.keyczar.interfaces.EncryptingStream;
 import com.google.keyczar.interfaces.SigningStream;
@@ -49,11 +51,11 @@ class AesKey extends KeyczarKey {
   private Key aesKey;
   private int blockSize;
 
-  private static final String AES_ALGORITHM = "AES";
+  private static final String AES_ALGORITHM = "AES"; //$NON-NLS-1$
   // Default mode is CBC
   private static final CipherMode DEFAULT_MODE = CipherMode.CBC;
 
-  @Expose private String aesKeyString = "";
+  @Expose private String aesKeyString = ""; //$NON-NLS-1$
   @Expose private HmacKey hmacKey = new HmacKey();
   @Expose private CipherMode mode = DEFAULT_MODE;
   @Expose private KeyType type = KeyType.AES;
@@ -89,7 +91,7 @@ class AesKey extends KeyczarKey {
   static AesKey read(String input) throws KeyczarException {
     AesKey key = Util.gson().fromJson(input, AesKey.class);
     if (key.getType() != KeyType.AES) {
-      throw new KeyczarException("Invalid type in input: " + key.type);
+      throw new UnsupportedTypeException(key.getType());
     }
     key.hmacKey.init();
     key.init();

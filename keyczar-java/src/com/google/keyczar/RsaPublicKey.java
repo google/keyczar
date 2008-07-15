@@ -18,6 +18,8 @@ package com.google.keyczar;
 
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.exceptions.UnsupportedTypeException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.EncryptingStream;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.interfaces.Stream;
@@ -44,9 +46,9 @@ import javax.crypto.ShortBufferException;
  */
 class RsaPublicKey extends KeyczarPublicKey {
   private static final String CRYPT_ALGORITHM =
-    "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
-  private static final String KEY_GEN_ALGORITHM = "RSA";
-  private static final String SIG_ALGORITHM = "SHA1withRSA";
+    "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING"; //$NON-NLS-1$
+  private static final String KEY_GEN_ALGORITHM = "RSA"; //$NON-NLS-1$
+  private static final String SIG_ALGORITHM = "SHA1withRSA"; //$NON-NLS-1$
 
   @Override
   String getKeyGenAlgorithm() {
@@ -66,7 +68,7 @@ class RsaPublicKey extends KeyczarPublicKey {
   static RsaPublicKey read(String input) throws KeyczarException {
     RsaPublicKey key = Util.gson().fromJson(input, RsaPublicKey.class);
     if (key.getType() != KeyType.RSA_PUB) {
-      throw new KeyczarException("Incorrect type. Received: " + key.getType());
+      throw new UnsupportedTypeException(key.getType());
     }
     key.init();
     return key;

@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
+
 package com.google.keyczar.exceptions;
 
+import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.i18n.Messages;
 
-public class InvalidSignatureException extends KeyczarException {
-  private static final long serialVersionUID = -9209043556761224393L;
-
-  public InvalidSignatureException() {
-    super(Messages.getString("InvalidSignatureException"));
+/**
+ * A key type was used in an inappropriate purpose.
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ */
+public class UnsupportedTypeException extends KeyczarException {
+  public UnsupportedTypeException(KeyType type) {
+    super(Messages.getString("InvalidTypeInInput", type));
   }
+
 }

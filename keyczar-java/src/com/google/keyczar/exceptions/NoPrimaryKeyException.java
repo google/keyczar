@@ -16,6 +16,8 @@
 
 package com.google.keyczar.exceptions;
 
+import com.google.keyczar.i18n.Messages;
+
 public class NoPrimaryKeyException extends KeyNotFoundException {
   private static final long serialVersionUID = 2435853068538255446L;
 

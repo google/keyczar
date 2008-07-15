@@ -18,8 +18,8 @@ package com.google.keyczar;
 
 import com.google.keyczar.exceptions.BadVersionException;
 import com.google.keyczar.exceptions.InvalidSignatureException;
-import com.google.keyczar.exceptions.Messages;
 import com.google.keyczar.exceptions.ShortBufferException;
+import com.google.keyczar.i18n.Messages;
 
 import junit.framework.TestCase;
 
@@ -38,8 +38,7 @@ public class InternationaliztionTest extends TestCase {
   @Test
   public final void testEnglish() throws Exception {
     String englishMessage = "Received a bad version number: 1";
-    
-    Messages.reloadBundle(new Locale("en"));
+    Messages.changeLocale(new Locale("en"));
     BadVersionException enEx = new BadVersionException((byte) 1);
     assertEquals(englishMessage, enEx.getMessage());
     
@@ -52,8 +51,7 @@ public class InternationaliztionTest extends TestCase {
   @Test
   public final void testSpanish() throws Exception {
     String spanishMessage = "Recibido un mal número de versión: 1";
-    
-    Messages.reloadBundle(new Locale("es"));
+    Messages.changeLocale(new Locale("es"));
     BadVersionException esEx = new BadVersionException((byte) 1);
     assertEquals(spanishMessage, esEx.getMessage());
     

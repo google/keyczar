@@ -17,6 +17,7 @@
 package com.google.keyczar;
 
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.KeyczarReader;
 
 import java.io.File;
@@ -31,7 +32,7 @@ import java.io.RandomAccessFile;
  */
 class KeyczarFileReader implements KeyczarReader {
   private String location;
-  static final String META_FILE = "meta";
+  static final String META_FILE = "meta"; 
 
   KeyczarFileReader(String fileLocation) {
     if (fileLocation != null && !fileLocation.endsWith(File.separator)) {
@@ -52,13 +53,14 @@ class KeyczarFileReader implements KeyczarReader {
 
   private String readFile(String filename) throws KeyczarException {
     try {
-      RandomAccessFile file = new RandomAccessFile(filename, "r");
+      RandomAccessFile file = new RandomAccessFile(filename, "r"); 
       byte[] contents = new byte[(int) file.length()];
       file.read(contents);
       file.close();
       return new String(contents);
     } catch (IOException e) {
-      throw new KeyczarException("Error reading file " + filename, e);
+      throw new KeyczarException(
+          Messages.getString("KeyczarFileReader.FileError", filename), e);
     }
   }
 }

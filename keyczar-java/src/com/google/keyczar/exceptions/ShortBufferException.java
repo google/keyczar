@@ -16,6 +16,8 @@
 
 package com.google.keyczar.exceptions;
 
+import com.google.keyczar.i18n.Messages;
+
 public class ShortBufferException extends KeyczarException {
   private static final long serialVersionUID = -3056628233532649L;
 

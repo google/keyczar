@@ -18,6 +18,8 @@ package com.google.keyczar;
 
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.exceptions.UnsupportedTypeException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.Stream;
 import com.google.keyczar.util.Util;
 
@@ -97,11 +99,10 @@ abstract class KeyczarKey {
       case RSA_PRIV:
         return RsaPrivateKey.generate();
       case RSA_PUB: case DSA_PUB:
-        throw new KeyczarException("Public keys of type " + type +
-            " must be exported from private keys");
+        throw new KeyczarException(
+            Messages.getString("KeyczarKey.PublicKeyExport", type));
     }
-
-    throw new KeyczarException("Unsupported key type: " + type);
+    throw new UnsupportedTypeException(type);
   }
   
   /**
@@ -130,6 +131,6 @@ abstract class KeyczarKey {
       return RsaPublicKey.read(key);
     }
 
-    throw new KeyczarException("Unsupported key type: " + type);
+    throw new UnsupportedTypeException(type);
   }
 }

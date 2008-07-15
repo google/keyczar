@@ -20,6 +20,7 @@ import com.google.keyczar.enums.KeyPurpose;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.exceptions.NoPrimaryKeyException;
 import com.google.keyczar.exceptions.ShortBufferException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.util.Base64Coder;
@@ -108,7 +109,7 @@ public class Signer extends Verifier {
    * JCE exception occurs. 
    */
   public void sign(ByteBuffer input, ByteBuffer output) throws KeyczarException {
-    logger.info("Signing " + input.remaining() + " bytes");
+    logger.info(Messages.getString("Signer.Signing", input.remaining())); 
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
       throw new NoPrimaryKeyException();

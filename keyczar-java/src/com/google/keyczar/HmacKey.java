@@ -19,6 +19,8 @@ package com.google.keyczar;
 import com.google.gson.annotations.Expose;
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.exceptions.UnsupportedTypeException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.interfaces.Stream;
 import com.google.keyczar.interfaces.VerifyingStream;
@@ -42,7 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
  */
 class HmacKey extends KeyczarKey {
   private Key hmacKey;
-  private static final String MAC_ALGORITHM = "HMACSHA1";
+  private static final String MAC_ALGORITHM = "HMACSHA1"; //$NON-NLS-1$
   
   @Expose private String hmacKeyString;
   @Expose private KeyType type = KeyType.HMAC_SHA1;
@@ -93,7 +95,7 @@ class HmacKey extends KeyczarKey {
   static HmacKey read(String input) throws KeyczarException {
     HmacKey key = Util.gson().fromJson(input, HmacKey.class);
     if (key.getType() != KeyType.HMAC_SHA1) {
-      throw new KeyczarException("Invalid type in input: " + key.getType());
+      throw new UnsupportedTypeException(key.getType());
     }
     key.init();
     return key;

@@ -22,6 +22,7 @@ import com.google.keyczar.exceptions.InvalidSignatureException;
 import com.google.keyczar.exceptions.KeyNotFoundException;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.exceptions.ShortCiphertextException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.DecryptingStream;
 import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.VerifyingStream;
@@ -100,7 +101,8 @@ public class Crypter extends Encrypter {
   public void decrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
     ByteBuffer inputCopy = input.asReadOnlyBuffer();
-    logger.info("Decrypting " + inputCopy.remaining() + " bytes");
+    logger.info(
+        Messages.getString("Crypter.Decrypting", inputCopy.remaining()));
     if (inputCopy.remaining() < HEADER_SIZE) {
       throw new ShortCiphertextException(inputCopy.remaining());
     }

@@ -20,6 +20,7 @@ import com.google.keyczar.enums.KeyPurpose;
 import com.google.keyczar.enums.KeyStatus;
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.KeyczarReader;
 
 import java.io.File;
@@ -82,19 +83,20 @@ public class KeyczarTool {
       printUsage();
     } else {
       setFlags(args);
-      if (args[0].equals("create")) {
+      if (args[0].equals(Messages.getString("KeyczarTool.Create"))) {
         create();
-      } else if (args[0].equals("addkey")) {
+      } else if (args[0].equals(Messages.getString("KeyczarTool.Addkey"))) {
         addKey();
-      } else if (args[0].equals("pubkey")) {
+      } else if (args[0].equals(Messages.getString("KeyczarTool.Pubkey"))) {
         publicKeys();
-      } else if (args[0].equals("promote")) {
+      } else if (args[0].equals(Messages.getString("KeyczarTool.Promote"))) {
         promote();
-      } else if (args[0].equals("demote")) {
+      } else if (args[0].equals(Messages.getString("KeyczarTool.Demote"))) {
         demote();
-      } else if (args[0].equals("revoke")) {
+      } else if (args[0].equals(Messages.getString("KeyczarTool.Revoke"))) {
         revoke();
-      } else if (args[0].equals("usekey") && args.length > 2) {
+      } else if (args[0].equals(Messages.getString("KeyczarTool.Usekey"))
+          && args.length > 2) {
         useKey(args[1]);
       } else { // unsupported command
         printUsage();
@@ -105,8 +107,8 @@ public class KeyczarTool {
   private static void useKey(String msg) throws KeyczarException {
     GenericKeyczar genericKeyczar = createGenericKeyczar();
     if (destinationFlag == null) {
-      throw new KeyczarException("Must define a public key set location with"
-          + " the --destination flag");
+      throw new KeyczarException(
+          Messages.getString("KeyczarTool.MustDefinePublic"));
     }
     String answer = "";
     KeyczarReader reader = new KeyczarFileReader(locationFlag);
@@ -125,7 +127,9 @@ public class KeyczarTool {
         answer = signer.sign(msg);
         break;
       default:
-        throw new KeyczarException("Unsupported purpose!");
+        throw new KeyczarException(
+            Messages.getString("KeyczarTool.UnsupportedPurpose",
+                genericKeyczar.getMetadata().getPurpose()));
     }
     genericKeyczar.writeFile(answer, destinationFlag);
   }
@@ -162,8 +166,8 @@ public class KeyczarTool {
   private static void create() throws KeyczarException {
     KeyMetadata kmd = null;
     if (purposeFlag == null) {
-      throw new KeyczarException("Must define a key set purpose with the "
-          + "--purpose flag. Valid purposes are sign, crypt, and test.");
+      throw new KeyczarException(
+          Messages.getString("KeyczarTool.MustDefinePurpose"));
     }
     switch (purposeFlag) {
       case TEST:
@@ -171,7 +175,7 @@ public class KeyczarTool {
         break;
       case SIGN_AND_VERIFY:
         if (asymmetricFlag != null) {
-          if (asymmetricFlag.equalsIgnoreCase("rsa")) { // RSA
+          if (asymmetricFlag.equalsIgnoreCase("rsa")) {
             kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
                 KeyType.RSA_PRIV);
           } else { // Default to DSA
@@ -194,24 +198,26 @@ public class KeyczarTool {
         break;
     }
     if (kmd == null) {
-      throw new KeyczarException("Unsupported purpose: " + purposeFlag);
+      throw new KeyczarException(
+          Messages.getString("KeyczarTool.UnsupportedPurpose", purposeFlag));
     }
     if (mock == null) {
       if (locationFlag == null) {
-        throw new KeyczarException("Must define a key set location with the "
-            + "--location flag.");
+        throw new KeyczarException(
+            Messages.getString("KeyczarTool.MustDefineLocation"));
       }
       File file = new File(locationFlag + KeyczarFileReader.META_FILE);
       if (file.exists()) {
-        throw new KeyczarException("File already exists: " + file);
+        throw new KeyczarException(
+            Messages.getString("KeyczarTool.FileExists", file));
       }
       try {
         FileOutputStream metaOutput = new FileOutputStream(file);
         metaOutput.write(kmd.toString().getBytes());
         metaOutput.close();
       } catch (IOException e) {
-        throw new KeyczarException("Unable to write to : " + 
-            file.toString(), e);
+        throw new KeyczarException(Messages.getString(
+            "KeyczarTool.UnableToWrite", file.toString()), e);
       }
     } else { // for testing purposes, update mock kmd
       mock.setMetadata(kmd);
@@ -227,7 +233,8 @@ public class KeyczarTool {
    */
   private static void promote() throws KeyczarException {
     if (versionFlag < 0) {
-      throw new KeyczarException("Illegal or missing version number.");
+      throw new KeyczarException(
+          Messages.getString("KeyczarTool.MissingVersion"));
     }
     GenericKeyczar genericKeyczar = createGenericKeyczar();
     genericKeyczar.promote(versionFlag);
@@ -243,7 +250,8 @@ public class KeyczarTool {
    */
   private static void demote() throws KeyczarException {
     if (versionFlag < 0) {
-      throw new KeyczarException("Illegal or missing version number.");
+      throw new KeyczarException(
+          Messages.getString("KeyczarTool.MissingVersion"));
     }
     GenericKeyczar genericKeyczar = createGenericKeyczar();
     genericKeyczar.demote(versionFlag);
@@ -258,8 +266,8 @@ public class KeyczarTool {
    */
   private static void publicKeys() throws KeyczarException {
     if (mock == null && destinationFlag == null) { // only if not testing
-      throw new KeyczarException("Must define a public key set location with"
-          + " the --destination flag");
+      throw new KeyczarException(
+          Messages.getString("KeyczarTool.MustDefineDestination"));
     }
     GenericKeyczar genericKeyczar = createGenericKeyczar();
     genericKeyczar.publicKeyExport(destinationFlag);
@@ -284,7 +292,7 @@ public class KeyczarTool {
       // make a difference if the current version is cached. Probably better to
       // keep all key material encrypted on disk.
       if (!revokedVersion.delete()) { // delete old key file
-        throw new KeyczarException("Unable to delete revoked key file.");
+        throw new KeyczarException("Unable to delete revoked key file."); //$NON-NLS-1$
       }
     } else {
       mock.removeKey(versionFlag);
@@ -296,47 +304,49 @@ public class KeyczarTool {
    */
   private static void printUsage() {
     // TODO: Move this to an external file
-    String msg = "Usage:\t\"KeyczarTool command flags\"\n" +
-                 "Commands (optional paramters in [brackets]):\n" + 
-                 "create --location=location --purpose=purpose [--name=name]" +
-                     "[--asymmetric=rsa|dsa]\n" +
-                 "\tCreates a new key store.\n" + 
-                 "addkey --location=location [--status=status]" +
-                 " [--size=size] [--encrypter=encrypterLocation]\n" +
-                 "\tAdds new key with given status, size to given location." +
-                 "The default status is ACTIVE.\n" + 
-                 "pubkey --location=location --destination=destination\n" +
-                 "\tExport a key set at the given location as a set of " + 
-                     "public keys at a given destination.\n" + 
-                 "promote --location=location --version=versionNumber\n" +
-                 "\tPromote status of given key version at given location.\n" +
-                 "demote --location=location --version=versionNumber\n" +
-                 "\tDemote status of given key version at given location.\n" +
-                 "revoke --location=location --version=versionNumber\n" +
-                 "\tRevoke given key at given location if scheduled to be.\n" +
-                 "Flags:\n" + 
-                 "\t--name : Define the name of a keystore. Optional.\n" + 
-                 "\t--location : Define the file location of a keystore\n" + 
-                 "\t--destination : Define the destination location of " + 
-                     "a keystore.\n" + 
-                 "\t--purpose : Define the purpose of a keystore." + 
-                     " Must be sign, crypt, or test.\n" + 
-                 "\t--status : Define the status of a new key. Must be " +
-                     "primary, active, or scheduled_for_revocation. Optional." +
-                     " Defaults to active.\n" +
-                     "\t--crypter : The location of a crypter to be used for" +
-                     " encrypting new keys \n" + 
-                 "\t--version : The version number of key to update.\n" +
-                 "\t--size : Key size in bits. Overrides default. Optional.\n" +
-                 "\t--asymmetric : Dictate use of asymmetric algorithm. " +
-                     "Must be rsa or blank. Optional.\n\t\t\t" +
-                     "For sign, defaults to DSA unless rsa indicated. " +
-                     "For crypt, uses RSA.\n" +
-                 "Key Sizes: (default first)\n" +
-                 "AES : 128\n" +
-                 "HMAC-SHA1 : 256\n" +
-                 "DSA : 1024\n" +
-                 "RSA : 2048, 1024, 768, 512\n";
+    String msg = "Usage:\t\"KeyczarTool command flags\"\n" + //$NON-NLS-1$
+                 "Commands (optional paramters in [brackets]):\n" +  //$NON-NLS-1$
+                 "create --location=location --purpose=purpose [--name=name]" + //$NON-NLS-1$
+                     "[--asymmetric=rsa|dsa]\n" + //$NON-NLS-1$
+                 "\tCreates a new key store.\n" +  //$NON-NLS-1$
+                 "addkey --location=location [--status=status]" + //$NON-NLS-1$
+                 " [--size=size] [--crypter=crypterLocation]\n" + //$NON-NLS-1$
+                 "\tAdds new key with given status, size to given location." + //$NON-NLS-1$
+                 "The default status is ACTIVE.\n" +  //$NON-NLS-1$
+                 "pubkey --location=location --destination=destination\n" + //$NON-NLS-1$
+                 "\tExport a key set at the given location as a set of " +  //$NON-NLS-1$
+                     "public keys at a given destination.\n" +  //$NON-NLS-1$
+                 "promote --location=location --version=versionNumber\n" + //$NON-NLS-1$
+                 "\tPromote status of given key version at given location.\n" + //$NON-NLS-1$
+                 "demote --location=location --version=versionNumber\n" + //$NON-NLS-1$
+                 "\tDemote status of given key version at given location.\n" + //$NON-NLS-1$
+                 "revoke --location=location --version=versionNumber\n" + //$NON-NLS-1$
+                 "\tRevoke given key at given location if scheduled to be.\n" + //$NON-NLS-1$
+                 "Flags:\n" +  //$NON-NLS-1$
+                 "\t--name : Define the name of a keystore. Optional.\n" +  //$NON-NLS-1$
+                 "\t--location : Define the file location of a keystore\n" +  //$NON-NLS-1$
+                 "\t--destination : Define the destination location of " +  //$NON-NLS-1$
+                     "a keystore.\n" +  //$NON-NLS-1$
+                 "\t--purpose : Define the purpose of a keystore." +  //$NON-NLS-1$
+                     " Must be sign, crypt, or test.\n" +  //$NON-NLS-1$
+                 "\t--status : Define the status of a new key. Must be " + //$NON-NLS-1$
+                     "primary, active, or scheduled_for_revocation. Optional." + //$NON-NLS-1$
+                     " Defaults to active.\n" + //$NON-NLS-1$
+                     "\t--crypter : The location of a crypter to be used for" + //$NON-NLS-1$
+                     " encrypting new keys \n" +  //$NON-NLS-1$
+                 "\t--version : The version number of key to update.\n" + //$NON-NLS-1$
+                 "\t--size : Key size in bits. Overrides default. Optional.\n" + //$NON-NLS-1$
+                 "\t--asymmetric : Dictate use of asymmetric algorithm. " + //$NON-NLS-1$
+                 "Must be rsa or blank. Optional.\n\t\t\t" + //$NON-NLS-1$
+                 "For sign, defaults to DSA unless rsa indicated. " + //$NON-NLS-1$
+                 "For crypt, uses RSA.\n" + //$NON-NLS-1$
+                 "\t--crypter : The location of a crypter that will " + //$NON-NLS-1$
+                 "encrypt a keyset on disk\n" + //$NON-NLS-1$
+                 "Key Sizes: (default first)\n" + //$NON-NLS-1$
+                 "AES : 128\n" + //$NON-NLS-1$
+                 "HMAC-SHA1 : 256\n" + //$NON-NLS-1$
+                 "DSA : 1024\n" + //$NON-NLS-1$
+                 "RSA : 2048, 1024, 768, 512\n"; //$NON-NLS-1$
     System.out.println(msg);
   }
   
@@ -382,7 +392,7 @@ public class KeyczarTool {
       versionFlag = -1; // mark flag as unset, handle above
     }
     try {
-      sizeFlag = Integer.parseInt(params.get("size"));
+      sizeFlag = Integer.parseInt(params.get("size")); //$NON-NLS-1$
     } catch (NumberFormatException e) {
       sizeFlag = -1; // mark flag as unset, handle above
     }
@@ -400,8 +410,8 @@ public class KeyczarTool {
       return new GenericKeyczar(mock);
     }
     if (locationFlag == null) {
-      throw new KeyczarException("Must define a key set location with the "
-          + "--location flag");
+      throw new KeyczarException("Must define a key set location with the " //$NON-NLS-1$
+          + "--location flag"); //$NON-NLS-1$
     }
     KeyczarReader reader = new KeyczarFileReader(locationFlag);
     if (crypterFlag != null) {
@@ -486,8 +496,8 @@ public class KeyczarTool {
           break;
       }
       if (publicKmd == null) {
-        throw new KeyczarException("Cannot export public keys for key type: "
-            + kmd.getType() + " and purpose " + kmd.getPurpose());
+        throw new KeyczarException("Cannot export public keys for key type: " //$NON-NLS-1$
+            + kmd.getType() + " and purpose " + kmd.getPurpose()); //$NON-NLS-1$
       }
       
       for (KeyVersion version : getVersions()) {
@@ -559,7 +569,7 @@ public class KeyczarTool {
         writer.write(data);
         writer.close();
       } catch (IOException e) {
-        throw new KeyczarException("Unable to write to : "
+        throw new KeyczarException("Unable to write to : " //$NON-NLS-1$
             + outputFile.toString(), e);
       }
     }

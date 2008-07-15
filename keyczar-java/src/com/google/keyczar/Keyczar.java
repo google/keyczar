@@ -19,6 +19,7 @@ package com.google.keyczar;
 import com.google.keyczar.enums.KeyPurpose;
 import com.google.keyczar.enums.KeyStatus;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.EncryptedReader;
 import com.google.keyczar.interfaces.KeyczarReader;
 
@@ -83,24 +84,25 @@ abstract class Keyczar {
     // Reads keys from the KeyczarReader
     kmd = KeyMetadata.read(reader.getMetadata());
     if (!isAcceptablePurpose(kmd.getPurpose())) {
-      throw new KeyczarException("Unacceptable purpose: " + kmd.getPurpose());
+      throw new KeyczarException(
+          Messages.getString("Keyczar.UnacceptablePurpose", kmd.getPurpose()));
     }
     
     if (kmd.isEncrypted() && !(reader instanceof EncryptedReader)) {
-      throw new KeyczarException("Must use an EncryptedReader to read " +
-          "encrypted key sets.");
+      throw new KeyczarException(
+          Messages.getString("Keyczar.NeedEncryptedReader"));
     }
     for (KeyVersion version : kmd.getVersions()) {
       if (version.getStatus() == KeyStatus.PRIMARY) {
         if (primaryVersion != null) {
           throw new KeyczarException(
-              "Key sets may only have a single primary version");
+              Messages.getString("Keyczar.SinglePrimary"));
         }
         primaryVersion = version;
       }
       KeyczarKey key = KeyczarKey.readKey(kmd.getType(),
           reader.getKey(version.getVersionNumber()));
-      logger.info("Read version: " + version);
+      logger.info(Messages.getString("Keyczar.ReadVersion", version));
       hashMap.put(new KeyHash(key.hash()), key);
       versionMap.put(version, key);
     }
@@ -171,9 +173,8 @@ abstract class Keyczar {
     KeyczarKey key;
     kmd.getType().setKeySize(keySize);
     if (keySize < kmd.getType().defaultSize()) { // print a warning statement
-      System.out.println("WARNING: " + keySize + "-bit key size is less than " +
-          "the recommended default key size of " + kmd.getType().defaultSize() + 
-          " bits for " + kmd.getType().toString() + " keys.");
+      logger.warn(Messages.getString("Keyczar.SizeWarning",
+          keySize, kmd.getType().defaultSize(), kmd.getType().toString()));
     }
     do { // Make sure no keys collide on their identifiers
       key = KeyczarKey.genKey(kmd.getType());
@@ -183,7 +184,7 @@ abstract class Keyczar {
     // maybe automatically reset after any calls to KeyType.keySize()?
     // this would only allow one time changes to keySize
     addKey(version, key);
-    logger.info("Created new version: " + version);
+    logger.info(Messages.getString("Keyczar.NewVersion", version));
   }
   
   /**
@@ -196,10 +197,11 @@ abstract class Keyczar {
    */
   void promote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
-    logger.info("Promoting version: " + version);
+    logger.info(Messages.getString("Keyczar.PromotedVersion", version));
     switch (version.getStatus()) {
       case PRIMARY:
-        throw new KeyczarException("Can't promote a primary key.");
+        throw new KeyczarException(
+            Messages.getString("Keyczar.CantPromotePrimary"));
       case ACTIVE: 
         version.setStatus(KeyStatus.PRIMARY); // promote to PRIMARY
         if (primaryVersion != null) {
@@ -223,7 +225,7 @@ abstract class Keyczar {
    */
   void demote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
-    logger.info("Demoting version: " + version);
+    logger.info(Messages.getString("Keyczar.DemotingVersion", version));
     switch (version.getStatus()) {
       case PRIMARY:
         version.setStatus(KeyStatus.ACTIVE);
@@ -233,8 +235,8 @@ abstract class Keyczar {
         version.setStatus(KeyStatus.SCHEDULED_FOR_REVOCATION);
         break;
       case SCHEDULED_FOR_REVOCATION:
-        throw new KeyczarException("Can't demote a key scheduled " + 
-            "for revocation.");
+        throw new KeyczarException(
+            Messages.getString("Keyczar.CantDemoteScheduled"));
     }
   }
   
@@ -250,7 +252,7 @@ abstract class Keyczar {
     if (version.getStatus() == KeyStatus.SCHEDULED_FOR_REVOCATION) {
       kmd.removeVersion(versionNumber);
     } else {
-      throw new KeyczarException("Can't revoke key if not scheduled to be.");
+      throw new KeyczarException(Messages.getString("Keyczar.CantRevoke"));
     }
   }
 
@@ -264,7 +266,8 @@ abstract class Keyczar {
    KeyVersion getVersion(int versionNumber) throws KeyczarException {
     KeyVersion version = kmd.getVersion(versionNumber);
     if (version == null) {
-      throw new KeyczarException("No such version number: " + versionNumber);
+      throw new KeyczarException(
+          Messages.getString("Keyczar.NoSuchVersion", versionNumber));
     }
     return version;
   }

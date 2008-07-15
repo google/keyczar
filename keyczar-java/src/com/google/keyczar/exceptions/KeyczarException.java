@@ -16,6 +16,8 @@
 
 package com.google.keyczar.exceptions;
 
+import org.apache.log4j.Logger;
+
 /**
  * Base class of all possible exceptions thrown by Keyczar.
  *
@@ -25,6 +27,8 @@ package com.google.keyczar.exceptions;
 
 public class KeyczarException extends Exception {
   private static final long serialVersionUID = 7893435087558002323L;
+  private static final Logger logger =
+    Logger.getLogger(KeyczarException.class);
 
   public KeyczarException(String message) {
     super(message);

@@ -21,6 +21,7 @@ import com.google.keyczar.exceptions.BadVersionException;
 import com.google.keyczar.exceptions.KeyNotFoundException;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.exceptions.ShortSignatureException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.VerifyingStream;
 import com.google.keyczar.util.Base64Coder;
@@ -97,7 +98,7 @@ public class Verifier extends Keyczar {
    */
   public boolean verify(ByteBuffer data, ByteBuffer signature)
       throws KeyczarException {
-    logger.info("Verifying " + data.remaining() + " bytes");
+    logger.info(Messages.getString("Verifier.Verifying", data.remaining()));
     if (signature.remaining() < HEADER_SIZE) {
       throw new ShortSignatureException(signature.remaining());
     }

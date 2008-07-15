@@ -20,6 +20,7 @@ import com.google.keyczar.enums.KeyPurpose;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.exceptions.NoPrimaryKeyException;
 import com.google.keyczar.exceptions.ShortBufferException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.EncryptingStream;
 import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.interfaces.SigningStream;
@@ -127,7 +128,7 @@ public class Encrypter extends Keyczar {
    */
   public void encrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
-    logger.info("Encrypting " + input.remaining() + " bytes");
+    logger.info(Messages.getString("Encrypter.Encrypting", input.remaining()));
     KeyczarKey encryptingKey = getPrimaryKey();
     if (encryptingKey == null) {
       throw new NoPrimaryKeyException() ;

@@ -3,6 +3,7 @@ package com.google.keyczar;
 import com.google.keyczar.enums.KeyPurpose;
 import com.google.keyczar.enums.KeyStatus;
 import com.google.keyczar.enums.KeyType;
+import com.google.keyczar.exceptions.BadVersionException;
 import com.google.keyczar.exceptions.KeyczarException;
 import com.google.keyczar.interfaces.KeyczarReader;
 import com.google.keyczar.util.Util;
@@ -33,7 +34,7 @@ public class MockKeyczarReader implements KeyczarReader {
     if (keys.containsKey(version)) {
       return keys.get(version).toString();
     } else {
-      throw new KeyczarException("Illegal version number.");
+      throw new BadVersionException((byte) version);
     }
   }
 

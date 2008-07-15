@@ -19,6 +19,8 @@ package com.google.keyczar;
 import com.google.gson.annotations.Expose;
 import com.google.keyczar.enums.KeyType;
 import com.google.keyczar.exceptions.KeyczarException;
+import com.google.keyczar.exceptions.UnsupportedTypeException;
+import com.google.keyczar.i18n.Messages;
 import com.google.keyczar.interfaces.SigningStream;
 import com.google.keyczar.interfaces.Stream;
 import com.google.keyczar.interfaces.VerifyingStream;
@@ -41,8 +43,8 @@ import java.util.Arrays;
  * 
  */
 class DsaPrivateKey extends KeyczarPrivateKey {
-  private static final String KEY_GEN_ALGORITHM = "DSA";
-  private static final String SIG_ALGORITHM = "SHA1withDSA";
+  private static final String KEY_GEN_ALGORITHM = "DSA"; //$NON-NLS-1$
+  private static final String SIG_ALGORITHM = "SHA1withDSA"; //$NON-NLS-1$
 
   @Expose private DsaPublicKey publicKey;
   @Expose private KeyType type = KeyType.DSA_PRIV;
@@ -97,7 +99,7 @@ class DsaPrivateKey extends KeyczarPrivateKey {
   static DsaPrivateKey read(String input) throws KeyczarException {
     DsaPrivateKey key = Util.gson().fromJson(input, DsaPrivateKey.class);
     if (key.getType() != KeyType.DSA_PRIV) {
-      throw new KeyczarException("Incorrect type. Received: " + key.getType());
+      throw new UnsupportedTypeException(key.getType());
     }
     key.init();
     return key;
