@@ -64,7 +64,7 @@
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="com.google.keyczar.CrypterTest" todir="${junit.output.dir}"/>
+            <test name="org.keyczar.CrypterTest" todir="${junit.output.dir}"/>
             <classpath refid="Keyczar-Java.classpath"/>
         </junit>
     </target>
@@ -72,7 +72,7 @@
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="com.google.keyczar.SignerTest" todir="${junit.output.dir}"/>
+            <test name="org.keyczar.SignerTest" todir="${junit.output.dir}"/>
             <classpath refid="Keyczar-Java.classpath"/>
         </junit>
     </target>
@@ -80,10 +80,6 @@
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="com.google.keyczar.AllTests" todir="${junit.output.dir}"/>
-            <test name="com.google.keyczar.CrypterTest" todir="${junit.output.dir}"/>
-            <test name="com.google.keyczar.KeyczarToolTest" todir="${junit.output.dir}"/>
-            <test name="com.google.keyczar.SignerTest" todir="${junit.output.dir}"/>
             <classpath refid="Keyczar-Java.classpath"/>
         </junit>
     </target>
@@ -91,7 +87,7 @@
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="com.google.keyczar.EncryptedKeyTest" todir="${junit.output.dir}"/>
+            <test name="org.keyczar.EncryptedKeyTest" todir="${junit.output.dir}"/>
             <classpath refid="Keyczar-Java.classpath"/>
         </junit>
     </target>
@@ -106,15 +102,23 @@
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="com.google.keyczar.AllTests" todir="${junit.output.dir}"/>
+            <test name="org.keyczar.AllTests" todir="${junit.output.dir}"/>
             <classpath refid="Keyczar-Java.classpath"/>
         </junit>
     </target>
     <target name="KeyczarTool addkey encrypted">
-        <java classname="com.google.keyczar.KeyczarTool" failonerror="true" fork="yes">
+        <java classname="org.keyczar.KeyczarTool" failonerror="true" fork="yes">
             <arg line="addkey --location=/home/sweis/workspace/Keyczar-Java/testdata/aes-crypted --encrypter=/home/sweis/workspace/Keyczar-Java/testdata/aes"/>
             <classpath refid="Keyczar-Java.classpath"/>
         </java>
+    </target>
+    <target name="InternationaliztionTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="org.keyczar.InternationaliztionTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar-Java.classpath"/>
+        </junit>
     </target>
     <target name="junitreport">
         <junitreport todir="${junit.output.dir}">
