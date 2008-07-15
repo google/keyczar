@@ -7,7 +7,7 @@ gsonPath = cwd + "/../third_party/gson/gson.jar"
 log4jPath = cwd + "/../third_party/log4j/log4j-1.2.15.jar"
 binPath = cwd + "/../bin/"
 paths = binPath + ":" + gsonPath + ":" + log4jPath
-cmd = "java -cp " + paths + " com.google.keyczar.KeyczarTool"
+cmd = "java -cp " + paths + " org.keyczar.KeyczarTool"
 
 keyFiles = [("../testdata/aes/", "crypt", None, None),
             ("../testdata/rsa/", "crypt", "rsa", None),
