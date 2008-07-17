@@ -23,6 +23,82 @@ import errors
 from Crypto.Util import randpool
 import sha
 import base64
+from pyasn1.type import univ
+from pyasn1.type import namedtype
+from pyasn1.codec.der import encoder
+from pyasn1.codec.der import decoder
+
+#RSAPrivateKey ::= SEQUENCE {
+#  version Version,
+#  modulus INTEGER, -- n
+#  publicExponent INTEGER, -- e
+#  privateExponent INTEGER, -- d
+#  prime1 INTEGER, -- p
+#  prime2 INTEGER, -- q
+#  exponent1 INTEGER, -- d mod (p-1)
+#  exponent2 INTEGER, -- d mod (q-1)
+#  coefficient INTEGER -- (inverse of q) mod p }
+#
+#Version ::= INTEGER
+RSA_OID = univ.ObjectIdentifier('1.2.840.113549.1.1.1')
+RSA_SPEC = univ.Sequence(componentType=namedtype.NamedTypes(
+                              namedtype.NamedType('version', univ.Integer()), 
+                              namedtype.NamedType('n', univ.Integer()), 
+                              namedtype.NamedType('e', univ.Integer()), 
+                              namedtype.NamedType('d', univ.Integer()), 
+                              namedtype.NamedType('p', univ.Integer()), 
+                              namedtype.NamedType('q', univ.Integer()), 
+                              namedtype.NamedType('dp', univ.Integer()), 
+                              namedtype.NamedType('dq', univ.Integer()), 
+                              namedtype.NamedType('invq', univ.Integer())
+                        ))  # Don't need this anymore, can use position nums
+RSA_PARAMS = ['n', 'e', 'd', 'p', 'q', 'dp', 'dq', 'invq']
+DSA_OID = univ.ObjectIdentifier('1.2.840.10040.4.1')
+DSA_SPEC = None  # TODO: fill in
+
+#PrivateKeyInfo ::= SEQUENCE {
+#  version Version,
+#
+#  privateKeyAlgorithm PrivateKeyAlgorithmIdentifier,
+#  privateKey PrivateKey,
+#  attributes [0] IMPLICIT Attributes OPTIONAL }
+#
+#Version ::= INTEGER
+#
+#PrivateKeyAlgorithmIdentifier ::= AlgorithmIdentifier
+#
+#PrivateKey ::= OCTET STRING
+#
+#Attributes ::= SET OF Attribute
+def ParsePkcs8(bytes):
+  seq = decoder.decode(bytes)[0]
+  if len(seq) != 3:  # need three fields in PrivateKeyInfo
+    raise errors.KeyczarError("Illegal PKCS8 String.")
+  version = int(seq.getComponentByPosition(0))
+  if version != 0:
+      raise errors.KeyczarError("Unrecognized PKCS8 Version")
+  oid = seq.getComponentByPosition(1).getComponentByPosition(0)
+  alg_params = seq.getComponentByPosition(1).getComponentByPosition(1)
+  pkey = seq.getComponentByPosition(2)
+  if oid == RSA_OID:
+    key = decoder.decode(pkey, asn1Spec=RSA_SPEC)[0]
+    params = {}
+    version = int(key.getComponentByPosition(0))
+    if version != 0:
+      raise errors.KeyczarError("Unrecognized RSA Private Key Version")
+    for i in range(len(RSA_PARAMS)):
+      params[RSA_PARAMS[i]] = int(key.getComponentByPosition(i+1))
+    return params
+  elif oid == DSA_OID:
+    params = {'p': int(alg_params.getComponentByPosition(0)),
+              'q': int(alg_params.getComponentByPosition(1)),
+              'g': int(alg_params.getComponentByPosition(2))}
+    params['y'] = int(decoder.decode(pkey)[0])
+    params['x'] = None
+    #TODO: decoding pkey just gives an octet string of an integer, figure
+    # out if this is x or y and where the other one is
+  else:
+    raise errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
 
 def IntToBytes(n):
   """Return byte string of 4 big-endian ordered bytes representing n."""
