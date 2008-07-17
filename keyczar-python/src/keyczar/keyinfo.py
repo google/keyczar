@@ -47,9 +47,6 @@ class KeyType(_NameId):
     self.__sizes = sizes
     self.output_size = output_size
     self.default_size = self.__sizes[0]
-
-  def __str__(self):
-    return self.name
   
   def IsValidSize(self, size):
     return size in self.__sizes
@@ -100,11 +97,10 @@ class CipherMode(_NameId):
     self.use_iv = use_iv
     self.GetOutputSize = OutputSizeFn
     
-CBC = CipherMode("AES/CBC/PKCS5Padding", 0, True, lambda b, i: (i/b + 2) * b)
-CTR = CipherMode("AES/CTR/NoPadding", 1, True, lambda b, i: i + b / 2)
-ECB = CipherMode("AES/ECB/NoPadding", 2, False, lambda b, i: b)
-DET_CBC = CipherMode("AES/CBC/PKCS5Padding", 3, False, 
-                     lambda b, i: (i / b + 1) * b)
+CBC = CipherMode("CBC", 0, True, lambda b, i: (i/b + 2) * b)
+CTR = CipherMode("CTR", 1, True, lambda b, i: i + b / 2)
+ECB = CipherMode("ECB", 2, False, lambda b, i: b)
+DET_CBC = CipherMode("DET_CBC", 3, False, lambda b, i: (i / b + 1) * b)
 modes = {"CBC": CBC, "CTR": CTR, "ECB": ECB, "DET_CBC": DET_CBC}
 
 def GetMode(name):

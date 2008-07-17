@@ -20,7 +20,7 @@ __author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
 
 import errors
 
-from Crypto.Util.randpool import RandomPool
+from Crypto.Util import randpool
 import sha
 import base64
 
@@ -31,8 +31,7 @@ def IntToBytes(n):
 
 def RandBytes(n):
   """Return n random bytes."""
-  rp = RandomPool(512)
-  return rp.get_bytes(n)
+  return randpool.RandomPool(512).get_bytes(n)
 
 def Hash(inputs):
   """Return a SHA-1 hash over a list of inputs."""
@@ -81,4 +80,3 @@ def Decode(s):
   elif d == 3:
     s += "="
   return base64.urlsafe_b64decode(s)
-    

@@ -72,3 +72,8 @@ xG8Eiz7OOeI20NeKd3EcvEZ5hTHZKFRKyCSteRB4eWvjbvEeaPJR
 -----END RSA PRIVATE KEY-----\n"""
 
 print openssl == keyfactory.parsePEMKey(openssl).write()
+
+print "Testing RSA..."
+rsa_key = keys.RsaPrivateKey.Generate()
+ciph = rsa_key.Encrypt("hello")
+print rsa_key.Decrypt(ciph)
