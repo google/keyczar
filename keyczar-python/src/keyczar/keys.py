@@ -31,8 +31,7 @@ import keyczar
 import simplejson
 from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
-from tlslite.utils import ASN1Parser
-from tlslite.utils import cryptomath
+from Crypto.Util import number
 
 import sha
 import hmac
@@ -41,6 +40,32 @@ import hmac
 #modify all Read() methods to wrap data obtained from simplejson with str().
 #Currently, only problem arose with base64 conversions -- this was dealt with
 #directly in the encode/decode methods. Luckily 'hello' == u'hello'.
+
+def GenKey(type, size=None):
+  if size is None:
+    size = type.default_size
+  try:
+    return {keyinfo.AES: AesKey.Generate,
+            keyinfo.HMAC_SHA1: HmacKey.Generate,
+            keyinfo.DSA_PRIV: DsaPrivateKey.Generate,
+            keyinfo.RSA_PRIV: RsaPrivateKey.Generate}[type](size)
+  except KeyError:
+    if type == keyinfo.DSA_PUB or type == keyinfo.RSA_PUB:
+      msg = "Public keys of type %s must be exported from private keys."
+    else:
+      msg = "Unsupported key type: %s"
+    raise errors.KeyczarError(msg % type)
+
+def ReadKey(type, key):
+  try:
+    return {keyinfo.AES: AesKey.Read,
+            keyinfo.HMAC_SHA1: HmacKey.Read,
+            keyinfo.DSA_PRIV: DsaPrivateKey.Read,
+            keyinfo.RSA_PRIV: RsaPrivateKey.Read,
+            keyinfo.DSA_PUB: DsaPublicKey.Read,
+            keyinfo.RSA_PUB: RsaPublicKey.Read}[type](key)
+  except KeyError:
+    raise errors.KeyczarError("Unsupported key type: %s" % type)
 
 class Key(object):
   
@@ -86,31 +111,13 @@ class SymmetricKey(Key):
     """Return the key as a string."""
     return self.__key_string
 
-def GenKey(type, size=None):
-  if size is None:
-    size = type.default_size
-  try:
-    return {keyinfo.AES: AesKey.Generate,
-            keyinfo.HMAC_SHA1: HmacKey.Generate,
-            keyinfo.DSA_PRIV: DsaPrivateKey.Generate,
-            keyinfo.RSA_PRIV: RsaPrivateKey.Generate}[type](size)
-  except KeyError:
-    if type == keyinfo.DSA_PUB or type == keyinfo.RSA_PUB:
-      msg = "Public keys of type %s must be exported from private keys."
-    else:
-      msg = "Unsupported key type: %s"
-    raise errors.KeyczarError(msg % type)
-
-def ReadKey(type, key):
-  try:
-    return {keyinfo.AES: AesKey.Read,
-            keyinfo.HMAC_SHA1: HmacKey.Read,
-            keyinfo.DSA_PRIV: DsaPrivateKey.Read,
-            keyinfo.RSA_PRIV: RsaPrivateKey.Read,
-            keyinfo.DSA_PUB: DsaPublicKey.Read,
-            keyinfo.RSA_PUB: RsaPublicKey.Read}[type](key)
-  except KeyError:
-    raise errors.KeyczarError("Unsupported key type: %s" % type)
+class AsymmetricKey(Key):
+  
+  """Parent class for asymmetric keys."""
+  
+  def __init__(self, type, hash, params):
+    Key.__init__(self, type, hash)
+    self.__params = params
 
 class AesKey(SymmetricKey):
   
@@ -267,60 +274,28 @@ class HmacKey(SymmetricKey):
     """
     return self.Sign(msg) == sig_bytes
 
-class PrivateKey(Key):
+class PrivateKey(AsymmetricKey):
   
   """Represents private keys in Keyczar for asymmetric key pairs."""
   
-  RSA_ALG_ID = [6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 1, 5, 0]
-  DSA_ALG_ID = []  # TODO: Find out
-  
-  def __init__(self, type, hash, pkcs8, pub):
-    Key.__init__(self, type, hash)
+  def __init__(self, type, hash, params, pkcs8, pub):
+    AsymmetricKey.__init__(self, type, hash, params)
     self.pkcs8 = pkcs8
     self.public_key = pub
   
   def _GetKeyString(self):
     return self.pkcs8
-  
-  def _ParsePKCS8(self):
-    if self.pkcs8 is None:
-      return None
-    byte_array = cryptomath.createByteArraySequence(util.Decode(self.pkcs8))
-    parser = ASN1Parser.ASN1Parser(byte_array)
-    params = None
-    version = parser.getChild(0).value[0]
-    if version != 0:
-      raise errors.KeyczarError("Unrecognized PKCS8 Version")
-    alg_id = list(parser.getChild(1).getChild(0).value)
-    if alg_id != RSA_ALG_ID or alg_id != DSA_ALG_ID:
-      raise errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
-    if alg_id == DSA_ALG_ID:
-      node = parser.getChild(1).getChild(1)
-      nums = [cryptomath.bytesToNumber(node.getChild(i).value) 
-              for i in range(3)]
-      params = {'p': nums[0], 'q': nums[1], 'g': nums[2]}
-    return self._ParsePrivateKey(ASN1Parser.ASN1Parser(parser.getChild(2).value), 
-                                 params)
-  
-  def _ParsePrivateKey(self, parser, params=None):
-    """Abstract method to parse a RSA or DSA key in PrivateKey format."""
 
-class PublicKey(Key):
+class PublicKey(AsymmetricKey):
   
   """Represents public keys in Keyczar for asymmetric key pairs."""
   
-  def __init__(self, type, hash, x509):
-    Key.__init__(self, type, hash)
+  def __init__(self, type, hash, params, x509):
+    AsymmetricKey.__init__(self, type, hash, params)
     self.x509 = x509
   
   def _GetKeyString(self):
     return self.x509
-  
-  def _ParseX509(self):
-    pass
-  
-  def _ParsePublicKey(self, parser):
-    pass
 
 class DsaPrivateKey(PrivateKey):
   
@@ -334,35 +309,41 @@ class DsaPrivateKey(PrivateKey):
 
 class RsaPrivateKey(PrivateKey):
   
-  def __init__(self, hash, pkcs8, pub, key, size=keyinfo.RSA_PRIV.default_size):
-    PrivateKey.__init__(self, keyinfo.RSA_PRIV, hash, pkcs8, pub)
-    self.params = self._ParsePKCS8()
+  def __init__(self, hash, params, pkcs8, pub, key, 
+               size=keyinfo.RSA_PRIV.default_size):
+    PrivateKey.__init__(self, keyinfo.RSA_PRIV, hash, params, pkcs8, pub)
     self.key = key  # instance of PyCrypto RSA key
     self.size = size
-  
-  def _ParsePrivateKey(self, parser, params=None):
-    version = parser.getChild(0).value[0]
-    nums = [cryptomath.bytesToNumber(parser.getChild(i).value) 
-              for i in range(1,9)]
-    return {'n': nums[0], 'e': nums[1], 'd': nums[2], 'p': nums[3], 
-            'q': nums[4], 'dp': nums[5], 'dq': nums[6], 'qinv': nums[7]}
   
   @staticmethod
   def Generate(size=keyinfo.RSA_PRIV.default_size):
     """Return a newly generated RSA private key."""
-    key_pair = RSA.generate(size, util.RandBytes)
-    pub_key = key_pair.publickey()
-    pub = RsaPublicKey('HashAB', None, pub_key, size)  
-    # FIXME: need hash, x509 data
-    return RsaPrivateKey(pub.hash, None, pub, key_pair, size) 
-    # FIXME: need a way to import/export to pkcs8
+    key = RSA.generate(size, util.RandBytes)
+    params = {'n': key.n, 'e': key.e, 'd': key.d, 'p': key.q, 'q': key.p,  
+              'dp': key.d % key.q, 'dq': key.d % key.p, 'invq': key.u}
+    #NOTE: PyCrypto stores p < q, u = p^{-1} mod q
+    #But OpenSSL and PKCS8 stores q < p, invq = q^{-1} mod p
+    #So we have to reverse the p and q values
+    pubkey = key.publickey()
+    pub_params = {'n': pubkey.n, 'e': pubkey.e}
+    x509 = util.Decode(util.ExportRsaX509(pub_params))
+    fullhash = util.Hash([util.IntToBytes(len(x509)), x509])
+    hash = util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+    pub = RsaPublicKey(hash, pub_params, util.Encode(x509), pubkey, size)
+    return RsaPrivateKey(pub.hash, params, util.ExportRsaPkcs8(params), pub, 
+                         key, size)
   
   @staticmethod
   def Read(key):
     rsa = simplejson.loads(key)
-    pub_key = rsa['publicKey']
-    pub = RsaPublicKey(pub_key['hash'], pub_key['x509'], None) # FIXME: get key
-    rsa_key = RsaPrivateKey(rsa['hash'], rsa['pkcs8'], pub)
+    pubkey = rsa['publicKey']
+    pub_params = util.ParseX509(pubkey['x509'])
+    pycrypt_pub = RSA.construct((pub_params['n'], pub_params['e']))
+    pub = RsaPublicKey(pubkey['hash'], pub_params, pubkey['x509'], pycrypt_pub)
+    params = util.ParsePkcs8(rsa['pkcs8'])
+    key = RSA.construct((params['n'], params['e'], params['d'],
+                         params['q'], params['p'], params['invq']))
+    return RsaPrivateKey(rsa['hash'], params, rsa['pkcs8'], pub, key)
   
   def Encrypt(self, data):
     """Return ciphertext byte string containing Header|Ciphertext
@@ -419,9 +400,9 @@ class DsaPublicKey(PublicKey):
 
 class RsaPublicKey(PublicKey):
   
-  def __init__(self, hash, x509, key, size=keyinfo.RSA_PUB.default_size):
-    PublicKey.__init__(self, keyinfo.RSA_PUB, hash, x509)
-    self.params = self._ParseX509()
+  def __init__(self, hash, params, x509, key, 
+               size=keyinfo.RSA_PUB.default_size):
+    PublicKey.__init__(self, keyinfo.RSA_PUB, hash, params, x509)
     self.key = key
     self.size = size
   
@@ -429,4 +410,6 @@ class RsaPublicKey(PublicKey):
   def Read(key):
     rsa = simplejson.loads(key)
     # parse pyrcrypto rsa public key from x509
-    return RsaPublicKey(rsa['hash'], rsa['x509'], None)
+    params = util.ParseX509(rsa['x509'])
+    pubkey = RSA.construct((params['n'], params['e']))
+    return RsaPublicKey(rsa['hash'], params, rsa['x509'], pubkey)

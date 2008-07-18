@@ -24,7 +24,6 @@ from Crypto.Util import randpool
 import sha
 import base64
 from pyasn1.type import univ
-from pyasn1.type import namedtype
 from pyasn1.codec.der import encoder
 from pyasn1.codec.der import decoder
 
@@ -41,20 +40,9 @@ from pyasn1.codec.der import decoder
 #
 #Version ::= INTEGER
 RSA_OID = univ.ObjectIdentifier('1.2.840.113549.1.1.1')
-RSA_SPEC = univ.Sequence(componentType=namedtype.NamedTypes(
-                              namedtype.NamedType('version', univ.Integer()), 
-                              namedtype.NamedType('n', univ.Integer()), 
-                              namedtype.NamedType('e', univ.Integer()), 
-                              namedtype.NamedType('d', univ.Integer()), 
-                              namedtype.NamedType('p', univ.Integer()), 
-                              namedtype.NamedType('q', univ.Integer()), 
-                              namedtype.NamedType('dp', univ.Integer()), 
-                              namedtype.NamedType('dq', univ.Integer()), 
-                              namedtype.NamedType('invq', univ.Integer())
-                        ))  # Don't need this anymore, can use position nums
 RSA_PARAMS = ['n', 'e', 'd', 'p', 'q', 'dp', 'dq', 'invq']
 DSA_OID = univ.ObjectIdentifier('1.2.840.10040.4.1')
-DSA_SPEC = None  # TODO: fill in
+DSA_PARAMS = ['p', 'q', 'g']  # only algorithm params, not public/private keys
 
 #PrivateKeyInfo ::= SEQUENCE {
 #  version Version,
@@ -70,8 +58,8 @@ DSA_SPEC = None  # TODO: fill in
 #PrivateKey ::= OCTET STRING
 #
 #Attributes ::= SET OF Attribute
-def ParsePkcs8(bytes):
-  seq = decoder.decode(bytes)[0]
+def ParsePkcs8(pkcs8):
+  seq = decoder.decode(Decode(pkcs8))[0]
   if len(seq) != 3:  # need three fields in PrivateKeyInfo
     raise errors.KeyczarError("Illegal PKCS8 String.")
   version = int(seq.getComponentByPosition(0))
@@ -79,26 +67,117 @@ def ParsePkcs8(bytes):
       raise errors.KeyczarError("Unrecognized PKCS8 Version")
   oid = seq.getComponentByPosition(1).getComponentByPosition(0)
   alg_params = seq.getComponentByPosition(1).getComponentByPosition(1)
-  pkey = seq.getComponentByPosition(2)
+  key = decoder.decode(seq.getComponentByPosition(2))[0]
+  # Component 2 is an OCTET STRING which is further decoded
+  params = {}
   if oid == RSA_OID:
-    key = decoder.decode(pkey, asn1Spec=RSA_SPEC)[0]
-    params = {}
     version = int(key.getComponentByPosition(0))
     if version != 0:
       raise errors.KeyczarError("Unrecognized RSA Private Key Version")
     for i in range(len(RSA_PARAMS)):
       params[RSA_PARAMS[i]] = int(key.getComponentByPosition(i+1))
-    return params
   elif oid == DSA_OID:
-    params = {'p': int(alg_params.getComponentByPosition(0)),
-              'q': int(alg_params.getComponentByPosition(1)),
-              'g': int(alg_params.getComponentByPosition(2))}
-    params['y'] = int(decoder.decode(pkey)[0])
-    params['x'] = None
-    #TODO: decoding pkey just gives an octet string of an integer, figure
-    # out if this is x or y and where the other one is
+    for i in range(len(DSA_PARAMS)):
+      params[DSA_PARAMS[i]] = int(alg_params.getComponentByPosition(i))
+    params['x'] = int(key)
   else:
     raise errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
+  return params
+
+def ExportRsaPkcs8(params):
+  seq = univ.Sequence().setComponentByPosition(0, univ.Integer(0))  # version
+  oid = univ.Sequence().setComponentByPosition(0, RSA_OID)
+  oid.setComponentByPosition(1, univ.Null())
+  key = univ.Sequence().setComponentByPosition(0, univ.Integer(0))  # version
+  for i in range(len(RSA_PARAMS)):
+    key.setComponentByPosition(i+1, univ.Integer(params[RSA_PARAMS[i]]))
+  octkey = encoder.encode(key)
+  seq.setComponentByPosition(1, oid)
+  seq.setComponentByPosition(2, univ.OctetString(octkey))
+
+def ExportDsaPkcs8(params):
+  seq = univ.Sequence().setComponentByPosition(0, univ.Integer(0))  # version
+  alg_params = univ.Sequence()
+  for i in range(len(DSA_PARAMS)):
+    alg_params.setComponentByPosition(i, univ.Integer(params[DSA_PARAMS[i]]))
+  oid = univ.Sequence().setComponentByPosition(0, DSA_OID)
+  oid.setComponentByPosition(1, alg_params)
+  octkey = encoder.encode(univ.Integer(params['x']))
+  seq.setComponentByPosition(1, oid)
+  seq.setComponentByPosition(2, univ.OctetString(octkey))
+
+#NOTE: not full X.509 certificate, just public key info
+#SubjectPublicKeyInfo  ::=  SEQUENCE  {
+#        algorithm            AlgorithmIdentifier,
+#        subjectPublicKey     BIT STRING  }
+def ParseX509(x509):
+  seq = decoder.decode(Decode(x509))[0]
+  if len(seq) != 2:  # need two fields in SubjectPublicKeyInfo
+    raise errors.KeyczarError("Illegal X.509 String.")
+  oid = seq.getComponentByPosition(0).getComponentByPosition(0)
+  alg_params = seq.getComponentByPosition(0).getComponentByPosition(1)
+  pubkey = decoder.decode(univ.OctetString(BinToBytes(seq.
+                            getComponentByPosition(1).prettyPrint()[1:-2])))[0]
+  # Component 1 should be a BIT STRING, get raw bits by discarding extra chars,
+  # then convert to OCTET STRING which can be ASN.1 decoded
+  params = {}
+  if oid == RSA_OID:
+    params['n'] = int(pubkey.getComponentByPosition(0))
+    params['e'] = int(pubkey.getComponentByPosition(1))
+  elif oid == DSA_OID:
+    for i in range(len(DSA_PARAMS)):
+      params[DSA_PARAMS[i]] = int(alg_params.getComponentByPosition(i))
+    params['y'] = int(pubkey)
+  else:
+    raise errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
+  return params
+
+def ExportRsaX509(params):
+  seq = univ.Sequence()
+  oid = univ.Sequence().setComponentByPosition(0, RSA_OID)
+  oid.setComponentByPosition(1, univ.Null())
+  key = univ.Sequence()
+  key.setComponentByPosition(0, univ.Integer(params['n']))
+  key.setComponentByPosition(1, univ.Integer(params['e']))
+  binkey = BytesToBin(encoder.encode(key))
+  pubkey = univ.BitString("'%s'B" % binkey)  # needs to be a BIT STRING
+  seq.setComponentByPosition(0, oid)
+  seq.setComponentByPosition(1, pubkey)
+  return Encode(encoder.encode(seq))
+
+def ExportDsaX509(params):
+  seq = univ.Sequence()
+  alg_params = univ.Sequence()
+  for i in range(len(DSA_PARAMS)):
+    alg_params.setComponentByPosition(i, univ.Integer(params[DSA_PARAMS[i]]))
+  oid = univ.Sequence().setComponentByPosition(0, DSA_OID)
+  oid.setComponentByPosition(1, alg_params)
+  binkey = BytesToBin(encoder.encode(univ.Integer(params['y'])))
+  pubkey = univ.BitString("'%s'B" % binkey)  # needs to be a BIT STRING
+  seq.setComponentByPosition(0, oid)
+  seq.setComponentByPosition(1, pubkey)
+  return Encode(encoder.encode(seq))
+
+def BinToBytes(bits):
+  """Convert bit string to byte string."""
+  r = len(bits) % 8
+  if r != 0:
+    bits = (8-r)*'0' + bits
+  octets = [bits[8*i:8*(i+1)] for i in range(len(bits)/8)]
+  bytes = [chr(int(x, 2)) for x in octets]
+  return "".join(bytes)
+
+def BytesToBin(bytes):
+  """Convert byte string to bit string."""
+  return "".join([IntToBin(ord(byte)) for byte in bytes])
+
+def IntToBin(n):
+  if n == 0 or n == 1:
+    return str(n)
+  elif n % 2 == 0:
+    return IntToBin(n/2) + "0"
+  else:
+    return IntToBin(n/2) + "1"
 
 def IntToBytes(n):
   """Return byte string of 4 big-endian ordered bytes representing n."""

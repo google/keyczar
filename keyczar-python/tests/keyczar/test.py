@@ -73,7 +73,14 @@ xG8Eiz7OOeI20NeKd3EcvEZ5hTHZKFRKyCSteRB4eWvjbvEeaPJR
 
 print openssl == keyfactory.parsePEMKey(openssl).write()
 
+crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "rsa"))
+print "Primary RSA", crypter.Encrypt(input)  # primary
+activeRsa = crypter.GetKey("zmM4uw")  # active
+print "Active RSA", util.Encode(activeRsa.Encrypt(input))
+
 print "Testing RSA..."
 rsa_key = keys.RsaPrivateKey.Generate()
 ciph = rsa_key.Encrypt("hello")
 print rsa_key.Decrypt(ciph)
+sig = rsa_key.Sign("Hi Google")
+print rsa_key.Verify("Hi Google", sig)
