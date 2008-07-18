@@ -17,6 +17,8 @@
 package org.keyczar;
 
 
+import org.keyczar.enums.Command;
+import org.keyczar.enums.Flag;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.enums.KeyType;
@@ -51,17 +53,15 @@ import java.util.List;
  */
 
 public class KeyczarTool {
-  static String asymmetricFlag;
-  static String destinationFlag;
-  static String locationFlag;
-  static String crypterFlag;
-  static String nameFlag;
-  static int versionFlag = -1; // default if not set
-  static int sizeFlag = -1; // default if not set
-  static KeyPurpose purposeFlag;
-  static KeyStatus statusFlag = KeyStatus.ACTIVE; // default if not set
-  static MockKeyczarReader mock = null;
-  
+  //private static String asymmetricFlag;
+  //private static String locationFlag;
+  //private static String crypterFlag;
+  //private static String nameFlag;
+  //private static int sizeFlag = -1; // default if not set
+  //private static KeyPurpose purposeFlag;
+  //private static KeyStatus statusFlag = KeyStatus.ACTIVE; // default if not set
+  private static MockKeyczarReader mock = null;
+
   /**
    * Sets the mock KeyczarReader used only for testing.
    * 
@@ -77,36 +77,85 @@ public class KeyczarTool {
    * syntax is invalid.
    * 
    * @param args from the command line
-   * @throws KeyczarException for illegal commands.
    */
-  public static void main(String[] args) throws KeyczarException {
+  public static void main(String[] args){
     if (args.length == 0) {
       printUsage();
     } else {
-      setFlags(args);
-      if (args[0].equals(Messages.getString("KeyczarTool.Create"))) {
-        create();
-      } else if (args[0].equals(Messages.getString("KeyczarTool.Addkey"))) {
-        addKey();
-      } else if (args[0].equals(Messages.getString("KeyczarTool.Pubkey"))) {
-        publicKeys();
-      } else if (args[0].equals(Messages.getString("KeyczarTool.Promote"))) {
-        promote();
-      } else if (args[0].equals(Messages.getString("KeyczarTool.Demote"))) {
-        demote();
-      } else if (args[0].equals(Messages.getString("KeyczarTool.Revoke"))) {
-        revoke();
-      } else if (args[0].equals(Messages.getString("KeyczarTool.Usekey"))
-          && args.length > 2) {
-        useKey(args[1]);
-      } else { // unsupported command
+      try {
+        Command c = Command.getCommand(args[0]);
+        HashMap<Flag, String> flagMap = new HashMap<Flag, String>();
+        for (String arg : args) {
+          if (arg.startsWith("--")) {
+            arg = arg.substring(2); // Trim off the leading dashes
+            String[] nameValuePair = arg.split("=");
+            if (nameValuePair.length > 1) {
+              Flag f = Flag.getFlag(nameValuePair[0]);
+              flagMap.put(f, nameValuePair[1]);
+            }
+          }
+        }
+        
+        // All commands need a location.
+        String locationFlag = flagMap.get(Flag.LOCATION);
+        
+        switch (c) {
+        case CREATE:
+          String nameFlag = flagMap.get(Flag.NAME);
+          KeyPurpose purposeFlag =
+            KeyPurpose.getPurpose(flagMap.get(Flag.PURPOSE));
+          String asymmetricFlag = flagMap.get(Flag.ASYMMETRIC);
+          create(locationFlag, nameFlag, purposeFlag, asymmetricFlag); break;
+        case ADDKEY:
+          KeyStatus statusFlag = KeyStatus.getStatus(flagMap.get(Flag.STATUS));
+          String crypterFlag = flagMap.get(Flag.CRYPTER);
+          int sizeFlag = -1;
+          if (flagMap.containsKey(Flag.SIZE)) {
+            sizeFlag = Integer.parseInt(flagMap.get(Flag.SIZE));
+          }
+          addKey(locationFlag, statusFlag, crypterFlag, sizeFlag);
+          break;
+        case PUBKEY:
+          publicKeys(locationFlag, flagMap.get(Flag.DESTINATION));
+          break;
+        case PROMOTE:
+          promote(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
+          break;
+        case DEMOTE:
+          demote(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
+          break;
+        case REVOKE:
+          revoke(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
+          break;
+        case USEKEY:
+          if (args.length > 2) {
+            useKey(args[1], locationFlag, flagMap.get(Flag.DESTINATION),
+                  flagMap.get(Flag.CRYPTER));
+          } else {
+            printUsage();
+          }
+          break;
+        }
+      } catch (NumberFormatException e) {
+        e.printStackTrace();
+        printUsage();        
+      } catch (IllegalArgumentException e) {
+        e.printStackTrace();
+        printUsage();
+      } catch (NullPointerException e) {
+        e.printStackTrace();
+        printUsage();
+      } catch (KeyczarException e) {
+        e.printStackTrace();
         printUsage();
       }
     }
   }
 
-  private static void useKey(String msg) throws KeyczarException {
-    GenericKeyczar genericKeyczar = createGenericKeyczar();
+  private static void useKey(String msg, String locationFlag,
+      String destinationFlag, String crypterFlag) throws KeyczarException {
+    GenericKeyczar genericKeyczar =
+      createGenericKeyczar(locationFlag, crypterFlag);
     if (destinationFlag == null) {
       throw new KeyczarException(
           Messages.getString("KeyczarTool.MustDefinePublic"));
@@ -138,12 +187,18 @@ public class KeyczarTool {
   /**
    * Adds key of given status to key set and pushes update to meta file. 
    * Requires location and status flags.
+   * @param sizeFlag 
+   * @param crypterFlag 
+   * @param statusFlag 
+   * @param locationFlag 
    * 
    * @throws KeyczarException if location flag is not set or
    * key type is unsupported
    */
-  private static void addKey() throws KeyczarException {
-    GenericKeyczar genericKeyczar = createGenericKeyczar();
+  private static void addKey(String locationFlag, KeyStatus statusFlag,
+      String crypterFlag, int sizeFlag) throws KeyczarException {
+    GenericKeyczar genericKeyczar =
+      createGenericKeyczar(locationFlag, crypterFlag);
     if (sizeFlag == -1) { // use default size
       genericKeyczar.addVersion(statusFlag);
     } else { // use given size
@@ -151,9 +206,9 @@ public class KeyczarTool {
     }
     if (crypterFlag != null) {
       Encrypter encrypter = new Encrypter(crypterFlag);
-      updateGenericKeyczar(genericKeyczar, encrypter);
+      updateGenericKeyczar(genericKeyczar, encrypter, locationFlag);
     } else {
-      updateGenericKeyczar(genericKeyczar);
+      updateGenericKeyczar(genericKeyczar, locationFlag);
     }
   }
   
@@ -161,10 +216,15 @@ public class KeyczarTool {
    * Creates a new KeyMetadata object, deciding its name, purpose and type
    * based on command line flags. Outputs its JSON representation in a file 
    * named meta in the directory given by the location flag.
+   * @param asymmetricFlag 
+   * @param purposeFlag 
+   * @param nameFlag 
+   * @param locationFlag 
    * 
    * @throws KeyczarException if location or purpose flags are not set
    */
-  private static void create() throws KeyczarException {
+  private static void create(String locationFlag, String nameFlag,
+      KeyPurpose purposeFlag, String asymmetricFlag) throws KeyczarException {
     KeyMetadata kmd = null;
     if (purposeFlag == null) {
       throw new KeyczarException(
@@ -228,49 +288,58 @@ public class KeyczarTool {
   /**
    * If the version flag is set, promotes the status of given key version.
    * Pushes update to meta file. Requires location and version flags.
+   * @param versionFlag The version to promote
+   * @param locationFlag The location of the key set
    * 
    * @throws KeyczarException if location or version flag is not set
    * or promotion is illegal.
    */
-  private static void promote() throws KeyczarException {
+  private static void promote(String locationFlag, int versionFlag)
+      throws KeyczarException {
     if (versionFlag < 0) {
       throw new KeyczarException(
           Messages.getString("KeyczarTool.MissingVersion"));
     }
-    GenericKeyczar genericKeyczar = createGenericKeyczar();
+    GenericKeyczar genericKeyczar = createGenericKeyczar(locationFlag);
     genericKeyczar.promote(versionFlag);
-    updateGenericKeyczar(genericKeyczar);
+    updateGenericKeyczar(genericKeyczar, locationFlag);
   }
 
   /**
    * If the version flag is set, demotes the status of given key version.
    * Pushes update to meta file. Requires location and version flags.
+   * @param versionFlag The verion to demote
+   * @param locationFlag The location of the key set
    * 
    * @throws KeyczarException if location or version flag is not set
    * or demotion is illegal.
    */
-  private static void demote() throws KeyczarException {
+  private static void demote(String locationFlag, int versionFlag)
+      throws KeyczarException {
     if (versionFlag < 0) {
       throw new KeyczarException(
           Messages.getString("KeyczarTool.MissingVersion"));
     }
-    GenericKeyczar genericKeyczar = createGenericKeyczar();
+    GenericKeyczar genericKeyczar = createGenericKeyczar(locationFlag);
     genericKeyczar.demote(versionFlag);
-    updateGenericKeyczar(genericKeyczar);
+    updateGenericKeyczar(genericKeyczar, locationFlag);
   }
   
   /**
    * Creates and exports public key files to given destination based on 
    * private key set at given location.
+   * @param destinationFlag Destionation of public keys
+   * @param locationFlag Location of private key set
    * 
    * @throws KeyczarException if location or destination flag is not set.
    */
-  private static void publicKeys() throws KeyczarException {
+  private static void publicKeys(String locationFlag, String destinationFlag)
+      throws KeyczarException {
     if (mock == null && destinationFlag == null) { // only if not testing
       throw new KeyczarException(
           Messages.getString("KeyczarTool.MustDefineDestination"));
     }
-    GenericKeyczar genericKeyczar = createGenericKeyczar();
+    GenericKeyczar genericKeyczar = createGenericKeyczar(locationFlag);
     genericKeyczar.publicKeyExport(destinationFlag);
   }
 
@@ -278,14 +347,17 @@ public class KeyczarTool {
    * If the version flag is set, revokes the key of the given version.
    * Pushes update to meta file. Deletes old key file. Requires location
    * and version flags.
+   * @param versionFlag The version to revoke 
+   * @param locationFlag The location of the key set
    * 
    * @throws KeyczarException if location or version flag is not set or if
    * unable to delete revoked key file.
    */
-  private static void revoke() throws KeyczarException {
-    GenericKeyczar genericKeyczar = createGenericKeyczar();
+  private static void revoke(String locationFlag, int versionFlag)
+      throws KeyczarException {
+    GenericKeyczar genericKeyczar = createGenericKeyczar(locationFlag);
     genericKeyczar.revoke(versionFlag);
-    updateGenericKeyczar(genericKeyczar); // update meta files, key files
+    updateGenericKeyczar(genericKeyczar, locationFlag); // update meta files, key files
     if (mock == null) { // not necessary for testing
       File revokedVersion = new File(locationFlag + versionFlag);
       // TODO: Can we do anything to ensure that the file can't just be
@@ -293,7 +365,8 @@ public class KeyczarTool {
       // make a difference if the current version is cached. Probably better to
       // keep all key material encrypted on disk.
       if (!revokedVersion.delete()) { // delete old key file
-        throw new KeyczarException("Unable to delete revoked key file."); //$NON-NLS-1$
+        throw new KeyczarException(
+            Messages.getString("KeyczarTool.UnableToDelete"));
       }
     } else {
       mock.removeKey(versionFlag);
@@ -304,115 +377,40 @@ public class KeyczarTool {
    * Prints the usage instructions with list of commands and flags.
    */
   private static void printUsage() {
-    // TODO: Move this to an external file
-    String msg = "Usage:\t\"KeyczarTool command flags\"\n" + //$NON-NLS-1$
-                 "Commands (optional paramters in [brackets]):\n" +  //$NON-NLS-1$
-                 "create --location=location --purpose=purpose [--name=name]" + //$NON-NLS-1$
-                     "[--asymmetric=rsa|dsa]\n" + //$NON-NLS-1$
-                 "\tCreates a new key store.\n" +  //$NON-NLS-1$
-                 "addkey --location=location [--status=status]" + //$NON-NLS-1$
-                 " [--size=size] [--crypter=crypterLocation]\n" + //$NON-NLS-1$
-                 "\tAdds new key with given status, size to given location." + //$NON-NLS-1$
-                 "The default status is ACTIVE.\n" +  //$NON-NLS-1$
-                 "pubkey --location=location --destination=destination\n" + //$NON-NLS-1$
-                 "\tExport a key set at the given location as a set of " +  //$NON-NLS-1$
-                     "public keys at a given destination.\n" +  //$NON-NLS-1$
-                 "promote --location=location --version=versionNumber\n" + //$NON-NLS-1$
-                 "\tPromote status of given key version at given location.\n" + //$NON-NLS-1$
-                 "demote --location=location --version=versionNumber\n" + //$NON-NLS-1$
-                 "\tDemote status of given key version at given location.\n" + //$NON-NLS-1$
-                 "revoke --location=location --version=versionNumber\n" + //$NON-NLS-1$
-                 "\tRevoke given key at given location if scheduled to be.\n" + //$NON-NLS-1$
-                 "Flags:\n" +  //$NON-NLS-1$
-                 "\t--name : Define the name of a keystore. Optional.\n" +  //$NON-NLS-1$
-                 "\t--location : Define the file location of a keystore\n" +  //$NON-NLS-1$
-                 "\t--destination : Define the destination location of " +  //$NON-NLS-1$
-                     "a keystore.\n" +  //$NON-NLS-1$
-                 "\t--purpose : Define the purpose of a keystore." +  //$NON-NLS-1$
-                     " Must be sign, crypt, or test.\n" +  //$NON-NLS-1$
-                 "\t--status : Define the status of a new key. Must be " + //$NON-NLS-1$
-                     "primary, active, or scheduled_for_revocation. Optional." + //$NON-NLS-1$
-                     " Defaults to active.\n" + //$NON-NLS-1$
-                     "\t--crypter : The location of a crypter to be used for" + //$NON-NLS-1$
-                     " encrypting new keys \n" +  //$NON-NLS-1$
-                 "\t--version : The version number of key to update.\n" + //$NON-NLS-1$
-                 "\t--size : Key size in bits. Overrides default. Optional.\n" + //$NON-NLS-1$
-                 "\t--asymmetric : Dictate use of asymmetric algorithm. " + //$NON-NLS-1$
-                 "Must be rsa or blank. Optional.\n\t\t\t" + //$NON-NLS-1$
-                 "For sign, defaults to DSA unless rsa indicated. " + //$NON-NLS-1$
-                 "For crypt, uses RSA.\n" + //$NON-NLS-1$
-                 "\t--crypter : The location of a crypter that will " + //$NON-NLS-1$
-                 "encrypt a keyset on disk\n" + //$NON-NLS-1$
-                 "Key Sizes: (default first)\n" + //$NON-NLS-1$
-                 "AES : 128\n" + //$NON-NLS-1$
-                 "HMAC-SHA1 : 256\n" + //$NON-NLS-1$
-                 "DSA : 1024\n" + //$NON-NLS-1$
-                 "RSA : 2048, 1024, 768, 512\n"; //$NON-NLS-1$
-    System.out.println(msg);
+    ArrayList<String> usageParams = new ArrayList<String>();
+    for (Command c : Command.values()) {
+      usageParams.add(c.toString());
+    }
+    
+    for (Flag f : Flag.values()) {
+      usageParams.add(f.toString());
+    }
+    
+    System.out.println(
+        Messages.getString("KeyczarTool.Usage", usageParams.toArray()));
   }
   
-  /**
-   * Parses command line arguments and sets appropriate flags.
-   * 
-   * @param args from the command line
-   */
-  private static void setFlags(String[] args) {
-    HashMap<String, String> params = new HashMap<String, String>();
-    
-    for (String arg : args) {
-      if (arg.startsWith("--")) {
-        arg = arg.substring(2); // Trim off the leading dashes
-        String[] nameValuePair = arg.split("=");
-        if (nameValuePair.length == 2) {
-          params.put(nameValuePair[0], nameValuePair[1]);
-        } else if (nameValuePair.length == 1) {
-          params.put(nameValuePair[0], "true");
-        }
-      }
-    }
-    
-    locationFlag = params.get("location");
-    if (locationFlag != null && !locationFlag.endsWith(File.separator)) {
-      locationFlag += File.separator;
-    }
-
-    destinationFlag = params.get("destination");
-    if (destinationFlag != null && !destinationFlag.endsWith(File.separator)) {
-      destinationFlag += File.separator;
-    }
-
-    nameFlag = params.get("name");
-    purposeFlag = KeyPurpose.getPurpose(params.get("purpose"));
-    statusFlag = KeyStatus.getStatus(params.get("status")); // default ACTIVE
-    asymmetricFlag = params.get("asymmetric");
-    crypterFlag = params.get("crypter");
-    
-    try {
-      versionFlag = Integer.parseInt(params.get("version"));
-    } catch (NumberFormatException e) {
-      versionFlag = -1; // mark flag as unset, handle above
-    }
-    try {
-      sizeFlag = Integer.parseInt(params.get("size")); //$NON-NLS-1$
-    } catch (NumberFormatException e) {
-      sizeFlag = -1; // mark flag as unset, handle above
-    }
+  private static GenericKeyczar createGenericKeyczar(String locationFlag)
+      throws KeyczarException {
+    return createGenericKeyczar(locationFlag, null);
   }
-  
+
   /**
    * Creates a GenericKeyczar object based on locationFlag if it is set.
    * Alternatively, it can use the mock KeyczarReader if it is set.
-   * 
+   * @param locationFlag The location of the key set
+   * @param crypterFlag The location of a crypter to decrypt the key set
    * @return GenericKeyczar if locationFlag set
    * @throws KeyczarException if locationFlag not set
    */
-  private static GenericKeyczar createGenericKeyczar() throws KeyczarException {
+  private static GenericKeyczar createGenericKeyczar(String locationFlag,
+      String crypterFlag) throws KeyczarException {
     if (mock != null) {
       return new GenericKeyczar(mock);
     }
     if (locationFlag == null) {
-      throw new KeyczarException("Must define a key set location with the " //$NON-NLS-1$
-          + "--location flag"); //$NON-NLS-1$
+      throw new KeyczarException(
+          Messages.getString("KeyczarTool.NeedLocation"));
     }
     KeyczarReader reader = new KeyczarFileReader(locationFlag);
     if (crypterFlag != null) {
@@ -422,13 +420,13 @@ public class KeyczarTool {
     return new GenericKeyczar(reader);
   }
   
-  private static void updateGenericKeyczar(GenericKeyczar genericKeyczar) 
-      throws KeyczarException {
-    updateGenericKeyczar(genericKeyczar, null);
+  private static void updateGenericKeyczar(GenericKeyczar genericKeyczar,
+      String locationFlag) throws KeyczarException {
+    updateGenericKeyczar(genericKeyczar, null, locationFlag);
   }
   
   private static void updateGenericKeyczar(GenericKeyczar genericKeyczar, 
-      Encrypter encrypter) throws KeyczarException {
+      Encrypter encrypter, String locationFlag) throws KeyczarException {
     if (mock != null) {
       mock.setMetadata(genericKeyczar.getMetadata()); // update metadata
       for (KeyVersion version : genericKeyczar.getVersions()) {
@@ -497,8 +495,9 @@ public class KeyczarTool {
           break;
       }
       if (publicKmd == null) {
-        throw new KeyczarException("Cannot export public keys for key type: " //$NON-NLS-1$
-            + kmd.getType() + " and purpose " + kmd.getPurpose()); //$NON-NLS-1$
+        throw new KeyczarException(
+            Messages.getString("KeyczarTool.CannotExportPubKey",
+                kmd.getType(), kmd.getPurpose()));
       }
       
       for (KeyVersion version : getVersions()) {
@@ -570,8 +569,9 @@ public class KeyczarTool {
         writer.write(data);
         writer.close();
       } catch (IOException e) {
-        throw new KeyczarException("Unable to write to : " //$NON-NLS-1$
-            + outputFile.toString(), e);
+        throw new KeyczarException(
+            Messages.getString("KeyczarTool.UnableToWrite",
+                outputFile.toString()), e);
       }
     }
   }

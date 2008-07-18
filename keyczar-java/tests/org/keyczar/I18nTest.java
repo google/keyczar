@@ -33,7 +33,7 @@ import java.util.Locale;
  *
  * @author steveweis@gmail.com (Steve Weis)
  */
-public class InternationaliztionTest extends TestCase {
+public class I18nTest extends TestCase {
  
   @Test
   public final void testEnglish() throws Exception {

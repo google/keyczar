@@ -45,6 +45,7 @@ public class AllTests extends TestSuite {
     suite.addTestSuite(SignerTest.class);
     suite.addTestSuite(UriSignerTest.class);
     suite.addTestSuite(KeyczarToolTest.class);
+    suite.addTestSuite(I18nTest.class);
     return suite;
   }
 }
