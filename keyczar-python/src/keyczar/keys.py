@@ -41,6 +41,9 @@ import hmac
 #Currently, only problem arose with base64 conversions -- this was dealt with
 #directly in the encode/decode methods. Luckily 'hello' == u'hello'.
 
+#TODO: Should JSON of key files (not meta files) store KeyType or not?
+#Inconsistencies across the files. Decide on a standard.
+
 def GenKey(type, size=None):
   if size is None:
     size = type.default_size
@@ -71,13 +74,9 @@ class Key(object):
   
   """Parent class for Keyczar Keys."""
   
-  def __init__(self, type, hash):
+  def __init__(self, type):
     self.type = type
-    self.hash = hash
     self.__size = self.type.default_size  # initially default
-    
-  def __str__(self):
-    return "(%s %s %s)" % (self.type, self.hash, self.key_string)
   
   def __SetSize(self, new_size):
     if self.type.IsValidSize(new_size):
@@ -90,10 +89,20 @@ class Key(object):
     """Return the key as a string."""
     return self._GetKeyString()  # indirection allows subclass overriding
   
+  def _Hash(self):
+    """Compute and return the hash id of this key. Can override default hash."""
+    fullhash = util.Hash([util.IntToBytes(len(self.key_bytes)), self.key_bytes])
+    return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+  
+  def __Hash(self):
+    return self._Hash()  # indirection allows subclass overriding
+  
+  hash = property(__Hash, doc="""The hash id of the key.""")
   size = property(lambda self: self.__size, __SetSize, 
                   doc="""The size of the key in bits.""")
-  
-  key_string = property(__GetKeyString, doc="""The key as a string.""")
+  key_string = property(__GetKeyString, doc="""The key as a Base64 string.""")
+  key_bytes = property(lambda self: util.Decode(self.key_string), 
+                       doc="""The key as bytes.""")
   
   def Header(self):
     """Return the 6-byte header string including version, format, and hash."""
@@ -103,8 +112,8 @@ class SymmetricKey(Key):
   
   """Parent class for symmetric keys such as AES, HMAC-SHA1"""
   
-  def __init__(self, type, hash, key_string):
-    Key.__init__(self, type, hash)
+  def __init__(self, type, key_string):
+    Key.__init__(self, type)
     self.__key_string = key_string
   
   def _GetKeyString(self):
@@ -115,27 +124,30 @@ class AsymmetricKey(Key):
   
   """Parent class for asymmetric keys."""
   
-  def __init__(self, type, hash, params):
-    Key.__init__(self, type, hash)
+  def __init__(self, type, params):
+    Key.__init__(self, type)
     self.__params = params
 
 class AesKey(SymmetricKey):
   
-  def __init__(self, hash, key_string, hmac_key, size=keyinfo.AES.default_size, 
+  def __init__(self, key_string, hmac_key, size=keyinfo.AES.default_size, 
                mode=keyinfo.CBC):
-    SymmetricKey.__init__(self, keyinfo.AES, hash, key_string)
-    self.mode = mode
+    SymmetricKey.__init__(self, keyinfo.AES, key_string)
     self.hmac_key = hmac_key
-    self.key_bytes = util.Decode(key_string)
     self.block_size = len(self.key_bytes)
     self.size = size
+    self.mode = mode    
     
   def __str__(self):
     return simplejson.dumps({"type": "AES",
                              "mode": str(self.mode),
-                             "hash": self.hash,
                              "aesKeyString": self.key_string,
                              "hmacKey": simplejson.loads(str(self.hmac_key))})
+    
+  def _Hash(self):
+    fullhash = util.Hash([util.IntToBytes(len(self.key_bytes)), self.key_bytes, 
+                          util.Decode(self.hmac_key.hash)])
+    return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
   
   @staticmethod
   def Generate(size=keyinfo.AES.default_size):
@@ -143,17 +155,13 @@ class AesKey(SymmetricKey):
     key_bytes = util.RandBytes(size / 8)
     key_string = util.Encode(key_bytes)
     hmac_key = HmacKey.Generate()  # use default HMAC-SHA1 key size
-    full_hash = util.Hash([util.IntToBytes(len(key_bytes)), key_bytes, 
-                           util.Decode(hmac_key.hash)])
-    hash = util.Encode(full_hash[:keyczar.KEY_HASH_SIZE])
-    return AesKey(hash, key_string, hmac_key, size)
+    return AesKey(key_string, hmac_key, size)
   
   @staticmethod
   def Read(key):
     aes = simplejson.loads(key)
     hmac = aes['hmacKey']
-    return AesKey(aes['hash'], aes['aesKeyString'], 
-                  HmacKey(hmac['hash'], hmac['hmacKeyString']),
+    return AesKey(aes['aesKeyString'], HmacKey(hmac['hmacKeyString']),
                   mode=keyinfo.GetMode(aes['mode']))
   
   def __Pad(self, data):
@@ -228,13 +236,12 @@ class AesKey(SymmetricKey):
     
 class HmacKey(SymmetricKey):
   
-  def __init__(self, hash, key_string, size=keyinfo.HMAC_SHA1.default_size):
-    SymmetricKey.__init__(self, keyinfo.HMAC_SHA1, hash, key_string)
+  def __init__(self, key_string, size=keyinfo.HMAC_SHA1.default_size):
+    SymmetricKey.__init__(self, keyinfo.HMAC_SHA1, key_string)
     self.size = size
   
   def __str__(self):
     return simplejson.dumps({"type": "HMAC_SHA1",
-                             "hash": self.hash,
                              "hmacKeyString": self.key_string})
   
   @staticmethod
@@ -242,14 +249,12 @@ class HmacKey(SymmetricKey):
     """Return a newly generated HMAC-SHA1 key."""    
     key_bytes = util.RandBytes(size / 8)
     key_string = util.Encode(key_bytes)
-    full_hash = util.Hash([util.IntToBytes(len(key_bytes)), key_bytes])
-    hash = util.Encode(full_hash[:keyczar.KEY_HASH_SIZE])
-    return HmacKey(hash, key_string, size)
+    return HmacKey(key_string, size)
   
   @staticmethod
   def Read(key):
     mac = simplejson.loads(key)
-    return HmacKey(mac['hash'], mac['hmacKeyString'])
+    return HmacKey(mac['hmacKeyString'])
   
   def Sign(self, msg):
     """Return raw byte string of signature on the message.
@@ -278,21 +283,34 @@ class PrivateKey(AsymmetricKey):
   
   """Represents private keys in Keyczar for asymmetric key pairs."""
   
-  def __init__(self, type, hash, params, pkcs8, pub):
-    AsymmetricKey.__init__(self, type, hash, params)
+  def __init__(self, type, params, pkcs8, pub):
+    AsymmetricKey.__init__(self, type, params)
     self.pkcs8 = pkcs8
     self.public_key = pub
   
+  def __str__(self):
+    return simplejson.dumps({"publicKey": simplejson.loads(
+                                                          str(self.public_key)),
+                             "type": str(self.type),
+                             "pkcs8": self.pkcs8})
+  
   def _GetKeyString(self):
     return self.pkcs8
+  
+  def _Hash(self):
+    return self.public_key.hash
 
 class PublicKey(AsymmetricKey):
   
   """Represents public keys in Keyczar for asymmetric key pairs."""
   
-  def __init__(self, type, hash, params, x509):
-    AsymmetricKey.__init__(self, type, hash, params)
+  def __init__(self, type, params, x509):
+    AsymmetricKey.__init__(self, type, params)
     self.x509 = x509
+  
+  def __str__(self):
+    return simplejson.dumps({"type": str(self.type),
+                             "x509": self.x509})
   
   def _GetKeyString(self):
     return self.x509
@@ -309,9 +327,9 @@ class DsaPrivateKey(PrivateKey):
 
 class RsaPrivateKey(PrivateKey):
   
-  def __init__(self, hash, params, pkcs8, pub, key, 
+  def __init__(self, params, pkcs8, pub, key, 
                size=keyinfo.RSA_PRIV.default_size):
-    PrivateKey.__init__(self, keyinfo.RSA_PRIV, hash, params, pkcs8, pub)
+    PrivateKey.__init__(self, keyinfo.RSA_PRIV, params, pkcs8, pub)
     self.key = key  # instance of PyCrypto RSA key
     self.size = size
   
@@ -327,11 +345,8 @@ class RsaPrivateKey(PrivateKey):
     pubkey = key.publickey()
     pub_params = {'n': pubkey.n, 'e': pubkey.e}
     x509 = util.Decode(util.ExportRsaX509(pub_params))
-    fullhash = util.Hash([util.IntToBytes(len(x509)), x509])
-    hash = util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
-    pub = RsaPublicKey(hash, pub_params, util.Encode(x509), pubkey, size)
-    return RsaPrivateKey(pub.hash, params, util.ExportRsaPkcs8(params), pub, 
-                         key, size)
+    pub = RsaPublicKey(pub_params, util.Encode(x509), pubkey, size)
+    return RsaPrivateKey(params, util.ExportRsaPkcs8(params), pub, key, size)
   
   @staticmethod
   def Read(key):
@@ -339,11 +354,11 @@ class RsaPrivateKey(PrivateKey):
     pubkey = rsa['publicKey']
     pub_params = util.ParseX509(pubkey['x509'])
     pycrypt_pub = RSA.construct((pub_params['n'], pub_params['e']))
-    pub = RsaPublicKey(pubkey['hash'], pub_params, pubkey['x509'], pycrypt_pub)
+    pub = RsaPublicKey(pub_params, pubkey['x509'], pycrypt_pub)
     params = util.ParsePkcs8(rsa['pkcs8'])
     key = RSA.construct((params['n'], params['e'], params['d'],
                          params['q'], params['p'], params['invq']))
-    return RsaPrivateKey(rsa['hash'], params, rsa['pkcs8'], pub, key)
+    return RsaPrivateKey(params, rsa['pkcs8'], pub, key)
   
   def Encrypt(self, data):
     """Return ciphertext byte string containing Header|Ciphertext
@@ -376,9 +391,9 @@ class RsaPrivateKey(PrivateKey):
       msg: String message to be signed
     
     Returns:
-      Long int signature.
+      String representation of long int signature.
     """
-    return self.key.sign(msg, None)[0]
+    return str(self.key.sign(msg, None)[0])
   
   def Verify(self, msg, sig):
     """Return true if the signature corresponds to the message.
@@ -400,16 +415,14 @@ class DsaPublicKey(PublicKey):
 
 class RsaPublicKey(PublicKey):
   
-  def __init__(self, hash, params, x509, key, 
-               size=keyinfo.RSA_PUB.default_size):
-    PublicKey.__init__(self, keyinfo.RSA_PUB, hash, params, x509)
+  def __init__(self, params, x509, key, size=keyinfo.RSA_PUB.default_size):
+    PublicKey.__init__(self, keyinfo.RSA_PUB, params, x509)
     self.key = key
     self.size = size
   
   @staticmethod
   def Read(key):
     rsa = simplejson.loads(key)
-    # parse pyrcrypto rsa public key from x509
     params = util.ParseX509(rsa['x509'])
     pubkey = RSA.construct((params['n'], params['e']))
-    return RsaPublicKey(rsa['hash'], params, rsa['x509'], pubkey)
+    return RsaPublicKey(params, rsa['x509'], pubkey)

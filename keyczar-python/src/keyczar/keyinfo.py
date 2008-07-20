@@ -52,11 +52,11 @@ class KeyType(_NameId):
     return size in self.__sizes
 
 AES = KeyType("AES", 0, [128, 192, 256], 0)
-HMAC_SHA1 = KeyType("HMAC-SHA1", 1, [256], 20)
-DSA_PRIV = KeyType("DSA Private", 2, [1024], 48)
-DSA_PUB = KeyType("DSA Public", 3, [1024], 48)
-RSA_PRIV = KeyType("RSA Private", 4, [2048, 1024, 768, 512], 256)
-RSA_PUB = KeyType("RSA Public", 4, [2048, 1024, 768, 512], 256)
+HMAC_SHA1 = KeyType("HMAC_SHA1", 1, [256], 20)
+DSA_PRIV = KeyType("DSA_PRIV", 2, [1024], 48)
+DSA_PUB = KeyType("DSA_PUB", 3, [1024], 48)
+RSA_PRIV = KeyType("RSA_PRIV", 4, [2048, 1024, 768, 512], 256)
+RSA_PUB = KeyType("RSA_PUB", 4, [2048, 1024, 768, 512], 256)
 types = {"AES": AES, "HMAC_SHA1": HMAC_SHA1, "DSA_PRIV": DSA_PRIV, 
          "DSA_PUB": DSA_PUB, "RSA_PRIV": RSA_PRIV, "RSA_PUB": RSA_PUB}
 
