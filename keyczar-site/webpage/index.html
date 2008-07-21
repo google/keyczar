@@ -28,12 +28,12 @@ symmetric and asymmetric keys. Some features of keyCzar include:</p>
   <li>Java and Python implementations (C++ coming soon)</li>
 </ul>
 <h3>Why keyCzar?</h3>
-<p>Cryptography is easy to get wrong. Developers can often choose
-the wrong cipher mode, use obsolete algorithms, compose primitives in an
-unsafe manner, or fail to anticipate the need for key rotation. keyCzar
+<p>Cryptography is easy to get wrong. Developers can choose improper
+cipher modes, use obsolete algorithms, compose primitives in an unsafe
+manner, or fail to anticipate the need for key rotation. keyCzar
 abstracts some of these details by choosing safe defaults, automatically
 tagging outputs with key version information, and providing a simple
-interface.</p>
+programming interface.</p>
 
 <p>keyCzar is designed to be open, extensible, and cross-platform
 compatible. It is not intended to replace existing cryptographic
@@ -53,12 +53,12 @@ Crypter crypter = new Crypter("/path/to/your/keys");
 String ciphertext = crypter.encrypt("Secret message");
 </pre></div>
 
-See the <a href="javadocs/index.html">keyCzar Javadocs</a> for more details.
+<p>That's it! See the <a href="javadocs/index.html">keyCzar
+Javadocs</a> for more details.</p>
 
 <h3>How to get keyCzar</h3>
 <p>keyCzar is available for download from <a
   href="http://code.google.com/p/keyczar">Google Code</a>.</p>
-
 
 <p>Interested in getting involved? Please join us on the <a
   href="http://code.google.com/p/keyczar">keyCzar project</a> and
@@ -66,8 +66,11 @@ subscribe to the <a
   href="http://groups.google.com/group/keyczar-discuss">keyCzar-discuss
 </a> mailing list.</p>
 
-<div id="footer"><img id="lock" src="lock.jpg" alt="keyCzar" /></div>
-
+<div id="footer"><a href="index.html">Home</a> - <a
+  href="about.html">About</a> - <a
+  href="http://code.google.com/p/keyczar">Project</a> - <a
+  href="javadocs/index.html">JavaDocs</a><img id="lock" src="lock.jpg"
+  alt="keyCzar" /></div>
 
 </body>
 </html>
