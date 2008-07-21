@@ -327,6 +327,7 @@ class DsaPrivateKey(PrivateKey):
     PrivateKey.__init__(self, keyinfo.DSA_PRIV, params, pkcs8, pub)
     self.key = key
     self.size = size
+    self.Verify = self.public_key.Verify
   
   @staticmethod
   def Generate(size=keyinfo.DSA_PRIV.default_size):
@@ -364,23 +365,6 @@ class DsaPrivateKey(PrivateKey):
     k = random.randint(2, self.key.q-1)  # need to chose a random k per-message
     (r, s) = self.key.sign(msg, k)
     return "|".join([str(r), str(s)])
-  
-  def Verify(self, msg, sig):
-    """Return true if the signature corresponds to the message.
-    
-    Parameters:
-      msg: String message that has been signed
-      sig: Raw byte string of the signature formatted as r|s.
-    
-    Returns:
-      True if signature is valid for message. False otherwise.
-    """
-    try: 
-      [r, s] = [long(t) for t in sig.split("|")]
-      return self.key.verify(msg, (r, s))
-    except ValueError:
-      # if signature is not in correct format, r|s, where r,s are longs
-      return False
 
 class RsaPrivateKey(PrivateKey):
   
@@ -389,6 +373,8 @@ class RsaPrivateKey(PrivateKey):
     PrivateKey.__init__(self, keyinfo.RSA_PRIV, params, pkcs8, pub)
     self.key = key  # instance of PyCrypto RSA key
     self.size = size
+    self.Encrypt = self.public_key.Encrypt
+    self.Verify = self.public_key.Verify
   
   @staticmethod
   def Generate(size=keyinfo.RSA_PRIV.default_size):
@@ -416,18 +402,6 @@ class RsaPrivateKey(PrivateKey):
                          params['q'], params['p'], params['invq']))
     return RsaPrivateKey(params, rsa['pkcs8'], pub, key)
   
-  def Encrypt(self, data):
-    """Return ciphertext byte string containing Header|Ciphertext
-    
-    Parameters:
-      data: String plaintext to be encrypted.
-    
-    Returns:
-      Raw byte string ciphertext formatted to have Header|Ciphertext
-    """
-    ciph_bytes = self.key.encrypt(data, None)[0]  # PyCrypto returns 1-tuple
-    return self.Header() + ciph_bytes
-  
   def Decrypt(self, input_bytes):
     """Decrypts the given ciphertext.
     
@@ -450,18 +424,6 @@ class RsaPrivateKey(PrivateKey):
       String representation of long int signature.
     """
     return str(self.key.sign(msg, None)[0])
-  
-  def Verify(self, msg, sig):
-    """Return true if the signature corresponds to the message.
-    
-    Parameters:
-      msg: String message that has been signed
-      sig: String representation of long int signature.
-    
-    Returns:
-      True if signature is valid for message. False otherwise.
-    """
-    return sig == self.Sign(msg)
 
 class DsaPublicKey(PublicKey):
   
@@ -509,7 +471,7 @@ class RsaPublicKey(PublicKey):
     return RsaPublicKey(params, rsa['x509'], pubkey)
   
   def Encrypt(self, data):
-    ciph_bytes = self.pubkey.encrypt(data, None)[0]  # PyCrypto returns 1-tuple
+    ciph_bytes = self.key.encrypt(data, None)[0]  # PyCrypto returns 1-tuple
     return self.Header() + ciph_bytes
   
   def Verify(self, msg, sig):
@@ -522,4 +484,8 @@ class RsaPublicKey(PublicKey):
     Returns:
       True if signature is valid for message. False otherwise.
     """
-    return self.key.verify(msg, (long(sig),))
+    try:
+      return self.key.verify(msg, (long(sig),))
+    except ValueError:
+      # if sig is not a long, it's invalid
+      return False
