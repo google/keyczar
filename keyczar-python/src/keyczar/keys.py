@@ -31,10 +31,12 @@ import keyczar
 import simplejson
 from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
+from Crypto.PublicKey import DSA
 from Crypto.Util import number
 
 import sha
 import hmac
+import random
 
 #TODO: Note that simplejson deals in Unicode strings. So perhaps we should
 #modify all Read() methods to wrap data obtained from simplejson with str().
@@ -43,6 +45,9 @@ import hmac
 
 #TODO: Should JSON of key files (not meta files) store KeyType or not?
 #Inconsistencies across the files. Decide on a standard.
+
+#TODO: Asymmetric public key functions duplicated (e.g. encrypt  and verify)
+#from private key functions. Perhaps rearrange class structure?
 
 def GenKey(type, size=None):
   if size is None:
@@ -317,13 +322,65 @@ class PublicKey(AsymmetricKey):
 
 class DsaPrivateKey(PrivateKey):
   
+  def __init__(self, params, pkcs8, pub, key, 
+               size=keyinfo.DSA_PRIV.default_size):
+    PrivateKey.__init__(self, keyinfo.DSA_PRIV, params, pkcs8, pub)
+    self.key = key
+    self.size = size
+  
   @staticmethod
   def Generate(size=keyinfo.DSA_PRIV.default_size):
     """Return a newly generated DSA private key."""
+    key = DSA.generate(size, util.RandBytes)
+    params = {'g': key.g, 'p': key.p, 'q': key.q, 'y': key.y, 'x': key.x}
+    pubkey = key.publickey()
+    pub_params = {'g': pubkey.g, 'p': pubkey.p, 'q': pubkey.q, 'y': pubkey.y}
+    pub = DsaPublicKey(pub_params, util.ExportDsaX509(pub_params), pubkey, size)
+    return DsaPrivateKey(params, util.ExportDsaPkcs8(params), pub, key, size)
   
   @staticmethod
   def Read(key):
-    pass
+    dsa = simplejson.loads(key)
+    pubkey = dsa['publicKey']
+    pub_params = util.ParseX509(pubkey['x509'])
+    pycrypt_pub = DSA.construct((pub_params['y'], pub_params['g'], 
+                                 pub_params['p'], pub_params['q']))
+    pub = DsaPublicKey(pub_params, pubkey['x509'], pycrypt_pub)
+    params = util.ParsePkcs8(dsa['pkcs8'])
+    key = DSA.construct((pub_params['y'], params['g'], params['p'], params['q'], 
+                         params['x']))
+    return DsaPrivateKey(params, dsa['pkcs8'], pub, key)
+  
+  def Sign(self, msg):
+    """Return raw byte string of signature on the message.
+    
+    Parameters:
+      msg: String message to be signed
+    
+    Returns:
+      Signature formatted as r|s where r and s are the long ints in the DSA
+      signature tuple (r,s). 
+    """
+    k = random.randint(2, self.key.q-1)  # need to chose a random k per-message
+    (r, s) = self.key.sign(msg, k)
+    return "|".join([str(r), str(s)])
+  
+  def Verify(self, msg, sig):
+    """Return true if the signature corresponds to the message.
+    
+    Parameters:
+      msg: String message that has been signed
+      sig: Raw byte string of the signature formatted as r|s.
+    
+    Returns:
+      True if signature is valid for message. False otherwise.
+    """
+    try: 
+      [r, s] = [long(t) for t in sig.split("|")]
+      return self.key.verify(msg, (r, s))
+    except ValueError:
+      # if signature is not in correct format, r|s, where r,s are longs
+      return False
 
 class RsaPrivateKey(PrivateKey):
   
@@ -344,8 +401,7 @@ class RsaPrivateKey(PrivateKey):
     #So we have to reverse the p and q values
     pubkey = key.publickey()
     pub_params = {'n': pubkey.n, 'e': pubkey.e}
-    x509 = util.Decode(util.ExportRsaX509(pub_params))
-    pub = RsaPublicKey(pub_params, util.Encode(x509), pubkey, size)
+    pub = RsaPublicKey(pub_params, util.ExportRsaX509(pub_params), pubkey, size)
     return RsaPrivateKey(params, util.ExportRsaPkcs8(params), pub, key, size)
   
   @staticmethod
@@ -400,7 +456,7 @@ class RsaPrivateKey(PrivateKey):
     
     Parameters:
       msg: String message that has been signed
-      sig: Long int signature.
+      sig: String representation of long int signature.
     
     Returns:
       True if signature is valid for message. False otherwise.
@@ -409,9 +465,34 @@ class RsaPrivateKey(PrivateKey):
 
 class DsaPublicKey(PublicKey):
   
+  def __init__(self, params, x509, key, size=keyinfo.DSA_PUB.default_size):
+    PublicKey.__init__(self, keyinfo.DSA_PUB, params, x509)
+    self.key = key
+    self.size = size
+  
   @staticmethod
   def Read(key):
-    pass
+    dsa = simplejson.loads(key)
+    params = util.ParseX509(dsa['x509'])
+    pubkey = DSA.construct((params['y'], params['g'], params['p'], params['q']))
+    return DsaPublicKey(params, dsa['x509'], pubkey)
+  
+  def Verify(self, msg, sig):
+    """Return true if the signature corresponds to the message.
+    
+    Parameters:
+      msg: String message that has been signed
+      sig: Raw byte string of the signature formatted as r|s.
+    
+    Returns:
+      True if signature is valid for message. False otherwise.
+    """
+    try: 
+      [r, s] = [long(t) for t in sig.split("|")]
+      return self.key.verify(msg, (r, s))
+    except ValueError:
+      # if signature is not in correct format, r|s, where r,s are longs
+      return False
 
 class RsaPublicKey(PublicKey):
   
@@ -426,3 +507,19 @@ class RsaPublicKey(PublicKey):
     params = util.ParseX509(rsa['x509'])
     pubkey = RSA.construct((params['n'], params['e']))
     return RsaPublicKey(params, rsa['x509'], pubkey)
+  
+  def Encrypt(self, data):
+    ciph_bytes = self.pubkey.encrypt(data, None)[0]  # PyCrypto returns 1-tuple
+    return self.Header() + ciph_bytes
+  
+  def Verify(self, msg, sig):
+    """Return true if the signature corresponds to the message.
+    
+    Parameters:
+      msg: String message that has been signed
+      sig: String representation of long int signature.
+    
+    Returns:
+      True if signature is valid for message. False otherwise.
+    """
+    return self.key.verify(msg, (long(sig),))

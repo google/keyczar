@@ -35,12 +35,17 @@ class SignerTest(unittest.TestCase):
     sig = signer.Sign(self.input)
     return (signer, sig)
   
-  def __readGoldenOutput(self, subdir):
+  def __readGoldenOutput(self, subdir, verifier=False, public=False):
     path = os.path.join(TEST_DATA, subdir)
-    signer = keyczar.Signer.Read(path)
+    if verifier and not public:
+      czar = keyczar.Verifier.Read(path)
+    elif verifier and public:
+      czar = keyczar.Verifier.Read(os.path.join(TEST_DATA, subdir+".public"))
+    else:
+      czar = keyczar.Signer.Read(path)
     active_sig = open(os.path.join(path, "1out")).read()
     primary_sig = open(os.path.join(path, "2out")).read()
-    return (signer, active_sig, primary_sig)
+    return (czar, active_sig, primary_sig)
   
   def __testSignAndVerify(self, subdir):
     (signer, sig) = self.__signInput(subdir)
@@ -51,6 +56,15 @@ class SignerTest(unittest.TestCase):
     (signer, active_sig, primary_sig) = self.__readGoldenOutput(subdir)
     self.assertTrue(signer.Verify(self.input, active_sig))
     self.assertTrue(signer.Verify(self.input, primary_sig))
+  
+  def __testPublicVerify(self, subdir):
+    (verifier, active_sig, primary_sig) = self.__readGoldenOutput(subdir, True)
+    self.assertTrue(verifier.Verify(self.input, active_sig))
+    self.assertTrue(verifier.Verify(self.input, primary_sig))
+    (pubverifier, active_sig, primary_sig) = self.__readGoldenOutput(subdir, 
+                                                                     True, True)
+    self.assertTrue(pubverifier.Verify(self.input, active_sig))
+    self.assertTrue(pubverifier.Verify(self.input, primary_sig))
   
   def __testBadVerify(self, subdir):
     (signer, active_sig, primary_sig) = self.__readGoldenOutput(subdir)
@@ -72,6 +86,7 @@ class SignerTest(unittest.TestCase):
   
   def testDsaSignerVerify(self):
     self.__testSignerVerify("dsa")
+    self.__testPublicVerify("dsa")
   
   def testBadDsaVerify(self):
     self.__testBadVerify("dsa")
@@ -81,9 +96,10 @@ class SignerTest(unittest.TestCase):
   
   def testRsaSignerVerify(self):
     self.__testSignerVerify("rsa-sign")
+    self.__testPublicVerify("rsa-sign")
   
   def testBadRsaVerify(self):
-    self.__testBadVerify("dsa")
+    self.__testBadVerify("rsa-sign")
   
   def testHmacBadSigs(self):
     (signer, sig) = self.__signInput("hmac")
