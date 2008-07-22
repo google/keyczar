@@ -14,18 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utility functions for keyczar package."""
+"""
+Utility functions for keyczar package.
 
-__author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+"""
 
-import errors
+import base64
+import sha
 
 from Crypto.Util import randpool
-import sha
-import base64
-from pyasn1.type import univ
-from pyasn1.codec.der import encoder
 from pyasn1.codec.der import decoder
+from pyasn1.codec.der import encoder
+from pyasn1.type import univ
+
+import errors
 
 #RSAPrivateKey ::= SEQUENCE {
 #  version Version,
@@ -75,11 +78,11 @@ def ParsePkcs8(pkcs8):
     if version != 0:
       raise errors.KeyczarError("Unrecognized RSA Private Key Version")
     for i in range(len(RSA_PARAMS)):
-      params[RSA_PARAMS[i]] = int(key.getComponentByPosition(i+1))
+      params[RSA_PARAMS[i]] = long(key.getComponentByPosition(i+1))
   elif oid == DSA_OID:
     for i in range(len(DSA_PARAMS)):
-      params[DSA_PARAMS[i]] = int(alg_params.getComponentByPosition(i))
-    params['x'] = int(key)
+      params[DSA_PARAMS[i]] = long(alg_params.getComponentByPosition(i))
+    params['x'] = long(key)
   else:
     raise errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
   return params
@@ -122,12 +125,12 @@ def ParseX509(x509):
   # then convert to OCTET STRING which can be ASN.1 decoded
   params = {}
   if oid == RSA_OID:
-    params['n'] = int(pubkey.getComponentByPosition(0))
-    params['e'] = int(pubkey.getComponentByPosition(1))
+    params['n'] = long(pubkey.getComponentByPosition(0))
+    params['e'] = long(pubkey.getComponentByPosition(1))
   elif oid == DSA_OID:
     for i in range(len(DSA_PARAMS)):
-      params[DSA_PARAMS[i]] = int(alg_params.getComponentByPosition(i))
-    params['y'] = int(pubkey)
+      params[DSA_PARAMS[i]] = long(alg_params.getComponentByPosition(i))
+    params['y'] = long(pubkey)
   else:
     raise errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
   return params
@@ -196,35 +199,36 @@ def Hash(inputs):
   return md.digest()
 
 def Encode(s):
-  """Return Base64 encoding of s. Suppress padding characters (=).
+  """
+  Return Base64 encoding of s. Suppress padding characters (=).
   
   Uses URL-safe alphabet: - replaces +, _ replaces /. Will convert s of type
   unicode to string type first.
   
-  Parameters:
-    s: string to encode as Base64
+  @param s: string to encode as Base64
+  @type s: string
   
-  Returns:
-    Base64 representation of s.
+  @return: Base64 representation of s.
+  @rtype: string
   """
   return base64.urlsafe_b64encode(str(s)).replace("=", "")
   
 
 def Decode(s):
-  """Return decoded version of given Base64 string. Ignore whitespace.
+  """
+  Return decoded version of given Base64 string. Ignore whitespace.
   
   Uses URL-safe alphabet: - replaces +, _ replaces /. Will convert s of type
   unicode to string type first.
   
-  Parameters:
-    s: Base64 string to decode
+  @param s: Base64 string to decode
+  @type s: string
   
-  Returns:
-    original string that was encoded as Base64
+  @return: original string that was encoded as Base64
+  @rtype: string
   
-  Raises:
-    Base64DecodingError: If length of string (ignoring whitespace) is one more
-      than a multiple of four.
+  @raise Base64DecodingError: If length of string (ignoring whitespace) is one 
+    more than a multiple of four.
   """
   s = str(s.replace(" ", ""))  # kill whitespace, make string (not unicode)
   d = len(s) % 4

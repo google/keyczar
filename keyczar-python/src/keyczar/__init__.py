@@ -14,11 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Keyczar Cryptography Toolkit
+"""
+Keyczar Cryptography Toolkit
 
 Collection of tools for managing and using cryptographic keys. Goal is to make
 it easier for developers to use application-layer cryptography.
-"""
 
-__author__ = """steveweis@gmail.com (Steve Weis), 
-                arkajit.dey@gmail.com (Arkajit Dey)"""
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+@author: steveweis@gmail.com (Steve Weis)
+"""

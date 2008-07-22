@@ -18,25 +18,25 @@
 
 Identifies a key by its hash and type. Includes several subclasses
 of base class Key.
+
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+@author: steveweis@gmail.com (Steve Weis)
 """
 
-__author__ = """steveweis@gmail.com (Steve Weis), 
-                arkajit.dey@gmail.com (Arkajit Dey)"""
-
-import errors
-import keyinfo
-import util
-import keyczar
-
-import simplejson
-from Crypto.Cipher import AES
-from Crypto.PublicKey import RSA
-from Crypto.PublicKey import DSA
-from Crypto.Util import number
-
-import sha
 import hmac
 import random
+import sha
+
+from Crypto.Cipher import AES
+from Crypto.PublicKey import DSA
+from Crypto.PublicKey import RSA
+from Crypto.Util import number
+import simplejson
+
+import errors
+import keyczar
+import keyinfo
+import util
 
 #TODO: Note that simplejson deals in Unicode strings. So perhaps we should
 #modify all Read() methods to wrap data obtained from simplejson with str().
@@ -46,10 +46,20 @@ import random
 #TODO: Should JSON of key files (not meta files) store KeyType or not?
 #Inconsistencies across the files. Decide on a standard.
 
-#TODO: Asymmetric public key functions duplicated (e.g. encrypt  and verify)
-#from private key functions. Perhaps rearrange class structure?
-
 def GenKey(type, size=None):
+  """
+  Generates a key of the given type and length.
+  
+  @param type: the type of key to generate
+  @type type: L{keyinfo.KeyType}
+  
+  @param size: the length in bits of the key to be generated
+  @type size: integer
+  
+  @return: the generated key of the given type and size
+  
+  @raise KeyczarError: if type is a public key or unsupported.
+  """
   if size is None:
     size = type.default_size
   try:
@@ -65,6 +75,19 @@ def GenKey(type, size=None):
     raise errors.KeyczarError(msg % type)
 
 def ReadKey(type, key):
+  """
+  Reads a key of the given type from a JSON string representation.
+  
+  @param type: the type of key to read
+  @type type: L{keyinfo.KeyType}
+  
+  @param key: the JSON string representation of the key
+  @type key: string
+  
+  @return: the key object read from the JSON string
+  
+  @raise KeyczarError: if type is unsupported
+  """
   try:
     return {keyinfo.AES: AesKey.Read,
             keyinfo.HMAC_SHA1: HmacKey.Read,
@@ -91,8 +114,8 @@ class Key(object):
     """Return the key as a string. Abstract method."""
   
   def __GetKeyString(self):
-    """Return the key as a string."""
-    return self._GetKeyString()  # indirection allows subclass overriding
+    """Indirect getter for the key string."""
+    return self._GetKeyString()
   
   def _Hash(self):
     """Compute and return the hash id of this key. Can override default hash."""
@@ -100,7 +123,8 @@ class Key(object):
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
   
   def __Hash(self):
-    return self._Hash()  # indirection allows subclass overriding
+    """Indirect getter for hash."""
+    return self._Hash()
   
   hash = property(__Hash, doc="""The hash id of the key.""")
   size = property(lambda self: self.__size, __SetSize, 
@@ -135,6 +159,8 @@ class AsymmetricKey(Key):
 
 class AesKey(SymmetricKey):
   
+  """Represents AES symmetric private keys."""
+  
   def __init__(self, key_string, hmac_key, size=keyinfo.AES.default_size, 
                mode=keyinfo.CBC):
     SymmetricKey.__init__(self, keyinfo.AES, key_string)
@@ -156,7 +182,15 @@ class AesKey(SymmetricKey):
   
   @staticmethod
   def Generate(size=keyinfo.AES.default_size):
-    """Return a newly generated AES key."""
+    """
+    Return a newly generated AES key.
+    
+    @param size: length of key in bits to generate
+    @type size: integer
+    
+    @return: an AES key
+    @rtype: L{AesKey}
+    """
     key_bytes = util.RandBytes(size / 8)
     key_string = util.Encode(key_bytes)
     hmac_key = HmacKey.Generate()  # use default HMAC-SHA1 key size
@@ -164,46 +198,58 @@ class AesKey(SymmetricKey):
   
   @staticmethod
   def Read(key):
+    """
+    Reads an AES key from a JSON string representation of it.
+    
+    @param key: a JSON representation of an AES key
+    @type key: string
+    
+    @return: an AES key
+    @rtype: L{AesKey}
+    """
     aes = simplejson.loads(key)
     hmac = aes['hmacKey']
     return AesKey(aes['aesKeyString'], HmacKey(hmac['hmacKeyString']),
                   mode=keyinfo.GetMode(aes['mode']))
   
   def __Pad(self, data):
-    """Returns the data padded using PKCS5.
+    """
+    Returns the data padded using PKCS5.
     
     For a block size B and data with N bytes in the last block, PKCS5
     pads the data with B-N bytes of the value B-N.
     
-    Parameters:
-      data: String to be padded
+    @param data: data to be padded
+    @type data: string
     
-    Returns:
-      PKCS5 padded string
+    @return: PKCS5 padded string
+    @rtype: string
     """
     pad = self.block_size - len(data) % self.block_size
     return data + pad * chr(pad)
   
   def __UnPad(self, padded):
-    """Returns the unpadded version of a data padded using PKCS5.
+    """
+    Returns the unpadded version of a data padded using PKCS5.
     
-    Params:
-      padded: String padded with PKCS5
+    @param padded: string padded with PKCS5
+    @type padded: string
     
-    Returns:
-      original, unpadded string
+    @return: original, unpadded string
+    @rtype: string
     """
     pad = ord(padded[-1])
     return padded[:-pad]
   
   def Encrypt(self, data):
-    """Return ciphertext byte string containing Header|IV|Ciph|Sig.
+    """
+    Return ciphertext byte string containing Header|IV|Ciph|Sig.
     
-    Parameters:
-      data: String plaintext to be encrypted.
+    @param data: plaintext to be encrypted.
+    @type data: string
     
-    Returns:
-      Raw byte string ciphertext formatted to have Header|IV|Ciph|Sig.
+    @return: raw byte string ciphertext formatted to have Header|IV|Ciph|Sig.
+    @rtype: string
     """
     data = self.__Pad(data)
     iv_bytes = util.RandBytes(self.block_size)
@@ -213,18 +259,18 @@ class AesKey(SymmetricKey):
     return msg_bytes + sig_bytes
   
   def Decrypt(self, input_bytes):
-    """Decrypts the given ciphertext.
+    """
+    Decrypts the given ciphertext.
     
-    Parameters:
-      input_bytes: Raw byte string formatted as Header|IV|Ciph|Sig where Sig
-      is the signature over the entire payload (Header|IV|Ciph).
+    @param input_bytes: raw byte string formatted as Header|IV|Ciph|Sig where 
+      Sig is the signature over the entire payload (Header|IV|Ciph).
+    @type input_bytes: string
     
-    Returns:
-      Plaintext String message
+    @return: plaintext message
+    @rtype: string
     
-    Raises:
-      ShortCiphertextError: If the ciphertext is too short to have an IV & Sig.
-      InvalidSignatureError: If the signature doesn't correspond to the payload.
+    @raise ShortCiphertextError: if the ciphertext is too short to have IV & Sig
+    @raise InvalidSignatureError: if the signature doesn't correspond to payload
     """    
     data_bytes = input_bytes[keyczar.HEADER_SIZE:]  # remove header
     if len(data_bytes) < self.block_size + sha.digest_size:  # IV + sig
@@ -241,6 +287,8 @@ class AesKey(SymmetricKey):
     
 class HmacKey(SymmetricKey):
   
+  """Represents HMAC-SHA1 symmetric private keys."""
+  
   def __init__(self, key_string, size=keyinfo.HMAC_SHA1.default_size):
     SymmetricKey.__init__(self, keyinfo.HMAC_SHA1, key_string)
     self.size = size
@@ -251,36 +299,57 @@ class HmacKey(SymmetricKey):
   
   @staticmethod
   def Generate(size=keyinfo.HMAC_SHA1.default_size):
-    """Return a newly generated HMAC-SHA1 key."""    
+    """
+    Return a newly generated HMAC-SHA1 key.
+    
+    @param size: length of key in bits to generate
+    @type size: integer
+    
+    @return: an HMAC-SHA1 key
+    @rtype: L{HmacKey}
+    """
     key_bytes = util.RandBytes(size / 8)
     key_string = util.Encode(key_bytes)
     return HmacKey(key_string, size)
   
   @staticmethod
   def Read(key):
+    """
+    Reads an HMAC-SHA1 key from a JSON string representation of it.
+    
+    @param key: a JSON representation of an HMAC-SHA1 key
+    @type key: string
+    
+    @return: an HMAC-SHA1 key
+    @rtype: L{HmacKey}
+    """    
     mac = simplejson.loads(key)
     return HmacKey(mac['hmacKeyString'])
   
   def Sign(self, msg):
-    """Return raw byte string of signature on the message.
+    """
+    Return raw byte string of signature on the message.
     
-    Parameters:
-      msg: String message to be signed
+    @param msg: message to be signed
+    @type msg: string
     
-    Returns:
-      Raw byte string signature.
+    @return: raw byte string signature
+    @rtype: string
     """
     return hmac.new(self.key_string, msg, sha).digest()
   
   def Verify(self, msg, sig_bytes):
-    """Return true if the signature corresponds to the message.
+    """
+    Return True if the signature corresponds to the message.
     
-    Parameters:
-      msg: String message that has been signed
-      sig_bytes: Raw byte string of the signature.
+    @param msg: message that has been signed
+    @type msg: string
     
-    Returns:
-      True if signature is valid for message. False otherwise.
+    @param sig_bytes: raw byte string of the signature
+    @type sig_bytes: string
+    
+    @return: True if signature is valid for message. False otherwise.
+    @rtype: boolean
     """
     return self.Sign(msg) == sig_bytes
 
@@ -322,16 +391,25 @@ class PublicKey(AsymmetricKey):
 
 class DsaPrivateKey(PrivateKey):
   
+  """Represents DSA private keys in an asymmetric DSA key pair."""
+  
   def __init__(self, params, pkcs8, pub, key, 
                size=keyinfo.DSA_PRIV.default_size):
     PrivateKey.__init__(self, keyinfo.DSA_PRIV, params, pkcs8, pub)
     self.key = key
     self.size = size
-    self.Verify = self.public_key.Verify
   
   @staticmethod
   def Generate(size=keyinfo.DSA_PRIV.default_size):
-    """Return a newly generated DSA private key."""
+    """
+    Return a newly generated DSA private key.
+    
+    @param size: length of key in bits to generate
+    @type size: integer
+    
+    @return: a DSA private key
+    @rtype: L{DsaPrivateKey}
+    """
     key = DSA.generate(size, util.RandBytes)
     params = {'g': key.g, 'p': key.p, 'q': key.q, 'y': key.y, 'x': key.x}
     pubkey = key.publickey()
@@ -341,6 +419,15 @@ class DsaPrivateKey(PrivateKey):
   
   @staticmethod
   def Read(key):
+    """
+    Reads a DSA private key from a JSON string representation of it.
+    
+    @param key: a JSON representation of a DSA private key
+    @type key: string
+    
+    @return: an DSA private key
+    @rtype: L{DsaPrivateKey}
+    """
     dsa = simplejson.loads(key)
     pubkey = dsa['publicKey']
     pub_params = util.ParseX509(pubkey['x509'])
@@ -353,32 +440,45 @@ class DsaPrivateKey(PrivateKey):
     return DsaPrivateKey(params, dsa['pkcs8'], pub, key)
   
   def Sign(self, msg):
-    """Return raw byte string of signature on the message.
+    """
+    Return raw byte string of signature on the message.
     
-    Parameters:
-      msg: String message to be signed
+    @param msg: message to be signed
+    @type msg: string
     
-    Returns:
-      Signature formatted as r|s where r and s are the long ints in the DSA
-      signature tuple (r,s). 
+    @return: signature formatted as r|s where r and s are the long ints in the 
+      DSA signature tuple (r,s).
+    @rtype: string 
     """
     k = random.randint(2, self.key.q-1)  # need to chose a random k per-message
     (r, s) = self.key.sign(msg, k)
     return "|".join([str(r), str(s)])
+  
+  def Verify(self, msg, sig):
+    """@see: L{DsaPublicKey.Verify}"""
+    return self.public_key.Verify(msg, sig)
 
 class RsaPrivateKey(PrivateKey):
+  
+  """Represents RSA private keys in an asymmetric RSA key pair."""
   
   def __init__(self, params, pkcs8, pub, key, 
                size=keyinfo.RSA_PRIV.default_size):
     PrivateKey.__init__(self, keyinfo.RSA_PRIV, params, pkcs8, pub)
     self.key = key  # instance of PyCrypto RSA key
     self.size = size
-    self.Encrypt = self.public_key.Encrypt
-    self.Verify = self.public_key.Verify
   
   @staticmethod
   def Generate(size=keyinfo.RSA_PRIV.default_size):
-    """Return a newly generated RSA private key."""
+    """
+    Return a newly generated RSA private key.
+    
+    @param size: length of key in bits to generate
+    @type size: integer
+    
+    @return: a RSA private key
+    @rtype: L{RsaPrivateKey}
+    """
     key = RSA.generate(size, util.RandBytes)
     params = {'n': key.n, 'e': key.e, 'd': key.d, 'p': key.q, 'q': key.p,  
               'dp': key.d % key.q, 'dq': key.d % key.p, 'invq': key.u}
@@ -392,6 +492,15 @@ class RsaPrivateKey(PrivateKey):
   
   @staticmethod
   def Read(key):
+    """
+    Reads a RSA private key from a JSON string representation of it.
+    
+    @param key: a JSON representation of a RSA private key
+    @type key: string
+    
+    @return: a RSA private key
+    @rtype: L{RsaPrivateKey}
+    """
     rsa = simplejson.loads(key)
     pubkey = rsa['publicKey']
     pub_params = util.ParseX509(pubkey['x509'])
@@ -402,30 +511,42 @@ class RsaPrivateKey(PrivateKey):
                          params['q'], params['p'], params['invq']))
     return RsaPrivateKey(params, rsa['pkcs8'], pub, key)
   
+  def Encrypt(self, data):
+    """@see: L{RsaPublicKey.Encrypt}"""
+    return self.public_key.Encrypt(data)
+  
   def Decrypt(self, input_bytes):
-    """Decrypts the given ciphertext.
+    """
+    Decrypts the given ciphertext.
     
-    Parameters:
-      input_bytes: Raw byte string formatted as Header|Ciphertext.
+    @param input_bytes: raw byte string formatted as Header|Ciphertext.
+    @type input_bytes: string
     
-    Returns:
-      Plaintext String message
+    @return: plaintext message
+    @rtype: string
     """
     ciph_bytes = input_bytes[keyczar.HEADER_SIZE:]
     return self.key.decrypt(ciph_bytes)
   
   def Sign(self, msg):
-    """Return raw byte string of signature on the message.
+    """
+    Return raw byte string of signature on the message.
     
-    Parameters:
-      msg: String message to be signed
+    @param msg: message to be signed
+    @type msg: string
     
-    Returns:
-      String representation of long int signature.
+    @return: string representation of long int signature over message
+    @rtype: string
     """
     return str(self.key.sign(msg, None)[0])
+  
+  def Verify(self, msg, sig):
+    """@see: L{RsaPublicKey.Verify}"""
+    return self.public_key.Verify(msg, sig)
 
 class DsaPublicKey(PublicKey):
+  
+  """Represents DSA public keys in an asymmetric DSA key pair."""
   
   def __init__(self, params, x509, key, size=keyinfo.DSA_PUB.default_size):
     PublicKey.__init__(self, keyinfo.DSA_PUB, params, x509)
@@ -434,20 +555,32 @@ class DsaPublicKey(PublicKey):
   
   @staticmethod
   def Read(key):
+    """
+    Reads a DSA public key from a JSON string representation of it.
+    
+    @param key: a JSON representation of a DSA public key
+    @type key: string
+    
+    @return: a DSA public key
+    @rtype: L{DsaPublicKey}
+    """
     dsa = simplejson.loads(key)
     params = util.ParseX509(dsa['x509'])
     pubkey = DSA.construct((params['y'], params['g'], params['p'], params['q']))
     return DsaPublicKey(params, dsa['x509'], pubkey)
   
   def Verify(self, msg, sig):
-    """Return true if the signature corresponds to the message.
+    """
+    Return True if the signature corresponds to the message.
     
-    Parameters:
-      msg: String message that has been signed
-      sig: Raw byte string of the signature formatted as r|s.
+    @param msg: message that has been signed
+    @type msg: string
     
-    Returns:
-      True if signature is valid for message. False otherwise.
+    @param sig: raw byte string of the signature formatted as r|s
+    @type sig: string
+    
+    @return: True if signature is valid for message. False otherwise.
+    @rtype: boolean
     """
     try: 
       [r, s] = [long(t) for t in sig.split("|")]
@@ -458,6 +591,8 @@ class DsaPublicKey(PublicKey):
 
 class RsaPublicKey(PublicKey):
   
+  """Represents RSA public keys in an asymmetric RSA key pair."""
+  
   def __init__(self, params, x509, key, size=keyinfo.RSA_PUB.default_size):
     PublicKey.__init__(self, keyinfo.RSA_PUB, params, x509)
     self.key = key
@@ -465,24 +600,45 @@ class RsaPublicKey(PublicKey):
   
   @staticmethod
   def Read(key):
+    """
+    Reads a RSA public key from a JSON string representation of it.
+    
+    @param key: a JSON representation of a RSA public key
+    @type key: string
+    
+    @return: a RSA public key
+    @rtype: L{RsaPublicKey}
+    """
     rsa = simplejson.loads(key)
     params = util.ParseX509(rsa['x509'])
     pubkey = RSA.construct((params['n'], params['e']))
     return RsaPublicKey(params, rsa['x509'], pubkey)
   
   def Encrypt(self, data):
+    """
+    Return a raw byte string of the ciphertext in the form Header|Ciph.
+    
+    @param data: message to be encrypted
+    @type data: string
+    
+    @return: ciphertext formatted as Header|Ciph
+    @rtype: string 
+    """
     ciph_bytes = self.key.encrypt(data, None)[0]  # PyCrypto returns 1-tuple
     return self.Header() + ciph_bytes
   
   def Verify(self, msg, sig):
-    """Return true if the signature corresponds to the message.
+    """
+    Return True if the signature corresponds to the message.
     
-    Parameters:
-      msg: String message that has been signed
-      sig: String representation of long int signature.
+    @param msg: message that has been signed
+    @type msg: string
     
-    Returns:
-      True if signature is valid for message. False otherwise.
+    @param sig: string representation of long int signature
+    @type sig: string
+    
+    @return: True if signature is valid for message. False otherwise.
+    @rtype: boolean
     """
     try:
       return self.key.verify(msg, (long(sig),))

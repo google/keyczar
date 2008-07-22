@@ -14,10 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Defines several 'enums' encoding information about keys."""
+"""
+Defines several 'enums' encoding information about keys, such as type,
+status, purpose, and the cipher mode.
 
-__author__ = """steveweis@gmail.com (Steve Weis), 
-                arkajit.dey@gmail.com (Arkajit Dey)"""
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+@author: steveweis@gmail.com (Steve Weis)
+"""
 
 class _NameId(object):
   def __init__(self, name, id):
@@ -29,18 +32,19 @@ class _NameId(object):
   
 class KeyType(_NameId):
   
-  """An 'enum' defining different key types and their properties.
-
-  Defines the following Key Types:
-    AES
-    HMAC-SHA1
-    DSA Private
-    DSA Public
-    RSA Private
-    RSA Public
+  """
+  Encodes different key types and their properties:
+    - AES
+    - HMAC-SHA1
+    - DSA Private
+    - DSA Public
+    - RSA Private
+    - RSA Public
   """
   
-  sizes = property(lambda self: self.__sizes)  # clients can't modify sizes
+  sizes = property(lambda self: self.__sizes, 
+                   doc="""List of valid key sizes for this key type.""")
+  # clients can't modify sizes
   
   def __init__(self, name, id, sizes, output_size):
     _NameId.__init__(self, name, id)
@@ -65,7 +69,13 @@ def GetType(name):
     return types[name]
     
 class KeyStatus(_NameId):
-  """Encodes the different possible statuses of a key."""
+  """
+  Encodes the different possible statuses of a key:
+    - Primary: can be used to encrypt and sign new data
+    - Active: can be used to decrypt or verify data signed previously
+    - Scheduled for Revocation: can do the same functions as an active key,
+      but status indicates that it is about to be revoked
+  """
 
 PRIMARY = KeyStatus("primary", 0)
 ACTIVE = KeyStatus("active", 1)
@@ -78,7 +88,13 @@ def GetStatus(value):
     return statuses[value]
 
 class KeyPurpose(_NameId):
-  """Encodes the different possible purposes for which a key can be used."""
+  """
+  Encodes the different possible purposes for which a key can be used:
+    - Decrypt and Encrypt
+    - Encrypt (only)
+    - Sign and Verify
+    - Verify (only)
+  """
 
 DECRYPT_AND_ENCRYPT = KeyPurpose("crypt", 0)
 ENCRYPT = KeyPurpose("encrypt", 1)
@@ -92,6 +108,15 @@ def GetPurpose(name):
     return purposes[name]
   
 class CipherMode(_NameId):
+  
+  """
+  Encodes the different possible modes for a cipher:
+    - Cipher Block Chaining (CBC)
+    - Counter (CTR)
+    - Electronic Code Book (ECB)
+    - Cipher Block Chaining without IV (DET-CBC)
+  """
+  
   def __init__(self, name, id, use_iv, OutputSizeFn):
     _NameId.__init__(self, name, id)
     self.use_iv = use_iv

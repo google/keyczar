@@ -14,9 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Contains hierarchy of all possible exceptions thrown by Keyczar."""
+"""
+Contains hierarchy of all possible exceptions thrown by Keyczar.
 
-__author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+"""
 
 class KeyczarError(Exception):
   """Indicates exceptions raised by a Keyczar class."""

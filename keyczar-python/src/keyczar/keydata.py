@@ -14,12 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = """steveweis@gmail.com (Steve Weis), 
-                arkajit.dey@gmail.com (Arkajit Dey)"""
+"""
+Encodes the two classes storing data about keys:
+  - KeyMetadata: stores metadata
+  - KeyVersion: stores key strings and types
+
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+@author: steveweis@gmail.com (Steve Weis)
+"""
                 
-import keyinfo
-import errors
 import simplejson
+
+import errors
+import keyinfo
 
 class KeyMetadata(object):
   
@@ -37,6 +44,16 @@ class KeyMetadata(object):
     return "%s - %s - %s" % (self.name, self.purpose, self.type)
   
   def AddVersion(self, version):
+    """
+    Adds given version and returns True if successful.
+    
+    @param version: version to add
+    @type version: L{KeyVersion}
+    
+    @return: True if version was successfully added (i.e. no previous version
+      had the same version number), False otherwise.
+    @rtype: boolean
+    """
     num = version.version_number
     if num not in self.__versions:
       self.__versions[num] = version
@@ -44,27 +61,28 @@ class KeyMetadata(object):
     return False
   
   def RemoveVersion(self, version_number):
-    """Removes version with given version number and returns it if it exists.
+    """
+    Removes version with given version number and returns it if it exists.
     
-    Args:
-      version_number: integer version number to remove
+    @param version_number: version number to remove
+    @type version_number: integer
     
-    Returns:
-      KeyVersion: the removed version if it exists or None.
+    @return: the removed version if it exists or None.
+    @rtype: L{KeyVersion}
     """
     return self.__versions.pop(version_number, None)
   
   def GetVersion(self, version_number):
-    """Returns the version corresponding to the given version number.
+    """
+    Return the version corresponding to the given version number.
     
-    Args:
-      version_number: integer version number of desired KeyVersion
+    @param version_number: integer version number of desired version
+    @type version_number: integer
     
-    Returns:
-      KeyVersion: the corresponding version if it exists
+    @return: the corresponding version if it exists
+    @rtype: L{KeyVersion}
     
-    Raises:
-      KeyczarError: If the version number is non-existent.
+    @raise KeyczarError: if the version number is non-existent.
     """
     version = self.__versions.get(version_number)
     if version is None:
@@ -74,13 +92,14 @@ class KeyMetadata(object):
   
   @staticmethod
   def Read(json_string):
-    """Return KeyMetadata object constructed from JSON string representation.
+    """
+    Return KeyMetadata object constructed from JSON string representation.
     
-    Args:
-      json_string: a JSON representation of a KeyMetadata object
+    @param json_string: a JSON representation of a KeyMetadata object
+    @type json_string: string
     
-    Returns: 
-      A KeyMetadata object
+    @return: the constructed KeyMetadata object
+    @rtype: L{KeyMetadata}
     """
     meta = simplejson.loads(json_string)
     kmd = KeyMetadata(meta['name'], keyinfo.GetPurpose(meta['purpose']), 
@@ -106,13 +125,14 @@ class KeyVersion(object):
   
   @staticmethod
   def Read(version):
-    """Return KeyVersion object constructed from dictionary derived from JSON.
+    """
+    Return KeyVersion object constructed from dictionary derived from JSON.
     
-    Args:
-      version: a dictionary obtained from a JSON string representation.
+    @param version: a dictionary obtained from a JSON string representation
+    @type version: dictionary
     
-    Returns: 
-      A KeyVersion object
+    @return: constructed KeyVersion object
+    @rtype: L{KeyVersion}
     """
     return KeyVersion(int(version['versionNumber']),
                       keyinfo.GetStatus(version['status']),

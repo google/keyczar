@@ -14,17 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = """steveweis@gmail.com (Steve Weis), 
-                arkajit.dey@gmail.com (Arkajit Dey)"""
+"""
+Collection of all Keyczar classes used to perform cryptographic functions:
+encrypt, decrypt, sign and verify.
 
-import readers
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+@author: steveweis@gmail.com (Steve Weis)
+"""
+
+from Crypto.Cipher import AES
+
+import errors
 import keydata
 import keyinfo
 import keys
-import errors
+import readers
 import util
-
-from Crypto.Cipher import AES
 
 VERSION = 1
 FORMAT = 1
@@ -56,7 +61,7 @@ class Keyczar(object):
       self.__keys[key.hash] = key
     
   versions = property(lambda self: [k for k in self.__keys.keys() 
-                                    if isinstance(k, keyinfo.KeyVersion)],
+                                    if isinstance(k, keydata.KeyVersion)],
                       doc="""List of versions in key set.""")
   primary_key = property(lambda self: self.GetKey(self.primary_version),
                          doc="""The primary key for this key set.""")
@@ -65,18 +70,18 @@ class Keyczar(object):
     return str(self.metadata)
   
   def _ParseHeader(self, header):
-    """Parse the header and verify version, format info. Return key if exists.
+    """
+    Parse the header and verify version, format info. Return key if exists.
     
-    Params:
-      header: the bytes of the header of Keyczar output
+    @param header: the bytes of the header of Keyczar output
+    @type header: string
       
-    Returns:
-      hash: the 4 byte key hash identifier as a Base64 string
+    @return: the 4 byte key hash identifier as a Base64 string
+    @rtype: string
     
-    Raises:
-      BadVersionError: If header specifies an illegal version.
-      BadFormatError: If header specifies an illegal format.
-      KeyNotFoundError: If key specified in header doesn't exist.
+    @raise BadVersionError: if header specifies an illegal version
+    @raise BadFormatError: if header specifies an illegal format
+    @raise KeyNotFoundError: if key specified in header doesn't exist
     """
     version = ord(header[0])
     format = ord(header[1])
@@ -89,23 +94,31 @@ class Keyczar(object):
   
   @staticmethod
   def Read(location):
-    """Return a Keyczar object created from FileReader at given location."""
+    """
+    Return a Keyczar object created from FileReader at given location.
+    
+    @param location: pathname of the directory storing the key files
+    @type location: string
+    
+    @return: a Keyczar to manage the keys stored at the given location
+    @rtype: L{Keyczar}
+    """
     return Keyczar(readers.FileReader(location))
   
   def IsAcceptablePurpose(self, purpose):
     """Indicates whether purpose is valid. Abstract method."""
   
   def GetKey(self, id):
-    """Returns the key associated with the given id, a hash or a version.
+    """
+    Returns the key associated with the given id, a hash or a version.
     
-    Args:
-      id: Either the hash identifier of the key or its KeyVersion.
+    @param id: Either the hash identifier of the key or its version.
+    @type id: string or L{keydata.KeyVersion}
     
-    Returns:
-      Key: The key associated with this id or None if id doesn't exist.
+    @return: key associated with this id or None if id doesn't exist.
+    @rtype: L{keys.Key}
     
-    Raises:
-      KeyNotFoundError: If key with given id doesn't exist.
+    @raise KeyNotFoundError: if key with given id doesn't exist
     """
     try:
       return self.__keys[id]
@@ -117,20 +130,21 @@ class Keyczar(object):
     self.metadata.AddVersion(version)
   
   def AddVersion(self, status, size=None):
-    """Adds a new key version with given status to key set.
+    """
+    Adds a new key version with given status to key set.
     
     Generates a new key of same type (repeated until hash identifier is unique) 
     for this version. Uses supplied key size (if provided) in lieu of the
     default key size. If this is an unacceptable key size, uses the default 
     key size. Uses next available version number.
     
-    Args:
-      status: a KeyStatus
-      size: an integer, size of key in bits. Optional, uses default size
-      if not provided.
+    @param status: the status of the new key to be added
+    @type status: L{keyinfo.KeyStatus}
     
-    Raises:
-      KeyczarError: If key type unsupported
+    @param size: size of key in bits, uses default size if not provided.
+    @type size: integer
+    
+    @raise KeyczarError: if key type unsupported
     """
     if size is None:
       size = self.default_size
@@ -156,15 +170,16 @@ class Keyczar(object):
     self.__AddKey(version, key)
   
   def Promote(self, version_number):
-    """Promotes the status of key with given version number.
+    """
+    Promotes the status of key with given version number.
     
     Promoting ACTIVE key automatically demotes current PRIMARY key to ACTIVE.
     
-    Args:
-      version_number: integer version number to promote
+    @param version_number: the version number to promote
+    @type version_number: integer
     
-    Raises:
-      KeyczarError: If invalid version number or trying to promote a primary key
+    @raise KeyczarError: if invalid version number or trying to promote 
+      a primary key
     """
     version = self.metadata.GetVersion(version_number)
     if version.status == keyinfo.PRIMARY:
@@ -178,16 +193,16 @@ class Keyczar(object):
       version.status = keyinfo.ACTIVE
   
   def Demote(self, version_number):
-    """Demotes the status of key with given version number.
+    """
+    Demotes the status of key with given version number.
     
     Demoting PRIMARY key results in a key set with no primary version.
     
-    Args:
-      version_number: integer version number to demote
+    @param version_number: the version number to demote
+    @type version_number: integer
     
-    Raises:
-      KeyczarError: If invalid version number or trying to demote a key
-          scheduled for revocation. Should use Revoke instead.
+    @raise KeyczarError: if invalid version number or trying to demote a key 
+      scheduled for revocation, use L{Revoke} instead.
     """
     version = self.metadata.GetVersion(version_number)
     if version.status == keyinfo.PRIMARY:
@@ -199,14 +214,14 @@ class Keyczar(object):
       raise errors.KeyczarError("Can't demote a key scheduled for revocation.")
   
   def Revoke(self, version_number):
-    """Revokes the key with given version number if scheduled to be revoked.
+    """
+    Revokes the key with given version number if scheduled to be revoked.
     
-    Args:
-      version_number: integer version number to revoke
+    @param version_number: integer version number to revoke
+    @type version_number: integer
     
-    Raises:
-      KeyczarError: If invalid version number or key is not scheduled
-          for revocation.
+    @raise KeyczarError: if invalid version number or key is not scheduled
+      for revocation
     """
     version = self.metadata.GetVersion(version_number)
     if version.status == keyinfo.SCHEDULED_FOR_REVOCATION:
@@ -236,7 +251,16 @@ class Encrypter(Keyczar):
   
   @staticmethod
   def Read(location):
-    """Return an Encrypter created from FileReader at given location."""
+    """
+    Return an Encrypter object created from FileReader at given location.
+    
+    @param location: pathname of the directory storing the key files
+    @type location: string
+    
+    @return: an Encrypter to manage the keys stored at the given location and
+      perform encryption functions.
+    @rtype: L{Encrypter}
+    """
     return Encrypter(readers.FileReader(location))
   
   def IsAcceptablePurpose(self, purpose):
@@ -244,17 +268,16 @@ class Encrypter(Keyczar):
     return purpose == keyinfo.ENCRYPT or purpose == keyinfo.DECRYPT_AND_ENCRYPT
   
   def Encrypt(self, data):
-    """Encrypt the data and return the ciphertext.
+    """
+    Encrypt the data and return the ciphertext.
     
-    Parameters:
-      data: String message to encrypt
+    @param data: message to encrypt
+    @type data: string
     
-    Returns:
-      ciphertext encoded as a Base64 string
+    @return: ciphertext encoded as a Base64 string
+    @rtype: string
       
-    Raises:
-      NoPrimaryKeyError: If no primary key can be found to encrypt.
-      KeyczarError: If primary key is not capable of encryption.
+    @raise NoPrimaryKeyError: if no primary key can be found to encrypt
     """
     encrypting_key = self.primary_key
     if encrypting_key is None:
@@ -267,7 +290,16 @@ class Verifier(Keyczar):
   
   @staticmethod
   def Read(location):
-    """Return a Verifier created from FileReader at given location."""
+    """
+    Return a Verifier object created from FileReader at given location.
+    
+    @param location: pathname of the directory storing the key files
+    @type location: string
+    
+    @return: a Verifier to manage the keys stored at the given location and
+      perform verify functions.
+    @rtype: L{Verifier}
+    """
     return Verifier(readers.FileReader(location))
   
   def IsAcceptablePurpose(self, purpose):
@@ -275,14 +307,17 @@ class Verifier(Keyczar):
     return purpose == keyinfo.VERIFY or purpose == keyinfo.SIGN_AND_VERIFY
   
   def Verify(self, data, sig):
-    """Verifies whether the signature corresponds to the given data.
+    """
+    Verifies whether the signature corresponds to the given data.
     
-    Args:
-      data: message that has been signed with sig
-      sig: Base64 string formatted as Header|Signature
+    @param data: message that has been signed with sig
+    @type data: string
     
-    Returns:
-      True if sig corresponds to data, False otherwise.
+    @param sig: Base64 string formatted as Header|Signature
+    @type sig: string
+    
+    @return: True if sig corresponds to data, False otherwise.
+    @rtype: boolean
     """
     sig_bytes = util.Decode(sig)
     if len(sig_bytes) < HEADER_SIZE:
@@ -296,7 +331,16 @@ class Crypter(Encrypter):
 
   @staticmethod
   def Read(location):
-    """Return a Crypter created from FileReader at given location."""
+    """
+    Return a Crypter object created from FileReader at given location.
+    
+    @param location: pathname of the directory storing the key files
+    @type location: string
+    
+    @return: a Crypter to manage the keys stored at the given location and
+      perform encryption and decryption functions.
+    @rtype: L{Crypter}
+    """
     return Crypter(readers.FileReader(location))
   
   def IsAcceptablePurpose(self, purpose):
@@ -304,20 +348,20 @@ class Crypter(Encrypter):
     return purpose == keyinfo.DECRYPT_AND_ENCRYPT
   
   def Decrypt(self, ciphertext):
-    """Decrypts the given ciphertext and returns the plaintext.
+    """
+    Decrypts the given ciphertext and returns the plaintext.
     
-    Parameters:
-      ciphertext: Base64 encoded string ciphertext to be decrypted.
+    @param ciphertext: Base64 encoded string ciphertext to be decrypted.
+    @type ciphertext: string
       
-    Returns:
-      Plaintext String message
+    @return: plaintext message
+    @rtype: string
     
-    Raises:
-      ShortCiphertextError: If length is too short to have Header, IV, & Sig.
-      BadVersionError: If header specifies an illegal version.
-      BadFormatError: If header specifies an illegal format.
-      KeyNotFoundError: If key specified in header doesn't exist.
-      InvalidSignatureError: If the signature can't be verified. 
+    @raise ShortCiphertextError: if length is too short to have Header, IV, Sig
+    @raise BadVersionError: if header specifies an illegal version
+    @raise BadFormatError: if header specifies an illegal format
+    @raise KeyNotFoundError: if key specified in header doesn't exist
+    @raise InvalidSignatureError: if the signature can't be verified
     """
     data_bytes = util.Decode(ciphertext)
     if len(data_bytes) < HEADER_SIZE:
@@ -331,7 +375,16 @@ class Signer(Verifier):
   
   @staticmethod
   def Read(location):
-    """Return a Signer created from FileReader at given location."""
+    """
+    Return a Signer object created from FileReader at given location.
+    
+    @param location: pathname of the directory storing the key files
+    @type location: string
+    
+    @return: a Signer to manage the keys stored at the given location and
+      perform sign and verify functions.
+    @rtype: L{Signer}
+    """
     return Signer(readers.FileReader(location))
   
   def IsAcceptablePurpose(self, purpose):
@@ -339,13 +392,14 @@ class Signer(Verifier):
     return purpose == keyinfo.SIGN_AND_VERIFY
   
   def Sign(self, data):
-    """Sign given data and return corresponding signature.
+    """
+    Sign given data and return corresponding signature.
     
-    Args:
-      data: String message to be signed.
+    @param data: message to be signed
+    @type data: string
     
-    Returns:
-      Signature on the data encoded as a Base64 string.
+    @return: signature on the data encoded as a Base64 string
+    @rtype: string
     """
     signing_key = self.primary_key
     if signing_key is None:

@@ -14,30 +14,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A Reader supports reading GetMetadata and GetKey info for key sets."""
+"""
+A Reader supports reading metadata and key info for key sets.
 
-__author__ = """steveweis@gmail.com (Steve Weis), 
-                arkajit.dey@gmail.com (Arkajit Dey)"""
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+@author: steveweis.gmail.com (Steve Weis)
+"""
                 
 import os
 
 class Reader(object):
-  """ Interface providing supported methods (no implementation). """
+  """Interface providing supported methods (no implementation)."""
 
   def GetMetadata(self):
-    """Return the KeyMetadata for the GetKey set being Read. Abstract method.
+    """
+    Return the KeyMetadata for the key set being read.
     
-    @return JSON string representation of KeyMetadata object
+    @return: JSON string representation of KeyMetadata object
+    @rtype: string
     """
   
-  def GetKey(self, version):
-    """Return the key corresponding to the given version. Abstract method.
+  def GetKey(self, version_number):
+    """
+    Return the key corresponding to the given version.
     
-    @param version, the integer version number
-    @return JSON string representation of a Key object
+    @param version_number: the version number of the desired key
+    @type version_number: integer
+    
+    @return: JSON string representation of a Key object
+    @rtype: string
     """
 
 class FileReader(Reader):
+  
+  """Reader that reads key data from files."""
+  
   def __init__(self, location):
     self.__location = location
     

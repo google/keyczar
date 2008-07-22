@@ -14,14 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Keyczart(ool) is a utility for creating and managing Keyczar keysets."""
+"""
+Keyczart(ool) is a utility for creating and managing Keyczar keysets.
 
-__author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
-
-from keyczar import keyczar
-#FIXME: want to import keyczar module in keyczar package
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+"""
 
 import sys
+
+import keyczar
 
 class KeyczarTool:
   pass
