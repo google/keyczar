@@ -1,0 +1,125 @@
+\contentsline {section}{Contents}{1}{section*.2}
+\contentsline {section}{\numberline {1}Package keyczar}{4}{section.1}
+\contentsline {subsection}{\numberline {1.1}Modules}{4}{subsection.1.1}
+\contentsline {section}{\numberline {2}Module keyczar.errors}{5}{section.2}
+\contentsline {subsection}{\numberline {2.1}Class KeyczarError}{5}{subsection.2.1}
+\contentsline {subsubsection}{\numberline {2.1.1}Methods}{5}{subsubsection.2.1.1}
+\contentsline {subsubsection}{\numberline {2.1.2}Properties}{5}{subsubsection.2.1.2}
+\contentsline {subsection}{\numberline {2.2}Class BadVersionError}{6}{subsection.2.2}
+\contentsline {subsubsection}{\numberline {2.2.1}Methods}{6}{subsubsection.2.2.1}
+\contentsline {subsubsection}{\numberline {2.2.2}Properties}{6}{subsubsection.2.2.2}
+\contentsline {subsection}{\numberline {2.3}Class BadFormatError}{7}{subsection.2.3}
+\contentsline {subsubsection}{\numberline {2.3.1}Methods}{7}{subsubsection.2.3.1}
+\contentsline {subsubsection}{\numberline {2.3.2}Properties}{7}{subsubsection.2.3.2}
+\contentsline {subsection}{\numberline {2.4}Class Base64DecodingError}{8}{subsection.2.4}
+\contentsline {subsubsection}{\numberline {2.4.1}Methods}{8}{subsubsection.2.4.1}
+\contentsline {subsubsection}{\numberline {2.4.2}Properties}{8}{subsubsection.2.4.2}
+\contentsline {subsection}{\numberline {2.5}Class InvalidSignatureError}{9}{subsection.2.5}
+\contentsline {subsubsection}{\numberline {2.5.1}Methods}{9}{subsubsection.2.5.1}
+\contentsline {subsubsection}{\numberline {2.5.2}Properties}{9}{subsubsection.2.5.2}
+\contentsline {subsection}{\numberline {2.6}Class KeyNotFoundError}{10}{subsection.2.6}
+\contentsline {subsubsection}{\numberline {2.6.1}Methods}{10}{subsubsection.2.6.1}
+\contentsline {subsubsection}{\numberline {2.6.2}Properties}{10}{subsubsection.2.6.2}
+\contentsline {subsection}{\numberline {2.7}Class ShortBufferError}{11}{subsection.2.7}
+\contentsline {subsubsection}{\numberline {2.7.1}Methods}{11}{subsubsection.2.7.1}
+\contentsline {subsubsection}{\numberline {2.7.2}Properties}{11}{subsubsection.2.7.2}
+\contentsline {subsection}{\numberline {2.8}Class ShortCiphertextError}{12}{subsection.2.8}
+\contentsline {subsubsection}{\numberline {2.8.1}Methods}{12}{subsubsection.2.8.1}
+\contentsline {subsubsection}{\numberline {2.8.2}Properties}{12}{subsubsection.2.8.2}
+\contentsline {subsection}{\numberline {2.9}Class ShortSignatureError}{13}{subsection.2.9}
+\contentsline {subsubsection}{\numberline {2.9.1}Methods}{13}{subsubsection.2.9.1}
+\contentsline {subsubsection}{\numberline {2.9.2}Properties}{13}{subsubsection.2.9.2}
+\contentsline {subsection}{\numberline {2.10}Class NoPrimaryKeyError}{14}{subsection.2.10}
+\contentsline {subsubsection}{\numberline {2.10.1}Methods}{14}{subsubsection.2.10.1}
+\contentsline {subsubsection}{\numberline {2.10.2}Properties}{14}{subsubsection.2.10.2}
+\contentsline {section}{\numberline {3}Module keyczar.keyczar}{15}{section.3}
+\contentsline {subsection}{\numberline {3.1}Variables}{15}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Class Keyczar}{15}{subsection.3.2}
+\contentsline {subsubsection}{\numberline {3.2.1}Methods}{15}{subsubsection.3.2.1}
+\contentsline {subsubsection}{\numberline {3.2.2}Properties}{18}{subsubsection.3.2.2}
+\contentsline {subsection}{\numberline {3.3}Class GenericKeyczar}{18}{subsection.3.3}
+\contentsline {subsubsection}{\numberline {3.3.1}Methods}{19}{subsubsection.3.3.1}
+\contentsline {subsubsection}{\numberline {3.3.2}Properties}{19}{subsubsection.3.3.2}
+\contentsline {subsection}{\numberline {3.4}Class Encrypter}{20}{subsection.3.4}
+\contentsline {subsubsection}{\numberline {3.4.1}Methods}{20}{subsubsection.3.4.1}
+\contentsline {subsubsection}{\numberline {3.4.2}Properties}{21}{subsubsection.3.4.2}
+\contentsline {subsection}{\numberline {3.5}Class Verifier}{21}{subsection.3.5}
+\contentsline {subsubsection}{\numberline {3.5.1}Methods}{22}{subsubsection.3.5.1}
+\contentsline {subsubsection}{\numberline {3.5.2}Properties}{22}{subsubsection.3.5.2}
+\contentsline {subsection}{\numberline {3.6}Class Crypter}{23}{subsection.3.6}
+\contentsline {subsubsection}{\numberline {3.6.1}Methods}{23}{subsubsection.3.6.1}
+\contentsline {subsubsection}{\numberline {3.6.2}Properties}{24}{subsubsection.3.6.2}
+\contentsline {subsection}{\numberline {3.7}Class Signer}{25}{subsection.3.7}
+\contentsline {subsubsection}{\numberline {3.7.1}Methods}{25}{subsubsection.3.7.1}
+\contentsline {subsubsection}{\numberline {3.7.2}Properties}{26}{subsubsection.3.7.2}
+\contentsline {section}{\numberline {4}Module keyczar.keyczart}{27}{section.4}
+\contentsline {subsection}{\numberline {4.1}Functions}{27}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Class KeyczarTool}{27}{subsection.4.2}
+\contentsline {section}{\numberline {5}Module keyczar.keydata}{28}{section.5}
+\contentsline {subsection}{\numberline {5.1}Class KeyMetadata}{28}{subsection.5.1}
+\contentsline {subsubsection}{\numberline {5.1.1}Methods}{28}{subsubsection.5.1.1}
+\contentsline {subsubsection}{\numberline {5.1.2}Properties}{29}{subsubsection.5.1.2}
+\contentsline {subsection}{\numberline {5.2}Class KeyVersion}{30}{subsection.5.2}
+\contentsline {subsubsection}{\numberline {5.2.1}Methods}{30}{subsubsection.5.2.1}
+\contentsline {subsubsection}{\numberline {5.2.2}Properties}{30}{subsubsection.5.2.2}
+\contentsline {section}{\numberline {6}Module keyczar.keyinfo}{32}{section.6}
+\contentsline {subsection}{\numberline {6.1}Functions}{32}{subsection.6.1}
+\contentsline {subsection}{\numberline {6.2}Variables}{32}{subsection.6.2}
+\contentsline {subsection}{\numberline {6.3}Class KeyType}{33}{subsection.6.3}
+\contentsline {subsubsection}{\numberline {6.3.1}Methods}{33}{subsubsection.6.3.1}
+\contentsline {subsubsection}{\numberline {6.3.2}Properties}{34}{subsubsection.6.3.2}
+\contentsline {subsection}{\numberline {6.4}Class KeyStatus}{34}{subsection.6.4}
+\contentsline {subsubsection}{\numberline {6.4.1}Methods}{34}{subsubsection.6.4.1}
+\contentsline {subsubsection}{\numberline {6.4.2}Properties}{35}{subsubsection.6.4.2}
+\contentsline {subsection}{\numberline {6.5}Class KeyPurpose}{35}{subsection.6.5}
+\contentsline {subsubsection}{\numberline {6.5.1}Methods}{35}{subsubsection.6.5.1}
+\contentsline {subsubsection}{\numberline {6.5.2}Properties}{35}{subsubsection.6.5.2}
+\contentsline {subsection}{\numberline {6.6}Class CipherMode}{36}{subsection.6.6}
+\contentsline {subsubsection}{\numberline {6.6.1}Methods}{36}{subsubsection.6.6.1}
+\contentsline {subsubsection}{\numberline {6.6.2}Properties}{36}{subsubsection.6.6.2}
+\contentsline {section}{\numberline {7}Module keyczar.keys}{37}{section.7}
+\contentsline {subsection}{\numberline {7.1}Functions}{37}{subsection.7.1}
+\contentsline {subsection}{\numberline {7.2}Class Key}{38}{subsection.7.2}
+\contentsline {subsubsection}{\numberline {7.2.1}Methods}{38}{subsubsection.7.2.1}
+\contentsline {subsubsection}{\numberline {7.2.2}Properties}{38}{subsubsection.7.2.2}
+\contentsline {subsection}{\numberline {7.3}Class SymmetricKey}{39}{subsection.7.3}
+\contentsline {subsubsection}{\numberline {7.3.1}Methods}{39}{subsubsection.7.3.1}
+\contentsline {subsubsection}{\numberline {7.3.2}Properties}{39}{subsubsection.7.3.2}
+\contentsline {subsection}{\numberline {7.4}Class AsymmetricKey}{39}{subsection.7.4}
+\contentsline {subsubsection}{\numberline {7.4.1}Methods}{40}{subsubsection.7.4.1}
+\contentsline {subsubsection}{\numberline {7.4.2}Properties}{40}{subsubsection.7.4.2}
+\contentsline {subsection}{\numberline {7.5}Class AesKey}{40}{subsection.7.5}
+\contentsline {subsubsection}{\numberline {7.5.1}Methods}{41}{subsubsection.7.5.1}
+\contentsline {subsubsection}{\numberline {7.5.2}Properties}{42}{subsubsection.7.5.2}
+\contentsline {subsection}{\numberline {7.6}Class HmacKey}{43}{subsection.7.6}
+\contentsline {subsubsection}{\numberline {7.6.1}Methods}{43}{subsubsection.7.6.1}
+\contentsline {subsubsection}{\numberline {7.6.2}Properties}{45}{subsubsection.7.6.2}
+\contentsline {subsection}{\numberline {7.7}Class PrivateKey}{45}{subsection.7.7}
+\contentsline {subsubsection}{\numberline {7.7.1}Methods}{45}{subsubsection.7.7.1}
+\contentsline {subsubsection}{\numberline {7.7.2}Properties}{46}{subsubsection.7.7.2}
+\contentsline {subsection}{\numberline {7.8}Class PublicKey}{46}{subsection.7.8}
+\contentsline {subsubsection}{\numberline {7.8.1}Methods}{46}{subsubsection.7.8.1}
+\contentsline {subsubsection}{\numberline {7.8.2}Properties}{47}{subsubsection.7.8.2}
+\contentsline {subsection}{\numberline {7.9}Class DsaPrivateKey}{47}{subsection.7.9}
+\contentsline {subsubsection}{\numberline {7.9.1}Methods}{47}{subsubsection.7.9.1}
+\contentsline {subsubsection}{\numberline {7.9.2}Properties}{48}{subsubsection.7.9.2}
+\contentsline {subsection}{\numberline {7.10}Class RsaPrivateKey}{49}{subsection.7.10}
+\contentsline {subsubsection}{\numberline {7.10.1}Methods}{49}{subsubsection.7.10.1}
+\contentsline {subsubsection}{\numberline {7.10.2}Properties}{51}{subsubsection.7.10.2}
+\contentsline {subsection}{\numberline {7.11}Class DsaPublicKey}{51}{subsection.7.11}
+\contentsline {subsubsection}{\numberline {7.11.1}Methods}{51}{subsubsection.7.11.1}
+\contentsline {subsubsection}{\numberline {7.11.2}Properties}{52}{subsubsection.7.11.2}
+\contentsline {subsection}{\numberline {7.12}Class RsaPublicKey}{53}{subsection.7.12}
+\contentsline {subsubsection}{\numberline {7.12.1}Methods}{53}{subsubsection.7.12.1}
+\contentsline {subsubsection}{\numberline {7.12.2}Properties}{54}{subsubsection.7.12.2}
+\contentsline {section}{\numberline {8}Module keyczar.readers}{55}{section.8}
+\contentsline {subsection}{\numberline {8.1}Class Reader}{55}{subsection.8.1}
+\contentsline {subsubsection}{\numberline {8.1.1}Methods}{55}{subsubsection.8.1.1}
+\contentsline {subsubsection}{\numberline {8.1.2}Properties}{55}{subsubsection.8.1.2}
+\contentsline {subsection}{\numberline {8.2}Class FileReader}{56}{subsection.8.2}
+\contentsline {subsubsection}{\numberline {8.2.1}Methods}{56}{subsubsection.8.2.1}
+\contentsline {subsubsection}{\numberline {8.2.2}Properties}{57}{subsubsection.8.2.2}
+\contentsline {section}{\numberline {9}Module keyczar.util}{58}{section.9}
+\contentsline {subsection}{\numberline {9.1}Functions}{58}{subsection.9.1}
+\contentsline {subsection}{\numberline {9.2}Variables}{59}{subsection.9.2}
+\contentsline {section}{Index}{60}{section*.4}

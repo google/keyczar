@@ -1,0 +1,127 @@
+\begin{theindex}
+
+  \item keyczar \textit{(package)}, \hyperpage{2}
+    \subitem keyczar.errors \textit{(module)}, \hyperpage{3--12}
+      \subsubitem keyczar.errors.BadFormatError \textit{(class)}, 
+		\hyperpage{4--5}
+      \subsubitem keyczar.errors.BadVersionError \textit{(class)}, 
+		\hyperpage{3--4}
+      \subsubitem keyczar.errors.Base64DecodingError \textit{(class)}, 
+		\hyperpage{5--6}
+      \subsubitem keyczar.errors.InvalidSignatureError \textit{(class)}, 
+		\hyperpage{6--7}
+      \subsubitem keyczar.errors.KeyczarError \textit{(class)}, 
+		\hyperpage{3}
+      \subsubitem keyczar.errors.KeyNotFoundError \textit{(class)}, 
+		\hyperpage{7--8}
+      \subsubitem keyczar.errors.NoPrimaryKeyError \textit{(class)}, 
+		\hyperpage{11--12}
+      \subsubitem keyczar.errors.ShortBufferError \textit{(class)}, 
+		\hyperpage{8--9}
+      \subsubitem keyczar.errors.ShortCiphertextError \textit{(class)}, 
+		\hyperpage{9--10}
+      \subsubitem keyczar.errors.ShortSignatureError \textit{(class)}, 
+		\hyperpage{10--11}
+    \subitem keyczar.keyczar \textit{(module)}, \hyperpage{13--24}
+      \subsubitem keyczar.keyczar.Crypter \textit{(class)}, 
+		\hyperpage{21--22}
+      \subsubitem keyczar.keyczar.Encrypter \textit{(class)}, 
+		\hyperpage{17--19}
+      \subsubitem keyczar.keyczar.GenericKeyczar \textit{(class)}, 
+		\hyperpage{16--17}
+      \subsubitem keyczar.keyczar.Keyczar \textit{(class)}, 
+		\hyperpage{13--16}
+      \subsubitem keyczar.keyczar.Signer \textit{(class)}, 
+		\hyperpage{22--24}
+      \subsubitem keyczar.keyczar.Verifier \textit{(class)}, 
+		\hyperpage{19--21}
+    \subitem keyczar.keyczart \textit{(module)}, \hyperpage{25}
+      \subsubitem keyczar.keyczart.KeyczarTool \textit{(class)}, 
+		\hyperpage{25}
+      \subsubitem keyczar.keyczart.main \textit{(function)}, 
+		\hyperpage{25}
+      \subsubitem keyczar.keyczart.usage \textit{(function)}, 
+		\hyperpage{25}
+    \subitem keyczar.keydata \textit{(module)}, \hyperpage{26--29}
+      \subsubitem keyczar.keydata.KeyMetadata \textit{(class)}, 
+		\hyperpage{26--28}
+      \subsubitem keyczar.keydata.KeyVersion \textit{(class)}, 
+		\hyperpage{28--29}
+    \subitem keyczar.keyinfo \textit{(module)}, \hyperpage{30--34}
+      \subsubitem keyczar.keyinfo.CipherMode \textit{(class)}, 
+		\hyperpage{33--34}
+      \subsubitem keyczar.keyinfo.GetMode \textit{(function)}, 
+		\hyperpage{30}
+      \subsubitem keyczar.keyinfo.GetPurpose \textit{(function)}, 
+		\hyperpage{30}
+      \subsubitem keyczar.keyinfo.GetStatus \textit{(function)}, 
+		\hyperpage{30}
+      \subsubitem keyczar.keyinfo.GetType \textit{(function)}, 
+		\hyperpage{30}
+      \subsubitem keyczar.keyinfo.KeyPurpose \textit{(class)}, 
+		\hyperpage{33}
+      \subsubitem keyczar.keyinfo.KeyStatus \textit{(class)}, 
+		\hyperpage{32--33}
+      \subsubitem keyczar.keyinfo.KeyType \textit{(class)}, 
+		\hyperpage{31--32}
+    \subitem keyczar.keys \textit{(module)}, \hyperpage{35--52}
+      \subsubitem keyczar.keys.AesKey \textit{(class)}, 
+		\hyperpage{38--41}
+      \subsubitem keyczar.keys.AsymmetricKey \textit{(class)}, 
+		\hyperpage{37--38}
+      \subsubitem keyczar.keys.DsaPrivateKey \textit{(class)}, 
+		\hyperpage{45--47}
+      \subsubitem keyczar.keys.DsaPublicKey \textit{(class)}, 
+		\hyperpage{49--50}
+      \subsubitem keyczar.keys.GenKey \textit{(function)}, 
+		\hyperpage{35}
+      \subsubitem keyczar.keys.HmacKey \textit{(class)}, 
+		\hyperpage{41--43}
+      \subsubitem keyczar.keys.Key \textit{(class)}, \hyperpage{35--36}
+      \subsubitem keyczar.keys.PrivateKey \textit{(class)}, 
+		\hyperpage{43--44}
+      \subsubitem keyczar.keys.PublicKey \textit{(class)}, 
+		\hyperpage{44--45}
+      \subsubitem keyczar.keys.ReadKey \textit{(function)}, 
+		\hyperpage{35}
+      \subsubitem keyczar.keys.RsaPrivateKey \textit{(class)}, 
+		\hyperpage{47--49}
+      \subsubitem keyczar.keys.RsaPublicKey \textit{(class)}, 
+		\hyperpage{50--52}
+      \subsubitem keyczar.keys.SymmetricKey \textit{(class)}, 
+		\hyperpage{36--37}
+    \subitem keyczar.readers \textit{(module)}, \hyperpage{53--55}
+      \subsubitem keyczar.readers.FileReader \textit{(class)}, 
+		\hyperpage{54--55}
+      \subsubitem keyczar.readers.Reader \textit{(class)}, 
+		\hyperpage{53--54}
+    \subitem keyczar.util \textit{(module)}, \hyperpage{56--57}
+      \subsubitem keyczar.util.BinToBytes \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.BytesToBin \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.Decode \textit{(function)}, 
+		\hyperpage{57}
+      \subsubitem keyczar.util.Encode \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.ExportDsaPkcs8 \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.ExportDsaX509 \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.ExportRsaPkcs8 \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.ExportRsaX509 \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.Hash \textit{(function)}, \hyperpage{56}
+      \subsubitem keyczar.util.IntToBin \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.IntToBytes \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.ParsePkcs8 \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.ParseX509 \textit{(function)}, 
+		\hyperpage{56}
+      \subsubitem keyczar.util.RandBytes \textit{(function)}, 
+		\hyperpage{56}
+
+\end{theindex}
