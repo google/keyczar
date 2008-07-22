@@ -4,7 +4,8 @@
 <head>
 <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 <meta name="keywords"
-  content="keyczar, keys, encryption, cryptography, signatures, digital signatures, public key encryption, aes, rsa, dsa, hmac" />
+  content="keyczar, keys, encryption, cryptography, signatures, 
+  digital signatures, public key encryption, aes, rsa, dsa, hmac" />
 <meta name="description"
   content="keyCzar: An open source cryptographic toolkit" />
 <link rel="stylesheet" href="style.css" type="text/css" />
@@ -37,7 +38,7 @@ programming interface.</p>
 
 <p>keyCzar is designed to be open, extensible, and cross-platform
 compatible. It is not intended to replace existing cryptographic
-libraries like OpenSSL, PyCrypt, or the Java JCE, and in fact is built
+libraries like OpenSSL, PyCrypto, or the Java JCE, and in fact is built
 on these libraries.</p>
 
 <h3>An illustrative use case</h3>
@@ -48,17 +49,32 @@ handle initialization vectors, how to rotate keys, and how to sign
 ciphertexts. keyCzar simplifies these choices. Using an existing keyset,
 a Java developer would just need to call the following:</p>
 
-<div id="code"><pre>
-Crypter crypter = new Crypter("/path/to/your/keys");
-String ciphertext = crypter.encrypt("Secret message");
-</pre></div>
+<div id="code">
+  <pre>
+	Crypter crypter = new Crypter("/path/to/your/keys");
+	String ciphertext = crypter.encrypt("Secret message");
+  </pre>
+</div>
 
-<p>That's it! See the <a href="javadocs/index.html">keyCzar
-Javadocs</a> for more details.</p>
+<p>Similarly a Python developer would just call the following:</p>
+
+<div id="code">
+  <pre>
+	crypter = Crypter.Read("/path/to/your/keys");
+	ciphertext = crypter.Encrypt("Secret message");
+  </pre>
+</div>
+
+<p>
+  That's it! See the <a href="javadocs/index.html">keyCzar Javadocs</a> 
+  or the <a href="pydocs/index.html">keyCzar Pydocs</a> for more details.
+</p>
 
 <h3>How to get keyCzar</h3>
-<p>keyCzar is available for download from <a
-  href="http://code.google.com/p/keyczar">Google Code</a>.</p>
+<p>
+  keyCzar is available for download from 
+  <a href="http://code.google.com/p/keyczar">Google Code</a>.
+</p>
 
 <p>Interested in getting involved? Please join us on the <a
   href="http://code.google.com/p/keyczar">keyCzar project</a> and
@@ -66,11 +82,14 @@ subscribe to the <a
   href="http://groups.google.com/group/keyczar-discuss">keyCzar-discuss
 </a> mailing list.</p>
 
-<div id="footer"><a href="index.html">Home</a> - <a
-  href="about.html">About</a> - <a
-  href="http://code.google.com/p/keyczar">Project</a> - <a
-  href="javadocs/index.html">JavaDocs</a><img id="lock" src="lock.jpg"
-  alt="keyCzar" /></div>
+<div id="footer">
+  <a href="index.html">Home</a> - 
+  <a href="about.html">About</a> - 
+  <a href="http://code.google.com/p/keyczar">Project</a> - 
+  <a href="javadocs/index.html">JavaDocs</a> - 
+  <a href="pydocs/index.html">PyDocs</a>
+  <img id="lock" src="lock.jpg" alt="keyCzar" />
+</div>
 
 </body>
 </html>
