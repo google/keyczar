@@ -1,0 +1,38 @@
+body {
+	font-family:Optima, Verdana, Arial, Helvetica, sans-serif;
+	text-align: justify;
+	margin: 2% 2%;
+}
+
+div#logo {
+	padding-left: 15px;
+	padding-top: 10px;
+	border-bottom: 5px solid #59bce5;
+}
+
+div#contents {
+	margin: 2% 2%;
+}
+
+img {
+	border: 0px;
+}
+
+img#lock {
+  float: right;
+}
+
+div#footer {
+  text-align: center;
+  font-size: small;
+}
+
+div#code {
+  font-family: monospace;
+  border-left: 5px solid #59bce5;
+  padding-left: 5px;
+}
+
+ul#list {
+  margin-top: 0px;
+}
