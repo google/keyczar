@@ -14,7 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = """arkajit.dey@gmail.com (Arkajit Dey)"""
+"""
+Testcases to test behavior of Keyczar Crypters.
+
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+"""
 
 from keyczar import keyczar
 from keyczar import errors

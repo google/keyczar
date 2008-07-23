@@ -37,6 +37,8 @@ crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
 print "Primary AES", crypter.Encrypt(input)  # primary
 activeAes = crypter.GetKey("y2W2qg")  # active
 print "Active AES", util.Encode(activeAes.Encrypt(input))
+print "Versions List", [str(v) for v in crypter.versions]
+print "Metadata", str(crypter.metadata)
 
 signer = keyczar.Signer.Read(os.path.join(TEST_DATA, "hmac"))
 print "Primary HMAC Sign", signer.Sign(input)

@@ -22,6 +22,8 @@ encrypt, decrypt, sign and verify.
 @author: steveweis@gmail.com (Steve Weis)
 """
 
+import os
+
 from Crypto.Cipher import AES
 
 import errors
@@ -125,9 +127,22 @@ class Keyczar(object):
     except KeyError:
       raise errors.KeyNotFoundError(id)
   
-  def __AddKey(self, version, key):
+  def _AddKey(self, version, key):
     self.__keys[version] = self.__keys[key.hash] = key
     self.metadata.AddVersion(version)
+
+class GenericKeyczar(Keyczar):
+  
+  """To be used by Keyczart."""
+  
+  @staticmethod
+  def Read(location):
+    """Return a GenericKeyczar created from FileReader at given location."""
+    return GenericKeyczar(readers.FileReader(location))
+
+  def IsAcceptablePurpose(self, purpose):
+    """All purposes ok for Keyczart."""
+    return True
   
   def AddVersion(self, status, size=None):
     """
@@ -148,7 +163,7 @@ class Keyczar(object):
     """
     if size is None:
       size = self.default_size
-
+  
     version = keydata.KeyVersion(len(self.versions)+1, status, False)
     
     if status == keyinfo.PRIMARY:
@@ -167,7 +182,7 @@ class Keyczar(object):
       if self.__keys.get(key.hash) is None:
         break
     
-    self.__AddKey(version, key)
+    self._AddKey(version, key)
   
   def Promote(self, version_number):
     """
@@ -228,22 +243,31 @@ class Keyczar(object):
       self.metadata.RemoveVersion(version)
     else:
       raise errors.KeyczarError("Can't revoke key if not scheduled to be.")
-
-class GenericKeyczar(Keyczar):
   
-  """To be used by Keyczart."""
-  
-  @staticmethod
-  def Read(location):
-    """Return a GenericKeyczar created from FileReader at given location."""
-    return GenericKeyczar(readers.FileReader(location))
-
-  def IsAcceptablePurpose(self, purpose):
-    """All purposes ok for Keyczart."""
-    return True
-  
-  def PublicKeyExport(self, destination):
+  def PublicKeyExport(self, dest):
     """Export the public keys corresponding to our key set to destination."""
+    kmd = self.metadata
+    pubkmd = None
+    if kmd.type == keyinfo.DSA_PRIV and kmd.purpose == keyinfo.SIGN_AND_VERIFY:
+      pubkmd = keydata.KeyMetadata(kmd.name, keyinfo.VERIFY, keyinfo.DSA_PUB)
+    elif kmd.type == keyinfo.RSA_PRIV:
+      if kmd.purpose == keyinfo.DECRYPT_AND_ENCRYPT:
+        pubkmd = keydata.KeyMetadata(kmd.name, keyinfo.ENCRYPT, keyinfo.RSA_PUB)
+      elif kmd.purpose == keyinfo.SIGN_AND_VERIFY:
+        pubkmd = keydata.KeyMetadata(kmd.name, keyinfo.VERIFY, keyinfo.RSA_PUB)
+    if pubkmd is None:
+      raise errors.KeyczarError("Cannot export public key")
+    util.WriteFile(str(pubkmd), os.path.join(dest, "meta"))
+    pubkeys = [self.GetKey(v).public_key for v in self.versions]
+    for v in self.versions:
+      pubkey = self.GetKey(v).public_key
+      util.WriteFile(str(pubkey), os.path.join(dest, v.version_number))
+  
+  def Write(self, loc):
+    util.WriteFile(str(self.metadata), os.path.join(loc, "meta"))
+    for v in self.versions:
+      util.WriteFile(str(self.GetKey(v)), 
+                     os.path.join(loc, str(v.version_number)))
 
 class Encrypter(Keyczar):
   

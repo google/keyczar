@@ -41,7 +41,11 @@ class KeyMetadata(object):
   versions = property(lambda self: self.__versions.values())
     
   def __str__(self):
-    return "%s - %s - %s" % (self.name, self.purpose, self.type)
+    return simplejson.dumps({"name": self.name,
+                             "purpose": str(self.purpose),
+                             "type": str(self.type),
+                             "versions": [simplejson.loads(str(v)) 
+                                          for v in self.versions]})
   
   def AddVersion(self, version):
     """
@@ -121,7 +125,9 @@ class KeyVersion(object):
   status = property(lambda self: self.__status, __SetStatus)
   
   def __str__(self):
-    return "(%d, %s, %s)" % (self.version_number, self.status, self.exportable)
+    return simplejson.dumps({"versionNumber": self.version_number,
+                             "status": str(self.status),
+                             "exportable": self.exportable})
   
   @staticmethod
   def Read(version):
@@ -134,7 +140,7 @@ class KeyVersion(object):
     @return: constructed KeyVersion object
     @rtype: L{KeyVersion}
     """
-    return KeyVersion(int(version['versionNumber']),
+    return KeyVersion(version['versionNumber'],
                       keyinfo.GetStatus(version['status']),
                       version['exportable'])
     

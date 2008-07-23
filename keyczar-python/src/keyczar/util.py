@@ -239,3 +239,11 @@ def Decode(s):
   elif d == 3:
     s += "="
   return base64.urlsafe_b64decode(s)
+
+def WriteFile(data, loc):
+  try:
+    f = open(loc, "w")
+    f.write(data)
+    f.close()
+  except IOError:
+    raise errors.KeyczarError("Bad file name")

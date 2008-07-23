@@ -170,8 +170,7 @@ class AesKey(SymmetricKey):
     self.mode = mode    
     
   def __str__(self):
-    return simplejson.dumps({"type": "AES",
-                             "mode": str(self.mode),
+    return simplejson.dumps({"mode": str(self.mode),
                              "aesKeyString": self.key_string,
                              "hmacKey": simplejson.loads(str(self.hmac_key))})
     
@@ -294,8 +293,7 @@ class HmacKey(SymmetricKey):
     self.size = size
   
   def __str__(self):
-    return simplejson.dumps({"type": "HMAC_SHA1",
-                             "hmacKeyString": self.key_string})
+    return simplejson.dumps({"hmacKeyString": self.key_string})
   
   @staticmethod
   def Generate(size=keyinfo.HMAC_SHA1.default_size):
@@ -365,7 +363,6 @@ class PrivateKey(AsymmetricKey):
   def __str__(self):
     return simplejson.dumps({"publicKey": simplejson.loads(
                                                           str(self.public_key)),
-                             "type": str(self.type),
                              "pkcs8": self.pkcs8})
   
   def _GetKeyString(self):
@@ -383,8 +380,7 @@ class PublicKey(AsymmetricKey):
     self.x509 = x509
   
   def __str__(self):
-    return simplejson.dumps({"type": str(self.type),
-                             "x509": self.x509})
+    return simplejson.dumps({"x509": self.x509})
   
   def _GetKeyString(self):
     return self.x509

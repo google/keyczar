@@ -77,9 +77,9 @@ class KeyStatus(_NameId):
       but status indicates that it is about to be revoked
   """
 
-PRIMARY = KeyStatus("primary", 0)
-ACTIVE = KeyStatus("active", 1)
-SCHEDULED_FOR_REVOCATION = KeyStatus("scheduled_for_revocation", 2)
+PRIMARY = KeyStatus("PRIMARY", 0)
+ACTIVE = KeyStatus("ACTIVE", 1)
+SCHEDULED_FOR_REVOCATION = KeyStatus("SCHEDULED_FOR_REVOCATION", 2)
 statuses = {"PRIMARY": PRIMARY, "ACTIVE": ACTIVE, 
             "SCHEDULED_FOR_REVOCATION": SCHEDULED_FOR_REVOCATION}
 
@@ -96,10 +96,10 @@ class KeyPurpose(_NameId):
     - Verify (only)
   """
 
-DECRYPT_AND_ENCRYPT = KeyPurpose("crypt", 0)
-ENCRYPT = KeyPurpose("encrypt", 1)
-SIGN_AND_VERIFY = KeyPurpose("sign", 2)
-VERIFY = KeyPurpose("verify", 3)
+DECRYPT_AND_ENCRYPT = KeyPurpose("DECRYPT_AND_ENCRYPT", 0)
+ENCRYPT = KeyPurpose("ENCRYPT", 1)
+SIGN_AND_VERIFY = KeyPurpose("SIGN_AND_VERIFY", 2)
+VERIFY = KeyPurpose("VERIFY", 3)
 purposes = {"DECRYPT_AND_ENCRYPT": DECRYPT_AND_ENCRYPT, "ENCRYPT": ENCRYPT,
             "SIGN_AND_VERIFY": SIGN_AND_VERIFY, "VERIFY": VERIFY}
 

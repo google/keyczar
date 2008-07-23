@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for Keyczar Cryptography Toolkit
+"""
+Tests for Keyczar Cryptography Toolkit
 
 Suite of unit tests for keyczar package.
-"""
 
-__author__ = """steveweis@gmail.com (Steve Weis), 
-                arkajit.dey@gmail.com (Arkajit Dey)"""
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+@author: steveweis@gmail.com (Steve Weis)
+"""

@@ -1,1 +1,1 @@
-{"aesKeyString":"CrOgKTc1zAAojXKHGw-VIA","hmacKey":{"hmacKeyString":"sWaQnZWToMMSLTK8WaAVyaB9kGH55egm6gEuGj6FUdU","type":"HMAC_SHA1"},"mode":"CBC","type":"AES"}
+{"aesKeyString":"CrOgKTc1zAAojXKHGw-VIA","hmacKey":{"hmacKeyString":"sWaQnZWToMMSLTK8WaAVyaB9kGH55egm6gEuGj6FUdU","type":"HMAC_SHA1"},"mode":"CBC"}
