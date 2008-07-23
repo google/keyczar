@@ -44,7 +44,7 @@ class Keyczar(object):
     
   def __init__(self, reader):
     self.metadata = keydata.KeyMetadata.Read(reader.GetMetadata())
-    self.__keys = {}  # maps both KeyVersions and hash ids to keys
+    self._keys = {}  # maps both KeyVersions and hash ids to keys
     self.primary_version = None  # default if no primary key
     self.default_size = self.metadata.type.default_size
     
@@ -59,10 +59,10 @@ class Keyczar(object):
               "Key sets may only have a single primary version")
         self.primary_version = version
       key = keys.ReadKey(self.metadata.type, reader.GetKey(version.version_number))
-      self.__keys[version] = key
-      self.__keys[key.hash] = key
+      self._keys[version] = key
+      self._keys[key.hash] = key
     
-  versions = property(lambda self: [k for k in self.__keys.keys() 
+  versions = property(lambda self: [k for k in self._keys.keys() 
                                     if isinstance(k, keydata.KeyVersion)],
                       doc="""List of versions in key set.""")
   primary_key = property(lambda self: self.GetKey(self.primary_version),
@@ -123,12 +123,12 @@ class Keyczar(object):
     @raise KeyNotFoundError: if key with given id doesn't exist
     """
     try:
-      return self.__keys[id]
+      return self._keys[id]
     except KeyError:
       raise errors.KeyNotFoundError(id)
   
   def _AddKey(self, version, key):
-    self.__keys[version] = self.__keys[key.hash] = key
+    self._keys[version] = self._keys[key.hash] = key
     self.metadata.AddVersion(version)
 
 class GenericKeyczar(Keyczar):
@@ -179,7 +179,7 @@ class GenericKeyczar(Keyczar):
     # Make sure no keys collide on their identifiers
     while True:
       key = keys.GenKey(self.metadata.type, size)
-      if self.__keys.get(key.hash) is None:
+      if self._keys.get(key.hash) is None:
         break
     
     self._AddKey(version, key)

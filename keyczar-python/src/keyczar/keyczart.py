@@ -141,7 +141,43 @@ def UseKey(msg, loc, dest):
   pass
 
 def Usage():
-  print "Usage: "
+  print '''Usage: "Keyczart command flags"
+  Commands: create addkey pubkey promote demote revoke
+Flags: location name size status purpose destination version asymmetric crypter
+Command Usage:
+create --location=/path/to/keys --purpose=(crypt|sign) [--name="A name"] [--asymmetric=(dsa|rsa)]
+  Creates a new, empty key set in the given location.
+  This key set must have a purpose of either "crypt" or "sign"
+  and may optionally be given a name. The optional asymmetric 
+  flag will generate a public key set of the given algorithm.
+  The "dsa" asymmetric value is valid only for sets with "sign" purpose.
+  with the given purpose.
+addkey --location=/path/to/keys [--status=(active|primary)] [--size=size] [--crypter=crypterLocation]
+  Adds a new key to an existing key set. Optionally
+  specify a purpose, which is active by default. Optionally
+  specify a key size in bits. Also optionally specify the
+  location of a set of crypting keys, which will be used to
+  encrypt this key set.
+pubkey --location=/path/to/keys --destination=/destination
+  Extracts public keys from a given key set and writes them
+  to the destination. The "pubkey" command Only works for
+  key sets that were created with the "--asymmetric" flag.
+promote --location=/path/to/keys --version=versionNumber
+  Promotes the status of the given key version in the given 
+  location. Active keys are promoted to primary (which demotes 
+  any existing primary key to active). Keys scheduled for 
+  revocation are promoted to be active.
+demote --location=/path/to/keys --version=versionNumber
+  Demotes the status of the given key version in the given
+  location. Primary keys are demoted to active. Active keys
+  are scheduled for revocation.
+revoke --location=/path/to/keys --version=versionNumber
+  Revokes the key of the given version number.
+  This key must have been scheduled for revocation by the
+  promote command. WARNING: The key will be destroyed.
+
+Optional flags are in [brackets]. The notation (a|b|c) means "a", "b", and "c"
+are the valid choices'''
 
 def CreateGenericKeyczar(loc):
   if loc is None:
