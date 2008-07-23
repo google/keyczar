@@ -89,9 +89,6 @@ class RsaPrivateKey extends KeyczarPrivateKey {
   
   static RsaPrivateKey read(String input) throws KeyczarException {
     RsaPrivateKey key = Util.gson().fromJson(input, RsaPrivateKey.class);
-    if (key.getType() != KeyType.RSA_PRIV) {
-      throw new UnsupportedTypeException(key.getType());
-    }
     key.init();
     return key;
   }

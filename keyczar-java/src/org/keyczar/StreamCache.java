@@ -20,6 +20,7 @@ import org.keyczar.interfaces.Stream;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 /**
  * Caches StreamQueue objects for KeyczarKeys so they can reused.
  *

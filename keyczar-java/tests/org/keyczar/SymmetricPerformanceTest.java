@@ -27,7 +27,7 @@ import java.util.ArrayList;
 public class SymmetricPerformanceTest {
   enum Tests { HMAC, AES }
   
-  private static final String TEST_DATA = "/home/sweis/workspace/Keyczar/testdata";
+  private static final String TEST_DATA = "./testdata";
   static final int NUM_THREADS = 3;
   static final int NUM_ITERATIONS = 30000;
   static volatile boolean caughtException;

@@ -16,7 +16,6 @@
 
 package org.keyczar;
 
-
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
@@ -31,7 +30,6 @@ import java.security.GeneralSecurityException;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Arrays;
-
 
 /**
  * Wrapping class for DSA Public Keys. These must be exported from existing DSA
@@ -61,9 +59,6 @@ class DsaPublicKey extends KeyczarPublicKey {
 
   static DsaPublicKey read(String input) throws KeyczarException {
     DsaPublicKey key = Util.gson().fromJson(input, DsaPublicKey.class);
-    if (key.getType() != KeyType.DSA_PUB) {
-      throw new UnsupportedTypeException(key.getType());
-    }
     key.init();
     return key;
   }

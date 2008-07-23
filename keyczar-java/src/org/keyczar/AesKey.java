@@ -59,7 +59,6 @@ class AesKey extends KeyczarKey {
   @Expose private String aesKeyString = ""; //$NON-NLS-1$
   @Expose private HmacKey hmacKey = new HmacKey();
   @Expose private CipherMode mode = DEFAULT_MODE;
-  @Expose private KeyType type = KeyType.AES;
   
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
@@ -74,7 +73,7 @@ class AesKey extends KeyczarKey {
     byte[] aesBytes = Util.rand(key.size() / 8);
     key.aesKeyString = Base64Coder.encode(aesBytes);
     key.mode = DEFAULT_MODE;
-    key.hmacKey = HmacKey.generate(); // CHECK: changed this, OK?
+    key.hmacKey = HmacKey.generate();
     key.init();
     return key;
   }
@@ -91,9 +90,6 @@ class AesKey extends KeyczarKey {
 
   static AesKey read(String input) throws KeyczarException {
     AesKey key = Util.gson().fromJson(input, AesKey.class);
-    if (key.getType() != KeyType.AES) {
-      throw new UnsupportedTypeException(key.getType());
-    }
     key.hmacKey.init();
     key.init();
     return key;
@@ -119,9 +115,12 @@ class AesKey extends KeyczarKey {
     boolean ivRead = false;
 
     public AesStream() throws KeyczarException  {
-      // The JCE Cipher.init() call essentially reallocates a new Cipher object
-      // So, we avoid having to reinitialize Ciphers by setting two here here
-      // with zero-valued IVs. 
+      /* 
+       * The JCE Cipher.init() call essentially reallocates a new Cipher object
+       * We avoid this by initializing two Cipher objects with zero-valued IVs,
+       * Then passing IVs for CBC mode ourselves. The Ciphers will be cached in
+       * this stream
+       */
       IvParameterSpec zeroIv = new IvParameterSpec(new byte[blockSize]);
       try {
         encryptingCipher = Cipher.getInstance(mode.getMode());
@@ -132,7 +131,6 @@ class AesKey extends KeyczarKey {
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
- 
     }
 
     @Override

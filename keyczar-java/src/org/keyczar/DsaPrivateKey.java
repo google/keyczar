@@ -36,7 +36,6 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Arrays;
 
-
 /**
  * Wrapping class for DSA Private Keys
  * 
@@ -48,7 +47,6 @@ class DsaPrivateKey extends KeyczarPrivateKey {
   private static final String SIG_ALGORITHM = "SHA1withDSA"; //$NON-NLS-1$
 
   @Expose private DsaPublicKey publicKey;
-  @Expose private KeyType type = KeyType.DSA_PRIV;
 
   private DsaPrivateKey() {
     publicKey = new DsaPublicKey();
@@ -99,9 +97,6 @@ class DsaPrivateKey extends KeyczarPrivateKey {
   
   static DsaPrivateKey read(String input) throws KeyczarException {
     DsaPrivateKey key = Util.gson().fromJson(input, DsaPrivateKey.class);
-    if (key.getType() != KeyType.DSA_PRIV) {
-      throw new UnsupportedTypeException(key.getType());
-    }
     key.init();
     return key;
   }

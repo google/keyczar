@@ -58,7 +58,6 @@ class KeyMetadata {
   protected Map<Integer, KeyVersion> versionMap = 
       new HashMap<Integer, KeyVersion>(); // link version number to version
   
-
   private KeyMetadata() {
     // For GSON
   }
@@ -151,7 +150,7 @@ class KeyMetadata {
     KeyMetadata kmd = Util.gson().fromJson(jsonString, KeyMetadata.class);
     for (KeyVersion version : kmd.getVersions()) {
       kmd.versionMap.put(version.getVersionNumber(), version);
-    } //FIXME: can we initialize the version map from JSON too?
+    } //TODO: Initialize the version map from JSON too?
     return kmd;
   }
 }

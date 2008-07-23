@@ -55,7 +55,7 @@ public class KeyczarToolTest extends TestCase {
   }
   
   @Test
-  public final void testCreate() throws KeyczarException {
+  public final void testCreate() {
     String[] args = {"create", "--name=create-test", "--purpose=test"};
     Assert.assertEquals("TEST", mock.name());
     Assert.assertEquals(KeyPurpose.ENCRYPT, mock.purpose());
@@ -67,7 +67,7 @@ public class KeyczarToolTest extends TestCase {
   }
   
   @Test
-  public final void testAddKey() throws KeyczarException {
+  public final void testAddKey() {
     Assert.assertEquals(3, mock.numKeys());
     String[] args = {"addkey", "--status=primary"};
     KeyczarTool.main(args);
@@ -77,7 +77,7 @@ public class KeyczarToolTest extends TestCase {
   }
   
   @Test
-  public final void testAddKeySizeFlag() throws KeyczarException {
+  public final void testAddKeySizeFlag() {
     String[] args = {"addkey", "--status=active", "--size=192"};
     KeyczarTool.main(args);
     Assert.assertEquals(192, mock.getKeySize(4)); // adding fourth key
@@ -95,7 +95,7 @@ public class KeyczarToolTest extends TestCase {
   }
   
   @Test
-  public final void testPromote() throws KeyczarException {
+  public final void testPromote() {
     String[] args = {"promote", "--version=77"};
     KeyczarTool.main(args);
     Assert.assertEquals(KeyStatus.PRIMARY, mock.getStatus(77));
@@ -103,7 +103,7 @@ public class KeyczarToolTest extends TestCase {
   }
   
   @Test
-  public final void testDemote() throws KeyczarException {
+  public final void testDemote() {
     String[] args = {"demote", "--version=77"};
     KeyczarTool.main(args);
     Assert.assertEquals(KeyStatus.SCHEDULED_FOR_REVOCATION, 
@@ -111,7 +111,7 @@ public class KeyczarToolTest extends TestCase {
   }
   
   @Test
-  public final void testRevoke() throws KeyczarException {
+  public final void testRevoke() {
     String[] args = {"revoke", "--version=99"};
     Assert.assertTrue(mock.existsVersion(99));
     KeyczarTool.main(args);

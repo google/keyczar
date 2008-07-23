@@ -36,7 +36,6 @@ import java.util.Arrays;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-
 /**
  * Wrapping class for HMAC-SHA1 keys
  * 
@@ -44,22 +43,16 @@ import javax.crypto.spec.SecretKeySpec;
  * 
  */
 class HmacKey extends KeyczarKey {
-  private Key hmacKey;
   private static final String MAC_ALGORITHM = "HMACSHA1"; //$NON-NLS-1$
   
   @Expose private String hmacKeyString;
-  @Expose private KeyType type = KeyType.HMAC_SHA1;
-  
+
+  private Key hmacKey;
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
   @Override
   public String toString() {
     return Util.gson().toJson(this);
-  }
-  
-  @Override
-  public int hashCode() {
-    return (hash[0] << 24) | hash[1] << 16 | hash[2] << 8 | hash[3];
   }
 
   static HmacKey generate() throws KeyczarException {
@@ -95,9 +88,6 @@ class HmacKey extends KeyczarKey {
 
   static HmacKey read(String input) throws KeyczarException {
     HmacKey key = Util.gson().fromJson(input, HmacKey.class);
-    if (key.getType() != KeyType.HMAC_SHA1) {
-      throw new UnsupportedTypeException(key.getType());
-    }
     key.init();
     return key;
   }

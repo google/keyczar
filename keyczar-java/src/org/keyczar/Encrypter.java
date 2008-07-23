@@ -16,7 +16,6 @@
 
 package org.keyczar;
 
-
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
@@ -30,7 +29,6 @@ import org.keyczar.util.Base64Coder;
 
 import java.nio.ByteBuffer;
 
-
 /**
  * Encrypters are used strictly to encrypt data. Typically, Encrypters will read
  * sets of public keys, although may also be instantiated with sets of symmetric
@@ -42,8 +40,9 @@ import java.nio.ByteBuffer;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public class Encrypter extends Keyczar {  
-  private static final Logger logger = Logger.getLogger(Encrypter.class);
-  static final int ENCRYPT_CHUNK_SIZE = 1024;
+  private static final Logger ENCRYPTER_LOGGER =
+    Logger.getLogger(Encrypter.class);
+  private static final int ENCRYPT_CHUNK_SIZE = 1024;
   private final StreamQueue<EncryptingStream> ENCRYPT_QUEUE =
     new StreamQueue<EncryptingStream>();
   
@@ -128,7 +127,7 @@ public class Encrypter extends Keyczar {
    */
   public void encrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
-    logger.info(Messages.getString("Encrypter.Encrypting", input.remaining()));
+    ENCRYPTER_LOGGER.info(Messages.getString("Encrypter.Encrypting", input.remaining()));
     KeyczarKey encryptingKey = getPrimaryKey();
     if (encryptingKey == null) {
       throw new NoPrimaryKeyException() ;

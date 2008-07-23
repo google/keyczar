@@ -39,7 +39,7 @@ import java.nio.ByteBuffer;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public class Signer extends Verifier {
-  private static final Logger logger = Logger.getLogger(Signer.class);
+  private static final Logger SIGNER_LOGGER = Logger.getLogger(Signer.class);
   private final StreamQueue<SigningStream> SIGN_QUEUE =
     new StreamQueue<SigningStream>();
 
@@ -109,7 +109,7 @@ public class Signer extends Verifier {
    * JCE exception occurs. 
    */
   public void sign(ByteBuffer input, ByteBuffer output) throws KeyczarException {
-    logger.info(Messages.getString("Signer.Signing", input.remaining())); 
+    SIGNER_LOGGER.info(Messages.getString("Signer.Signing", input.remaining())); 
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
       throw new NoPrimaryKeyException();

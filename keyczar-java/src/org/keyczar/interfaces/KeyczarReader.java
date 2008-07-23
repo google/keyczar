@@ -26,7 +26,7 @@ import org.keyczar.exceptions.KeyczarException;
  */
 public interface KeyczarReader {
   /**
-   * Returns an input stream of a particular version of a packed key
+   * Returns an input stream of a particular version of a key
    * 
    * @param version The Version number of the key to read
    * @return A JSON string data representation of a Key

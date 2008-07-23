@@ -38,7 +38,6 @@ import java.util.Arrays;
  *
  */
 abstract class KeyczarKey {
-  
   int size = getType().defaultSize();
   
   void copyHeader(ByteBuffer dest) {

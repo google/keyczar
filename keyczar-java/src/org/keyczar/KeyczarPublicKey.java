@@ -37,7 +37,6 @@ import java.security.spec.X509EncodedKeySpec;
 abstract class KeyczarPublicKey extends KeyczarKey {
   private PublicKey jcePublicKey;
   
-  @SuppressWarnings("unused") @Expose private KeyType type = getType();
   @Expose String x509;
   
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
@@ -71,7 +70,6 @@ abstract class KeyczarPublicKey extends KeyczarKey {
   }
 
   void set(byte[] x509Bytes) throws KeyczarException {
-    type = getType();
     x509 = Base64Coder.encode(x509Bytes);
     byte[] fullHash = Util.prefixHash(x509Bytes);
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
