@@ -35,15 +35,16 @@ print hmac.Verify(msg, sig)
 input = "Hello Google"
 crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
 print "Primary AES", crypter.Encrypt(input)  # primary
-activeAes = crypter.GetKey("y2W2qg")  # active
+activeAes = crypter.GetKey(crypter.metadata.GetVersion(1))  # active
 print "Active AES", util.Encode(activeAes.Encrypt(input))
 print "Versions List", [str(v) for v in crypter.versions]
 print "Metadata", str(crypter.metadata)
 
 signer = keyczar.Signer.Read(os.path.join(TEST_DATA, "hmac"))
 print "Primary HMAC Sign", signer.Sign(input)
-activeHmac = signer.GetKey("vAOFlA")
-print "Active HMAC Sign", util.Encode(activeHmac.Header() + activeHmac.Sign(input))
+activeHmac = signer.GetKey(signer.metadata.GetVersion(1))
+print "Active HMAC Sign", util.Encode(activeHmac.Header() 
+                                      + activeHmac.Sign(activeHmac.Header() + input))
 
 #openssl = """-----BEGIN RSA PRIVATE KEY-----
 #MIIEowIBAAKCAQEAybkyIBcnwJkjTiBvwwMFHcXSzwZzuARs0Dp/xuXtqvlVqGSZ
@@ -77,19 +78,22 @@ print "Active HMAC Sign", util.Encode(activeHmac.Header() + activeHmac.Sign(inpu
 
 crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "rsa"))
 print "Primary RSA", crypter.Encrypt(input)  # primary
-activeRsa = crypter.GetKey("zmM4uw")  # active
+activeRsa = crypter.GetKey(crypter.metadata.GetVersion(1))  # active
 print "Active RSA", util.Encode(activeRsa.Encrypt(input))
 
 signer = keyczar.Signer.Read(os.path.join(TEST_DATA, "rsa-sign"))
 print "Primary RSA Sign", signer.Sign(input)
 activeRsaSign = signer.GetKey(signer.metadata.GetVersion(1)) # active
 print "Active RSA Sign", util.Encode(activeRsaSign.Header() + 
-                                     activeRsaSign.Sign(input))
+                                     activeRsaSign.Sign(activeRsaSign.Header() 
+                                                        + input))
 
 signer = keyczar.Signer.Read(os.path.join(TEST_DATA, "dsa"))
 print "Primary DSA Sign", signer.Sign(input)
 activeDsa = signer.GetKey(signer.metadata.GetVersion(1)) # active
-print "Active DSA Sign", util.Encode(activeDsa.Header() + activeDsa.Sign(input))
+print "Active DSA Sign", util.Encode(activeDsa.Header() 
+                                     + activeDsa.Sign(activeDsa.Header() 
+                                                      + input))
 
 #print "Testing RSA..."
 #rsa_key = keys.RsaPrivateKey.Generate()

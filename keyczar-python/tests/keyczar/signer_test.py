@@ -113,10 +113,8 @@ class SignerTest(unittest.TestCase):
     bad_sig = util.Encode(chr(23) + sig_bytes[1:])
     self.assertRaises(errors.BadVersionError, signer.Verify, 
                       self.input, bad_sig)
-    bad_sig = util.Encode(sig_bytes[0] + chr(23) + sig_bytes[2:])
-    self.assertRaises(errors.BadFormatError, signer.Verify, self.input, bad_sig)
-    char = chr(ord(sig_bytes[2]) ^ 45)  # Munge key hash info in sig 
-    bad_sig = util.Encode(sig_bytes[:2] + char + sig_bytes[3:])
+    char = chr(ord(sig_bytes[1]) ^ 45)  # Munge key hash info in sig 
+    bad_sig = util.Encode(sig_bytes[0] + char + sig_bytes[2:])
     self.assertRaises(errors.KeyNotFoundError, signer.Verify, 
                       self.input, bad_sig)
     

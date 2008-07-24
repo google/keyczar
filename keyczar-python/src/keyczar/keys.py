@@ -134,8 +134,8 @@ class Key(object):
                        doc="""The key as bytes.""")
   
   def Header(self):
-    """Return the 6-byte header string including version, format, and hash."""
-    return chr(keyczar.VERSION) + chr(keyczar.FORMAT) + util.Decode(self.hash)
+    """Return the 5-byte header string including version byte, 4-byte hash."""
+    return chr(keyczar.VERSION) + util.Decode(self.hash)
 
 class SymmetricKey(Key):
   

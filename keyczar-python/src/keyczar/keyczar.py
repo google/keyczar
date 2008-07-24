@@ -34,9 +34,8 @@ import readers
 import util
 
 VERSION = 1
-FORMAT = 1
 KEY_HASH_SIZE = 4
-HEADER_SIZE = 2 + KEY_HASH_SIZE
+HEADER_SIZE = 1 + KEY_HASH_SIZE
 
 class Keyczar(object):
   
@@ -78,20 +77,16 @@ class Keyczar(object):
     @param header: the bytes of the header of Keyczar output
     @type header: string
       
-    @return: the 4 byte key hash identifier as a Base64 string
-    @rtype: string
+    @return: the key identified by the hash in the header
+    @rtype: L{keys.Key}
     
     @raise BadVersionError: if header specifies an illegal version
-    @raise BadFormatError: if header specifies an illegal format
     @raise KeyNotFoundError: if key specified in header doesn't exist
     """
     version = ord(header[0])
-    format = ord(header[1])
     if version != VERSION:
       raise errors.BadVersionError(version)
-    if format != FORMAT:
-      raise errors.BadFormatError(format)
-    hash = util.Encode(header[2:])
+    hash = util.Encode(header[1:])
     return self.GetKey(hash)
   
   @staticmethod
@@ -347,7 +342,7 @@ class Verifier(Keyczar):
     if len(sig_bytes) < HEADER_SIZE:
       raise errors.ShortSignatureError(len(sig_bytes))
     key = self._ParseHeader(sig_bytes[:HEADER_SIZE])
-    return key.Verify(data, sig_bytes[HEADER_SIZE:])
+    return key.Verify(sig_bytes[:HEADER_SIZE] + data, sig_bytes[HEADER_SIZE:])
 
 class Crypter(Encrypter):
   
@@ -419,6 +414,8 @@ class Signer(Verifier):
     """
     Sign given data and return corresponding signature.
     
+    For message M, outputs the signature as Header|Sig(Header.M).
+    
     @param data: message to be signed
     @type data: string
     
@@ -428,4 +425,5 @@ class Signer(Verifier):
     signing_key = self.primary_key
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
-    return util.Encode(signing_key.Header() + signing_key.Sign(data))
+    header = signing_key.Header()
+    return util.Encode(header + signing_key.Sign(header + data))
