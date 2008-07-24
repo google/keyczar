@@ -57,7 +57,8 @@ class Keyczar(object):
           raise errors.KeyczarError(
               "Key sets may only have a single primary version")
         self.primary_version = version
-      key = keys.ReadKey(self.metadata.type, reader.GetKey(version.version_number))
+      key = keys.ReadKey(self.metadata.type, 
+                         reader.GetKey(version.version_number))
       self._keys[version] = key
       self._keys[key.hash] = key
     

@@ -155,7 +155,7 @@ class AsymmetricKey(Key):
   
   def __init__(self, type, params):
     Key.__init__(self, type)
-    self.__params = params
+    self._params = params
 
 class AesKey(SymmetricKey):
   
@@ -171,6 +171,7 @@ class AesKey(SymmetricKey):
     
   def __str__(self):
     return simplejson.dumps({"mode": str(self.mode),
+                             "size": self.size,
                              "aesKeyString": self.key_string,
                              "hmacKey": simplejson.loads(str(self.hmac_key))})
     
@@ -208,8 +209,9 @@ class AesKey(SymmetricKey):
     """
     aes = simplejson.loads(key)
     hmac = aes['hmacKey']
-    return AesKey(aes['aesKeyString'], HmacKey(hmac['hmacKeyString']),
-                  mode=keyinfo.GetMode(aes['mode']))
+    return AesKey(aes['aesKeyString'], 
+                  HmacKey(hmac['hmacKeyString'], hmac['size']), 
+                  aes['size'], keyinfo.GetMode(aes['mode']))
   
   def __Pad(self, data):
     """
@@ -293,7 +295,8 @@ class HmacKey(SymmetricKey):
     self.size = size
   
   def __str__(self):
-    return simplejson.dumps({"hmacKeyString": self.key_string})
+    return simplejson.dumps({"size": self.size, 
+                             "hmacKeyString": self.key_string})
   
   @staticmethod
   def Generate(size=keyinfo.HMAC_SHA1.default_size):
@@ -322,7 +325,7 @@ class HmacKey(SymmetricKey):
     @rtype: L{HmacKey}
     """    
     mac = simplejson.loads(key)
-    return HmacKey(mac['hmacKeyString'])
+    return HmacKey(mac['hmacKeyString'], mac['size'])
   
   def Sign(self, msg):
     """
@@ -363,7 +366,8 @@ class PrivateKey(AsymmetricKey):
   def __str__(self):
     return simplejson.dumps({"publicKey": simplejson.loads(
                                                           str(self.public_key)),
-                             "pkcs8": self.pkcs8})
+                             "pkcs8": self.pkcs8, 
+                             "size": self.size})
   
   def _GetKeyString(self):
     return self.pkcs8
@@ -380,7 +384,7 @@ class PublicKey(AsymmetricKey):
     self.x509 = x509
   
   def __str__(self):
-    return simplejson.dumps({"x509": self.x509})
+    return simplejson.dumps({"x509": self.x509, "size": self.size})
   
   def _GetKeyString(self):
     return self.x509
@@ -425,15 +429,11 @@ class DsaPrivateKey(PrivateKey):
     @rtype: L{DsaPrivateKey}
     """
     dsa = simplejson.loads(key)
-    pubkey = dsa['publicKey']
-    pub_params = util.ParseX509(pubkey['x509'])
-    pycrypt_pub = DSA.construct((pub_params['y'], pub_params['g'], 
-                                 pub_params['p'], pub_params['q']))
-    pub = DsaPublicKey(pub_params, pubkey['x509'], pycrypt_pub)
+    pub = DsaPublicKey.Read(simplejson.dumps(dsa['publicKey']))
     params = util.ParsePkcs8(dsa['pkcs8'])
-    key = DSA.construct((pub_params['y'], params['g'], params['p'], params['q'], 
+    key = DSA.construct((pub._params['y'], params['g'], params['p'], params['q'], 
                          params['x']))
-    return DsaPrivateKey(params, dsa['pkcs8'], pub, key)
+    return DsaPrivateKey(params, dsa['pkcs8'], pub, key, dsa['size'])
   
   def Sign(self, msg):
     """
@@ -498,14 +498,11 @@ class RsaPrivateKey(PrivateKey):
     @rtype: L{RsaPrivateKey}
     """
     rsa = simplejson.loads(key)
-    pubkey = rsa['publicKey']
-    pub_params = util.ParseX509(pubkey['x509'])
-    pycrypt_pub = RSA.construct((pub_params['n'], pub_params['e']))
-    pub = RsaPublicKey(pub_params, pubkey['x509'], pycrypt_pub)
+    pub = RsaPublicKey.Read(simplejson.dumps(rsa['publicKey']))
     params = util.ParsePkcs8(rsa['pkcs8'])
     key = RSA.construct((params['n'], params['e'], params['d'],
                          params['q'], params['p'], params['invq']))
-    return RsaPrivateKey(params, rsa['pkcs8'], pub, key)
+    return RsaPrivateKey(params, rsa['pkcs8'], pub, key, rsa['size'])
   
   def Encrypt(self, data):
     """@see: L{RsaPublicKey.Encrypt}"""
@@ -563,7 +560,7 @@ class DsaPublicKey(PublicKey):
     dsa = simplejson.loads(key)
     params = util.ParseX509(dsa['x509'])
     pubkey = DSA.construct((params['y'], params['g'], params['p'], params['q']))
-    return DsaPublicKey(params, dsa['x509'], pubkey)
+    return DsaPublicKey(params, dsa['x509'], pubkey, dsa['size'])
   
   def Verify(self, msg, sig):
     """
@@ -608,7 +605,7 @@ class RsaPublicKey(PublicKey):
     rsa = simplejson.loads(key)
     params = util.ParseX509(rsa['x509'])
     pubkey = RSA.construct((params['n'], params['e']))
-    return RsaPublicKey(params, rsa['x509'], pubkey)
+    return RsaPublicKey(params, rsa['x509'], pubkey, rsa['size'])
   
   def Encrypt(self, data):
     """
