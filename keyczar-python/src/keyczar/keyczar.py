@@ -253,11 +253,11 @@ class GenericKeyczar(Keyczar):
         pubkmd = keydata.KeyMetadata(kmd.name, keyinfo.VERIFY, keyinfo.RSA_PUB)
     if pubkmd is None:
       raise errors.KeyczarError("Cannot export public key")
-    util.WriteFile(str(pubkmd), os.path.join(dest, "meta"))
-    pubkeys = [self.GetKey(v).public_key for v in self.versions]
     for v in self.versions:
+      pubkmd.AddVersion(v)
       pubkey = self.GetKey(v).public_key
-      util.WriteFile(str(pubkey), os.path.join(dest, v.version_number))
+      util.WriteFile(str(pubkey), os.path.join(dest, str(v.version_number)))
+    util.WriteFile(str(pubkmd), os.path.join(dest, "meta"))
   
   def Write(self, loc):
     util.WriteFile(str(self.metadata), os.path.join(loc, "meta"))

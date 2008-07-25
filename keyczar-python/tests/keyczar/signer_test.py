@@ -61,10 +61,12 @@ class SignerTest(unittest.TestCase):
     self.assertTrue(signer.Verify(self.input, active_sig))
     self.assertTrue(signer.Verify(self.input, primary_sig))
   
-  def __testPublicVerify(self, subdir):
+  def __testVerify(self, subdir):
     (verifier, active_sig, primary_sig) = self.__readGoldenOutput(subdir, True)
     self.assertTrue(verifier.Verify(self.input, active_sig))
     self.assertTrue(verifier.Verify(self.input, primary_sig))
+  
+  def __testPublicVerify(self, subdir):
     (pubverifier, active_sig, primary_sig) = self.__readGoldenOutput(subdir, 
                                                                      True, True)
     self.assertTrue(pubverifier.Verify(self.input, active_sig))
@@ -90,6 +92,11 @@ class SignerTest(unittest.TestCase):
   
   def testDsaSignerVerify(self):
     self.__testSignerVerify("dsa")
+  
+  def testDsaVerify(self):
+    self.__testVerify("dsa")
+
+  def testDsaPublicVerify(self):
     self.__testPublicVerify("dsa")
   
   def testBadDsaVerify(self):
@@ -100,6 +107,11 @@ class SignerTest(unittest.TestCase):
   
   def testRsaSignerVerify(self):
     self.__testSignerVerify("rsa-sign")
+  
+  def testRsaVerify(self):
+    self.__testVerify("rsa-sign")
+  
+  def testRsaPublicVerify(self):
     self.__testPublicVerify("rsa-sign")
   
   def testBadRsaVerify(self):

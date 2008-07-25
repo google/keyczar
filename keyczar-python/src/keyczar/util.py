@@ -97,6 +97,7 @@ def ExportRsaPkcs8(params):
   octkey = encoder.encode(key)
   seq.setComponentByPosition(1, oid)
   seq.setComponentByPosition(2, univ.OctetString(octkey))
+  return Encode(encoder.encode(seq))
 
 def ExportDsaPkcs8(params):
   seq = univ.Sequence().setComponentByPosition(0, univ.Integer(0))  # version
@@ -108,6 +109,7 @@ def ExportDsaPkcs8(params):
   octkey = encoder.encode(univ.Integer(params['x']))
   seq.setComponentByPosition(1, oid)
   seq.setComponentByPosition(2, univ.OctetString(octkey))
+  return Encode(encoder.encode(seq))
 
 #NOTE: not full X.509 certificate, just public key info
 #SubjectPublicKeyInfo  ::=  SEQUENCE  {
@@ -163,16 +165,19 @@ def ExportDsaX509(params):
 
 def BinToBytes(bits):
   """Convert bit string to byte string."""
-  r = len(bits) % 8
-  if r != 0:
-    bits = (8-r)*'0' + bits
+  bits = _PadByte(bits)
   octets = [bits[8*i:8*(i+1)] for i in range(len(bits)/8)]
   bytes = [chr(int(x, 2)) for x in octets]
   return "".join(bytes)
 
 def BytesToBin(bytes):
   """Convert byte string to bit string."""
-  return "".join([IntToBin(ord(byte)) for byte in bytes])
+  return "".join([_PadByte(IntToBin(ord(byte))) for byte in bytes])
+
+def _PadByte(bits):
+  """Pad a string of bits with zeros to make its length a multiple of 8."""
+  r = len(bits) % 8
+  return ((8-r) % 8)*'0' + bits
 
 def IntToBin(n):
   if n == 0 or n == 1:

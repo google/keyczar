@@ -27,6 +27,13 @@ import errors
 import keyczar
 import keydata
 import keyinfo
+import util
+
+KEYSETS = [('aes', keyinfo.DECRYPT_AND_ENCRYPT, None),
+           ('hmac', keyinfo.SIGN_AND_VERIFY, None),
+           ('rsa', keyinfo.DECRYPT_AND_ENCRYPT, 'rsa'),
+           ('rsa-sign', keyinfo.SIGN_AND_VERIFY, 'rsa'),
+           ('dsa', keyinfo.SIGN_AND_VERIFY, 'dsa')]
 
 class _Name(object):
   
@@ -45,10 +52,10 @@ PUBKEY = Command("pubkey")
 PROMOTE = Command("promote")
 DEMOTE = Command("demote")
 REVOKE = Command("revoke")
-USEKEY = Command("usekey")
+GENKEY = Command("genkey")
 commands = {"create": CREATE, "addkey": ADDKEY, "pubkey": PUBKEY, 
             "promote": PROMOTE, "demote": DEMOTE, "revoke": REVOKE, 
-            "usekey": USEKEY}
+            "genkey": GENKEY}
 
 def GetCommand(cmd):
   try:
@@ -77,7 +84,7 @@ def GetFlag(flag):
   except KeyError:
     raise errors.KeyczarError("Unknown flag")
 
-def Create(loc, name, purpose, asymmetric):
+def Create(loc, name, purpose, asymmetric=None):
   if loc is None:
     raise errors.KeyczarError("Location missing")
   kmd = None
@@ -95,15 +102,16 @@ def Create(loc, name, purpose, asymmetric):
       kmd = keydata.KeyMetadata(name, purpose, keyinfo.RSA_PRIV)
   else:
     raise errors.KeyczarError("Missing or unsupported purpose")
-  meta = open(os.path.join(loc, "meta"), "w")
-  if os.path.exists(meta):
+  name = os.path.join(loc, "meta")
+  if os.path.exists(name):
     raise errors.KeyczarError("File already exists")
+  meta = open(name, "w")
   try:
     meta.write(str(kmd))
   except IOError:
     raise errors.KeyczarError("Unable to write")
 
-def AddKey(loc, status, size):
+def AddKey(loc, status, size=None):
   czar = CreateGenericKeyczar(loc)
   if size == -1:
     size = None
@@ -137,8 +145,38 @@ def Revoke(loc, num):
   czar.Revoke(num)
   UpdateGenericKeyczar(czar, loc)
 
-def UseKey(msg, loc, dest):
-  pass
+def GenKeySet(loc):
+  print "Generating private key sets..."
+  for (name, purpose, asymmetric) in KEYSETS:
+    print "."
+    dir = os.path.join(loc, name)
+    Clean(dir)
+    Create(dir, "Test", purpose, asymmetric)
+    AddKey(dir, keyinfo.PRIMARY)
+    UseKey(purpose, dir, os.path.join(dir, "1out"))
+    AddKey(dir, keyinfo.PRIMARY)
+    UseKey(purpose, dir, os.path.join(dir, "2out"))
+  
+  print "Exporting public key sets..."
+  for name in ('dsa', 'rsa-sign'):
+    print "."
+    dir = os.path.join(loc, name)
+    dest = os.path.join(loc, name + '.public')
+    PubKey(dir, dest)
+
+def Clean(directory):
+  for file in os.listdir(directory):
+    path = os.path.join(directory, file)
+    if not os.path.isdir(path): 
+      os.remove(path)
+
+def UseKey(purpose, loc, dest, msg="Hello Google"):
+  if purpose == keyinfo.DECRYPT_AND_ENCRYPT:
+    crypter = keyczar.Crypter.Read(loc)
+    util.WriteFile(crypter.Encrypt(msg), dest)
+  elif purpose == keyinfo.SIGN_AND_VERIFY:
+    signer = keyczar.Signer.Read(loc)
+    util.WriteFile(signer.Sign(msg), dest)
 
 def Usage():
   print '''Usage: "Keyczart command flags"
@@ -203,7 +241,9 @@ def main(argv):
         except ValueError:
           Usage()
     if cmd == CREATE:
-      Create(flags.get(LOCATION), flags.get(NAME, ''), flags.get(PURPOSE), 
+      purpose = {'crypt': keyinfo.DECRYPT_AND_ENCRYPT,
+                 'sign': keyinfo.SIGN_AND_VERIFY}.get(flags.get(PURPOSE))
+      Create(flags.get(LOCATION), flags.get(NAME, 'Test'), purpose, 
              flags.get(ASYMMETRIC))
     elif cmd == ADDKEY:
       AddKey(flags.get(LOCATION), 
@@ -217,8 +257,8 @@ def main(argv):
       Demote(flags.get(LOCATION), int(flags.get(VERSION, -1)))
     elif cmd == REVOKE:
       Revoke(flags.get(LOCATION), int(flags.get(VERSION, -1)))
-    elif cmd == USEKEY and len(argv) > 2:
-      UseKey(argv[1], flags.get(LOCATION), flags.get(DESTINATION))
+    elif cmd == GENKEY:
+      GenKeySet(flags.get(LOCATION))
     else:
       Usage()
 
