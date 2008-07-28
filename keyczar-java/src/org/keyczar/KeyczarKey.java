@@ -17,6 +17,8 @@
 package org.keyczar;
 
 
+import com.google.gson.annotations.Expose;
+
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
@@ -38,7 +40,7 @@ import java.util.Arrays;
  *
  */
 abstract class KeyczarKey {
-  int size = getType().defaultSize();
+  @Expose int size = getType().defaultSize();
   
   void copyHeader(ByteBuffer dest) {
     dest.put(Keyczar.VERSION);
