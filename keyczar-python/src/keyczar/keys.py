@@ -177,6 +177,7 @@ class AesKey(SymmetricKey):
     
   def _Hash(self):
     fullhash = util.Hash([util.IntToBytes(len(self.key_bytes)), self.key_bytes, 
+                          util.IntToBytes(keyczar.KEY_HASH_SIZE), 
                           util.Decode(self.hmac_key.hash)])
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
   
