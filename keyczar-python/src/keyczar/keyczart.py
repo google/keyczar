@@ -163,6 +163,7 @@ def GenKeySet(loc):
     dir = os.path.join(loc, name)
     dest = os.path.join(loc, name + '.public')
     PubKey(dir, dest)
+  print "Done!"
 
 def Clean(directory):
   for file in os.listdir(directory):
@@ -170,7 +171,7 @@ def Clean(directory):
     if not os.path.isdir(path): 
       os.remove(path)
 
-def UseKey(purpose, loc, dest, msg="Hello Google"):
+def UseKey(purpose, loc, dest, msg="This is some test data"):
   if purpose == keyinfo.DECRYPT_AND_ENCRYPT:
     crypter = keyczar.Crypter.Read(loc)
     util.WriteFile(crypter.Encrypt(msg), dest)

@@ -32,7 +32,7 @@ TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 class CrypterTest(unittest.TestCase):
   
   def setUp(self):
-    self.input = "Hello Google"
+    self.input = "This is some test data"
   
   def __testDecrypt(self, subdir):
     path = os.path.join(TEST_DATA, subdir)

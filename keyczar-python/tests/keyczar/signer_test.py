@@ -32,7 +32,7 @@ TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 class SignerTest(unittest.TestCase):
   
   def setUp(self):
-    self.input = "Hello Google"
+    self.input = "This is some test data"
   
   def __signInput(self, subdir):
     signer = keyczar.Signer.Read(os.path.join(TEST_DATA, subdir))
