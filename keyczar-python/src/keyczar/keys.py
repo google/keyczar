@@ -20,7 +20,6 @@ Identifies a key by its hash and type. Includes several subclasses
 of base class Key.
 
 @author: arkajit.dey@gmail.com (Arkajit Dey)
-@author: steveweis@gmail.com (Steve Weis)
 """
 
 import hmac

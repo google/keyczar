@@ -20,7 +20,6 @@ Encodes the two classes storing data about keys:
   - KeyVersion: stores key strings and types
 
 @author: arkajit.dey@gmail.com (Arkajit Dey)
-@author: steveweis@gmail.com (Steve Weis)
 """
                 
 import simplejson

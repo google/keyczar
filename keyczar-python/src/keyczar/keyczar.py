@@ -19,7 +19,6 @@ Collection of all Keyczar classes used to perform cryptographic functions:
 encrypt, decrypt, sign and verify.
 
 @author: arkajit.dey@gmail.com (Arkajit Dey)
-@author: steveweis@gmail.com (Steve Weis)
 """
 
 import os

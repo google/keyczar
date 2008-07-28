@@ -19,7 +19,6 @@ Defines several 'enums' encoding information about keys, such as type,
 status, purpose, and the cipher mode.
 
 @author: arkajit.dey@gmail.com (Arkajit Dey)
-@author: steveweis@gmail.com (Steve Weis)
 """
 
 class _NameId(object):

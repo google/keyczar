@@ -18,7 +18,6 @@
 A Reader supports reading metadata and key info for key sets.
 
 @author: arkajit.dey@gmail.com (Arkajit Dey)
-@author: steveweis.gmail.com (Steve Weis)
 """
                 
 import os
