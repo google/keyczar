@@ -337,7 +337,7 @@ class HmacKey(SymmetricKey):
     @return: raw byte string signature
     @rtype: string
     """
-    return hmac.new(self.key_string, msg, sha).digest()
+    return hmac.new(self.key_bytes, msg, sha).digest()
   
   def Verify(self, msg, sig_bytes):
     """
