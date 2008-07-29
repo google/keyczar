@@ -29,7 +29,6 @@ import sha
 from Crypto.Cipher import AES
 from Crypto.PublicKey import DSA
 from Crypto.PublicKey import RSA
-from Crypto.Util import number
 import simplejson
 
 import errors
@@ -41,9 +40,6 @@ import util
 #modify all Read() methods to wrap data obtained from simplejson with str().
 #Currently, only problem arose with base64 conversions -- this was dealt with
 #directly in the encode/decode methods. Luckily 'hello' == u'hello'.
-
-#TODO: Should JSON of key files (not meta files) store KeyType or not?
-#Inconsistencies across the files. Decide on a standard.
 
 def GenKey(type, size=None):
   """
