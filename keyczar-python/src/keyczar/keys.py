@@ -23,6 +23,7 @@ of base class Key.
 """
 
 import hmac
+import math
 import random
 import sha
 
@@ -270,13 +271,13 @@ class AesKey(SymmetricKey):
     @raise InvalidSignatureError: if the signature doesn't correspond to payload
     """    
     data_bytes = input_bytes[keyczar.HEADER_SIZE:]  # remove header
-    if len(data_bytes) < self.block_size + sha.digest_size:  # IV + sig
+    if len(data_bytes) < self.block_size + util.HLEN:  # IV + sig
       raise errors.ShortCiphertextError(len(data_bytes))
     
     iv_bytes = data_bytes[:self.block_size]  # first block of bytes is the IV
-    ciph_bytes = data_bytes[self.block_size:-sha.digest_size]
-    sig_bytes = data_bytes[-sha.digest_size:]  # last 20 bytes are sig
-    if not self.hmac_key.Verify(input_bytes[:-sha.digest_size], sig_bytes):
+    ciph_bytes = data_bytes[self.block_size:-util.HLEN]
+    sig_bytes = data_bytes[-util.HLEN:]  # last 20 bytes are sig
+    if not self.hmac_key.Verify(input_bytes[:-util.HLEN], sig_bytes):
       raise errors.InvalidSignatureError()
     
     plain = AES.new(self.key_bytes, AES.MODE_CBC, iv_bytes).decrypt(ciph_bytes)
@@ -459,6 +460,23 @@ class RsaPrivateKey(PrivateKey):
     PrivateKey.__init__(self, keyinfo.RSA_PRIV, params, pkcs8, pub)
     self.key = key  # instance of PyCrypto RSA key
     self.size = size
+    
+  def __Decode(self, em, p=""):
+    if len(p) >= 2**61 or len(em) < 2 * util.HLEN + 2:  
+      # 2^61 = the input limit for SHA-1
+      raise errors.KeyczarError("OAEP Decoding Error")
+    # PyCrypto strips all leading zeros, can't check it
+    masked_seed = em[:util.HLEN]
+    masked_db = em[util.HLEN:]
+    seed_mask = util.MGF(masked_db, util.HLEN)
+    seed = util.Xor(masked_seed, seed_mask)
+    db_mask = util.MGF(seed, len(em) - util.HLEN)  # em already stripped of 0
+    db = util.Xor(masked_db, db_mask)
+    ph = db[:util.HLEN]
+    one = db.find(chr(1), util.HLEN)
+    if ph != util.Hash([p]) or one == -1:
+      raise errors.KeyczarError("OAEP Decoding Error")
+    return db[one+1:]  # the message
   
   @staticmethod
   def Generate(size=keyinfo.RSA_PRIV.default_size):
@@ -515,7 +533,8 @@ class RsaPrivateKey(PrivateKey):
     @rtype: string
     """
     ciph_bytes = input_bytes[keyczar.HEADER_SIZE:]
-    return self.key.decrypt(ciph_bytes)
+    decrypted = self.key.decrypt(ciph_bytes)
+    return self.__Decode(decrypted)
   
   def Sign(self, msg):
     """
@@ -587,6 +606,22 @@ class RsaPublicKey(PublicKey):
     self.key = key
     self.size = size
   
+  def __Encode(self, msg, p=""):
+    if len(p) >= 2**61:  # the input limit for SHA-1
+      raise errors.KeyczarError("OAEP parameter string too long.")
+    k = int(math.floor(math.log(self._params['n'], 256)) + 1) # num bytes in n
+    if len(msg) > k - 2 * util.HLEN - 2:
+      raise errors.KeyczarError("Message too long to OAEP encode.")
+    ph = util.Hash([p])
+    ps = (k - len(msg) - 2 * util.HLEN - 2) * chr(0)  # zero byte string
+    db = "".join([ph, ps, chr(1), msg])
+    seed = util.RandBytes(util.HLEN)
+    db_mask = util.MGF(seed, k - util.HLEN - 1)
+    masked_db = util.Xor(db, db_mask)
+    seed_mask = util.MGF(masked_db, util.HLEN)
+    masked_seed = util.Xor(seed, seed_mask)
+    return "".join([chr(0), masked_seed, masked_db])
+  
   @staticmethod
   def Read(key):
     """
@@ -613,6 +648,7 @@ class RsaPublicKey(PublicKey):
     @return: ciphertext formatted as Header|Ciph
     @rtype: string 
     """
+    data = self.__Encode(data)
     ciph_bytes = self.key.encrypt(data, None)[0]  # PyCrypto returns 1-tuple
     return self.Header() + ciph_bytes
   

@@ -21,6 +21,7 @@ Utility functions for keyczar package.
 """
 
 import base64
+import math
 import sha
 
 from Crypto.Util import randpool
@@ -29,6 +30,8 @@ from pyasn1.codec.der import encoder
 from pyasn1.type import univ
 
 import errors
+
+HLEN = sha.digest_size  # length of the hash output
 
 #RSAPrivateKey ::= SEQUENCE {
 #  version Version,
@@ -192,6 +195,33 @@ def IntToBytes(n):
   bytes = [m % 256 for m in [n >> 24, n >> 16, n >> 8, n]]
   return "".join([chr(b) for b in bytes])  # byte array to byte string
 
+def BytesToInt(bytes):
+  l = len(bytes)
+  return sum([ord(bytes[i]) * 256**(l - 1 - i) for i in range(l)])
+
+def Xor(a, b):
+  """Return a ^ b as a byte string where a and b are byte strings."""
+  # pad shorter byte string with zeros to make length equal
+  m = max(len(a), len(b))
+  a = _PadBytes(a, m - len(a))
+  b = _PadBytes(b, m - len(b))
+  x = [ord(c) for c in a]
+  y = [ord(c) for c in b]
+  z = [chr(x[i] ^ y[i]) for i in range(m)]
+  return _TrimBytes("".join(z))
+  
+def _PadBytes(bytes, n):
+  """Prepend a byte string with n zero bytes."""
+  return n * chr(0) + bytes
+
+def _TrimBytes(bytes):
+  """Trim leading zero bytes."""
+  trimmed = bytes.lstrip(chr(0))
+  if trimmed == "":  # was a string of all zero bytes
+    return chr(0)
+  else:
+    return trimmed
+
 def RandBytes(n):
   """Return n random bytes."""
   return randpool.RandomPool(512).get_bytes(n)
@@ -252,3 +282,23 @@ def WriteFile(data, loc):
     f.close()
   except IOError:
     raise errors.KeyczarError("Bad file name")
+
+def MGF(seed, mlen):
+  """
+  Mask Generation Function (MGF1) with SHA-1 as hash.
+  
+  @param seed: used to generate mask, a byte string
+  @type seed: string
+  
+  @param mlen: desired length of mask
+  @type mlen: integer
+  
+  @return: mask, byte string of length mlen
+  @rtype: string
+  
+  @raise KeyczarError: if mask length too long, > 2^32 * hash_length  
+  """
+  if mlen > 2**32 * HLEN:
+    raise errors.KeyczarError("MGF1 mask length too long.")
+  return ("".join([Hash([seed, IntToBytes(i)]) 
+                   for i in range(int(math.ceil(mlen / float(HLEN))))]))[:mlen]
