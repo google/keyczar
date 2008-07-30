@@ -408,8 +408,8 @@ public class KeyczarTool {
       return new GenericKeyczar(mock);
     }
     if (locationFlag == null) {
-      throw new KeyczarException(
-          Messages.getString("KeyczarTool.NeedLocation"));
+      throw new KeyczarException(Messages.getString("KeyczarTool.NeedLocation",
+          Messages.getString("KeyczarTool.Location")));
     }
     KeyczarReader reader = new KeyczarFileReader(locationFlag);
     if (crypterFlag != null) {

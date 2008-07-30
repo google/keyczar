@@ -69,7 +69,7 @@ public class Util {
    * @param input The long to convert to a byte array.
    * @return A byte array representation of a long.
    */
-  static byte[] fromLong(long input) {
+  public static byte[] fromLong(long input) {
     byte[] output = new byte[8];
     writeLong(input, output, 0);
     return output;
@@ -189,7 +189,7 @@ public class Util {
    * @param src A big-endian representation of a long
    * @return The long value represented by the source array
    */
-  static long toLong(byte[] src) {
+  public static long toLong(byte[] src) {
     return readLong(src, 0);
   }
 

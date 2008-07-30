@@ -99,7 +99,8 @@ public class Verifier extends Keyczar {
    */
   public boolean verify(ByteBuffer data, ByteBuffer signature)
       throws KeyczarException {
-    VERIFIER_LOGGER.info(Messages.getString("Verifier.Verifying", data.remaining()));
+    VERIFIER_LOGGER.info(
+        Messages.getString("Verifier.Verifying", data.remaining()));
     if (signature.remaining() < HEADER_SIZE) {
       throw new ShortSignatureException(signature.remaining());
     }
@@ -135,7 +136,7 @@ public class Verifier extends Keyczar {
   }
 
   /**
-   * Verifies the signature on the data stored in the given ByteBuffer
+   * Verifies the signature on the given String
    * 
    * @param data The data to verify the signature on
    * @param signature The signature to verify

@@ -16,7 +16,6 @@
 
 package org.keyczar;
 
-
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
@@ -26,11 +25,12 @@ import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 
 /**
- * Signers may both encrypt and decrypt data using sets of symmetric or private
+ * Signers may both sign and verify data using sets of symmetric or private
  * keys. Sets of public keys may only be used with {@link Verifier} objects.
  * 
  * {@link Signer} objects should be used with symmetric or private key sets to
@@ -39,6 +39,7 @@ import java.nio.ByteBuffer;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public class Signer extends Verifier {
+  static final int TIMESTAMP_SIZE = 8;
   private static final Logger SIGNER_LOGGER = Logger.getLogger(Signer.class);
   private final StreamQueue<SigningStream> SIGN_QUEUE =
     new StreamQueue<SigningStream>();
@@ -108,7 +109,23 @@ public class Signer extends Verifier {
    * @throws KeyczarException If this Signer does not have a primary or a
    * JCE exception occurs. 
    */
-  public void sign(ByteBuffer input, ByteBuffer output) throws KeyczarException {
+  public void sign(ByteBuffer input, ByteBuffer output)
+      throws KeyczarException {
+    sign(input, null, 0, output);
+  }
+  
+  /**private 
+   * This allows other classes in the package to pass in hidden data and/or
+   * expiration data to be signed.
+   *  
+   * @param input The input to be signed
+   * @param hidden Hidden data to be signed
+   * @param expirationTime The expiration time of this signature
+   * @param output The destination of this signature
+   * @throws KeyczarException
+   */
+  void sign(ByteBuffer input, ByteBuffer hidden, long expirationTime,
+      ByteBuffer output) throws KeyczarException {
     SIGNER_LOGGER.info(Messages.getString("Signer.Signing", input.remaining())); 
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
@@ -119,9 +136,14 @@ public class Signer extends Verifier {
       stream = (SigningStream) signingKey.getStream();
     }
 
-    if (output.capacity() < digestSize()) {
-      throw new ShortBufferException(output.capacity(), digestSize());
+    int spaceNeeded = digestSize();
+    if (expirationTime > 0) {
+      spaceNeeded += TIMESTAMP_SIZE;
     }
+    if (output.capacity() < spaceNeeded) {
+      throw new ShortBufferException(output.capacity(), spaceNeeded);
+    }
+        
     ByteBuffer header = ByteBuffer.allocate(HEADER_SIZE);
     signingKey.copyHeader(header);
     header.rewind();
@@ -132,12 +154,25 @@ public class Signer extends Verifier {
     output.put(header);
     header.rewind();
     stream.updateSign(header);
+    
+    if (expirationTime > 0) {
+      // Write an expiration time following the header and sign it.
+      ByteBuffer expiration = ByteBuffer.wrap(Util.fromLong(expirationTime));
+      output.put(expiration);
+      expiration.rewind();
+      stream.updateSign(expiration);
+    }
+    
+    if (hidden != null && hidden.remaining() > 0) {
+      // Sign any hidden data
+      stream.updateSign(hidden);
+    }
 
     // Write the signature to the output
     stream.updateSign(input);
     stream.sign(output);
     output.limit(output.position());
-    SIGN_QUEUE.add(stream);
+    SIGN_QUEUE.add(stream);    
   }
 
   /**
