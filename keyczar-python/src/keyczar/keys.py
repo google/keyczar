@@ -115,7 +115,7 @@ class Key(object):
   
   def _Hash(self):
     """Compute and return the hash id of this key. Can override default hash."""
-    fullhash = util.Hash([util.IntToBytes(len(self.key_bytes)), self.key_bytes])
+    fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)), self.key_bytes)
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
   
   def __Hash(self):
@@ -172,9 +172,9 @@ class AesKey(SymmetricKey):
                              "hmacKey": simplejson.loads(str(self.hmac_key))})
     
   def _Hash(self):
-    fullhash = util.Hash([util.IntToBytes(len(self.key_bytes)), self.key_bytes, 
-                          util.IntToBytes(keyczar.KEY_HASH_SIZE), 
-                          util.Decode(self.hmac_key.hash)])
+    fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)), self.key_bytes, 
+                         util.IntToBytes(keyczar.KEY_HASH_SIZE), 
+                         util.Decode(self.hmac_key.hash))
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
   
   @staticmethod
@@ -473,7 +473,7 @@ class RsaPrivateKey(PrivateKey):
     db = util.Xor(masked_db, db_mask)
     ph = db[:util.HLEN]
     one = db.find(chr(1), util.HLEN)
-    if ph != util.Hash([p]) or one == -1:
+    if ph != util.Hash(p) or one == -1:
       raise errors.KeyczarError("OAEP Decoding Error")
     return db[one+1:]  # the message
   
@@ -490,7 +490,8 @@ class RsaPrivateKey(PrivateKey):
     """
     key = RSA.generate(size, util.RandBytes)
     params = {'n': key.n, 'e': key.e, 'd': key.d, 'p': key.q, 'q': key.p,  
-              'dp': key.d % key.q, 'dq': key.d % key.p, 'invq': key.u}
+              'dp': key.d % (key.q - 1), 'dq': key.d % (key.p - 1), 
+              'invq': key.u}
     #NOTE: PyCrypto stores p < q, u = p^{-1} mod q
     #But OpenSSL and PKCS8 stores q < p, invq = q^{-1} mod p
     #So we have to reverse the p and q values
@@ -537,7 +538,7 @@ class RsaPrivateKey(PrivateKey):
   
   def Sign(self, msg):
     """
-    Return raw byte string of signature on the message.
+    Return raw byte string of signature on the SHA-1 hash of the message.
     
     @param msg: message to be signed
     @type msg: string
@@ -545,7 +546,7 @@ class RsaPrivateKey(PrivateKey):
     @return: string representation of long int signature over message
     @rtype: string
     """
-    return str(self.key.sign(msg, None)[0])
+    return str(self.key.sign(util.Hash(msg), None)[0])
   
   def Verify(self, msg, sig):
     """@see: L{RsaPublicKey.Verify}"""
@@ -612,7 +613,7 @@ class RsaPublicKey(PublicKey):
     k = int(math.floor(math.log(self._params['n'], 256)) + 1) # num bytes in n
     if len(msg) > k - 2 * util.HLEN - 2:
       raise errors.KeyczarError("Message too long to OAEP encode.")
-    ph = util.Hash([p])
+    ph = util.Hash(p)
     ps = (k - len(msg) - 2 * util.HLEN - 2) * chr(0)  # zero byte string
     db = "".join([ph, ps, chr(1), msg])
     seed = util.RandBytes(util.HLEN)
@@ -662,11 +663,11 @@ class RsaPublicKey(PublicKey):
     @param sig: string representation of long int signature
     @type sig: string
     
-    @return: True if signature is valid for message. False otherwise.
+    @return: True if signature is valid for the message hash. False otherwise.
     @rtype: boolean
     """
     try:
-      return self.key.verify(msg, (long(sig),))
+      return self.key.verify(util.Hash(msg), (long(sig),))
     except ValueError:
       # if sig is not a long, it's invalid
       return False

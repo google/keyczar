@@ -263,8 +263,8 @@ def RandBytes(n):
   """Return n random bytes."""
   return randpool.RandomPool(512).get_bytes(n)
 
-def Hash(inputs):
-  """Return a SHA-1 hash over a list of inputs."""
+def Hash(*inputs):
+  """Return a SHA-1 hash over a variable number of inputs."""
   md = sha.new()
   for i in inputs:
     md.update(i)
@@ -337,5 +337,5 @@ def MGF(seed, mlen):
   """
   if mlen > 2**32 * HLEN:
     raise errors.KeyczarError("MGF1 mask length too long.")
-  return ("".join([Hash([seed, IntToBytes(i)]) 
+  return ("".join([Hash(seed, IntToBytes(i))
                    for i in range(int(math.ceil(mlen / float(HLEN))))]))[:mlen]
