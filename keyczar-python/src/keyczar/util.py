@@ -166,6 +166,43 @@ def ExportDsaX509(params):
   seq.setComponentByPosition(1, pubkey)
   return Encode(encoder.encode(seq))
 
+def MakeDsaSig(r, s):
+  """
+  Given the raw parameters of a DSA signature, return a Base64 signature.
+  
+  @param r: parameter r of DSA signature
+  @type r: long int
+  
+  @param s: parameter s of DSA signature
+  @type s: long int
+  
+  @return: raw byte string formatted as an ASN.1 sequence of r and s
+  @rtype: string   
+  """
+  seq = univ.Sequence()
+  seq.setComponentByPosition(0, univ.Integer(r))
+  seq.setComponentByPosition(1, univ.Integer(s))
+  return encoder.encode(seq)
+
+def ParseDsaSig(sig):
+  """
+  Given a raw byte string, return tuple of DSA signature parameters.
+  
+  @param sig: byte string of ASN.1 representation
+  @type sig: string
+  
+  @return: parameters r, s as a tuple
+  @rtype: tuple
+  
+  @raise KeyczarErrror: if the DSA signature format is invalid 
+  """
+  seq = decoder.decode(sig)[0]
+  if len(seq) != 2:
+    raise errors.KeyczarError("Illegal DSA signature.")
+  r = long(seq.getComponentByPosition(0))
+  s = long(seq.getComponentByPosition(1))
+  return (r, s)
+
 def BinToBytes(bits):
   """Convert bit string to byte string."""
   bits = _PadByte(bits)

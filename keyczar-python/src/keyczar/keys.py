@@ -439,13 +439,12 @@ class DsaPrivateKey(PrivateKey):
     @param msg: message to be signed
     @type msg: string
     
-    @return: signature formatted as r|s where r and s are the long ints in the 
-      DSA signature tuple (r,s).
+    @return: byte string formatted as an ASN.1 sequnce of r and s
     @rtype: string 
     """
     k = random.randint(2, self.key.q-1)  # need to chose a random k per-message
     (r, s) = self.key.sign(msg, k)
-    return "|".join([str(r), str(s)])
+    return util.MakeDsaSig(r, s)
   
   def Verify(self, msg, sig):
     """@see: L{DsaPublicKey.Verify}"""
@@ -584,17 +583,18 @@ class DsaPublicKey(PublicKey):
     @param msg: message that has been signed
     @type msg: string
     
-    @param sig: raw byte string of the signature formatted as r|s
+    @param sig: raw byte string of the signature formatted as an ASN.1 sequence
+      of r and s
     @type sig: string
     
     @return: True if signature is valid for message. False otherwise.
     @rtype: boolean
     """
-    try: 
-      [r, s] = [long(t) for t in sig.split("|")]
+    try:
+      (r, s) = util.ParseDsaSig(sig)
       return self.key.verify(msg, (r, s))
-    except ValueError:
-      # if signature is not in correct format, r|s, where r,s are longs
+    except errors.KeyczarError:
+      # if signature is not in correct format
       return False
 
 class RsaPublicKey(PublicKey):
