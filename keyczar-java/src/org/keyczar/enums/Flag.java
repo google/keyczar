@@ -24,15 +24,15 @@ import org.keyczar.i18n.Messages;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public enum Flag {
-  LOCATION(Messages.getString("KeyczarTool.Location")),
-  NAME(Messages.getString("KeyczarTool.Name")),
-  SIZE(Messages.getString("KeyczarTool.Size")),
-  STATUS(Messages.getString("KeyczarTool.Status")),
-  PURPOSE(Messages.getString("KeyczarTool.Purpose")), 
-  DESTINATION(Messages.getString("KeyczarTool.Destination")),
-  VERSION(Messages.getString("KeyczarTool.Version")),
-  ASYMMETRIC(Messages.getString("KeyczarTool.Asymmetric")),
-  CRYPTER(Messages.getString("KeyczarTool.Crypter"));
+  LOCATION("location"),
+  NAME("name"),
+  SIZE("size"),
+  STATUS("status"),
+  PURPOSE("purpose"), 
+  DESTINATION("destination"),
+  VERSION("version"),
+  ASYMMETRIC("asymmetric"),
+  CRYPTER("crypter");
   
   private final String name;
   

@@ -24,13 +24,13 @@ import org.keyczar.i18n.Messages;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public enum Command {
-  CREATE(Messages.getString("KeyczarTool.Create")),
-  ADDKEY(Messages.getString("KeyczarTool.Addkey")),
-  PUBKEY(Messages.getString("KeyczarTool.Pubkey")),
-  PROMOTE(Messages.getString("KeyczarTool.Promote")),
-  DEMOTE(Messages.getString("KeyczarTool.Demote")), 
-  REVOKE(Messages.getString("KeyczarTool.Revoke")),
-  USEKEY(Messages.getString("KeyczarTool.Usekey"));
+  CREATE("create"),
+  ADDKEY("addkey"),
+  PUBKEY("pubkey"),
+  PROMOTE("promote"),
+  DEMOTE("demote"), 
+  REVOKE("revoke"),
+  USEKEY("usekey");
   
   private final String name;
   
