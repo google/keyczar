@@ -49,6 +49,17 @@ RSA_OID = univ.ObjectIdentifier('1.2.840.113549.1.1.1')
 RSA_PARAMS = ['n', 'e', 'd', 'p', 'q', 'dp', 'dq', 'invq']
 DSA_OID = univ.ObjectIdentifier('1.2.840.10040.4.1')
 DSA_PARAMS = ['p', 'q', 'g']  # only algorithm params, not public/private keys
+SHA1RSA_OID = univ.ObjectIdentifier('1.2.840.113549.1.1.5')
+SHA1_OID = univ.ObjectIdentifier('1.3.14.3.2.26')
+
+def ASN1Sequence(*vals):
+  seq = univ.Sequence()
+  for i in range(len(vals)):
+    seq.setComponentByPosition(i, vals[i])
+  return seq
+
+def ParseASN1Sequence(seq):
+  return [seq.getComponentByPosition(i) for i in range(len(seq))]
 
 #PrivateKeyInfo ::= SEQUENCE {
 #  version Version,
@@ -65,53 +76,48 @@ DSA_PARAMS = ['p', 'q', 'g']  # only algorithm params, not public/private keys
 #
 #Attributes ::= SET OF Attribute
 def ParsePkcs8(pkcs8):
-  seq = decoder.decode(Decode(pkcs8))[0]
+  seq = ParseASN1Sequence(decoder.decode(Decode(pkcs8))[0])
   if len(seq) != 3:  # need three fields in PrivateKeyInfo
     raise errors.KeyczarError("Illegal PKCS8 String.")
-  version = int(seq.getComponentByPosition(0))
+  version = int(seq[0])
   if version != 0:
       raise errors.KeyczarError("Unrecognized PKCS8 Version")
-  oid = seq.getComponentByPosition(1).getComponentByPosition(0)
-  alg_params = seq.getComponentByPosition(1).getComponentByPosition(1)
-  key = decoder.decode(seq.getComponentByPosition(2))[0]
+  [oid, alg_params] = ParseASN1Sequence(seq[1])
+  key = decoder.decode(seq[2])[0]
   # Component 2 is an OCTET STRING which is further decoded
   params = {}
   if oid == RSA_OID:
-    version = int(key.getComponentByPosition(0))
+    key = ParseASN1Sequence(key)
+    version = int(key[0])
     if version != 0:
       raise errors.KeyczarError("Unrecognized RSA Private Key Version")
     for i in range(len(RSA_PARAMS)):
-      params[RSA_PARAMS[i]] = long(key.getComponentByPosition(i+1))
+      params[RSA_PARAMS[i]] = long(key[i+1])
   elif oid == DSA_OID:
+    alg_params = ParseASN1Sequence(alg_params)
     for i in range(len(DSA_PARAMS)):
-      params[DSA_PARAMS[i]] = long(alg_params.getComponentByPosition(i))
+      params[DSA_PARAMS[i]] = long(alg_params[i])
     params['x'] = long(key)
   else:
     raise errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
   return params
 
 def ExportRsaPkcs8(params):
-  seq = univ.Sequence().setComponentByPosition(0, univ.Integer(0))  # version
-  oid = univ.Sequence().setComponentByPosition(0, RSA_OID)
-  oid.setComponentByPosition(1, univ.Null())
+  oid = ASN1Sequence(RSA_OID, univ.Null())
   key = univ.Sequence().setComponentByPosition(0, univ.Integer(0))  # version
   for i in range(len(RSA_PARAMS)):
     key.setComponentByPosition(i+1, univ.Integer(params[RSA_PARAMS[i]]))
   octkey = encoder.encode(key)
-  seq.setComponentByPosition(1, oid)
-  seq.setComponentByPosition(2, univ.OctetString(octkey))
+  seq = ASN1Sequence(univ.Integer(0), oid, univ.OctetString(octkey))
   return Encode(encoder.encode(seq))
 
 def ExportDsaPkcs8(params):
-  seq = univ.Sequence().setComponentByPosition(0, univ.Integer(0))  # version
   alg_params = univ.Sequence()
   for i in range(len(DSA_PARAMS)):
     alg_params.setComponentByPosition(i, univ.Integer(params[DSA_PARAMS[i]]))
-  oid = univ.Sequence().setComponentByPosition(0, DSA_OID)
-  oid.setComponentByPosition(1, alg_params)
+  oid = ASN1Sequence(DSA_OID, alg_params)
   octkey = encoder.encode(univ.Integer(params['x']))
-  seq.setComponentByPosition(1, oid)
-  seq.setComponentByPosition(2, univ.OctetString(octkey))
+  seq = ASN1Sequence(univ.Integer(0), oid, univ.OctetString(octkey))
   return Encode(encoder.encode(seq))
 
 #NOTE: not full X.509 certificate, just public key info
@@ -119,51 +125,42 @@ def ExportDsaPkcs8(params):
 #        algorithm            AlgorithmIdentifier,
 #        subjectPublicKey     BIT STRING  }
 def ParseX509(x509):
-  seq = decoder.decode(Decode(x509))[0]
+  seq = ParseASN1Sequence(decoder.decode(Decode(x509))[0])
   if len(seq) != 2:  # need two fields in SubjectPublicKeyInfo
     raise errors.KeyczarError("Illegal X.509 String.")
-  oid = seq.getComponentByPosition(0).getComponentByPosition(0)
-  alg_params = seq.getComponentByPosition(0).getComponentByPosition(1)
-  pubkey = decoder.decode(univ.OctetString(BinToBytes(seq.
-                            getComponentByPosition(1).prettyPrint()[1:-2])))[0]
+  [oid, alg_params] = ParseASN1Sequence(seq[0])
+  pubkey = decoder.decode(univ.OctetString(BinToBytes(seq[1].
+                                                      prettyPrint()[1:-2])))[0]
   # Component 1 should be a BIT STRING, get raw bits by discarding extra chars,
   # then convert to OCTET STRING which can be ASN.1 decoded
   params = {}
   if oid == RSA_OID:
-    params['n'] = long(pubkey.getComponentByPosition(0))
-    params['e'] = long(pubkey.getComponentByPosition(1))
+    [params['n'], params['e']] = [long(x) for x in ParseASN1Sequence(pubkey)]
   elif oid == DSA_OID:
+    vals = [long(x) for x in ParseASN1Sequence(alg_params)]
     for i in range(len(DSA_PARAMS)):
-      params[DSA_PARAMS[i]] = long(alg_params.getComponentByPosition(i))
+      params[DSA_PARAMS[i]] = vals[i]
     params['y'] = long(pubkey)
   else:
     raise errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
   return params
 
 def ExportRsaX509(params):
-  seq = univ.Sequence()
-  oid = univ.Sequence().setComponentByPosition(0, RSA_OID)
-  oid.setComponentByPosition(1, univ.Null())
-  key = univ.Sequence()
-  key.setComponentByPosition(0, univ.Integer(params['n']))
-  key.setComponentByPosition(1, univ.Integer(params['e']))
+  oid = ASN1Sequence(RSA_OID, univ.Null())
+  key = ASN1Sequence(univ.Integer(params['n']), univ.Integer(params['e']))
   binkey = BytesToBin(encoder.encode(key))
   pubkey = univ.BitString("'%s'B" % binkey)  # needs to be a BIT STRING
-  seq.setComponentByPosition(0, oid)
-  seq.setComponentByPosition(1, pubkey)
+  seq = ASN1Sequence(oid, pubkey)
   return Encode(encoder.encode(seq))
 
 def ExportDsaX509(params):
-  seq = univ.Sequence()
-  alg_params = univ.Sequence()
-  for i in range(len(DSA_PARAMS)):
-    alg_params.setComponentByPosition(i, univ.Integer(params[DSA_PARAMS[i]]))
-  oid = univ.Sequence().setComponentByPosition(0, DSA_OID)
-  oid.setComponentByPosition(1, alg_params)
+  alg_params = ASN1Sequence(univ.Integer(params['p']), 
+                            univ.Integer(params['q']), 
+                            univ.Integer(params['g']))
+  oid = ASN1Sequence(DSA_OID, alg_params)
   binkey = BytesToBin(encoder.encode(univ.Integer(params['y'])))
   pubkey = univ.BitString("'%s'B" % binkey)  # needs to be a BIT STRING
-  seq.setComponentByPosition(0, oid)
-  seq.setComponentByPosition(1, pubkey)
+  seq = ASN1Sequence(oid, pubkey)
   return Encode(encoder.encode(seq))
 
 def MakeDsaSig(r, s):
@@ -179,9 +176,7 @@ def MakeDsaSig(r, s):
   @return: raw byte string formatted as an ASN.1 sequence of r and s
   @rtype: string   
   """
-  seq = univ.Sequence()
-  seq.setComponentByPosition(0, univ.Integer(r))
-  seq.setComponentByPosition(1, univ.Integer(s))
+  seq = ASN1Sequence(univ.Integer(r), univ.Integer(s))
   return encoder.encode(seq)
 
 def ParseDsaSig(sig):
@@ -203,11 +198,10 @@ def ParseDsaSig(sig):
   s = long(seq.getComponentByPosition(1))
   return (r, s)
 
-
 def MakeEmsaMessage(msg, modulus_size):
   """Algorithm EMSA_PKCS1-v1_5 from PKCS 1 version 2"""
-  magic_sha1_header = [ 0x30, 0x21, 0x30, 0x9, 0x6, 0x5, 0x2b, 0xe,
-                     0x3, 0x2, 0x1a, 0x5, 0x0, 0x4, 0x14 ]
+  magic_sha1_header = [0x30, 0x21, 0x30, 0x9, 0x6, 0x5, 0x2b, 0xe, 0x3, 0x2, 
+                       0x1a, 0x5, 0x0, 0x4, 0x14]
   encoded = "".join([chr(c) for c in magic_sha1_header]) + Hash(msg)
   pad_string = chr(0xFF) * (modulus_size / 8 - len(encoded) - 3)
   return chr(1) + pad_string + chr(0) + encoded
