@@ -443,7 +443,7 @@ class DsaPrivateKey(PrivateKey):
     @rtype: string 
     """
     k = random.randint(2, self.key.q-1)  # need to chose a random k per-message
-    (r, s) = self.key.sign(msg, k)
+    (r, s) = self.key.sign(util.Hash(msg), k)
     return util.MakeDsaSig(r, s)
   
   def Verify(self, msg, sig):
@@ -546,7 +546,8 @@ class RsaPrivateKey(PrivateKey):
     @return: string representation of long int signature over message
     @rtype: string
     """
-    return str(self.key.sign(util.Hash(msg), None)[0])
+    emsa_encoded = util.MakeEmsaMessage(msg, self.size)
+    return util.BigIntToBytes(self.key.sign(emsa_encoded, None)[0])
   
   def Verify(self, msg, sig):
     """@see: L{RsaPublicKey.Verify}"""
@@ -593,7 +594,7 @@ class DsaPublicKey(PublicKey):
     """
     try:
       (r, s) = util.ParseDsaSig(sig)
-      return self.key.verify(msg, (r, s))
+      return self.key.verify(util.Hash(msg), (r, s))
     except errors.KeyczarError:
       # if signature is not in correct format
       return False
@@ -667,7 +668,7 @@ class RsaPublicKey(PublicKey):
     @rtype: boolean
     """
     try:
-      return self.key.verify(util.Hash(msg), (long(sig),))
+      return self.key.verify(util.MakeEmsaMessage(msg, self.size), (util.BytesToInt(sig),))
     except ValueError:
       # if sig is not a long, it's invalid
       return False

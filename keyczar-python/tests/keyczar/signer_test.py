@@ -27,7 +27,7 @@ from keyczar import util
 import unittest
 import os
 
-TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "jtestdata"))
 
 class SignerTest(unittest.TestCase):
   

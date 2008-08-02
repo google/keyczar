@@ -203,6 +203,15 @@ def ParseDsaSig(sig):
   s = long(seq.getComponentByPosition(1))
   return (r, s)
 
+
+def MakeEmsaMessage(msg, modulus_size):
+  """Algorithm EMSA_PKCS1-v1_5 from PKCS 1 version 2"""
+  magic_sha1_header = [ 0x30, 0x21, 0x30, 0x9, 0x6, 0x5, 0x2b, 0xe,
+                     0x3, 0x2, 0x1a, 0x5, 0x0, 0x4, 0x14 ]
+  encoded = "".join([chr(c) for c in magic_sha1_header]) + Hash(msg)
+  pad_string = chr(0xFF) * (modulus_size / 8 - len(encoded) - 3)
+  return chr(1) + pad_string + chr(0) + encoded
+
 def BinToBytes(bits):
   """Convert bit string to byte string."""
   bits = _PadByte(bits)
@@ -226,6 +235,15 @@ def IntToBin(n):
     return IntToBin(n/2) + "0"
   else:
     return IntToBin(n/2) + "1"
+
+def BigIntToBytes(n):
+  """Return a big-endian byte string representation of an arbitrary length n."""
+  chars = []
+  while (n > 0):
+    chars.append(chr(n % 256))
+    n = n >> 8
+  chars.reverse()
+  return "".join(chars)
 
 def IntToBytes(n):
   """Return byte string of 4 big-endian ordered bytes representing n."""
