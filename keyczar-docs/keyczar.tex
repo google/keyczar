@@ -17,28 +17,30 @@ Keyczar's goal is to make it easier for application developers to safely use
 cryptography. Keyczar defaults to safe algorithms, key lengths, and
 modes, and prevents developers from inadvertently exposing key material. It
 uses a simple, extensible key versioning system that allows developers to
-easily rotate and retire keys. 
+easily rotate and retire keys.
 \end{abstract}
 
 \section{Introduction and Philosophy}
 
 The motivation for Keyczar grew out of a need to make cryptography easier to
-use for developers. Developers often can make simple mistakes when using
-cryptography that can create security vulnerabilities. For instance, developers
-may use obsolete algorithms, weak key lengths, improper cipher modes, or
-unsafely compose cryptographic operations. Another common developer mistake is
-to fail to provision for key rotation or even to hard-code keys in source
-code.
+use for developers. Developers making improperly using cryptography can create
+serious security vulnerabilities. For instance, developers may use obsolete
+algorithms, weak key lengths, improper cipher modes, or unsafely compose
+cryptographic operations. Another common developer mistake is to fail to
+provision for key rotation or even to hard-code keys in source code.
 
 Keyczar's goal is to address these issues by providing a simple application
 programming interface (API) for developers that handles basic cryptographic
 details. Keyczar also provides a simple key versioning and management system
 based on directories of human-readable flat files, which will be refered to as
-\emph{keysets}. 
+\emph{keysets}. More information about Keyczar is available from {\tt
+http://keyczar.org}.
+
 \section{Using KeyczarTool}\label{keytool}
 
-All Keyczar keys are generated with the stand-alone
-{\tt KeyczarTool} utility located in the {\tt com.google.keyczar} Java package.
+All Keyczar keys are generated with the stand-alone 
+KeyczarTool utility. Two implementations of KeyczarTool are available under
+{\tt org.keyczar.KeyczarTool} in Java and {\tt keyczart.py} in Python.
 
 \subsection{KeyczarTool create}
 KeyczarTool must first create a new keyset using the {\tt create} command. A
@@ -50,7 +52,8 @@ flags that specify the location of the key set and its purpose. Valid purposes
 are currently {\tt crypt} and {\tt sign}. The create command may also take
 an optional {\tt name} flag to give a newly created keyset a name. If the {\tt
 asymmetric} flag is specified, the newly created set will contain asymmetric
-keys.
+keys of the specified algorithm. Currently DSA is supported for keysets with
+as sign purpose. RSA is supported for both crypting and signing keysets.
 
 Some example {\tt create} commands:
 \begin{itemize}
@@ -59,7 +62,8 @@ Some example {\tt create} commands:
 \item Create a symmetric crypting (AES) keyset named ``Test'': \\
 {\tt KeyczarTool create --location=/path/to/keyset --purpose=crypt --name=Test}
 \item Create an asymmetric signing (DSA) keyset: \\
-{\tt KeyczarTool create --location=/path/to/keyset --purpose=sign --asymmetric} 
+{\tt KeyczarTool create --location=/path/to/keyset --purpose=sign
+--asymmetric=dsa}
 \end{itemize}
 
 \subsection{KeyczarTool addkey}
@@ -262,8 +266,6 @@ KeyczarCrypter crypter = new KeyczarCrypter(``/rsakeys'');
 String plaintext = crypter.decrypt(ciphertext);
 \end{verbatim}
 
-
-
 Signing and verifying is similarily easy:
 \begin{verbatim}
 KeyczarTool create --location=/hmackeys --purpose=sign
@@ -277,10 +279,8 @@ String signature = signer.sign(``Some data to sign'');
 boolean verified = signer.verify(``Some data to sign'', signature);
 \end{verbatim}
 
-
-\section{Using Python Keyczar}
-
-Python Keyczar is in development.
+See Section \ref{walkthrough} for a more detailed walkthrough and sample test
+vectors.
 
 \section{Keys}
 
@@ -314,6 +314,7 @@ used for signing.
 These purposes correspond to their respective public and symmetric/private
 keys, and are usable by the Keyczar classes specified in the table below: 
 
+\vspace*{3mm}
 \begin{tabular}{ l | l | l }
 {\bf Purpose} &  {\bf Public, Private, or Symmetric } & {\bf Class used by} \\
 \hline Encrypting & Public & Encrypter or Crypter \\ \hline
@@ -321,20 +322,15 @@ Encrypting and Decrypting & Private or Symmetric & Crypter \\ \hline
 Verifying & Public & Verifier or Signer \\ \hline 
 Verifying and Signing & Private or Symmetric & Signer \\ \hline
 \end{tabular}
+\vspace*{3mm}
 
 Each metadata file contains a specific key type that only that set can contain.
-Currently, the valid key types are:
-\begin{itemize}
-  \item AES
-  \item HMAC-SHA1
-  \item DSA Private
-  \item DSA Public
-  \item RSA Private
-  \item RSA Public
-\end{itemize}
+Currently, the valid key types are AES, HMAC-SHA1, DSA Private, DSA Public, RSA
+Private, and RSA Public.
 
-Finally, the metadata will contain a list of version information, which is
-described in Section \ref{versions}.
+The metadata will contain a list of version information, which is
+described in Section \ref{versions}. See Section \ref{walkthrough} for a sample
+JSON metadata file.
 
 \subsection{Versions}\label{versions}
 
@@ -352,11 +348,15 @@ However, key version numbers may be any positive, non-zero integral values.
 Each Keyczar output is tagged with a Keyczar-specific header. The header format
 is as follows:
 
+\vspace*{3mm}
 \begin{tabular}{| l | l |}
 \hline
 Format & Key Hash \\ \hline
 1 byte & 4 bytes \\ \hline
 \end{tabular}
+\vspace*{3mm}
+
+See Section \ref{walkthrough} for a concrete example of an output header.
 
 \subsubsection{Version Byte}
 
@@ -369,16 +369,16 @@ reserved.
 Each header includes 4-byte truncated SHA-1 hash of the raw key
 material itself. The following values will be hashed for each key type:
 \begin{itemize}
-  \item HMAC: 4-byte integer value representing the length of the HMAC key,
-  followed by the actual HMAC key bytes.
+  \item HMAC: 4-byte integer value representing the length of the HMAC key in
+  bytes, followed by the actual HMAC key bytes.
   \item AES: 4-byte integer value representing the length of the AES key,
   followed by the acutal AES key bytes, followed by the 4-byte KeyHash of the
   attached HMAC key.
-  \item DSA Public: 4-byte integer value representing the length of the X.509
+  \item \item DSA Public: 4-byte integer value representing the length of the X.509
   representation of this key, followed by the X.509 representation.
   \item DSA Private: Same as DSA Public.
   \item RSA Public: 4-byte integer value representing the length of the X.509
-  representation of this key, followed by the X.509 representation.  \item
+  representation of this key, followed by the X.509 representation.
   \item RSA Private: Same as RSA Public. 
 \end{itemize}
 
@@ -433,62 +433,70 @@ Base64 representation of a PKCS8 encoded DSA private key.
 
 \section{Output Formats}
 
-\subsection{Signatures}
+\subsection{Signatures}\label{signatures}
 
 A Keyczar signature consists of a header (described in Section \ref{header})
 followed by a algorithm-dependent signature:
 
+\vspace*{3mm}
 \begin{tabular}{| c | c |}
 \hline
 Header & Sign(header $|$ M) \\
 \hline 5 bytes & Algorithm-dependent length \\ \hline
 \end{tabular}
+\vspace*{3mm}
 
 (Note: $|$ represents string concatenation.)
 
+\vspace*{3mm}
+
 For example, HMAC keys will produce a 20-byte output, so have the form:
 
+\vspace*{3mm}
 \begin{tabular}{| c | c |}
 \hline
 Header & HMAC-SHA1(header $|$ M) \\ \hline
 5 bytes & 20 bytes \\ \hline
 \end{tabular}
-
+\vspace*{3mm}
 \subsection{Ciphertext}
 
 A Keyczar ciphertext contains a header (described in Section \ref{header}), an
 IV (if needed), the algorithm-dependent ciphertext, and a signature on the
 preceding fields (for symmetric keys only):
 
+\vspace*{3mm}
 \begin{tabular}{| c | c | c | c |}
 \hline
 Header & IV (if any) & Encrypt(M) & Sign(header $|$ IV $|$ M) (if any) \\ \hline
 5 bytes & Algorithm-dependent & Algorithm-depndent & Algorithm-depndent \\
 \hline
 \end{tabular}
-
-\vspace{1mm}
+\vspace*{3mm}
 
 For example, 128-bit AES keys (which have an attached HMAC key) used in CBC
 mode would produce the following output:
 
+\vspace*{3mm}
 \begin{tabular}{| c | c | c | c |}
 \hline
 Header & IV & AES-CBC(M) & HMAC-SHA1(header $|$ IV $|$ M) \\ \hline
 5 bytes & 16 bytes & Algorithm-dependent & 20 bytes \\
 \hline
 \end{tabular}
+\vspace*{3mm}
 
 In contrast, RSA ciphertexts neither use IVs nor are signed. Thus, the RSA
 ciphertext format is:
 
+\vspace*{3mm}
 \begin{tabular}{| c | c | c | c |}
 \hline
 Header & RSA-OAEP(M)  \\ \hline
 5 bytes & Single RSA block  \\
 \hline
 \end{tabular}
-
+\vspace*{3mm}
 
 \section{Algorithm Details}
 
@@ -508,13 +516,176 @@ These are the default key lengths, algorithms, and padding modes used:
 \end{itemize}
 
 
-\section{Samples and Test Vectors}
+\section{Walkthrough and Sample Data}\label{walkthrough}
+
+\subsection{Creating an HMAC Keyset}
+A {\tt meta} file is created by a call to the {\tt KeyczarTool create} command.
+The following example was created usign the command: \\
+{\tt KeyczarTool create --location=/path/to/keyset --name=Test --purpose=sign}
+
+\begin{verbatim}
+{
+ "name":"test",
+ "purpose":"SIGN_AND_VERIFY",
+ "type":"HMAC_SHA1",
+ "versions":[],
+ "encrypted":false
+}
+\end{verbatim}
+
+\subsection{Generating a HMAC key}
+
+The following command will create a new key in an existing keyset: \\
+{\tt KeyczarTool addkey --location=/path/to/keyset}
+
+This will add key version information to the existing {\tt meta} file: 
+\begin{verbatim}
+{
+ "name":"test",
+ "purpose":"SIGN_AND_VERIFY",
+ "type":"HMAC_SHA1",
+ "versions":[
+    { "exportable":false,
+      "status":"ACTIVE",
+      "versionNumber":1}
+    ],
+ "encrypted":false
+}
+\end{verbatim}
+
+It will also create a key version file named ``1'':
+\begin{verbatim}
+{
+ "hmacKeyString":"9E7yslYyE4GHzq2WbppOOjGqBL7OGXxy5OsFSqBn2ao",
+ "size":256
+}
+\end{verbatim}
+
+\subsection{Promoting a Key}
+Since no status was specified, key version 1 was created with an ``active''
+status. That means it can be used for verifying signatures, but not generating
+new signatures. Since we just created this key, there are no existing
+signatures to verify. We have to promote it to a ``primary'' status before
+it's useful: \\
+{\tt KeyczarTool promote --location=/path/to/keyset --version=1}
+
+This will just alter the meta file to reflect the promotion:
+\begin{verbatim}
+{
+ "name":"test",
+ "purpose":"SIGN_AND_VERIFY",
+ "type":"HMAC_SHA1",
+ "versions":[
+    { 
+      "exportable":false,
+      "status":"PRIMARY",
+      "versionNumber":1
+    }
+  ],
+ "encrypted":false
+}
+\end{verbatim}
+
+We can generate a second key version with a primary status as follows: \\
+{\tt KeyczarTool addkey --location=/path/to/keyset --status=primary}
+
+This create a new key version ``2'' with a primary status. Keysets can only have
+one primary key at a time, so this automatically demotes key version ``1'' to
+be active:
+\begin{verbatim}
+{
+ "name":"test",
+ "purpose":"SIGN_AND_VERIFY",
+ "type":"HMAC_SHA1",
+ "versions":[
+    { 
+      "exportable":false,
+      "status":"ACTIVE",
+      "versionNumber":1
+    },
+    { 
+      "exportable":false,
+      "status":"PRIMARY",
+      "versionNumber":2
+    }
+  ],
+ "encrypted":false
+}
+\end{verbatim}
+
+This creates another key version file ``2'' with the following contents:
+\begin{verbatim}
+{
+  "hmacKeyString":"-jkgTURAPoBr9SaQ5NLsFq2Xu5Z54RmnHYHlv1RVE7s",
+  "size":256
+}
+\end{verbatim}
+
+\subsection{Key Hash Values}
+
+Note that the Base64 value of the ``hmacKeyString'' in the previous
+section decodes to the following 32 bytes in hexadecimal format:
+\begin{verbatim}
+fa, 39, 20, 4d, 44, 40, 3e, 80,
+6b, f5, 26, 90, e4, d2, ec, 16,
+ad, 97, bb, 96, 79, e1, 19, a7,
+1d, 81, e5, bf, 54, 55, 13, bb
+\end{verbatim}
+
+These key bytes will be hashed to obtain a key identifier. The raw key bytes
+will be prefixed by a byte representation of the length in bytes. In this case,
+the length is 32, so the following bytes (in hexadecimal format) will be
+hashed with SHA-1:\\ {\tt  SHA-1(00, 00, 00, 20, fa, 39, \ldots, 13, bb)}
+
+This produces the following 20-byte SHA1 output:
+\begin{verbatim}
+d8, 36, 36, 62, d0, 6d, cb, a7,
+35, cd, 6c, 69, 33, 40, df, 87,
+ce, da, d9, 8d
+\end{verbatim}
+
+This is truncated down to the four bytes {\tt d8, 36, 36, 62}, which is
+this key's hash identifier. As described in Section \ref{header}, all output
+will be prefixed with a version byte (currently equal to 1) and this identifier.
+
+\subsection{Signing and Verifying} 
+
+To sign the string ``Hello world'' with our newly generated keys in Java, we
+would simply use the following two lines of code.
+
+\begin{verbatim}
+Signer signer = new Signer("/path/to/keyset"); 
+String signature = signer.sign("Hello world");
+\end{verbatim}
+
+Keyczar will convert the string to the bytes to the following values:
+\begin{verbatim}
+48, 65, 6c, 6c, 6f, 20, 77, 6f, 72, 6c, 64
+\end{verbatim} 
+
+The output Base64 encoded signature would be the value {\tt
+Adg2NmIPTshpioGdunRaGRYWFNgheKmjvg}, which corresponds to the bytes:
+\begin{verbatim}
+1, d8, 36, 36, 62, f, 4e, c8,
+69, 8a, 81, 9d, ba, 74, 5a, 19,
+16, 16, 14, d8, 21, 78, a9, a3,
+be,
+\end{verbatim}
+
+Note that the first output byte is the version byte 1, followed by the 4-byte
+key hash identifier, and a 20-byte HMAC-SHA1 output. All signatures produced by
+this key will have this same identifier. Verification of this signature is
+simple:
+\begin{verbatim}
+boolean isValid =
+    signer.verify("Hello world", "Adg2NmIPTshpioGdunRaGRYWFNgheKmjvg");
+\end{verbatim}
 
 \section{Licenses and Dependencies}
 
 Keyczar is available under an Apache 2.0 license \cite{apache2}. Java Keyczar
 depends on the Google GSON package \cite{google-gson}. It also relies on the
-Java's {\tt javax.crypto} package, which may not be available in  all locales
+Java's {\tt javax.crypto} package, which may not be available in all countries
 due to local laws and regulations.
 
 Python Keyczar depends on the Python Cryptography Toolkit \cite{python-crypto}
@@ -522,8 +693,9 @@ and simplejson \cite{simplejson}.
 
 \section{Acknowledgements}
 
-Thanks to Ben Laurie, Marius Schilder, and Neil Daswani for their
-contributions.
+Thanks to Ben Laurie, Marius Schilder, and Neil Daswani for their original
+design contributions. Thanks to Sarvar Patel, Loren Kornfelder, Manuel Marquez
+Garrido, and Laura Krotowski for their various contributions.
 
 \bibliography{keyczar}
 \bibliographystyle{acm}
