@@ -37,7 +37,7 @@ import java.nio.ByteBuffer;
  *
  */
 public class SignerTest extends TestCase {
-  private static final String TEST_DATA = "./pytestdata";
+  private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
   private byte[] inputBytes = input.getBytes();
 

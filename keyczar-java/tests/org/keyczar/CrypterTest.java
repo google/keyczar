@@ -39,7 +39,7 @@ import java.io.RandomAccessFile;
  */
 
 public class CrypterTest extends TestCase {
-  private static final String TEST_DATA = "./pytestdata";
+  private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
   
   private final void testDecrypt(String subDir) throws Exception {
