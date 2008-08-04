@@ -1,7 +1,14 @@
 body {
 	font-family:Optima, Verdana, Arial, Helvetica, sans-serif;
 	text-align: justify;
-	margin: 2% 2%;
+	
+	background: #ffffff url(fade.jpg) repeat-x;
+}
+
+#main {
+  margin: 2% 2%;
+  padding: 5px;
+  background: #ffffff
 }
 
 div#logo {
