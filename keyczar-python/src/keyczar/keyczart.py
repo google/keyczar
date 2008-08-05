@@ -27,13 +27,15 @@ import errors
 import keyczar
 import keydata
 import keyinfo
+import readers
 import util
 
-KEYSETS = [('aes', keyinfo.DECRYPT_AND_ENCRYPT, None),
-           ('hmac', keyinfo.SIGN_AND_VERIFY, None),
-           ('rsa', keyinfo.DECRYPT_AND_ENCRYPT, 'rsa'),
-           ('rsa-sign', keyinfo.SIGN_AND_VERIFY, 'rsa'),
-           ('dsa', keyinfo.SIGN_AND_VERIFY, 'dsa')]
+KEYSETS = [('aes', keyinfo.DECRYPT_AND_ENCRYPT, None, None),
+           ('aes-crypted', keyinfo.DECRYPT_AND_ENCRYPT, None, 'aes'),
+           ('hmac', keyinfo.SIGN_AND_VERIFY, None, None),
+           ('rsa', keyinfo.DECRYPT_AND_ENCRYPT, 'rsa', None),
+           ('rsa-sign', keyinfo.SIGN_AND_VERIFY, 'rsa', None),
+           ('dsa', keyinfo.SIGN_AND_VERIFY, 'dsa', None)]
 
 class _Name(object):
   
@@ -74,9 +76,10 @@ PURPOSE = Flag("purpose")
 DESTINATION = Flag("destination")
 VERSION = Flag("version")
 ASYMMETRIC = Flag("asymmetric")
+CRYPTER = Flag("crypter")
 flags = {"location": LOCATION, "name": NAME, "size": SIZE, "status": STATUS,
          "purpose": PURPOSE, "destination": DESTINATION, "version": VERSION,
-         "asymmetric": ASYMMETRIC}
+         "asymmetric": ASYMMETRIC, "crypter": CRYPTER}
 
 def GetFlag(flag):
   try:
@@ -105,18 +108,14 @@ def Create(loc, name, purpose, asymmetric=None):
   name = os.path.join(loc, "meta")
   if os.path.exists(name):
     raise errors.KeyczarError("File already exists")
-  meta = open(name, "w")
-  try:
-    meta.write(str(kmd))
-  except IOError:
-    raise errors.KeyczarError("Unable to write")
+  util.WriteFile(str(kmd), name)
 
-def AddKey(loc, status, size=None):
-  czar = CreateGenericKeyczar(loc)
+def AddKey(loc, status, crypter=None, size=None):
+  czar = CreateGenericKeyczar(loc, crypter)
   if size == -1:
     size = None
   czar.AddVersion(status, size)
-  UpdateGenericKeyczar(czar, loc)
+  UpdateGenericKeyczar(czar, loc, crypter)
 
 def PubKey(loc, dest):
   if dest is None:
@@ -144,18 +143,21 @@ def Revoke(loc, num):
     raise errors.KeyczarError("Missing version")
   czar.Revoke(num)
   UpdateGenericKeyczar(czar, loc)
+  os.remove(os.path.join(loc, str(num)))  # remove key file
 
 def GenKeySet(loc):
   print "Generating private key sets..."
-  for (name, purpose, asymmetric) in KEYSETS:
+  for (name, purpose, asymmetric, crypter) in KEYSETS:
     print "."
     dir = os.path.join(loc, name)
+    if crypter:
+      crypter = keyczar.Crypter.Read(os.path.join(loc, crypter))
     Clean(dir)
     Create(dir, "Test", purpose, asymmetric)
-    AddKey(dir, keyinfo.PRIMARY)
-    UseKey(purpose, dir, os.path.join(dir, "1out"))
-    AddKey(dir, keyinfo.PRIMARY)
-    UseKey(purpose, dir, os.path.join(dir, "2out"))
+    AddKey(dir, keyinfo.PRIMARY, crypter)
+    UseKey(purpose, dir, os.path.join(dir, "1.out"), crypter)
+    AddKey(dir, keyinfo.PRIMARY, crypter)
+    UseKey(purpose, dir, os.path.join(dir, "2.out"), crypter)
   
   print "Exporting public key sets..."
   for name in ('dsa', 'rsa-sign'):
@@ -171,13 +173,16 @@ def Clean(directory):
     if not os.path.isdir(path): 
       os.remove(path)
 
-def UseKey(purpose, loc, dest, msg="This is some test data"):
+def UseKey(purpose, loc, dest, crypter=None, msg="This is some test data"):
+  reader = readers.FileReader(loc)
+  answer = ""
+  if crypter:
+    reader = readers.EncryptedReader(reader, crypter)
   if purpose == keyinfo.DECRYPT_AND_ENCRYPT:
-    crypter = keyczar.Crypter.Read(loc)
-    util.WriteFile(crypter.Encrypt(msg), dest)
+    answer = keyczar.Crypter(reader).Encrypt(msg)
   elif purpose == keyinfo.SIGN_AND_VERIFY:
-    signer = keyczar.Signer.Read(loc)
-    util.WriteFile(signer.Sign(msg), dest)
+    answer = keyczar.Signer(reader).Sign(msg)
+  util.WriteFile(answer, dest)
 
 def Usage():
   print '''Usage: "Keyczart command flags"
@@ -218,14 +223,17 @@ revoke --location=/path/to/keys --version=versionNumber
 Optional flags are in [brackets]. The notation (a|b|c) means "a", "b", and "c"
 are the valid choices'''
 
-def CreateGenericKeyczar(loc):
+def CreateGenericKeyczar(loc, crypter=None):
   if loc is None:
     raise errors.KeyczarError("Need location")
   else:
-    return keyczar.GenericKeyczar.Read(loc)
+    reader = readers.FileReader(loc)
+    if crypter:
+      reader = readers.EncryptedReader(reader, crypter)
+    return keyczar.GenericKeyczar(reader)
 
-def UpdateGenericKeyczar(czar, loc):
-  czar.Write(loc)
+def UpdateGenericKeyczar(czar, loc, encrypter=None):
+  czar.Write(loc, encrypter)
 
 def main(argv):
   if len(argv) == 0:
@@ -247,9 +255,13 @@ def main(argv):
       Create(flags.get(LOCATION), flags.get(NAME, 'Test'), purpose, 
              flags.get(ASYMMETRIC))
     elif cmd == ADDKEY:
+      if flags.has_key(CRYPTER):
+        crypter = keyczar.Encrypter.Read(flags[CRYPTER])
+      else:
+        crypter = None
       AddKey(flags.get(LOCATION), 
              keyinfo.GetStatus(flags.get(STATUS, 'ACTIVE')), 
-             int(flags.get(SIZE, -1)))
+             int(flags.get(SIZE, -1)), crypter)
     elif cmd == PUBKEY:
       PubKey(flags.get(LOCATION), flags.get(DESTINATION))
     elif cmd == PROMOTE:

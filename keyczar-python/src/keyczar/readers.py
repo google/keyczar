@@ -19,8 +19,10 @@ A Reader supports reading metadata and key info for key sets.
 
 @author: arkajit.dey@gmail.com (Arkajit Dey)
 """
-                
-import os
+
+import os                
+
+import util
 
 class Reader(object):
   """Interface providing supported methods (no implementation)."""
@@ -31,6 +33,8 @@ class Reader(object):
     
     @return: JSON string representation of KeyMetadata object
     @rtype: string
+    
+    @raise KeyczarError: if unable to read metadata (e.g. IOError) 
     """
   
   def GetKey(self, version_number):
@@ -42,6 +46,8 @@ class Reader(object):
     
     @return: JSON string representation of a Key object
     @rtype: string
+    
+    @raise KeyczarError: if unable to read key info (e.g. IOError) 
     """
 
 class FileReader(Reader):
@@ -49,10 +55,24 @@ class FileReader(Reader):
   """Reader that reads key data from files."""
   
   def __init__(self, location):
-    self.__location = location
+    self._location = location
     
   def GetMetadata(self):
-    return open(os.path.join(self.__location, "meta")).read()
+    return util.ReadFile(os.path.join(self._location, "meta"))
 
   def GetKey(self, version_number):
-    return open(os.path.join(self.__location, str(version_number))).read()
+    return util.ReadFile(os.path.join(self._location, str(version_number)))
+
+class EncryptedReader(Reader):
+  
+  """Reader that reads encrypted key data from files."""
+  
+  def __init__(self, reader, crypter):
+    self._reader = reader
+    self._crypter = crypter
+  
+  def GetMetadata(self):
+    return self._reader.GetMetadata()
+  
+  def GetKey(self, version_number):
+    return self._crypter.Decrypt(self._reader.GetKey(version_number))

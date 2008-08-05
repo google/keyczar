@@ -20,14 +20,14 @@ Testcases to test behavior of Keyczar Signers.
 @author: arkajit.dey@gmail.com (Arkajit Dey)
 """
 
-from keyczar import keyczar
 from keyczar import errors
+from keyczar import keyczar
 from keyczar import util
 
 import unittest
 import os
 
-TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "jtestdata"))
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 
 class SignerTest(unittest.TestCase):
   
@@ -47,8 +47,8 @@ class SignerTest(unittest.TestCase):
       czar = keyczar.Verifier.Read(os.path.join(TEST_DATA, subdir+".public"))
     else:
       czar = keyczar.Signer.Read(path)
-    active_sig = open(os.path.join(path, "1out")).read()
-    primary_sig = open(os.path.join(path, "2out")).read()
+    active_sig = util.ReadFile(os.path.join(path, "1.out"))
+    primary_sig = util.ReadFile(os.path.join(path, "2.out"))
     return (czar, active_sig, primary_sig)
   
   def __testSignAndVerify(self, subdir):

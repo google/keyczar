@@ -49,6 +49,10 @@ class Keyczar(object):
     if not self.IsAcceptablePurpose(self.metadata.purpose):
       raise errors.KeyczarError("Unacceptable purpose: %s" 
                                 % self.metadata.purpose)
+    
+    if self.metadata.encrypted and not isinstance(reader, 
+                                                  readers.EncryptedReader):
+      raise errors.KeyczarError("Need encrypted reader.")
       
     for version in self.metadata.versions:
       if version.status == keyinfo.PRIMARY:
@@ -235,7 +239,7 @@ class GenericKeyczar(Keyczar):
     """
     version = self.metadata.GetVersion(version_number)
     if version.status == keyinfo.SCHEDULED_FOR_REVOCATION:
-      self.metadata.RemoveVersion(version)
+      self.metadata.RemoveVersion(version_number)
     else:
       raise errors.KeyczarError("Can't revoke key if not scheduled to be.")
   
@@ -258,11 +262,15 @@ class GenericKeyczar(Keyczar):
       util.WriteFile(str(pubkey), os.path.join(dest, str(v.version_number)))
     util.WriteFile(str(pubkmd), os.path.join(dest, "meta"))
   
-  def Write(self, loc):
-    util.WriteFile(str(self.metadata), os.path.join(loc, "meta"))
+  def Write(self, loc, encrypter=None):
+    if encrypter:
+      self.metadata.encrypted = True
+    util.WriteFile(str(self.metadata), os.path.join(loc, "meta"))  # just plain
     for v in self.versions:
-      util.WriteFile(str(self.GetKey(v)), 
-                     os.path.join(loc, str(v.version_number)))
+      key = str(self.GetKey(v))
+      if self.metadata.encrypted:
+        key = encrypter.Encrypt(key)  # encrypt key info before outputting
+      util.WriteFile(key, os.path.join(loc, str(v.version_number)))
 
 class Encrypter(Keyczar):
   

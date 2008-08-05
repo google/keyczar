@@ -31,10 +31,11 @@ class KeyMetadata(object):
   
   """Encodes metadata for a keyset with a name, purpose, type, and versions."""
     
-  def __init__(self, name, purpose, type):
+  def __init__(self, name, purpose, type, encrypted=False):
     self.name = name
     self.purpose = purpose
     self.type = type
+    self.encrypted = encrypted
     self.__versions = {}  # dictionary from version nums to KeyVersions
     
   versions = property(lambda self: self.__versions.values())
@@ -43,6 +44,7 @@ class KeyMetadata(object):
     return simplejson.dumps({"name": self.name,
                              "purpose": str(self.purpose),
                              "type": str(self.type),
+                             "encrypted": self.encrypted,
                              "versions": [simplejson.loads(str(v)) 
                                           for v in self.versions]})
   
@@ -70,10 +72,15 @@ class KeyMetadata(object):
     @param version_number: version number to remove
     @type version_number: integer
     
-    @return: the removed version if it exists or None.
+    @return: the removed version if it exists
     @rtype: L{KeyVersion}
+    
+    @raise KeyczarError: if the version number is non-existent
     """
-    return self.__versions.pop(version_number, None)
+    try:
+      self.__versions.pop(version_number)
+    except KeyError:
+      raise errors.KeyczarError("No such version number: %d" % version_number)
   
   def GetVersion(self, version_number):
     """
@@ -87,11 +94,10 @@ class KeyMetadata(object):
     
     @raise KeyczarError: if the version number is non-existent.
     """
-    version = self.__versions.get(version_number)
-    if version is None:
+    try:
+      return self.__versions[version_number]
+    except KeyError:
       raise errors.KeyczarError("No such version number: %d" % version_number)
-    else:
-      return version
   
   @staticmethod
   def Read(json_string):
@@ -106,7 +112,7 @@ class KeyMetadata(object):
     """
     meta = simplejson.loads(json_string)
     kmd = KeyMetadata(meta['name'], keyinfo.GetPurpose(meta['purpose']), 
-                      keyinfo.GetType(meta['type']))
+                      keyinfo.GetType(meta['type']), meta['encrypted'])
     for version in meta['versions']:
       kmd.AddVersion(KeyVersion.Read(version))
     return kmd

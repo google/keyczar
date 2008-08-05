@@ -20,25 +20,29 @@ Testcases to test behavior of Keyczar Crypters.
 @author: arkajit.dey@gmail.com (Arkajit Dey)
 """
 
-from keyczar import keyczar
 from keyczar import errors
+from keyczar import keyczar
+from keyczar import readers
 from keyczar import util
 
 import unittest
 import os
 
-TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "jtestdata"))
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 
 class CrypterTest(unittest.TestCase):
   
   def setUp(self):
     self.input = "This is some test data"
   
-  def __testDecrypt(self, subdir):
+  def __testDecrypt(self, subdir, reader=None):
     path = os.path.join(TEST_DATA, subdir)
-    crypter = keyczar.Crypter.Read(path)
-    active_ciphertext = open(os.path.join(path, "1out")).read()
-    primary_ciphertext = open(os.path.join(path, "2out")).read()
+    if reader:
+      crypter = keyczar.Crypter(reader)
+    else:
+      crypter = keyczar.Crypter.Read(path)
+    active_ciphertext = util.ReadFile(os.path.join(path, "1.out"))
+    primary_ciphertext = util.ReadFile(os.path.join(path, "2.out"))
     active_decrypted = crypter.Decrypt(active_ciphertext)
     self.assertEquals(self.input, active_decrypted)
     primary_decrypted = crypter.Decrypt(primary_ciphertext)
@@ -52,6 +56,12 @@ class CrypterTest(unittest.TestCase):
   
   def testAesDecrypt(self):
     self.__testDecrypt("aes")
+  
+  def testAesEncryptedKeyDecrypt(self):
+    file_reader = readers.FileReader(os.path.join(TEST_DATA, "aes-crypted"))
+    key_decrypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
+    reader = readers.EncryptedReader(file_reader, key_decrypter)
+    self.__testDecrypt("aes-crypted", reader)
     
   def testRsaDecrypt(self):
     self.__testDecrypt("rsa")

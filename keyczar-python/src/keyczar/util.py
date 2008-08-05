@@ -325,12 +325,40 @@ def Decode(s):
   return base64.urlsafe_b64decode(s)
 
 def WriteFile(data, loc):
+  """
+  Writes data to file at given location.
+  
+  @param data: contents to be written to file
+  @type data: string
+   
+  @param loc: name of file to write to
+  @type loc: string 
+  
+  @raise KeyczarError: if unable to write to file because of IOError 
+  """
   try:
     f = open(loc, "w")
     f.write(data)
     f.close()
   except IOError:
-    raise errors.KeyczarError("Bad file name")
+    raise errors.KeyczarError("Unable to write to file %s." % loc)
+
+def ReadFile(loc):
+  """
+  Read data from file at given location.
+  
+  @param loc: name of file to read from
+  @type loc: string
+  
+  @return: contents of the file
+  @rtype: string
+  
+  @raise KeyczarError: if unable to read from file because of IOError 
+  """
+  try:
+    return open(loc).read()
+  except IOError:
+    raise errors.KeyczarError("Unable to read file %s." % loc)
 
 def MGF(seed, mlen):
   """
