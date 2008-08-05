@@ -50,11 +50,11 @@ public class CrypterTest extends TestCase {
       throws Exception {
     Crypter crypter = new Crypter(reader);
     RandomAccessFile activeInput =
-      new RandomAccessFile(TEST_DATA + subDir + "/1out", "r");
+      new RandomAccessFile(TEST_DATA + subDir + "/1.out", "r");
     String activeCiphertext = activeInput.readLine(); 
     activeInput.close();
     RandomAccessFile primaryInput =
-      new RandomAccessFile(TEST_DATA + subDir + "/2out", "r");
+      new RandomAccessFile(TEST_DATA + subDir + "/2.out", "r");
     String primaryCiphertext = primaryInput.readLine();
     primaryInput.close();
     String activeDecrypted = crypter.decrypt(activeCiphertext);

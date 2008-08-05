@@ -1,4 +1,26 @@
-#script to generate all keys
+#!/usr/bin/python2.4
+#
+# Copyright 2008 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#      http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Script to generate all Java Keyczar keysets and testdata.
+
+@author: arkajit.dey@gmail.com (Arkajit Dey)
+@author: steveweis@gmail.com (Steve Weis)
+"""
+
 import os
 
 cwd = os.getcwd()
@@ -60,16 +82,18 @@ def useKey(loc, dest, crypter, data="This is some test data"):
 #generate private key sets
 print "Generating private key sets and golden outputs..."
 for (loc, purpose, asymmetric, crypter) in keyFiles:
+  print "."
   cleanUp(loc)
   create(name="test", loc=loc, purpose=purpose, asymmetric=asymmetric)
   addKey(loc=loc, status="primary", crypter=crypter)
-  useKey(loc=loc, dest=loc+"1out", crypter=crypter)
+  useKey(loc=loc, dest=loc+"1.out", crypter=crypter)
   addKey(loc=loc, status="primary", crypter=crypter)
-  useKey(loc=loc, dest=loc+"2out", crypter=crypter)
+  useKey(loc=loc, dest=loc+"2.out", crypter=crypter)
 
 #export public key sets
 print "Exporting public key sets..."
 for (loc, dest) in pubKeyFiles:
+  print "."
   cleanUp(dest)
   pubKey(loc, dest)
 

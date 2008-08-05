@@ -44,11 +44,11 @@ public class SignerTest extends TestCase {
   private final void testSignerVerify(String subDir) throws Exception {
     Signer signer = new Signer(TEST_DATA + subDir);
     RandomAccessFile activeInput =
-      new RandomAccessFile(TEST_DATA + subDir + "/1out", "r");
+      new RandomAccessFile(TEST_DATA + subDir + "/1.out", "r");
     String activeSignature = activeInput.readLine(); 
     activeInput.close();
     RandomAccessFile primaryInput =
-      new RandomAccessFile(TEST_DATA + subDir + "/2out", "r");
+      new RandomAccessFile(TEST_DATA + subDir + "/2.out", "r");
     String primarySignature = primaryInput.readLine();
     primaryInput.close();
 
@@ -60,26 +60,28 @@ public class SignerTest extends TestCase {
     Verifier verifier = new Verifier(TEST_DATA + subDir);
     Verifier publicVerifier = new Verifier(TEST_DATA + subDir + ".public");
     RandomAccessFile activeInput =
-      new RandomAccessFile(TEST_DATA + subDir + "/1out", "r");
+      new RandomAccessFile(TEST_DATA + subDir + "/1.out", "r");
     String activeSignature = activeInput.readLine(); 
     activeInput.close();
     RandomAccessFile primaryInput =
-      new RandomAccessFile(TEST_DATA + subDir + "/2out", "r");
+      new RandomAccessFile(TEST_DATA + subDir + "/2.out", "r");
     String primarySignature = primaryInput.readLine();
     primaryInput.close();
 
     assertTrue(verifier.verify(input, activeSignature));
     assertTrue(verifier.verify(input, primarySignature));
+    assertTrue(publicVerifier.verify(input, activeSignature));
+    assertTrue(publicVerifier.verify(input, primarySignature));
   }
 
   private final void testBadVerify(String subDir) throws Exception {
     Signer signer = new Signer(TEST_DATA + subDir);
     RandomAccessFile activeInput =
-      new RandomAccessFile(TEST_DATA + subDir + "/1out", "r");
+      new RandomAccessFile(TEST_DATA + subDir + "/1.out", "r");
     String activeSignature = activeInput.readLine(); 
     activeInput.close();
     RandomAccessFile primaryInput =
-      new RandomAccessFile(TEST_DATA + subDir + "/2out", "r");
+      new RandomAccessFile(TEST_DATA + subDir + "/2.out", "r");
     String primarySignature = primaryInput.readLine();
     primaryInput.close();
 
