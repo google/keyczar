@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,19 +27,19 @@ import org.keyczar.util.Util;
  * <ul>
  *   <li>an integer value version number, counting from 1,
  *   <li>a KeyStatus, and
- *   <li>a boolean representing whether this key is exportable 
+ *   <li>a boolean representing whether this key is exportable
  *       outside of Keyczar.
- * </ul>  
+ * </ul>
  * <p>JSON Representation consists of the following fields:
  * <ul>
  *   <li>"status": JSON representation of KeyStatus value,
  *   <li>"versionNumber": integer version number,
- *   <li>"exportable": boolean value.    
+ *   <li>"exportable": boolean value.
  * </ul>
- * 
+ *
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
- * 
+ *
  */
 class KeyVersion {
   @Expose private boolean exportable = false;
@@ -47,10 +47,10 @@ class KeyVersion {
   @Expose private int versionNumber = 0;
 
   @SuppressWarnings("unused")
-private KeyVersion() {
+  private KeyVersion() {
     // For GSON
   }
-  
+
   KeyVersion(int v, boolean export) {
     this(v, KeyStatus.ACTIVE, export);
   }
@@ -75,11 +75,10 @@ private KeyVersion() {
     return getVersionNumber() == v.getVersionNumber();
     // only depend on version number, otherwise changing status changes identity
   }
-  
+
   @Override
   public int hashCode() {
-    return versionNumber % 1000; // identity depends only on version number
-    //TODO: come up with a better hash function?
+    return versionNumber; // identity depends only on version number
   }
 
   KeyStatus getStatus() {
@@ -93,7 +92,7 @@ private KeyVersion() {
   boolean isExportable() {
     return exportable;
   }
-  
+
   /**
    * Updates the status of this KeyVersion to given status if not null.
    * @param status

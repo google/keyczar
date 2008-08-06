@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,15 +17,6 @@
 package org.keyczar;
 
 
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.Signature;
-import java.security.SignatureException;
-
-import javax.crypto.Cipher;
-import javax.crypto.ShortBufferException;
-
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
@@ -35,19 +26,28 @@ import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Util;
 
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.Signature;
+import java.security.SignatureException;
+
+import javax.crypto.Cipher;
+import javax.crypto.ShortBufferException;
+
 
 /**
  * Wrapping class for RSA Public Keys. These must be exported from existing RSA
  * private key sets.
- * 
+ *
  * @author steveweis@gmail.com (Steve Weis)
- * 
+ *
  */
 class RsaPublicKey extends KeyczarPublicKey {
   private static final String CRYPT_ALGORITHM =
-    "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING"; //$NON-NLS-1$
-  private static final String KEY_GEN_ALGORITHM = "RSA"; //$NON-NLS-1$
-  private static final String SIG_ALGORITHM = "SHA1withRSA"; //$NON-NLS-1$
+    "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
+  private static final String KEY_GEN_ALGORITHM = "RSA";
+  private static final String SIG_ALGORITHM = "SHA1withRSA";
 
   @Override
   String getKeyGenAlgorithm() {
@@ -63,7 +63,7 @@ class RsaPublicKey extends KeyczarPublicKey {
   KeyType getType() {
     return KeyType.RSA_PUB;
   }
-  
+
   static RsaPublicKey read(String input) throws KeyczarException {
     RsaPublicKey key = Util.gson().fromJson(input, RsaPublicKey.class);
     if (key.getType() != KeyType.RSA_PUB) {

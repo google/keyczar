@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,8 +22,9 @@ import org.keyczar.i18n.Messages;
 
 /**
  * A web-safe Base64 encoding and decoding utility class. See RFC 3548
- * 
+ *
  * @author steveweis@gmail.com (Steve Weis)
+ *
  */
 public class Base64Coder {
   /**
@@ -58,7 +59,7 @@ public class Base64Coder {
   private Base64Coder() {
     // Don't new me.
   }
-  
+
   /**
    * Decodes a web-safe Base64 encoded string
    * @param source The string to decode. May contain whitespace and optionally

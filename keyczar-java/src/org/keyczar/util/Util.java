@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,21 +27,22 @@ import java.security.SecureRandom;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * A miscellaneous utility class. Includes random number generation, int-to-byte 
+ * A miscellaneous utility class. Includes random number generation, int-to-byte
  * conversion, etc.
- * 
+ *
  * @author steveweis@gmail.com (Steve Weis)
+ *
  */
 public class Util {
-  private static final ConcurrentLinkedQueue<MessageDigest> DIGEST_QUEUE = 
+  private static final ConcurrentLinkedQueue<MessageDigest> DIGEST_QUEUE =
     new ConcurrentLinkedQueue<MessageDigest>();
-  private static final ConcurrentLinkedQueue<SecureRandom> RAND_QUEUE = 
+  private static final ConcurrentLinkedQueue<SecureRandom> RAND_QUEUE =
     new ConcurrentLinkedQueue<SecureRandom>();
 
   private Util() {
     // Don't new me.
   }
-  
+
   private static final Gson GSON =
     new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 
@@ -52,7 +53,7 @@ public class Util {
   /**
    * Returns a byte array containing 4 big-endian ordered bytes representing the
    * given integer.
-   * 
+   *
    * @param input The integer to convert to a byte array.
    * @return A byte array representation of an integer.
    */
@@ -65,7 +66,7 @@ public class Util {
   /**
    * Returns a byte array containing 8 big-endian ordered bytes representing the
    * given long.
-   * 
+   *
    * @param input The long to convert to a byte array.
    * @return A byte array representation of a long.
    */
@@ -77,10 +78,10 @@ public class Util {
 
   /**
    * Hashes a variable number of inputs and returns a new byte array
-   * 
+   *
    * @param inputs The inputs to hash
    * @return The hash output
-   * @throws KeyczarException If the SHA-1 algorithm is not found 
+   * @throws KeyczarException If the SHA-1 algorithm is not found
    */
   public static byte[] prefixHash(byte[]... inputs) throws KeyczarException {
     MessageDigest md = DIGEST_QUEUE.poll();
@@ -103,7 +104,7 @@ public class Util {
   /**
    * Write random bytes into the destination. Uses pre-cached secure random
    * objects
-   * 
+   *
    * @param dest Destionation to write the data
    */
   public static void rand(byte[] dest) {
@@ -116,7 +117,7 @@ public class Util {
   }
 
   /**
-   * Returns an array of random bytes of the given length 
+   * Returns an array of random bytes of the given length
    * @param len The length of the random array to output
    * @return A random array of bytes
    */
@@ -129,9 +130,9 @@ public class Util {
   /**
    * Reads 4 big-endian ordered bytes from a given offset in an array and
    * returns an integer representation.
-   * 
+   *
    * This method does not check the source array length.
-   * 
+   *
    * @param src The source array to read bytes from
    * @param offset The offset to start reading bytes from.
    * @return The integer value represented by the source array from the offset
@@ -148,9 +149,9 @@ public class Util {
   /**
    * Reads 8 big-endian ordered bytes from a given offset in an array and
    * returns a long representation.
-   * 
+   *
    * This method does not check the source array length.
-   * 
+   *
    * @param src The source array to read bytes from
    * @param offset The offset to start reading bytes from.
    * @return The long value represented by the source array from the offset
@@ -171,9 +172,9 @@ public class Util {
   /**
    * Converts a given byte array to an integer. Reads the bytes in big-endian
    * order.
-   * 
+   *
    * This method does not check the source array length.
-   * 
+   *
    * @param src A big-endian representation of an integer
    * @return The integer value represented by the source array
    */
@@ -183,9 +184,9 @@ public class Util {
 
   /**
    * Converts a given byte array to a long. Reads the bytes in big-endian order.
-   * 
+   *
    * This method does not check the source array length.
-   * 
+   *
    * @param src A big-endian representation of a long
    * @return The long value represented by the source array
    */
@@ -196,9 +197,9 @@ public class Util {
   /**
    * Writes 4 big-endian ordered bytes representing the given integer into the
    * destination byte array starting from the given offset.
-   * 
+   *
    * This method does not check the destination array length.
-   * 
+   *
    * @param input The integer to convert to bytes
    * @param dest The array in which to write the integer byte representation
    * @param offset The offset to start writing the bytes from
@@ -213,9 +214,9 @@ public class Util {
   /**
    * Writes 8 big-endian ordered bytes representing the given long into the
    * destination byte array starting from the given offset.
-   * 
+   *
    * This method does not check the destination array length.
-   * 
+   *
    * @param input The long to convert to bytes
    * @param dest The array in which to write the long byte representation
    * @param offset The offset to start writing the bytes from

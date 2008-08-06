@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,13 +16,7 @@
 
 package org.keyczar;
 
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import com.google.gson.annotations.Expose;
 
 import org.keyczar.enums.CipherMode;
 import org.keyczar.enums.KeyType;
@@ -36,26 +30,32 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import com.google.gson.annotations.Expose;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Wrapping class for AES keys. Currently the default is to use CBC mode.
- * 
+ *
  * @author steveweis@gmail.com (Steve Weis)
- * 
+ * @author arkajit.dey@gmail.com (Arkajit Dey)
+ *
  */
 class AesKey extends KeyczarKey {
   private Key aesKey;
   private int blockSize;
 
-  private static final String AES_ALGORITHM = "AES"; //$NON-NLS-1$
-  // Default mode is CBC
+  private static final String AES_ALGORITHM = "AES";
   private static final CipherMode DEFAULT_MODE = CipherMode.CBC;
 
-  @Expose private String aesKeyString = ""; //$NON-NLS-1$
+  @Expose private String aesKeyString = "";
   @Expose private HmacKey hmacKey = new HmacKey();
   @Expose private CipherMode mode = DEFAULT_MODE;
-  
+
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
   @Override
@@ -64,8 +64,12 @@ class AesKey extends KeyczarKey {
   }
 
   static AesKey generate() throws KeyczarException {
+    return generate(KeyType.AES.defaultSize());
+  }
+
+  static AesKey generate(int keySize) throws KeyczarException {
     AesKey key = new AesKey();
-    key.size = key.getType().keySize();
+    key.size = keySize;
     byte[] aesBytes = Util.rand(key.size() / 8);
     key.aesKeyString = Base64Coder.encode(aesBytes);
     key.mode = DEFAULT_MODE;
@@ -111,7 +115,7 @@ class AesKey extends KeyczarKey {
     boolean ivRead = false;
 
     public AesStream() throws KeyczarException  {
-      /* 
+      /*
        * The JCE Cipher.init() call essentially reallocates a new Cipher object
        * We avoid this by initializing two Cipher objects with zero-valued IVs,
        * Then passing IVs for CBC mode ourselves. The Ciphers will be cached in
@@ -168,7 +172,7 @@ class AesKey extends KeyczarKey {
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[blockSize];
         input.get(temp);
-        byte[] ivPreimage = decryptingCipher.update(temp);
+        decryptingCipher.update(temp);  // discard IV preimage byte array
         ivRead = false;
       }
       try {
@@ -196,7 +200,7 @@ class AesKey extends KeyczarKey {
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[blockSize];
         input.get(temp);
-        decryptingCipher.update(temp);  // discard the IV preimage byte array
+        decryptingCipher.update(temp);  // discard IV preimage byte array
         ivRead = false;
       }
       try {

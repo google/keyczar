@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,12 +16,7 @@
 
 package org.keyczar;
 
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.Signature;
-import java.security.SignatureException;
+import com.google.gson.annotations.Expose;
 
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
@@ -31,17 +26,23 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import com.google.gson.annotations.Expose;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Signature;
+import java.security.SignatureException;
 
 /**
  * Wrapping class for DSA Private Keys
- * 
+ *
  * @author steveweis@gmail.com (Steve Weis)
- * 
+ * @author arkajit.dey@gmail.com (Arkajit Dey)
+ *
  */
 class DsaPrivateKey extends KeyczarPrivateKey {
-  private static final String KEY_GEN_ALGORITHM = "DSA"; //$NON-NLS-1$
-  private static final String SIG_ALGORITHM = "SHA1withDSA"; //$NON-NLS-1$
+  private static final String KEY_GEN_ALGORITHM = "DSA";
+  private static final String SIG_ALGORITHM = "SHA1withDSA";
 
   @Expose private DsaPublicKey publicKey;
 
@@ -63,7 +64,7 @@ class DsaPrivateKey extends KeyczarPrivateKey {
   Stream getStream() throws KeyczarException {
     return new DsaSigningStream();
   }
-  
+
   @Override
   KeyType getType() {
     return KeyType.DSA_PRIV;
@@ -74,12 +75,16 @@ class DsaPrivateKey extends KeyczarPrivateKey {
     publicKey = (DsaPublicKey) pub;
     publicKey.init();
   }
-  
+
   static DsaPrivateKey generate() throws KeyczarException {
+    return generate(KeyType.DSA_PRIV.defaultSize());
+  }
+
+  static DsaPrivateKey generate(int keySize) throws KeyczarException {
     DsaPrivateKey key = new DsaPrivateKey();
     try {
       KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_GEN_ALGORITHM);
-      key.size = key.getType().keySize();
+      key.size = keySize;
       kpg.initialize(key.size());
       KeyPair pair = kpg.generateKeyPair();
       key.jcePrivateKey = pair.getPrivate();
@@ -91,7 +96,7 @@ class DsaPrivateKey extends KeyczarPrivateKey {
     key.init();
     return key;
   }
-  
+
   static DsaPrivateKey read(String input) throws KeyczarException {
     DsaPrivateKey key = Util.gson().fromJson(input, DsaPrivateKey.class);
     key.init();

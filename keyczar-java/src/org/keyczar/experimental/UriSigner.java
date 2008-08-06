@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,12 +29,10 @@ import java.util.TreeSet;
  * Adds a signature parameter, named sig by default, to a URI query which
  * signs all the query parameters. Can use to check integrity of query
  * parameters. Canonicalizes URI query parameters to be in lexicographic order.
- * 
- * Under construction. This class will most likely change.
- * 
+ *
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
- * 
+ *
  */
 public class UriSigner {
   private static final String DEFAULT_SIG_PARAM = "sig";
@@ -47,24 +45,24 @@ public class UriSigner {
   public UriSigner(String fileLocation) throws KeyczarException {
     signer = new Signer(fileLocation);
   }
-  
+
   /**
    * Returns a signed URI with the signature in the default parameter 'sig'.
    * Rest of the URI and query parameters are unchanged. Entire URI is signed.
-   * 
+   *
    * @param uri to be signed
    * @return signed uri
    * @throws KeyczarException
    */
-  public URI sign(URI uri) throws KeyczarException { 
+  public URI sign(URI uri) throws KeyczarException {
     return sign(uri, DEFAULT_SIG_PARAM);
   }
-  
+
   /**
    * Returns a signed URI with the signature in a parameter with the specified
-   * name. Rest of the URI and query parameters are unchanged. 
+   * name. Rest of the URI and query parameters are unchanged.
    * Entire URI is signed.
-   * 
+   *
    * @param uri to be signed
    * @param sigParam String name of signature parameter
    * @return signed uri with signature in given parameter
@@ -72,7 +70,7 @@ public class UriSigner {
    */
   public URI sign(URI uri, String sigParam) throws KeyczarException {
     try {
-      uri = canonicalUri(uri); // CHECK: Canonicalized the URI, OK?
+      uri = canonicalUri(uri);
     } catch (URISyntaxException e) {
       throw new KeyczarException(e);
     }
@@ -91,11 +89,11 @@ public class UriSigner {
       throw new KeyczarException(e);
     }
   }
-  
+
   /**
    * Verifies that the given URI is properly signed. Assumes signature is
    * in query parameter named 'sig'.
-   * 
+   *
    * @param signedUri
    * @return true if signature is valid, false otherwise
    * @throws KeyczarException
@@ -103,11 +101,11 @@ public class UriSigner {
   public boolean verify(URI signedUri) throws KeyczarException {
     return verify(signedUri, DEFAULT_SIG_PARAM);
   }
-  
+
   /**
    * Verifies that the given URI is properly signed. Takes signature from
    * from the parameter name given.
-   * 
+   *
    * @param signedUri
    * @param sigParam
    * @return true if signature is valid, false otherwise
@@ -116,15 +114,15 @@ public class UriSigner {
   public boolean verify(URI signedUri, String sigParam)
       throws KeyczarException {
     if (signedUri == null) {
-      return false; // exception instead?
+      return false;
     }
     String query = signedUri.getQuery();
     if (query == null) {
-      //TODO: if query==null? vacuously true? or false? exception?
+      return false;
     }
     String sig = null;
     StringBuffer unsignedQuery = new StringBuffer();
-    
+
     for (String param : query.split("&")) {
       if (param.startsWith(sigParam)) {
         String[] nameValue = param.split("=");
@@ -138,13 +136,13 @@ public class UriSigner {
     if (sig == null) {
       return false;
     }
-    
+
     try {
       URI unsignedUri;
       if (unsignedQuery.length() > 0) {
         unsignedQuery.deleteCharAt(unsignedQuery.length() - 1); // extra &
         unsignedUri = new URI(signedUri.getScheme(), signedUri.getAuthority(),
-            signedUri.getPath(), unsignedQuery.toString(), 
+            signedUri.getPath(), unsignedQuery.toString(),
             signedUri.getFragment());
       } else {
         unsignedUri = new URI(signedUri.getScheme(), signedUri.getAuthority(),
@@ -157,11 +155,11 @@ public class UriSigner {
       return false;
     }
   }
-  
+
   /**
    * Return canonical version of query string with all query parameters sorted
-   * in lexicographic order. 
-   * 
+   * in lexicographic order.
+   *
    * @param query to canonicalize
    * @return canonicalized query String
    */
@@ -185,13 +183,13 @@ public class UriSigner {
 
   /**
    * Canonicalizes URI by replacing query component with canonicalized query.
-   * 
+   *
    * @param uri to be canonicalized
    * @return canonicalized uri
    * @throws URISyntaxException if uri is invalid
    */
   private URI canonicalUri(URI uri) throws URISyntaxException {
-    return (uri == null) ? null : new URI(uri.getScheme(), uri.getAuthority(), 
+    return (uri == null) ? null : new URI(uri.getScheme(), uri.getAuthority(),
         uri.getPath(), canonicalQuery(uri.getQuery()), uri.getFragment());
   }
 }

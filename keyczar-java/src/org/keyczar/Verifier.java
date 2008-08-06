@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,11 +35,12 @@ import java.nio.ByteBuffer;
 * Verifiers are used strictly to verify signatures. Typically, Verifiers will
 * read sets of public keys, although may also be instantiated with sets of
 * symmetric or private keys.
-* 
+*
 * {@link Signer} objects should be used with symmetric or private key sets to
 * generate signatures.
-* 
+*
 * @author steveweis@gmail.com (Steve Weis)
+*
 */
 public class Verifier extends Keyczar {
   private static final Logger VERIFIER_LOGGER =
@@ -51,7 +52,7 @@ public class Verifier extends Keyczar {
    * Initialize a new Verifier with a KeyczarReader. The corresponding key set
    * must have a purpose of either {@link org.keyczar.enums.KeyPurpose#VERIFY} or
    * {@link org.keyczar.enums.KeyPurpose#SIGN_AND_VERIFY}.
-   * 
+   *
    * @param reader A reader to read keys from
    * @throws KeyczarException In the event of an IO error reading keys or if the
    * key set does not have the appropriate purpose.
@@ -63,10 +64,10 @@ public class Verifier extends Keyczar {
   /**
    * Initialize a new Verifier with a key set location. This will attempt to
    * read the keys using a KeyczarFileReader. The corresponding key set
-   * must have a purpose of either 
+   * must have a purpose of either
    * {@link org.keyczar.enums.KeyPurpose#VERIFY} or
    * {@link org.keyczar.enums.KeyPurpose#SIGN_AND_VERIFY}
-   *  
+   *
    * @param fileLocation Directory containing a key set
    * @throws KeyczarException In the event of an IO error reading keys or if the
    * key set does not have the appropriate purpose.
@@ -77,7 +78,7 @@ public class Verifier extends Keyczar {
 
   /**
    * Verifies a signature on the given byte array of data
-   * 
+   *
    * @param data The data to verify the signature on
    * @param signature The signture to verify
    * @return Whether this is a valid signature
@@ -90,7 +91,7 @@ public class Verifier extends Keyczar {
 
   /**
    * Verifies the signature on the data stored in the given ByteBuffer
-   * 
+   *
    * @param data The data to verify the signature on
    * @param signature The signature to verify
    * @return Whether this is a valid signature
@@ -137,7 +138,7 @@ public class Verifier extends Keyczar {
 
   /**
    * Verifies the signature on the given String
-   * 
+   *
    * @param data The data to verify the signature on
    * @param signature The signature to verify
    * @return Whether this is a valid signature
@@ -150,7 +151,7 @@ public class Verifier extends Keyczar {
 
   @Override
   boolean isAcceptablePurpose(KeyPurpose purpose) {
-    return (purpose == KeyPurpose.VERIFY || 
+    return (purpose == KeyPurpose.VERIFY ||
             purpose == KeyPurpose.SIGN_AND_VERIFY);
   }
 }

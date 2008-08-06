@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,16 +16,16 @@
 
 package org.keyczar;
 
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
+import com.google.gson.annotations.Expose;
 
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import com.google.gson.annotations.Expose;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 
 /**
  * A wrapper for a public key associated with a X.509 certificate.
@@ -35,9 +35,9 @@ import com.google.gson.annotations.Expose;
  */
 abstract class KeyczarPublicKey extends KeyczarKey {
   private PublicKey jcePublicKey;
-  
+
   @Expose String x509;
-  
+
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
   public PublicKey getJcePublicKey() {
@@ -62,7 +62,7 @@ abstract class KeyczarPublicKey extends KeyczarKey {
       KeyFactory kf = KeyFactory.getInstance(getKeyGenAlgorithm());
       jcePublicKey = kf.generatePublic(new X509EncodedKeySpec(x509Bytes));
       byte[] fullHash = Util.prefixHash(x509Bytes);
-      System.arraycopy(fullHash, 0, hash, 0, hash.length);      
+      System.arraycopy(fullHash, 0, hash, 0, hash.length);
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }

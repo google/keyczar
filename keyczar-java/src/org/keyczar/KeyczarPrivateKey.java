@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,16 +16,16 @@
 
 package org.keyczar;
 
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.spec.PKCS8EncodedKeySpec;
+import com.google.gson.annotations.Expose;
 
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import com.google.gson.annotations.Expose;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 /**
  * A wrapper for a private key paired asymmetrically with a public key.
@@ -36,9 +36,9 @@ import com.google.gson.annotations.Expose;
  */
 abstract class KeyczarPrivateKey extends KeyczarKey {
   protected PrivateKey jcePrivateKey;
-  
+
   @Expose protected String pkcs8;
-  
+
   protected byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
   @Override
@@ -54,7 +54,7 @@ abstract class KeyczarPrivateKey extends KeyczarKey {
 
   /**
    * Get the public key paired with this private key.
-   * 
+   *
    * @return KeyczarPublicKey associated with this KeyczarPrivateKey
    */
   abstract KeyczarPublicKey getPublic();
@@ -76,5 +76,11 @@ abstract class KeyczarPrivateKey extends KeyczarKey {
     }
   }
 
+  /**
+   * Updates the KeyczarPublicKey associated with this KeyczarPrivateKey.
+   *
+   * @param pub the new KeyczarPublicKey
+   * @throws KeyczarException if can't initialize public key properly
+   */
   abstract void setPublic(KeyczarPublicKey pub) throws KeyczarException;
 }

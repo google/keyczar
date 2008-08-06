@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,12 +28,11 @@ import org.keyczar.util.Util;
 import java.util.HashMap;
 
 /**
- * Manages a Keyczar key set. Keys will not be read from a KeyczarReader until
- * the read() method is called.
- * 
+ * Manages a Keyczar key set.
+ *
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
- * 
+ *
  */
 abstract class Keyczar {
   static final Logger KEYCZAR_LOGGER = Logger.getLogger(Keyczar.class);
@@ -50,28 +49,28 @@ abstract class Keyczar {
 
   private class KeyHash {
     private byte[] data;
-    
+
     private KeyHash(byte[] d) {
       if (d.length != KEY_HASH_SIZE) {
         throw new IllegalArgumentException();
       }
       data = d;
     }
-    
+
     @Override
     public boolean equals(Object o) {
       return (o instanceof KeyHash && o.hashCode() == this.hashCode());
     }
-    
+
     @Override
     public int hashCode() {
       return Util.toInt(data);
     }
   }
-  
+
   /**
    * Instantiates a new Keyczar object by passing it a Keyczar reader object
-   * 
+   *
    * @param reader A KeyczarReader to read keys from
    * @throws KeyczarException
    */
@@ -82,7 +81,7 @@ abstract class Keyczar {
       throw new KeyczarException(
           Messages.getString("Keyczar.UnacceptablePurpose", kmd.getPurpose()));
     }
-    
+
     if (kmd.isEncrypted() && !(reader instanceof EncryptedReader)) {
       throw new KeyczarException(
           Messages.getString("Keyczar.NeedEncryptedReader"));
@@ -106,7 +105,7 @@ abstract class Keyczar {
   /**
    * Instantiates a new Keyczar object with a KeyczarFileReader instantiated
    * with the given file location
-   * 
+   *
    * @param fileLocation
    * @throws KeyczarException
    */
@@ -122,7 +121,7 @@ abstract class Keyczar {
   /**
    * Adds a new KeyczarKey (new version) to the key store. Associates it
    * with given version. Adds new KeyVersion to the key set.
-   * 
+   *
    * @param version KeyVersion
    * @param key KeyczarKey
    */
@@ -131,17 +130,23 @@ abstract class Keyczar {
     versionMap.put(version, key);
     kmd.addVersion(version);
   }
-  
+
   KeyczarKey getPrimaryKey() {
     if (primaryVersion == null) {
       return null;
     }
     return versionMap.get(primaryVersion);
   }
-  
+
   KeyczarKey getKey(byte[] hash) {
     return hashMap.get(new KeyHash(hash));
   }
-  
+
+  /**
+   * Returns true if the purpose is acceptable for this key set.
+   *
+   * @param purpose
+   * @return true if the purpose is acceptable, false otherwise.
+   */
   abstract boolean isAcceptablePurpose(KeyPurpose purpose);
 }

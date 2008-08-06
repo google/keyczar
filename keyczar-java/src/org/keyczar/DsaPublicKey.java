@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,33 +16,33 @@
 
 package org.keyczar;
 
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.Signature;
-import java.security.SignatureException;
-
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Util;
 
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.Signature;
+import java.security.SignatureException;
+
 /**
  * Wrapping class for DSA Public Keys. These must be exported from existing DSA
  * private key sets.
- * 
+ *
  * @author steveweis@gmail.com (Steve Weis)
- * 
+ *
  */
 class DsaPublicKey extends KeyczarPublicKey {
-  private static final String KEY_GEN_ALGORITHM = "DSA"; //$NON-NLS-1$
-  private static final String SIG_ALGORITHM = "SHA1withDSA"; //$NON-NLS-1$
+  private static final String KEY_GEN_ALGORITHM = "DSA";
+  private static final String SIG_ALGORITHM = "SHA1withDSA";
 
   @Override
   public Stream getStream() throws KeyczarException {
     return new DsaVerifyingStream();
   }
-  
+
   @Override
   String getKeyGenAlgorithm() {
     return KEY_GEN_ALGORITHM;
