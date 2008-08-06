@@ -47,19 +47,6 @@ public class I18nTest extends TestCase {
   }
   
   @Test
-  public final void testSpanish() throws Exception {
-    String spanishMessage = "Recibido un mal número de versión: 1";
-    Messages.changeLocale(new Locale("es"));
-    BadVersionException esEx = new BadVersionException((byte) 1);
-    assertEquals(spanishMessage, esEx.getMessage());
-    
-    String anotherSpanishMessage =
-      "Buffer de entrada es mas corto. Recibido: 20 bytes. Necesarios: 10";
-    ShortBufferException buffEx = new ShortBufferException(20, 10);
-    assertEquals(anotherSpanishMessage, buffEx.getMessage());
-  }
-  
-  @Test
   public final void testHindi() throws Exception {
     String hindiMessage = "\u0939\u092e\u093e\u0930\u0947 \u092a\u093e\u0938 \u0906\u092f\u093e \u090f\u0915 \u092c\u0941\u0930\u093e \u2018\u0935\u0930\u0937\u093f\u0928\u2019 \u0915\u093e \u0928\u0902\u092c\u0930: 1";
     Messages.changeLocale(new Locale("hi"));
