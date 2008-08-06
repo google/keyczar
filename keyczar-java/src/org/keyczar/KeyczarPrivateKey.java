@@ -16,20 +16,16 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Arrays;
+import com.google.gson.annotations.Expose;
 
 /**
  * A wrapper for a private key paired asymmetrically with a public key.

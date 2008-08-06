@@ -16,17 +16,16 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
-
-import org.keyczar.enums.KeyType;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
-
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
+
+import com.google.gson.annotations.Expose;
 
 /**
  * A wrapper for a public key associated with a X.509 certificate.

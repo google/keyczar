@@ -16,15 +16,11 @@
 
 package org.keyczar;
 
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.exceptions.NoPrimaryKeyException;
-import org.keyczar.interfaces.KeyczarReader;
-import org.keyczar.interfaces.SigningStream;
-import org.keyczar.util.Base64Coder;
-
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.Date;
+
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyczarReader;
+import org.keyczar.util.Base64Coder;
 
 /**
  * Timeout signers can generate signatures that are valid until a specified
@@ -105,7 +101,7 @@ public class TimeoutSigner extends TimeoutVerifier {
   public byte[] timeoutSign(byte[] input, long expirationTime)
       throws KeyczarException {
     ByteBuffer output =
-      ByteBuffer.allocate(signer.digestSize() + signer.TIMESTAMP_SIZE);
+      ByteBuffer.allocate(signer.digestSize() + Signer.TIMESTAMP_SIZE);
     timeoutSign(ByteBuffer.wrap(input), expirationTime, output);
     output.reset();
     byte[] outputBytes = new byte[output.remaining()];

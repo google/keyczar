@@ -17,16 +17,14 @@
 package org.keyczar;
 
 
+import java.util.Locale;
+
 import junit.framework.TestCase;
 
 import org.junit.Test;
 import org.keyczar.exceptions.BadVersionException;
-import org.keyczar.exceptions.InvalidSignatureException;
 import org.keyczar.exceptions.ShortBufferException;
 import org.keyczar.i18n.Messages;
-
-import java.lang.reflect.Method;
-import java.util.Locale;
 
 /**
  * Test internationalzied messages.

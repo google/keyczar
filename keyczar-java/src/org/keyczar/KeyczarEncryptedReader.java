@@ -21,14 +21,10 @@ import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.EncryptedReader;
 import org.keyczar.interfaces.KeyczarReader;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-
 /**
  * Reads metadata and encrypted key files from the given reader.
  * 
- * @author sweis@google.com (Steve Weis)
+ * @author steveweis@gmail.com (Steve Weis)
  * 
  */
 class KeyczarEncryptedReader implements EncryptedReader {

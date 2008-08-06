@@ -28,7 +28,7 @@ import java.io.RandomAccessFile;
 /**
  * Reads metadata and key files from the given location.
  * 
- * @author sweis@google.com (Steve Weis)
+ * @author steveweis@gmail.com (Steve Weis)
  * 
  */
 class KeyczarFileReader implements KeyczarReader {

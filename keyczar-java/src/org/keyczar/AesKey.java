@@ -16,14 +16,18 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.keyczar.enums.CipherMode;
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.ShortBufferException;
-import org.keyczar.exceptions.UnsupportedTypeException;
-import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.DecryptingStream;
 import org.keyczar.interfaces.EncryptingStream;
 import org.keyczar.interfaces.SigningStream;
@@ -32,21 +36,13 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.SecureRandom;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import com.google.gson.annotations.Expose;
 
 /**
- * Wrapping class for AES keys. Currently the default is to use CBC mode
+ * Wrapping class for AES keys. Currently the default is to use CBC mode.
  * 
  * @author steveweis@gmail.com (Steve Weis)
+ * 
  */
 class AesKey extends KeyczarKey {
   private Key aesKey;
@@ -200,7 +196,7 @@ class AesKey extends KeyczarKey {
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[blockSize];
         input.get(temp);
-        byte[] ivPreimage = decryptingCipher.update(temp);
+        decryptingCipher.update(temp);  // discard the IV preimage byte array
         ivRead = false;
       }
       try {

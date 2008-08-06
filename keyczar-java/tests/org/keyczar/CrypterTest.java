@@ -17,19 +17,15 @@
 package org.keyczar;
 
 
+import java.io.RandomAccessFile;
+
 import junit.framework.TestCase;
 
 import org.junit.Test;
-import org.keyczar.Crypter;
-import org.keyczar.KeyczarEncryptedReader;
-import org.keyczar.KeyczarFileReader;
 import org.keyczar.exceptions.KeyNotFoundException;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.ShortCiphertextException;
 import org.keyczar.interfaces.KeyczarReader;
-
-import java.io.FileNotFoundException;
-import java.io.RandomAccessFile;
 
 /**
  * Tests Crypter class for encrypting and decrypting with RSA and AES. 
@@ -106,7 +102,7 @@ public class CrypterTest extends TestCase {
   public final void testBadAesCiphertexts() throws KeyczarException {
     Crypter crypter = new Crypter(TEST_DATA + "/aes");
     try {
-      byte[] decrypted = crypter.decrypt(new byte[0]);
+      crypter.decrypt(new byte[0]);  // discard garbage decrypted output
     } catch (ShortCiphertextException e) {
       // Expected exception
     }
@@ -114,7 +110,7 @@ public class CrypterTest extends TestCase {
     // Munge the ciphertext
     ciphertext[1] ^= 44;
     try {
-      byte[] decrypted = crypter.decrypt(ciphertext);
+      crypter.decrypt(ciphertext);  // discard garbage decrypted output
     } catch (KeyNotFoundException e) {
       // Expected exception
     }    

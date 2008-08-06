@@ -20,15 +20,7 @@ package org.keyczar;
 import junit.framework.TestCase;
 
 import org.junit.Test;
-import org.keyczar.Signer;
-import org.keyczar.Verifier;
-import org.keyczar.exceptions.BadVersionException;
-import org.keyczar.exceptions.KeyNotFoundException;
 import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.exceptions.ShortSignatureException;
-
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 
 /**
  * Tests Signer class for signing and verifying timeout signatures
@@ -39,7 +31,6 @@ import java.nio.ByteBuffer;
 public class TimeoutSignerTest extends TestCase {
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
-  private byte[] inputBytes = input.getBytes();
 
   private final void testTimeoutSignAndVerify(TimeoutSigner signer)
       throws KeyczarException, InterruptedException {

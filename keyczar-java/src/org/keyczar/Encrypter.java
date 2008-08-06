@@ -16,18 +16,17 @@
 
 package org.keyczar;
 
+import java.nio.ByteBuffer;
+
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.NoPrimaryKeyException;
-import org.keyczar.exceptions.ShortBufferException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.EncryptingStream;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.util.Base64Coder;
-
-import java.nio.ByteBuffer;
 
 /**
  * Encrypters are used strictly to encrypt data. Typically, Encrypters will read

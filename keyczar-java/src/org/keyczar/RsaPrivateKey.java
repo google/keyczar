@@ -16,11 +16,19 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Signature;
+import java.security.SignatureException;
+
+import javax.crypto.Cipher;
+import javax.crypto.ShortBufferException;
 
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.exceptions.UnsupportedTypeException;
 import org.keyczar.interfaces.DecryptingStream;
 import org.keyczar.interfaces.EncryptingStream;
 import org.keyczar.interfaces.SigningStream;
@@ -29,17 +37,7 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.util.Arrays;
-
-import javax.crypto.Cipher;
-import javax.crypto.ShortBufferException;
+import com.google.gson.annotations.Expose;
 
 
 /**

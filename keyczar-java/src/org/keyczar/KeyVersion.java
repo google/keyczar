@@ -46,7 +46,8 @@ class KeyVersion {
   @Expose private KeyStatus status = KeyStatus.ACTIVE;
   @Expose private int versionNumber = 0;
 
-  private KeyVersion() {
+  @SuppressWarnings("unused")
+private KeyVersion() {
     // For GSON
   }
   

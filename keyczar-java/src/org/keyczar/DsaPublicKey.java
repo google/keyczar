@@ -16,20 +16,16 @@
 
 package org.keyczar;
 
-import org.keyczar.enums.KeyType;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.exceptions.UnsupportedTypeException;
-import org.keyczar.i18n.Messages;
-import org.keyczar.interfaces.Stream;
-import org.keyczar.interfaces.VerifyingStream;
-import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
-
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.util.Arrays;
+
+import org.keyczar.enums.KeyType;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.Stream;
+import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.util.Util;
 
 /**
  * Wrapping class for DSA Public Keys. These must be exported from existing DSA

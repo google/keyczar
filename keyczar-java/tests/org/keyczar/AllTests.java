@@ -21,12 +21,8 @@ package org.keyczar;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.keyczar.experimental.UriSignerTest;
-
-import java.util.Map;
 
 /**
  * Suite of all unit tests.
