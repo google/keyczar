@@ -28,13 +28,7 @@ class BadVersionError(KeyczarError):
   
   def __init__(self, version):
     KeyczarError.__init__(self, 
-                          "Received a bad version number: " + str(version))
-
-class BadFormatError(KeyczarError):
-  """Indicates a bad format number was received."""
-  
-  def __init__(self, format):
-    KeyczarError.__init__(self, "Received a bad format number: " + str(format)) 
+                          "Received a bad version number: " + str(version)) 
 
 class Base64DecodingError(KeyczarError):
   """Indicates an error while performing Base 64 decoding."""
@@ -51,13 +45,6 @@ class KeyNotFoundError(KeyczarError):
   def __init__(self, hash):
     KeyczarError.__init__(self, 
                           "Key with hash identifier %s not found." % hash)
-
-class ShortBufferError(KeyczarError):  
-  """Indicates a buffer with insufficient capacity."""
-  
-  def __init__(self, given, needed):
-    KeyczarError.__init__(self, "Short Buffer. Given %s bytes. Need: %s"
-                          % (given, needed))
 
 class ShortCiphertextError(KeyczarError):
   """Indicates a ciphertext too short to be valid."""
