@@ -72,7 +72,7 @@ All Keyczar keys are created using the {\tt addkey} command. This command
 requites a keyset {\tt location} flag and may optionally have {\tt status},
 {\tt crypter} and {\tt size} flags. Section \ref{status} describes the meaning
 of the status values, but briefly they are {\it primary}, {\it active}, and {\it
-scheduled for revocation}. The default status is {\it active}. User-specified
+inactive}. The default status is {\it active}. User-specified
 key sizes are supported, although it is recommneded that on default or larger
 key  sizes are used.
 
@@ -114,13 +114,13 @@ key status values. Each of these commands require a {\tt location} and {\tt
 version} flag. 
 
 Promoting an {\it active} key will raise its status to
-{\it primary}, and promoting a {\it scheduled for revocation} status will make
+{\it primary}, and promoting an {\it inactive} status will make
 it {\it primary}. There can only be a single {\it primary} key in a given key
 set. 
 
 Similarly, {\tt demote} will lower a {\it primary} key to {\it active},
-and an {\it active} key to {\it scheduled for revocation}. The {\tt revoke}
-command will only work for {\it scheduled for revocation} status values.
+and an {\it active} key to {\it inactive}. The {\tt revoke}
+command will only work for {\it inactive} status values.
 The {\tt revoke} command will permenantly delete key material, so should be
 used with caution.
 
@@ -131,9 +131,9 @@ that key version 1 initially has an {\it active} status:
 {\tt KeyczarTool promote --location=/path/to/keyset --version=1}
 \item Demote {\it primary} version 1 back to {\it active}: \\
 {\tt KeyczarTool demote --location=/path/to/keyset --version=1}
-\item Demote {\it active} version 1 to {\it scheduled for revocation}: \\
+\item Demote {\it active} version 1 to {\it inactive}: \\
 {\tt KeyczarTool demote --location=/path/to/keyset --version=1}
-\item Revoke the {\it scheduled for revocation} version 1:  
+\item Revoke the {\it inactive} version 1:  
 \item {\tt KeyczarTool revoke --location=/path/to/keyset --version=1}
 \end{itemize}
 
@@ -287,7 +287,7 @@ vectors.
 \subsection{Statuses}\label{status}
 
 As described in Section \ref{keytool}, Keyczar keys may have one of three
-status values: {\it primary}, {\it active}, {\it scheduled for revocation}.
+status values: {\it primary}, {\it active}, {\it inactive}.
 Keys with a primary status value are used to generate new cryptomaterial, that
 is, signatures or ciphertexts. Keys of all status values may be used to verify
 or decrypt legacy data, but are not used to generate new data.
@@ -296,9 +296,9 @@ The idea is that a key will start its life as a primary key and be used to
 generate cryptographic output. That key can be rotated by generating a new
 primary key value, and changing the existing primary key to be active. Active
 keys will be kept around to verify and decrypt existing data, until they are
-scheduled for revocation. A key that is scheduled for revocation is identical
+inactive. A key that is inactive is identical
 to an active key, except its usage statistics are collected by default. When a
-key that is scheduled for revocation is no longer used, it can be safely
+key that is inactive is no longer used, it can be safely
 revoked and removed from a key set entirely.
 
 \subsection{Key Metadata}\label{metadata}
@@ -337,7 +337,7 @@ JSON metadata file.
 Each key metadata (see Section \ref{metadata}) contains a list of version
 numbers corresponding to the keys contained in a given keyset. Each version
 specifies an integral version number, a status of either {\it active}, {\it
-primary}, or {\it scheduled for revocation}, and a boolean specifying whether
+primary}, or {\it inactive}, and a boolean specifying whether
 the key is exportable outside of Keyczar.
 
 By default, key version numbers start from 1 and increase montonically.
