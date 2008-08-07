@@ -70,7 +70,7 @@ public class I18nTest extends TestCase {
  
  @Test
  public final void testPortguese() throws Exception {
-   String portugueseMessage = "Número de versão inválido: 1";
+   String portugueseMessage = "N\u00famero de vers\u00e3o inv\u00e1lido: 1";
    Messages.changeLocale(new Locale("pt"));
    BadVersionException ptEx = new BadVersionException((byte) 1);
    assertEquals(portugueseMessage, ptEx.getMessage());
