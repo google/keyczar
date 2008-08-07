@@ -134,7 +134,6 @@ class Key(object):
     return chr(keyczar.VERSION) + util.Decode(self.hash)
 
 class SymmetricKey(Key):
-  
   """Parent class for symmetric keys such as AES, HMAC-SHA1"""
   
   def __init__(self, type, key_string):
@@ -146,7 +145,6 @@ class SymmetricKey(Key):
     return self.__key_string
 
 class AsymmetricKey(Key):
-  
   """Parent class for asymmetric keys."""
   
   def __init__(self, type, params):
@@ -154,7 +152,6 @@ class AsymmetricKey(Key):
     self._params = params
 
 class AesKey(SymmetricKey):
-  
   """Represents AES symmetric private keys."""
   
   def __init__(self, key_string, hmac_key, size=keyinfo.AES.default_size, 
@@ -164,19 +161,19 @@ class AesKey(SymmetricKey):
     self.block_size = len(self.key_bytes)
     self.size = size
     self.mode = mode    
-    
+
   def __str__(self):
     return simplejson.dumps({"mode": str(self.mode),
                              "size": self.size,
                              "aesKeyString": self.key_string,
                              "hmacKey": simplejson.loads(str(self.hmac_key))})
-    
+
   def _Hash(self):
     fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)), self.key_bytes, 
                          util.IntToBytes(keyczar.KEY_HASH_SIZE), 
                          util.Decode(self.hmac_key.hash))
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
-  
+
   @staticmethod
   def Generate(size=keyinfo.AES.default_size):
     """
@@ -284,7 +281,6 @@ class AesKey(SymmetricKey):
     return self.__UnPad(plain)
     
 class HmacKey(SymmetricKey):
-  
   """Represents HMAC-SHA1 symmetric private keys."""
   
   def __init__(self, key_string, size=keyinfo.HMAC_SHA1.default_size):
@@ -352,7 +348,6 @@ class HmacKey(SymmetricKey):
     return self.Sign(msg) == sig_bytes
 
 class PrivateKey(AsymmetricKey):
-  
   """Represents private keys in Keyczar for asymmetric key pairs."""
   
   def __init__(self, type, params, pkcs8, pub):
@@ -365,7 +360,7 @@ class PrivateKey(AsymmetricKey):
                                                           str(self.public_key)),
                              "pkcs8": self.pkcs8, 
                              "size": self.size})
-  
+
   def _GetKeyString(self):
     return self.pkcs8
   
@@ -373,7 +368,6 @@ class PrivateKey(AsymmetricKey):
     return self.public_key.hash
 
 class PublicKey(AsymmetricKey):
-  
   """Represents public keys in Keyczar for asymmetric key pairs."""
   
   def __init__(self, type, params, x509):
@@ -386,8 +380,7 @@ class PublicKey(AsymmetricKey):
   def _GetKeyString(self):
     return self.x509
 
-class DsaPrivateKey(PrivateKey):
-  
+class DsaPrivateKey(PrivateKey):  
   """Represents DSA private keys in an asymmetric DSA key pair."""
   
   def __init__(self, params, pkcs8, pub, key, 
@@ -451,7 +444,6 @@ class DsaPrivateKey(PrivateKey):
     return self.public_key.Verify(msg, sig)
 
 class RsaPrivateKey(PrivateKey):
-  
   """Represents RSA private keys in an asymmetric RSA key pair."""
   
   def __init__(self, params, pkcs8, pub, key, 
@@ -600,7 +592,6 @@ class DsaPublicKey(PublicKey):
       return False
 
 class RsaPublicKey(PublicKey):
-  
   """Represents RSA public keys in an asymmetric RSA key pair."""
   
   def __init__(self, params, x509, key, size=keyinfo.RSA_PUB.default_size):

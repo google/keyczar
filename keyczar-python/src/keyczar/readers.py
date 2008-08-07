@@ -51,7 +51,6 @@ class Reader(object):
     """
 
 class FileReader(Reader):
-  
   """Reader that reads key data from files."""
   
   def __init__(self, location):
@@ -64,7 +63,6 @@ class FileReader(Reader):
     return util.ReadFile(os.path.join(self._location, str(version_number)))
 
 class EncryptedReader(Reader):
-  
   """Reader that reads encrypted key data from files."""
   
   def __init__(self, reader, crypter):

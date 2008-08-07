@@ -30,7 +30,6 @@ class _NameId(object):
     return self.name
   
 class KeyType(_NameId):
-  
   """
   Encodes different key types and their properties:
     - AES
@@ -107,7 +106,6 @@ def GetPurpose(name):
     return purposes[name]
   
 class CipherMode(_NameId):
-  
   """
   Encodes the different possible modes for a cipher:
     - Cipher Block Chaining (CBC)

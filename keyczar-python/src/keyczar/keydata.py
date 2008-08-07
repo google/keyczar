@@ -28,7 +28,6 @@ import errors
 import keyinfo
 
 class KeyMetadata(object):
-  
   """Encodes metadata for a keyset with a name, purpose, type, and versions."""
     
   def __init__(self, name, purpose, type, encrypted=False):
@@ -148,4 +147,4 @@ class KeyVersion(object):
     return KeyVersion(version['versionNumber'],
                       keyinfo.GetStatus(version['status']),
                       version['exportable'])
-    
+  

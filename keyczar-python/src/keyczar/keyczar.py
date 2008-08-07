@@ -37,7 +37,6 @@ KEY_HASH_SIZE = 4
 HEADER_SIZE = 1 + KEY_HASH_SIZE
 
 class Keyczar(object):
-  
   """Abstract Keyczar base class."""
     
   def __init__(self, reader):
@@ -163,7 +162,7 @@ class GenericKeyczar(Keyczar):
     if size is None:
       size = self.default_size
   
-    version = keydata.KeyVersion(len(self.versions)+1, status, False)
+    version = keydata.KeyVersion(len(self.versions) + 1, status, False)
     
     if status == keyinfo.PRIMARY:
       if self.primary_version is not None:
@@ -272,8 +271,7 @@ class GenericKeyczar(Keyczar):
         key = encrypter.Encrypt(key)  # encrypt key info before outputting
       util.WriteFile(key, os.path.join(loc, str(v.version_number)))
 
-class Encrypter(Keyczar):
-  
+class Encrypter(Keyczar):  
   """Capable of encrypting only."""
   
   @staticmethod
@@ -311,8 +309,7 @@ class Encrypter(Keyczar):
       raise errors.NoPrimaryKeyError()
     return util.Encode(encrypting_key.Encrypt(data))
     
-class Verifier(Keyczar):
-  
+class Verifier(Keyczar):  
   """Capable of verifying only."""
   
   @staticmethod
@@ -397,7 +394,6 @@ class Crypter(Encrypter):
     return key.Decrypt(data_bytes)
     
 class Signer(Verifier):
-  
   """Capable of both signing and verifying."""
   
   @staticmethod
