@@ -22,7 +22,7 @@ package org.keyczar.enums;
  *   <li>Primary: This key can verify or decrypt existing data and can sign or 
  *   encrypt new data.
  *   <li>Active:  This key can only verify or decrypt existing data.
- *   <li>Scheduled for Revocation: This key can only verify or decrypt existing 
+ *   <li>Inactive: This key can only verify or decrypt existing 
  *   data and may be revoked at any time.
  * </ul>
  * 
@@ -30,7 +30,7 @@ package org.keyczar.enums;
  * <ul>
  *   <li>"PRIMARY"
  *   <li>"ACTIVE"
- *   <li>"SCHEDULE_FOR_REVOCATION"
+ *   <li>"INACTIVE"
  * </ul>
  * 
  *  @author steveweis@gmail.com (Steve Weis)
@@ -40,7 +40,7 @@ package org.keyczar.enums;
 public enum KeyStatus {
   PRIMARY(0, "primary"), 
   ACTIVE(1, "active"),
-  SCHEDULED_FOR_REVOCATION(2, "scheduled_for_revocation");
+  INACTIVE(2, "inactive");
 
   private int value;
   private String name;
@@ -65,7 +65,7 @@ public enum KeyStatus {
       case 1:
         return ACTIVE;
       case 2:
-        return SCHEDULED_FOR_REVOCATION;
+        return INACTIVE;
     }
     return null;
   }
@@ -76,8 +76,8 @@ public enum KeyStatus {
         return PRIMARY;
       } else if (name.equalsIgnoreCase(ACTIVE.getName())) {
         return ACTIVE;
-      } else if (name.equalsIgnoreCase(SCHEDULED_FOR_REVOCATION.getName())) {
-        return SCHEDULED_FOR_REVOCATION;
+      } else if (name.equalsIgnoreCase(INACTIVE.getName())) {
+        return INACTIVE;
       }
     }
     return ACTIVE; // default status

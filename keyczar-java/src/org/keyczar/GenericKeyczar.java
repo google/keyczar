@@ -70,7 +70,7 @@ class GenericKeyczar extends Keyczar {
         }
         primaryVersion = version;
         break;
-      case SCHEDULED_FOR_REVOCATION:
+      case INACTIVE:
         version.setStatus(KeyStatus.ACTIVE);
         break;
     }
@@ -93,9 +93,9 @@ class GenericKeyczar extends Keyczar {
         primaryVersion = null; // no more PRIMARY keys in the set
         break;
       case ACTIVE:
-        version.setStatus(KeyStatus.SCHEDULED_FOR_REVOCATION);
+        version.setStatus(KeyStatus.INACTIVE);
         break;
-      case SCHEDULED_FOR_REVOCATION:
+      case INACTIVE:
         throw new KeyczarException(
             Messages.getString("Keyczar.CantDemoteScheduled"));
     }
@@ -173,7 +173,7 @@ class GenericKeyczar extends Keyczar {
    */
   void revoke(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
-    if (version.getStatus() == KeyStatus.SCHEDULED_FOR_REVOCATION) {
+    if (version.getStatus() == KeyStatus.INACTIVE) {
       kmd.removeVersion(versionNumber);
     } else {
       throw new KeyczarException(Messages.getString("Keyczar.CantRevoke"));
