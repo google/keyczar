@@ -1,5 +1,5 @@
 body {
-	font-family:Optima, Verdana, Arial, Helvetica, sans-serif;
+	font-family: sans-serif;
 	text-align: justify;
 	
 	background: #ffffff url(fade.jpg) repeat-x;
@@ -27,6 +27,10 @@ img {
 
 img#lock {
   float: right;
+}
+
+p#quicklinks {
+  padding-bottom: 0px;
 }
 
 div#footer {
