@@ -1,0 +1,38 @@
+<html><head><title>Epydoc Redirect Page</title>
+<meta http-equiv="cache-control" content="no-cache" />
+<meta http-equiv="expires" content="0" />
+<meta http-equiv="pragma" content="no-cache" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+<!--
+var pages = ["keyczar.errors.InvalidSignatureError-c", "keyczar.errors.ShortCiphertextError-c", "keyczar.errors.Base64DecodingError-c", "keyczar.errors.ShortSignatureError-c", "keyczar.errors.NoPrimaryKeyError-c", "keyczar.errors.KeyNotFoundError-c", "keyczar.readers.EncryptedReader-c", "keyczar.errors.BadVersionError-c", "keyczar.keyczar.GenericKeyczar-c", "keyczar.errors.KeyczarError-c", "keyczar.keydata.KeyMetadata-c", "keyczar.keydata.KeyVersion-c", "keyczar.keyinfo.CipherMode-c", "keyczar.keyinfo.KeyPurpose-c", "keyczar.keys.AsymmetricKey-c", "keyczar.keys.DsaPrivateKey-c", "keyczar.keys.RsaPrivateKey-c", "keyczar.readers.FileReader-c", "keyczar.keyczar.Encrypter-c", "keyczar.keyinfo.KeyStatus-c", "keyczar.keys.DsaPublicKey-c", "keyczar.keys.RsaPublicKey-c", "keyczar.keys.SymmetricKey-c", "keyczar.keyczar.Verifier-c", "keyczar.keyczart.Command-c", "keyczar.keyczar.Crypter-c", "keyczar.keyczar.Keyczar-c", "keyczar.keyinfo.KeyType-c", "keyczar.keyinfo._NameId-c", "keyczar.keys.PrivateKey-c", "keyczar.keyczar.Signer-c", "keyczar.keyczart._Name-c", "keyczar.keys.PublicKey-c", "keyczar.readers.Reader-c", "keyczar.keyczart.Flag-c", "keyczar.keys.HmacKey-c", "keyczar.keys.AesKey-c", "keyczar.keyczart-m", "keyczar.keys.Key-c", "keyczar.keyczar-m", "keyczar.keydata-m", "keyczar.keyinfo-m", "keyczar.readers-m", "keyczar.errors-m", "keyczar.keys-m", "keyczar.util-m", "keyczar-m"];
+var dottedName = get_anchor();
+if (dottedName) {
+    var target = redirect_url(dottedName);
+    if (target) window.location.replace(target);
+}
+// -->
+</script>
+
+<h3>Epydoc Auto-redirect page</h3>
+
+<p>When javascript is enabled, this page will redirect URLs of
+the form <tt>redirect.html#<i>dotted.name</i></tt> to the
+documentation for the object with the given fully-qualified
+dotted name.</p>
+<p><a id="message"> &nbsp; </a></p>
+
+<script type="text/javascript">
+<!--
+if (dottedName) {
+    var msg = document.getElementById("message");
+    msg.innerHTML = "No documentation found for <tt>"+
+                    dottedName+"</tt>";
+}
+// -->
+</script>
+
+</body>
+</html>
