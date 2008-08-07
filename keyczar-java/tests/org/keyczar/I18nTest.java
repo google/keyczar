@@ -48,9 +48,31 @@ public class I18nTest extends TestCase {
   
   @Test
   public final void testHindi() throws Exception {
-    String hindiMessage = "\u0939\u092e\u093e\u0930\u0947 \u092a\u093e\u0938 \u0906\u092f\u093e \u090f\u0915 \u092c\u0941\u0930\u093e \u2018\u0935\u0930\u0937\u093f\u0928\u2019 \u0915\u093e \u0928\u0902\u092c\u0930: 1";
+    String hindiMessage = "\u0939\u092e\u093e\u0930\u0947 \u092a\u093e\u0938" +
+      " \u0906\u092f\u093e \u090f\u0915 \u092c\u0941\u0930\u093e" +
+      " \u2018\u0935\u0930\u0937\u093f\u0928\u2019 \u0915\u093e" +
+      " \u0928\u0902\u092c\u0930: 1";
     Messages.changeLocale(new Locale("hi"));
     BadVersionException hiEx = new BadVersionException((byte) 1);
     assertEquals(hindiMessage, hiEx.getMessage());
   }
+  
+ @Test
+ public final void testJapanese() throws Exception {
+    String japaneseMessage = "\u00e4\u00b8\u008d\u00e6\u00ad\u00a3\u00e3" +
+      "\u0081\u00aa\u00e3\u0083\u0090\u00e3\u0083\u00bc\u00e3\u0082\u00b8" +
+      "\u00e3\u0083\u00a7\u00e3\u0083\u00b3\u00e7\u0095\u00aa\u00e5\u008f" +
+      "\u00b7\u00ef\u00bc\u009a1";
+    Messages.changeLocale(new Locale("jp"));
+    BadVersionException jpEx = new BadVersionException((byte) 1);
+    assertEquals(japaneseMessage, jpEx.getMessage());
+  }
+ 
+ @Test
+ public final void testPortguese() throws Exception {
+   String portugueseMessage = "Número de versão inválido: 1";
+   Messages.changeLocale(new Locale("pt"));
+   BadVersionException ptEx = new BadVersionException((byte) 1);
+   assertEquals(portugueseMessage, ptEx.getMessage());
+ }
 }
