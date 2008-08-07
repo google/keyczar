@@ -1,6 +1,6 @@
 #!/usr/bin/python2.4
 #
-# Copyright 2008 Google Inc. All Rights Reserved.
+# Copyright 2008 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -77,9 +77,8 @@ class KeyStatus(_NameId):
 
 PRIMARY = KeyStatus("PRIMARY", 0)
 ACTIVE = KeyStatus("ACTIVE", 1)
-SCHEDULED_FOR_REVOCATION = KeyStatus("SCHEDULED_FOR_REVOCATION", 2)
-statuses = {"PRIMARY": PRIMARY, "ACTIVE": ACTIVE, 
-            "SCHEDULED_FOR_REVOCATION": SCHEDULED_FOR_REVOCATION}
+INACTIVE = KeyStatus("INACTIVE", 2)
+statuses = {"PRIMARY": PRIMARY, "ACTIVE": ACTIVE, "INACTIVE": INACTIVE}
 
 def GetStatus(value):
   if value in statuses:

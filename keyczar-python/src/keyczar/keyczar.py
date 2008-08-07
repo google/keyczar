@@ -1,6 +1,6 @@
 #!/usr/bin/python2.4
 #
-# Copyright 2008 Google Inc. All Rights Reserved.
+# Copyright 2008 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -202,7 +202,7 @@ class GenericKeyczar(Keyczar):
       if self.primary_version is not None:
         self.primary_version.status = keyinfo.ACTIVE  # only one primary key
       self.primary_version = version
-    elif version.status == keyinfo.SCHEDULED_FOR_REVOCATION:
+    elif version.status == keyinfo.INACTIVE:
       version.status = keyinfo.ACTIVE
   
   def Demote(self, version_number):
@@ -214,17 +214,17 @@ class GenericKeyczar(Keyczar):
     @param version_number: the version number to demote
     @type version_number: integer
     
-    @raise KeyczarError: if invalid version number or trying to demote a key 
-      scheduled for revocation, use L{Revoke} instead.
+    @raise KeyczarError: if invalid version number or trying to demote an
+    inactive key, use L{Revoke} instead.
     """
     version = self.metadata.GetVersion(version_number)
     if version.status == keyinfo.PRIMARY:
       version.status = keyinfo.ACTIVE
       self.primary_version = None  # no more primary keys in the set
     elif version.status == keyinfo.ACTIVE:
-      version.status = keyinfo.SCHEDULED_FOR_REVOCATION
-    elif version.status == keyinfo.SCHEDULED_FOR_REVOCATION:
-      raise errors.KeyczarError("Can't demote a key scheduled for revocation.")
+      version.status = keyinfo.INACTIVE
+    elif version.status == keyinfo.INACTIVE:
+      raise errors.KeyczarError("Can't demote an inactive key, only revoke.")
   
   def Revoke(self, version_number):
     """
@@ -233,14 +233,13 @@ class GenericKeyczar(Keyczar):
     @param version_number: integer version number to revoke
     @type version_number: integer
     
-    @raise KeyczarError: if invalid version number or key is not scheduled
-      for revocation
+    @raise KeyczarError: if invalid version number or key is not inactive.
     """
     version = self.metadata.GetVersion(version_number)
-    if version.status == keyinfo.SCHEDULED_FOR_REVOCATION:
+    if version.status == keyinfo.INACTIVE:
       self.metadata.RemoveVersion(version_number)
     else:
-      raise errors.KeyczarError("Can't revoke key if not scheduled to be.")
+      raise errors.KeyczarError("Can't revoke key if not inactive.")
   
   def PublicKeyExport(self, dest):
     """Export the public keys corresponding to our key set to destination."""

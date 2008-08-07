@@ -1,6 +1,6 @@
 #!/usr/bin/python2.4
 #
-# Copyright 2008 Google Inc. All Rights Reserved.
+# Copyright 2008 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,5 +20,4 @@ Tests for Keyczar Cryptography Toolkit
 Suite of unit tests for keyczar package.
 
 @author: arkajit.dey@gmail.com (Arkajit Dey)
-@author: steveweis@gmail.com (Steve Weis)
 """
