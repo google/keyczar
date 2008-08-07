@@ -1,6 +1,6 @@
 #!/usr/bin/python2.4
 #
-# Copyright 2008 Google Inc. All Rights Reserved.
+# Copyright 2008 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@ Testcases to test behavior of Keyczar Crypters.
 @author: arkajit.dey@gmail.com (Arkajit Dey)
 """
 
+import os
+import unittest
+
 from keyczar import errors
 from keyczar import keyczar
 from keyczar import readers
 from keyczar import util
-
-import unittest
-import os
 
 TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 
@@ -83,3 +83,6 @@ class CrypterTest(unittest.TestCase):
   
   def tearDown(self):
     self.input = None
+  
+def suite():
+  return unittest.makeSuite(CrypterTest, 'test')
