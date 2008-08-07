@@ -68,33 +68,16 @@
             <classpath refid="Keyczar-Java.classpath"/>
         </junit>
     </target>
+    <target name="TestRsaKey">
+        <java classname="org.keyczar.TestRsaKey" failonerror="true" fork="yes">
+            <classpath refid="Keyczar-Java.classpath"/>
+        </java>
+    </target>
     <target name="SignerTest">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
             <test name="org.keyczar.SignerTest" todir="${junit.output.dir}"/>
-            <classpath refid="Keyczar-Java.classpath"/>
-        </junit>
-    </target>
-    <target name="com.google.keyczar">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <classpath refid="Keyczar-Java.classpath"/>
-        </junit>
-    </target>
-    <target name="EncryptedKeyTest">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="org.keyczar.EncryptedKeyTest" todir="${junit.output.dir}"/>
-            <classpath refid="Keyczar-Java.classpath"/>
-        </junit>
-    </target>
-    <target name="com.google.security.keyczar">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
             <classpath refid="Keyczar-Java.classpath"/>
         </junit>
     </target>
@@ -106,19 +89,41 @@
             <classpath refid="Keyczar-Java.classpath"/>
         </junit>
     </target>
-    <target name="KeyczarTool addkey encrypted">
-        <java classname="org.keyczar.KeyczarTool" failonerror="true" fork="yes">
-            <arg line="addkey --location=/home/sweis/workspace/Keyczar-Java/testdata/aes-crypted --encrypter=/home/sweis/workspace/Keyczar-Java/testdata/aes"/>
+    <target name="Blah">
+        <java classname="org.keyczar.Blah" failonerror="true" fork="yes">
             <classpath refid="Keyczar-Java.classpath"/>
         </java>
     </target>
-    <target name="InternationaliztionTest">
+    <target name="I18nTest">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="org.keyczar.InternationaliztionTest" todir="${junit.output.dir}"/>
+            <test name="org.keyczar.I18nTest" todir="${junit.output.dir}"/>
             <classpath refid="Keyczar-Java.classpath"/>
         </junit>
+    </target>
+    <target name="org.keyczar">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="org.keyczar.AllTests" todir="${junit.output.dir}"/>
+            <test name="org.keyczar.CrypterTest" todir="${junit.output.dir}"/>
+            <test name="org.keyczar.I18nTest" todir="${junit.output.dir}"/>
+            <test name="org.keyczar.KeyczarToolTest" todir="${junit.output.dir}"/>
+            <test name="org.keyczar.SignerTest" todir="${junit.output.dir}"/>
+            <test name="org.keyczar.TimeoutSignerTest" todir="${junit.output.dir}"/>
+            <classpath refid="Keyczar-Java.classpath"/>
+        </junit>
+    </target>
+    <target name="Dummy">
+        <java classname="org.keyczar.Dummy" failonerror="true" fork="yes">
+            <classpath refid="Keyczar-Java.classpath"/>
+        </java>
+    </target>
+    <target name="KeyczarTool">
+        <java classname="org.keyczar.KeyczarTool" failonerror="true" fork="yes">
+            <classpath refid="Keyczar-Java.classpath"/>
+        </java>
     </target>
     <target name="junitreport">
         <junitreport todir="${junit.output.dir}">

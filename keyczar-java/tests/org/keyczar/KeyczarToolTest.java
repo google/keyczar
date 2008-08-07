@@ -46,7 +46,7 @@ public class KeyczarToolTest extends TestCase {
     mock = new MockKeyczarReader("TEST", KeyPurpose.ENCRYPT, KeyType.AES);
     mock.addKey(42, KeyStatus.PRIMARY);
     mock.addKey(77, KeyStatus.ACTIVE);
-    mock.addKey(99, KeyStatus.SCHEDULED_FOR_REVOCATION);
+    mock.addKey(99, KeyStatus.INACTIVE);
     
     pubMock = new MockKeyczarReader("PUBLIC-TEST", 
         KeyPurpose.DECRYPT_AND_ENCRYPT, KeyType.RSA_PRIV);
@@ -106,8 +106,7 @@ public class KeyczarToolTest extends TestCase {
   public final void testDemote() {
     String[] args = {"demote", "--version=77"};
     KeyczarTool.main(args);
-    Assert.assertEquals(KeyStatus.SCHEDULED_FOR_REVOCATION, 
-        mock.getStatus(77));
+    Assert.assertEquals(KeyStatus.INACTIVE, mock.getStatus(77));
   }
   
   @Test
