@@ -71,8 +71,8 @@ class KeyStatus(_NameId):
   Encodes the different possible statuses of a key:
     - Primary: can be used to encrypt and sign new data
     - Active: can be used to decrypt or verify data signed previously
-    - Scheduled for Revocation: can do the same functions as an active key,
-      but status indicates that it is about to be revoked
+    - Inactive: can do the same functions as an active key, but about
+      to be revoked
   """
 
 PRIMARY = KeyStatus("PRIMARY", 0)
