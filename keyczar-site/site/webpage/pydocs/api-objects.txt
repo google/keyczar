@@ -47,6 +47,7 @@ keyczar.keyinfo.DECRYPT_AND_ENCRYPT	keyczar.keyinfo-module.html#DECRYPT_AND_ENCR
 keyczar.keyinfo.CTR	keyczar.keyinfo-module.html#CTR
 keyczar.keyinfo.GetPurpose	keyczar.keyinfo-module.html#GetPurpose
 keyczar.keyinfo.RSA_PUB	keyczar.keyinfo-module.html#RSA_PUB
+keyczar.keyinfo.INACTIVE	keyczar.keyinfo-module.html#INACTIVE
 keyczar.keyinfo.DSA_PUB	keyczar.keyinfo-module.html#DSA_PUB
 keyczar.keyinfo.ENCRYPT	keyczar.keyinfo-module.html#ENCRYPT
 keyczar.keyinfo.statuses	keyczar.keyinfo-module.html#statuses
@@ -58,7 +59,6 @@ keyczar.keyinfo.RSA_PRIV	keyczar.keyinfo-module.html#RSA_PRIV
 keyczar.keyinfo.purposes	keyczar.keyinfo-module.html#purposes
 keyczar.keyinfo.ACTIVE	keyczar.keyinfo-module.html#ACTIVE
 keyczar.keyinfo.types	keyczar.keyinfo-module.html#types
-keyczar.keyinfo.SCHEDULED_FOR_REVOCATION	keyczar.keyinfo-module.html#SCHEDULED_FOR_REVOCATION
 keyczar.keyinfo.CBC	keyczar.keyinfo-module.html#CBC
 keyczar.keyinfo.GetMode	keyczar.keyinfo-module.html#GetMode
 keyczar.keyinfo.modes	keyczar.keyinfo-module.html#modes
