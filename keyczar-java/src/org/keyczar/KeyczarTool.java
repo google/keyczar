@@ -96,43 +96,47 @@ public class KeyczarTool {
 
         // All commands need a location.
         String locationFlag = flagMap.get(Flag.LOCATION);
+        if (locationFlag != null && !locationFlag.endsWith(File.separator)) {
+          locationFlag += File.separator;
+        }
 
         switch (c) {
-        case CREATE:
-          String nameFlag = flagMap.get(Flag.NAME);
-          KeyPurpose purposeFlag =
-            KeyPurpose.getPurpose(flagMap.get(Flag.PURPOSE));
-          String asymmetricFlag = flagMap.get(Flag.ASYMMETRIC);
-          create(locationFlag, nameFlag, purposeFlag, asymmetricFlag); break;
-        case ADDKEY:
-          KeyStatus statusFlag = KeyStatus.getStatus(flagMap.get(Flag.STATUS));
-          String crypterFlag = flagMap.get(Flag.CRYPTER);
-          int sizeFlag = -1;
-          if (flagMap.containsKey(Flag.SIZE)) {
-            sizeFlag = Integer.parseInt(flagMap.get(Flag.SIZE));
-          }
-          addKey(locationFlag, statusFlag, crypterFlag, sizeFlag);
-          break;
-        case PUBKEY:
-          publicKeys(locationFlag, flagMap.get(Flag.DESTINATION));
-          break;
-        case PROMOTE:
-          promote(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
-          break;
-        case DEMOTE:
-          demote(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
-          break;
-        case REVOKE:
-          revoke(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
-          break;
-        case USEKEY:
-          if (args.length > 2) {
-            useKey(args[1], locationFlag, flagMap.get(Flag.DESTINATION),
-                  flagMap.get(Flag.CRYPTER));
-          } else {
-            printUsage();
-          }
-          break;
+          case CREATE:
+            String nameFlag = flagMap.get(Flag.NAME);
+            KeyPurpose purposeFlag =
+              KeyPurpose.getPurpose(flagMap.get(Flag.PURPOSE));
+            String asymmetricFlag = flagMap.get(Flag.ASYMMETRIC);
+            create(locationFlag, nameFlag, purposeFlag, asymmetricFlag); break;
+          case ADDKEY:
+            KeyStatus statusFlag = KeyStatus.getStatus(
+                                                      flagMap.get(Flag.STATUS));
+            String crypterFlag = flagMap.get(Flag.CRYPTER);
+            int sizeFlag = -1;
+            if (flagMap.containsKey(Flag.SIZE)) {
+              sizeFlag = Integer.parseInt(flagMap.get(Flag.SIZE));
+            }
+            addKey(locationFlag, statusFlag, crypterFlag, sizeFlag);
+            break;
+          case PUBKEY:
+            publicKeys(locationFlag, flagMap.get(Flag.DESTINATION));
+            break;
+          case PROMOTE:
+            promote(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
+            break;
+          case DEMOTE:
+            demote(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
+            break;
+          case REVOKE:
+            revoke(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
+            break;
+          case USEKEY:
+            if (args.length > 2) {
+              useKey(args[1], locationFlag, flagMap.get(Flag.DESTINATION),
+                    flagMap.get(Flag.CRYPTER));
+            } else {
+              printUsage();
+            }
+            break;
         }
       } catch (NumberFormatException e) {
         e.printStackTrace();

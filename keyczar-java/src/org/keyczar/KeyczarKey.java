@@ -137,18 +137,18 @@ abstract class KeyczarKey {
    */
   static KeyczarKey readKey(KeyType type, String key) throws KeyczarException {
     switch (type) {
-    case AES:
-      return AesKey.read(key);
-    case HMAC_SHA1:
-      return HmacKey.read(key);
-    case DSA_PRIV:
-      return DsaPrivateKey.read(key);
-    case DSA_PUB:
-      return DsaPublicKey.read(key);
-    case RSA_PRIV:
-      return RsaPrivateKey.read(key);
-    case RSA_PUB:
-      return RsaPublicKey.read(key);
+      case AES:
+        return AesKey.read(key);
+      case HMAC_SHA1:
+        return HmacKey.read(key);
+      case DSA_PRIV:
+        return DsaPrivateKey.read(key);
+      case DSA_PUB:
+        return DsaPublicKey.read(key);
+      case RSA_PRIV:
+        return RsaPrivateKey.read(key);
+      case RSA_PUB:
+        return RsaPublicKey.read(key);
     }
 
     throw new UnsupportedTypeException(type);
