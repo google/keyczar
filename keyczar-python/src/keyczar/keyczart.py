@@ -261,7 +261,7 @@ def main(argv):
         crypter = None
       AddKey(flags.get(LOCATION), 
              keyinfo.GetStatus(flags.get(STATUS, 'ACTIVE')), 
-             int(flags.get(SIZE, -1)), crypter)
+             crypter, int(flags.get(SIZE, -1)))
     elif cmd == PUBKEY:
       PubKey(flags.get(LOCATION), flags.get(DESTINATION))
     elif cmd == PROMOTE:
