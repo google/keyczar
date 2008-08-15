@@ -74,7 +74,6 @@ class DsaPublicKey extends KeyczarPublicKey {
       return getType().getOutputSize();
     }
 
-    @Override
     public void initVerify() throws KeyczarException {
       try {
         signature.initVerify(getJcePublicKey());
@@ -83,7 +82,6 @@ class DsaPublicKey extends KeyczarPublicKey {
       }
     }
 
-    @Override
     public void updateVerify(ByteBuffer input) throws KeyczarException {
       try {
         signature.update(input);
@@ -92,7 +90,6 @@ class DsaPublicKey extends KeyczarPublicKey {
       }
     }
 
-    @Override
     public boolean verify(ByteBuffer sig) throws KeyczarException {
       try {
         return signature.verify(sig.array(), sig.position(), sig.limit()

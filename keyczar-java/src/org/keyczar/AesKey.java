@@ -133,17 +133,14 @@ class AesKey extends KeyczarKey {
       }
     }
 
-    @Override
     public SigningStream getSigningStream() {
       return signStream;
     }
 
-    @Override
     public VerifyingStream getVerifyingStream() {
       return (VerifyingStream) signStream;
     }
 
-    @Override
     public void initDecrypt(ByteBuffer input) {
       // This will simply decrypt the first block, leaving the CBC Cipher
       // ready for the next block of input.
@@ -153,7 +150,6 @@ class AesKey extends KeyczarKey {
       ivRead = true;
     }
 
-    @Override
     public int initEncrypt(ByteBuffer output) throws KeyczarException {
       // Generate a random value and encrypt it. This will be the IV.
       byte[] ivPreImage = new byte[blockSize];
@@ -165,7 +161,6 @@ class AesKey extends KeyczarKey {
       }
     }
 
-    @Override
     public int updateDecrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       if (ivRead) {
@@ -182,9 +177,8 @@ class AesKey extends KeyczarKey {
       }
     }
 
-    @Override
     public int updateEncrypt(ByteBuffer input, ByteBuffer output)
-    throws KeyczarException {
+        throws KeyczarException {
       try {
         return encryptingCipher.update(input, output);
         //return encryptingCipher.update(input, output);
@@ -193,7 +187,6 @@ class AesKey extends KeyczarKey {
       }
     }
 
-    @Override
     public int doFinalDecrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       if (ivRead) {
@@ -210,7 +203,6 @@ class AesKey extends KeyczarKey {
       }
     }
 
-    @Override
     public int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       try {
@@ -220,7 +212,6 @@ class AesKey extends KeyczarKey {
       }
     }
 
-    @Override
     public int maxOutputSize(int inputLen) {
       return mode.getOutputSize(blockSize, inputLen);
     }

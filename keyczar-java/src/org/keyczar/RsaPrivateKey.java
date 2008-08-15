@@ -136,7 +136,6 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       return getType().getOutputSize();
     }
 
-    @Override
     public int doFinalDecrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       try {
@@ -146,36 +145,29 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       }
     }
 
-    @Override
     public int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       return encryptingStream.doFinalEncrypt(input, output);
     }
 
-    @Override
     public SigningStream getSigningStream() throws KeyczarException {
       return encryptingStream.getSigningStream();
     }
 
-    @Override
     public VerifyingStream getVerifyingStream() {
       return new VerifyingStream() {
-        @Override
         public int digestSize() {
           return 0;
         }
 
-        @Override
         public void initVerify() {
           // Do nothing
         }
 
-        @Override
         public void updateVerify(ByteBuffer input) {
           // Do nothing
         }
 
-        @Override
         public boolean verify(ByteBuffer signature) {
           // Do nothing
           return true;
@@ -183,7 +175,6 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       };
     }
 
-    @Override
     public void initDecrypt(ByteBuffer input) throws KeyczarException {
       try {
         cipher.init(Cipher.DECRYPT_MODE, getJcePrivateKey());
@@ -192,12 +183,10 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       }
     }
 
-    @Override
     public int initEncrypt(ByteBuffer output) throws KeyczarException {
       return encryptingStream.initEncrypt(output);
     }
 
-    @Override
     public void initSign() throws KeyczarException {
       try {
         signature.initSign(getJcePrivateKey());
@@ -206,17 +195,14 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       }
     }
 
-    @Override
     public void initVerify() throws KeyczarException {
       verifyingStream.initVerify();
     }
 
-    @Override
     public int maxOutputSize(int inputLen) {
       return getType().getOutputSize() * 2;
     }
 
-    @Override
     public void sign(ByteBuffer output) throws KeyczarException {
       try {
         byte[] sig = signature.sign();
@@ -226,7 +212,6 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       }
     }
 
-    @Override
     public int updateDecrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       try {
@@ -236,13 +221,11 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       }
     }
 
-    @Override
     public int updateEncrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       return encryptingStream.updateEncrypt(input, output);
     }
 
-    @Override
     public void updateSign(ByteBuffer input) throws KeyczarException {
       try {
         signature.update(input);
@@ -251,12 +234,10 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       }
     }
 
-    @Override
     public void updateVerify(ByteBuffer input) throws KeyczarException {
       verifyingStream.updateVerify(input);
     }
 
-    @Override
     public boolean verify(ByteBuffer sig) throws KeyczarException {
       return verifyingStream.verify(sig);
     }

@@ -120,7 +120,6 @@ class DsaPrivateKey extends KeyczarPrivateKey {
       return getType().getOutputSize();
     }
 
-    @Override
     public void initSign() throws KeyczarException {
       try {
         signature.initSign(getJcePrivateKey());
@@ -129,12 +128,10 @@ class DsaPrivateKey extends KeyczarPrivateKey {
       }
     }
 
-    @Override
     public void initVerify() throws KeyczarException {
       verifyingStream.initVerify();
     }
 
-    @Override
     public void sign(ByteBuffer output) throws KeyczarException {
       try {
         byte[] sig = signature.sign();
@@ -144,7 +141,6 @@ class DsaPrivateKey extends KeyczarPrivateKey {
       }
     }
 
-    @Override
     public void updateSign(ByteBuffer input) throws KeyczarException {
       try {
         signature.update(input);
@@ -153,12 +149,10 @@ class DsaPrivateKey extends KeyczarPrivateKey {
       }
     }
 
-    @Override
     public void updateVerify(ByteBuffer input) throws KeyczarException {
       verifyingStream.updateVerify(input);
     }
 
-    @Override
     public boolean verify(ByteBuffer sig) throws KeyczarException {
       return verifyingStream.verify(sig);
     }

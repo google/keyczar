@@ -43,12 +43,10 @@ class KeyczarEncryptedReader implements EncryptedReader {
     this.crypter = crypter;
   }
 
-  @Override
   public String getKey(int version) throws KeyczarException {
     return crypter.decrypt(reader.getKey(version));
   }
 
-  @Override
   public String getMetadata() throws KeyczarException {
     return reader.getMetadata();
   }
