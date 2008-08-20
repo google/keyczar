@@ -118,9 +118,9 @@ public enum KeyType {
       case 3:
         return DSA_PUB;
       case 4:
-        return DSA_PRIV;
+        return RSA_PRIV;
       case 5:
-        return DSA_PUB;
+        return RSA_PUB;
       case 127:
         return TEST;
     }
