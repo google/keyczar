@@ -239,7 +239,7 @@ def main(argv):
   if len(argv) == 0:
     Usage()
   else:
-    cmd = GetCommand(argv[0])
+    cmd = GetCommand(argv[0])   
     flags = {}
     for arg in argv:
       if arg.startswith("--"):
@@ -248,30 +248,40 @@ def main(argv):
           [flag, val] = arg.split("=")
           flags[GetFlag(flag)] = val
         except ValueError:
+          print "Flags incorrectly formatted"
           Usage()
+    
+    try:
+      version = int(flags.get(VERSION, -1))
+      size = int(flags.get(SIZE, -1))
+      # -1 if non-existent
+    except ValueError:
+      print "Size and version flags require an integer"
+      Usage()
+    
+    loc = flags.get(LOCATION)  # all commands need location
+    
     if cmd == CREATE:
       purpose = {'crypt': keyinfo.DECRYPT_AND_ENCRYPT,
                  'sign': keyinfo.SIGN_AND_VERIFY}.get(flags.get(PURPOSE))
-      Create(flags.get(LOCATION), flags.get(NAME, 'Test'), purpose, 
-             flags.get(ASYMMETRIC))
+      Create(loc, flags.get(NAME, 'Test'), purpose, flags.get(ASYMMETRIC))
     elif cmd == ADDKEY:
-      if flags.has_key(CRYPTER):
+      status = keyinfo.GetStatus(flags.get(STATUS, 'ACTIVE').upper())
+      if CRYPTER in flags:
         crypter = keyczar.Encrypter.Read(flags[CRYPTER])
       else:
         crypter = None
-      AddKey(flags.get(LOCATION), 
-             keyinfo.GetStatus(flags.get(STATUS, 'ACTIVE')), 
-             crypter, int(flags.get(SIZE, -1)))
+      AddKey(loc, status, crypter, size)
     elif cmd == PUBKEY:
-      PubKey(flags.get(LOCATION), flags.get(DESTINATION))
+      PubKey(loc, flags.get(DESTINATION))
     elif cmd == PROMOTE:
-      Promote(flags.get(LOCATION), int(flags.get(VERSION, -1)))
+      Promote(loc, version)
     elif cmd == DEMOTE:
-      Demote(flags.get(LOCATION), int(flags.get(VERSION, -1)))
+      Demote(loc, version)
     elif cmd == REVOKE:
-      Revoke(flags.get(LOCATION), int(flags.get(VERSION, -1)))
+      Revoke(loc, version)
     elif cmd == GENKEY:
-      GenKeySet(flags.get(LOCATION))
+      GenKeySet(loc)
     else:
       Usage()
 

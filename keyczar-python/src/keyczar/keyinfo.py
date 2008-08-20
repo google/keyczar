@@ -21,6 +21,8 @@ status, purpose, and the cipher mode.
 @author: arkajit.dey@gmail.com (Arkajit Dey)
 """
 
+import errors
+
 class _NameId(object):
   def __init__(self, name, id):
     self.name = name
@@ -63,8 +65,10 @@ types = {"AES": AES, "HMAC_SHA1": HMAC_SHA1, "DSA_PRIV": DSA_PRIV,
          "DSA_PUB": DSA_PUB, "RSA_PRIV": RSA_PRIV, "RSA_PUB": RSA_PUB}
 
 def GetType(name):
-  if name in types:
+  try:
     return types[name]
+  except KeyError:
+    raise errors.KeyczarError("Invalid Key Type")
     
 class KeyStatus(_NameId):
   """
@@ -81,8 +85,10 @@ INACTIVE = KeyStatus("INACTIVE", 2)
 statuses = {"PRIMARY": PRIMARY, "ACTIVE": ACTIVE, "INACTIVE": INACTIVE}
 
 def GetStatus(value):
-  if value in statuses:
+  try:
     return statuses[value]
+  except KeyError:
+    raise errors.KeyczarError("Invalid Key Status")
 
 class KeyPurpose(_NameId):
   """
@@ -101,8 +107,10 @@ purposes = {"DECRYPT_AND_ENCRYPT": DECRYPT_AND_ENCRYPT, "ENCRYPT": ENCRYPT,
             "SIGN_AND_VERIFY": SIGN_AND_VERIFY, "VERIFY": VERIFY}
 
 def GetPurpose(name):
-  if name in purposes:
+  try:
     return purposes[name]
+  except KeyError:
+    raise errors.KeyczarError("Invalid Key Purpose")
   
 class CipherMode(_NameId):
   """
@@ -125,5 +133,7 @@ DET_CBC = CipherMode("DET_CBC", 3, False, lambda b, i: (i / b + 1) * b)
 modes = {"CBC": CBC, "CTR": CTR, "ECB": ECB, "DET_CBC": DET_CBC}
 
 def GetMode(name):
-  if name in modes:
+  try:
     return modes[name]
+  except KeyError:
+    raise errors.KeyczarError("Invalid Cipher Mode")
