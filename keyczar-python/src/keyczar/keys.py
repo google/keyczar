@@ -102,6 +102,11 @@ class Key(object):
     self.type = type
     self.__size = self.type.default_size  # initially default
   
+  def __eq__(self, other):
+    return (self.type == other.type and 
+            self.size == other.size and 
+            self.key_string == other.key_string)
+  
   def __SetSize(self, new_size):
     if self.type.IsValidSize(new_size):
       self.__size = new_size

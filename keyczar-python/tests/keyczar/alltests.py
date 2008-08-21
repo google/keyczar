@@ -23,11 +23,13 @@ Suite of all unittests for Python Keyczar.
 import unittest
 
 import crypter_test
+import keyczart_test
 import signer_test
 
 def suite():
   alltests = unittest.TestSuite()
   alltests.addTest(crypter_test.suite())
+  alltests.addTest(keyczart_test.suite())
   alltests.addTest(signer_test.suite())
   return alltests
 

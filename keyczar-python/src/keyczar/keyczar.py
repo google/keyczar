@@ -241,7 +241,7 @@ class GenericKeyczar(Keyczar):
     else:
       raise errors.KeyczarError("Can't revoke key if not inactive.")
   
-  def PublicKeyExport(self, dest):
+  def PublicKeyExport(self, dest, mock=None):
     """Export the public keys corresponding to our key set to destination."""
     kmd = self.metadata
     pubkmd = None
@@ -257,8 +257,14 @@ class GenericKeyczar(Keyczar):
     for v in self.versions:
       pubkmd.AddVersion(v)
       pubkey = self.GetKey(v).public_key
-      util.WriteFile(str(pubkey), os.path.join(dest, str(v.version_number)))
-    util.WriteFile(str(pubkmd), os.path.join(dest, "meta"))
+      if mock:  # only for testing
+        mock.SetPubKey(v.version_number, pubkey)
+      else:
+        util.WriteFile(str(pubkey), os.path.join(dest, str(v.version_number)))
+    if mock: # only for testing
+      mock.pubkmd = pubkmd
+    else:
+      util.WriteFile(str(pubkmd), os.path.join(dest, "meta"))
   
   def Write(self, loc, encrypter=None):
     if encrypter:

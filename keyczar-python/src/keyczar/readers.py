@@ -22,6 +22,9 @@ A Reader supports reading metadata and key info for key sets.
 
 import os                
 
+import errors
+import keydata
+import keys
 import util
 
 class Reader(object):
@@ -74,3 +77,57 @@ class EncryptedReader(Reader):
   
   def GetKey(self, version_number):
     return self._crypter.Decrypt(self._reader.GetKey(version_number))
+
+class MockReader(Reader):
+  """Mock reader used for testing Keyczart."""
+  
+  def __init__(self, name, purpose, type, encrypted=False):
+    self.kmd = keydata.KeyMetadata(name, purpose, type, encrypted)
+    self.pubkmd = None
+    self.keys = {}
+    self.pubkeys = {}
+  
+  @property
+  def numkeys(self):
+    return len(self.keys)
+  
+  def GetMetadata(self):
+    return str(self.kmd)
+  
+  def GetKey(self, version_number):
+    try:
+      return str(self.keys[version_number])
+    except KeyError:
+      raise errors.KeyczarError("Unrecognized Version Number")
+  
+  def GetStatus(self, version_number):
+    return self.kmd.GetVersion(version_number).status
+  
+  def SetKey(self, version_number, key):
+    self.keys[version_number] = key
+  
+  def SetPubKey(self, version_number, key):
+    self.pubkeys[version_number] = key
+  
+  def AddKey(self, version_number, status, size=None):
+    """Utility method for testing."""
+    key = keys.GenKey(self.kmd.type, size)
+    self.keys[version_number] = key
+    return self.kmd.AddVersion(keydata.KeyVersion(version_number, status, 
+                                                  False))
+  
+  def RemoveKey(self, version_number):
+    """Mocks out deleting revoked key files."""
+    self.keys.pop(version_number)
+  
+  def ExistsVersion(self, version_number):
+    return version_number in self.keys
+  
+  def HasPubKey(self, version_number):
+    priv = self.keys[version_number]
+    pub = self.pubkeys[version_number]
+    return priv.public_key == pub
+  
+  def GetKeySize(self, version_number):
+    return self.keys[version_number].size
+  
