@@ -18,6 +18,7 @@ package org.keyczar;
 
 
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 
 import junit.framework.TestCase;
 
@@ -97,7 +98,20 @@ public class CrypterTest extends TestCase {
     String decrypted = crypter.decrypt(ciphertext);
     assertEquals(input, decrypted);
   }
-    
+  
+  @Test
+  public final void testShortAesEncryptAndDecrypt() throws KeyczarException {
+    Crypter crypter = new Crypter(TEST_DATA + "/aes");
+    for (int i = 0; i < 32; i++) {
+      char[] letters = new char[i];
+      Arrays.fill(letters, 'a');
+      String input = new String(letters);
+      String ciphertext = crypter.encrypt(input);
+      String decrypted = crypter.decrypt(ciphertext);
+      assertEquals(input, decrypted);
+    }
+  }
+
   @Test
   public final void testBadAesCiphertexts() throws KeyczarException {
     Crypter crypter = new Crypter(TEST_DATA + "/aes");

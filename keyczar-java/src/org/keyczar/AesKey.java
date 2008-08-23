@@ -163,7 +163,7 @@ class AesKey extends KeyczarKey {
 
     public int updateDecrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
-      if (ivRead) {
+      if (ivRead && input.remaining() >= blockSize) {
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[blockSize];
         input.get(temp);
@@ -181,7 +181,6 @@ class AesKey extends KeyczarKey {
         throws KeyczarException {
       try {
         return encryptingCipher.update(input, output);
-        //return encryptingCipher.update(input, output);
       } catch (javax.crypto.ShortBufferException e) {
         throw new ShortBufferException(e);
       }
@@ -190,6 +189,10 @@ class AesKey extends KeyczarKey {
     public int doFinalDecrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       if (ivRead) {
+        if (input.remaining() == 0) {
+          // This can occur if someone encrypts an 0-length array
+          return 0;
+        }
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[blockSize];
         input.get(temp);
@@ -197,7 +200,13 @@ class AesKey extends KeyczarKey {
         ivRead = false;
       }
       try {
-        return decryptingCipher.doFinal(input, output);
+        if (input.remaining() == 0) {
+          byte[] outputBytes = decryptingCipher.doFinal();
+          output.put(outputBytes);
+          return outputBytes.length;
+        } else {
+          return decryptingCipher.doFinal(input, output);
+        }
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
