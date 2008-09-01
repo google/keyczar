@@ -32,6 +32,8 @@ import java.util.List;
  *   <li>DSA Public:  (1024, 48)
  *   <li>RSA Private: ((2048, 1024, 768, 512), 256)
  *   <li>RSA Public:  ((2048, 1024, 768, 512), 256)
+ *   <li>EC Private:  ((256, 384, 521, 192), 70)
+ *   <li>EC Public:   ((256, 384, 521, 192), 70)
  *   <li>Test:        (1, 0)
  * </ul>
  *
@@ -54,6 +56,8 @@ public enum KeyType {
   DSA_PUB("DSA Public", 3, Arrays.asList(1024), 48),
   RSA_PRIV("RSA Private", 4, Arrays.asList(2048, 1024, 768, 512), 256),
   RSA_PUB("RSA Public", 5, Arrays.asList(2048, 1024, 768, 512), 256),
+  EC_PRIV("EC Private", 6, Arrays.asList(256, 384, 521, 192), 70),
+  EC_PUB("EC Public", 7, Arrays.asList(256, 384, 521, 192), 70),
   TEST("Test", 127, Arrays.asList(1), 0);
 
   private int outputSize;
@@ -121,6 +125,10 @@ public enum KeyType {
         return RSA_PRIV;
       case 5:
         return RSA_PUB;
+      case 6:
+    	return EC_PRIV;
+      case 7:
+        return EC_PUB;
       case 127:
         return TEST;
     }
