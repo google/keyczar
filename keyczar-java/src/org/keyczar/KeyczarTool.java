@@ -241,6 +241,9 @@ public class KeyczarTool {
           if (asymmetricFlag.equalsIgnoreCase("rsa")) {
             kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
                 KeyType.RSA_PRIV);
+          } else if (asymmetricFlag.equalsIgnoreCase("ec")) {
+                kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
+                    KeyType.EC_PRIV);
           } else { // Default to DSA
             kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
                 KeyType.DSA_PRIV);
