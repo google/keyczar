@@ -12,78 +12,81 @@ import org.mozilla.jss.asn1.OCTET_STRING;
 import org.mozilla.jss.asn1.SEQUENCE;
 
 /**
- * This class implements EC private keys. 
- *
+ * This class implements EC private keys.
+ * 
  * @author martclau@gmail.com
- *
+ * 
  */
 public class EcPrivateKeyImpl implements ECPrivateKey {
 
-	private static final long serialVersionUID = -237229630170977756L;
-	
-	private BigInteger S;
-	private ECParameterSpec params;
-	
-	EcPrivateKeyImpl(BigInteger S, ECParameterSpec params) {
-		this.S = S;
-		this.params = params;
-	}
+  private static final long serialVersionUID = -237229630170977756L;
 
-	public BigInteger getS() {
-		return S;
-	}
+  private BigInteger S;
+  private ECParameterSpec params;
 
-	public String getAlgorithm() {
-		return "EC";
-	}
+  EcPrivateKeyImpl(BigInteger S, ECParameterSpec params) {
+    this.S = S;
+    this.params = params;
+  }
 
-	public byte[] getEncoded() {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+  public BigInteger getS() {
+    return S;
+  }
 
-		SEQUENCE privateKeyInfo = new SEQUENCE();
-		privateKeyInfo.addElement( new INTEGER(0) );
+  public String getAlgorithm() {
+    return "EC";
+  }
 
-		SEQUENCE algid = new SEQUENCE();
-		algid.addElement( new OBJECT_IDENTIFIER("1.2.840.10045.2.1") );
-		algid.addElement( new OBJECT_IDENTIFIER(EcCore.getOID(params)) );			
-		privateKeyInfo.addElement(algid);
+  public byte[] getEncoded() {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-		SEQUENCE ecPrivateKey = new SEQUENCE();
-		ecPrivateKey.addElement( new INTEGER(1) );
-		ecPrivateKey.addElement( new OCTET_STRING( EcCore.fieldElemToBytes(S, params) ) );
+    SEQUENCE privateKeyInfo = new SEQUENCE();
+    privateKeyInfo.addElement(new INTEGER(0));
 
-		try {
-			ecPrivateKey.encode(baos);
-		} catch (IOException ioe) {
-			throw new RuntimeException("Internal ASN.1 encoding error", ioe);
-		}
+    SEQUENCE algid = new SEQUENCE();
+    algid.addElement(new OBJECT_IDENTIFIER("1.2.840.10045.2.1"));
+    algid.addElement(new OBJECT_IDENTIFIER(EcCore.getOID(params)));
+    privateKeyInfo.addElement(algid);
 
-		privateKeyInfo.addElement( new OCTET_STRING( baos.toByteArray() ) ) ;
+    SEQUENCE ecPrivateKey = new SEQUENCE();
+    ecPrivateKey.addElement(new INTEGER(1));
+    ecPrivateKey
+        .addElement(new OCTET_STRING(EcCore.fieldElemToBytes(S, params)));
 
-		baos.reset();
-		try {
-			privateKeyInfo.encode(baos);
-		} catch (IOException ioe) {
-			throw new RuntimeException("Internal ASN.1 encoding error", ioe);
-		}				
+    try {
+      ecPrivateKey.encode(baos);
+    } catch (IOException ioe) {
+      throw new RuntimeException("Internal ASN.1 encoding error", ioe);
+    }
 
-		return baos.toByteArray();
-	}
+    privateKeyInfo.addElement(new OCTET_STRING(baos.toByteArray()));
 
-	public String getFormat() {
-		return "PKCS#8";
-	}
+    baos.reset();
+    try {
+      privateKeyInfo.encode(baos);
+    } catch (IOException ioe) {
+      throw new RuntimeException("Internal ASN.1 encoding error", ioe);
+    }
 
-	public ECParameterSpec getParams() {
-		return params;
-	}
+    return baos.toByteArray();
+  }
 
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		int bitlen = params.getOrder().bitLength();
-		sb.append("GooKey EC private key, " + bitlen + " bit\n");
-		sb.append("  Private value: " + S.toString(16) + "\n");
-		sb.append("  Parameters: " + EcCore.getFriendlyName(params) + " (" + EcCore.getOID(params) + ")");
-		return sb.toString();
-	}
+  public String getFormat() {
+    return "PKCS#8";
+  }
+
+  public ECParameterSpec getParams() {
+    return params;
+  }
+
+  @Override
+  public String toString() {
+    StringBuffer sb = new StringBuffer();
+    int bitlen = params.getOrder().bitLength();
+    sb.append("GooKey EC private key, " + bitlen + " bit\n");
+    sb.append("  Private value: " + S.toString(16) + "\n");
+    sb.append("  Parameters: " + EcCore.getFriendlyName(params) + " ("
+        + EcCore.getOID(params) + ")");
+    return sb.toString();
+  }
 }

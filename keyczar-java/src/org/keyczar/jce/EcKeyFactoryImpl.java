@@ -29,103 +29,114 @@ import org.mozilla.jss.pkix.primitive.PrivateKeyInfo;
  * This class implements an EC key factory capable of generating:
  * <ul>
  * <li>Private keys from PKCS#8 and ECPrivateKeySpec
- * <li>Public keys from X.509 and ECPublicKeySpec 
+ * <li>Public keys from X.509 and ECPublicKeySpec
  * </ul>
- *
+ * 
  * @author martclau@gmail.com
- *
+ * 
  */
 public class EcKeyFactoryImpl extends KeyFactorySpi {
 
-	public EcKeyFactoryImpl() {
-		super();
-	}
+  public EcKeyFactoryImpl() {
+    super();
+  }
 
-	// "Translate" e.g. {1 2 840 10045 2 1} to 1.2.840.10045.2.1
-	private static String decodeOID(ASN1Value val) throws Exception {
-		OBJECT_IDENTIFIER.Template ot = new OBJECT_IDENTIFIER.Template();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		val.encode(baos);
-		OBJECT_IDENTIFIER o = (OBJECT_IDENTIFIER)ot.decode(new ByteArrayInputStream(baos.toByteArray()));
-		StringBuffer sb = new StringBuffer();
-		long[] nums = o.getNumbers();
-		for (int i = 0; i < nums.length - 1; i++) {
-			sb.append(nums[i] + ".");
-		}
-		sb.append(nums[nums.length-1]);		
-		return sb.toString();
-	}
-	
-	protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
-	throws InvalidKeySpecException {
-		if (keySpec instanceof PKCS8EncodedKeySpec) {
-			try {
-				PrivateKeyInfo.Template pkiTemp = new PrivateKeyInfo.Template();				
-				byte[] data = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
-				PrivateKeyInfo pki = (PrivateKeyInfo)pkiTemp.decode(new ByteArrayInputStream(data));				
+  // "Translate" e.g. {1 2 840 10045 2 1} to 1.2.840.10045.2.1
+  private static String decodeOID(ASN1Value val) throws Exception {
+    OBJECT_IDENTIFIER.Template ot = new OBJECT_IDENTIFIER.Template();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    val.encode(baos);
+    OBJECT_IDENTIFIER o = (OBJECT_IDENTIFIER) ot
+        .decode(new ByteArrayInputStream(baos.toByteArray()));
+    StringBuffer sb = new StringBuffer();
+    long[] nums = o.getNumbers();
+    for (int i = 0; i < nums.length - 1; i++) {
+      sb.append(nums[i] + ".");
+    }
+    sb.append(nums[nums.length - 1]);
+    return sb.toString();
+  }
 
-				AlgorithmIdentifier algid = (AlgorithmIdentifier)pki.getPrivateKeyAlgorithm();
-				if (!algid.getOID().toString().equals("{1 2 840 10045 2 1}")) // ecPublicKey
-					throw new IllegalArgumentException("Unsupported key");
+  @Override
+  protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
+      throws InvalidKeySpecException {
+    if (keySpec instanceof PKCS8EncodedKeySpec) {
+      try {
+        PrivateKeyInfo.Template pkiTemp = new PrivateKeyInfo.Template();
+        byte[] data = ((PKCS8EncodedKeySpec) keySpec).getEncoded();
+        PrivateKeyInfo pki = (PrivateKeyInfo) pkiTemp
+            .decode(new ByteArrayInputStream(data));
 
-				ECParameterSpec params = EcCore.getParams(decodeOID(algid.getParameters()));
+        AlgorithmIdentifier algid = pki.getPrivateKeyAlgorithm();
+        if (!algid.getOID().toString().equals("{1 2 840 10045 2 1}")) // ecPublicKey
+          throw new IllegalArgumentException("Unsupported key");
 
-				SEQUENCE.Template foo = new SEQUENCE.Template();
-				foo.addElement(new INTEGER.Template());
-				foo.addElement(new OCTET_STRING.Template());
+        ECParameterSpec params = EcCore.getParams(decodeOID(algid
+            .getParameters()));
 
-				SEQUENCE ecPrivateKey =  (SEQUENCE)foo.decode(new ByteArrayInputStream(pki.getEncoded()));
-				OCTET_STRING arrhh = (OCTET_STRING)ecPrivateKey.elementAt(1);				
-				return new EcPrivateKeyImpl(new BigInteger(1, arrhh.toByteArray()), params);
-			} catch (Exception e) {
-				throw new InvalidKeySpecException("Invalid key encoding", e);
-			}
-		}
-		if (keySpec instanceof ECPrivateKeySpec) {
-			ECPrivateKeySpec spec = (ECPrivateKeySpec)keySpec;
-			return new EcPrivateKeyImpl(spec.getS(), spec.getParams());
-		}
-		throw new IllegalArgumentException("Type of KeySpec is not supported");
-	}
+        SEQUENCE.Template foo = new SEQUENCE.Template();
+        foo.addElement(new INTEGER.Template());
+        foo.addElement(new OCTET_STRING.Template());
 
-	protected PublicKey engineGeneratePublic(KeySpec keySpec)
-	throws InvalidKeySpecException {
-		if (keySpec instanceof X509EncodedKeySpec) {
-			try {
-				SEQUENCE.Template outer = new SEQUENCE.Template();
-				outer.addElement( AlgorithmIdentifier.getTemplate() );
-				outer.addElement( BIT_STRING.getTemplate() );
+        SEQUENCE ecPrivateKey = (SEQUENCE) foo.decode(new ByteArrayInputStream(
+            pki.getEncoded()));
+        OCTET_STRING arrhh = (OCTET_STRING) ecPrivateKey.elementAt(1);
+        return new EcPrivateKeyImpl(new BigInteger(1, arrhh.toByteArray()),
+            params);
+      } catch (Exception e) {
+        throw new InvalidKeySpecException("Invalid key encoding", e);
+      }
+    }
+    if (keySpec instanceof ECPrivateKeySpec) {
+      ECPrivateKeySpec spec = (ECPrivateKeySpec) keySpec;
+      return new EcPrivateKeyImpl(spec.getS(), spec.getParams());
+    }
+    throw new IllegalArgumentException("Type of KeySpec is not supported");
+  }
 
-				byte[] data = ((X509EncodedKeySpec)keySpec).getEncoded();
-				SEQUENCE ecPublicKey = (SEQUENCE)outer.decode(new ByteArrayInputStream(data));
-				
-				AlgorithmIdentifier algid = (AlgorithmIdentifier)ecPublicKey.elementAt(0);
-				if (!algid.getOID().toString().equals("{1 2 840 10045 2 1}")) // ecPublicKey
-					throw new IllegalArgumentException("Unsupported key");
+  @Override
+  protected PublicKey engineGeneratePublic(KeySpec keySpec)
+      throws InvalidKeySpecException {
+    if (keySpec instanceof X509EncodedKeySpec) {
+      try {
+        SEQUENCE.Template outer = new SEQUENCE.Template();
+        outer.addElement(AlgorithmIdentifier.getTemplate());
+        outer.addElement(BIT_STRING.getTemplate());
 
-				ECParameterSpec params = EcCore.getParams(decodeOID(algid.getParameters()));
+        byte[] data = ((X509EncodedKeySpec) keySpec).getEncoded();
+        SEQUENCE ecPublicKey = (SEQUENCE) outer
+            .decode(new ByteArrayInputStream(data));
 
-				BIT_STRING bs = (BIT_STRING)ecPublicKey.elementAt(1);
-				data = bs.getBits();
+        AlgorithmIdentifier algid = (AlgorithmIdentifier) ecPublicKey
+            .elementAt(0);
+        if (!algid.getOID().toString().equals("{1 2 840 10045 2 1}")) // ecPublicKey
+          throw new IllegalArgumentException("Unsupported key");
 
-				return new EcPublicKeyImpl(EcCore.bytesToECPoint(data, params), params);
-			} catch (Exception e) {
-				throw new InvalidKeySpecException("Invalid key encoding", e);
-			}
-		}
-		if (keySpec instanceof ECPublicKeySpec) {
-			ECPublicKeySpec spec = (ECPublicKeySpec)keySpec;			
-			return new EcPublicKeyImpl(spec.getW(), spec.getParams());
-		}
-		throw new IllegalArgumentException("Type of KeySpec is not supported");
-	}
+        ECParameterSpec params = EcCore.getParams(decodeOID(algid
+            .getParameters()));
 
-	protected <T extends KeySpec> T engineGetKeySpec(Key key,
-			Class<T> keySpec) throws InvalidKeySpecException {
-		throw new UnsupportedOperationException("Method not supported");
-	}
+        BIT_STRING bs = (BIT_STRING) ecPublicKey.elementAt(1);
+        data = bs.getBits();
 
-	protected Key engineTranslateKey(Key key) throws InvalidKeyException {
-		throw new UnsupportedOperationException("Method not supported");
-	}
+        return new EcPublicKeyImpl(EcCore.bytesToECPoint(data, params), params);
+      } catch (Exception e) {
+        throw new InvalidKeySpecException("Invalid key encoding", e);
+      }
+    }
+    if (keySpec instanceof ECPublicKeySpec) {
+      ECPublicKeySpec spec = (ECPublicKeySpec) keySpec;
+      return new EcPublicKeyImpl(spec.getW(), spec.getParams());
+    }
+    throw new IllegalArgumentException("Type of KeySpec is not supported");
+  }
+
+  @Override
+  protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec) {
+    throw new UnsupportedOperationException("Method not supported");
+  }
+
+  @Override
+  protected Key engineTranslateKey(Key key) {
+    throw new UnsupportedOperationException("Method not supported");
+  }
 }
