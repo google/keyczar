@@ -25,11 +25,6 @@
   <name>Keyczar Parent</name>
   <version>0.5b-SNAPSHOT</version>
   
-  <modules>
-    <module>src</module>
-    <module>tests</module>
-  </modules>
-
   <developers>
     <developer>
       <id>arkajit.dey</id>
@@ -46,12 +41,60 @@
       <organizationUrl>http://www.google.com</organizationUrl>
     </developer>
   </developers>
+  
+  <build>
+    <directory>target</directory>
+    <outputDirectory>target/classes</outputDirectory>
+    <finalName>${project.artifactId}-${project.version}</finalName>
+    <testOutputDirectory>target/test-classes</testOutputDirectory>
+    <sourceDirectory>src</sourceDirectory>
+    <scriptSourceDirectory>scripts</scriptSourceDirectory>
+    <testSourceDirectory>tests</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>testdata</directory>
+      </testResource>
+    </testResources>
+    <plugins>
+      <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <source>1.5</source>
+            <target>1.5</target>
+           </configuration>
+       </plugin>
+     </plugins>
+  </build>
 
   <scm>
     <connection>scm:svn:svn://keyczar.googlecode.com/svn/trunk/keyczar-java</connection>
     <developerConnection>scm:svn:svn://keyczar.googlecode.com/svn/trunk/keyczar-java</developerConnection>
     <url>https://keyczar.googlecode.com/svn/trunk/keyczar-java</url>
   </scm>
+  <dependencies>
+  	<dependency>
+  		<groupId>com.google.code.gson</groupId>
+  		<artifactId>gson</artifactId>
+  		<version>1.2</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>log4j</groupId>
+  		<artifactId>log4j</artifactId>
+  		<version>1.2.14</version>
+  	</dependency>
+    <dependency>
+      <groupId>org.mozilla</groupId>
+      <artifactId>jss</artifactId>
+      <version>4</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
   <distributionManagement>
     <repository>
@@ -62,4 +105,14 @@
     </repository>
   </distributionManagement>
   
+  <repositories>
+    <repository>
+      <id>Gson</id>
+      <url>http://google-gson.googlecode.com/svn/mavenrepo</url>
+    </repository>
+    <repository>
+      <id>log4j</id>
+      <url>http://www.ibiblio.org/maven/log4j</url>
+    </repository>
+  </repositories>
 </project>
