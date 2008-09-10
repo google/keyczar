@@ -99,7 +99,7 @@
   <distributionManagement>
     <repository>
       <id>keyczar</id>
-      <name>Local STEP2 Repository</name>
+      <name>Local Keyczar Repository</name>
       <url>file:../maven</url>
       <uniqueVersion>true</uniqueVersion>
     </repository>
