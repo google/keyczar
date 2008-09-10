@@ -73,8 +73,8 @@
   </build>
 
   <scm>
-    <connection>scm:svn:svn://keyczar.googlecode.com/svn/trunk/keyczar-java</connection>
-    <developerConnection>scm:svn:svn://keyczar.googlecode.com/svn/trunk/keyczar-java</developerConnection>
+    <connection>scm:svn:svn://keyczar.googlecode.com/svn/trunk/java/code</connection>
+    <developerConnection>scm:svn:svn://keyczar.googlecode.com/svn/trunk/java/code</developerConnection>
     <url>https://keyczar.googlecode.com/svn/trunk/keyczar-java</url>
   </scm>
   <dependencies>
@@ -111,8 +111,8 @@
   <distributionManagement>
     <repository>
       <id>keyczar</id>
-      <name>Local Keyczar Repository</name>
-      <url>file:./maven</url>
+      <name>Keyczar Repository</name>
+      <url>https://keyczar.googlecode.com/svn/trunk/java/maven</url>
       <uniqueVersion>true</uniqueVersion>
     </repository>
   </distributionManagement>
