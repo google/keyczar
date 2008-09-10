@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?><metadata>
+  <groupId>org.keyczar</groupId>
+  <artifactId>keyczar</artifactId>
+  <version>0.5b-SNAPSHOT</version>
+  <versioning>
+    <versions>
+      <version>0.5b-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20080910185534</lastUpdated>
+  </versioning>
+</metadata>

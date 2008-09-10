@@ -4,46 +4,62 @@
               To include a user specific buildfile here, simply create one in the same
               directory with the processing instruction <?eclipse.ant.import?>
               as the first entry and export the buildfile again. -->
-<project basedir="." default="build" name="Keyczar-Java">
+<project basedir="." default="build" name="keyczar-parent">
     <property environment="env"/>
     <property name="ECLIPSE_HOME" value="../../../../opt/eclipse"/>
-    <property name="junit.output.dir" value="junit"/>
     <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="1.6"/>
-    <property name="source" value="1.6"/>
+    <property name="target" value="1.5"/>
+    <property name="source" value="1.5"/>
     <path id="JUnit 4.libraryclasspath">
         <pathelement location="${ECLIPSE_HOME}/plugins/org.junit4_4.3.1/junit.jar"/>
     </path>
-    <path id="Keyczar-Java.classpath">
-        <pathelement location="bin"/>
+    <path id="Maven Dependencies.libraryclasspath">
+        <pathelement location="../../.m2/repository/com/google/code/gson/gson/1.2/gson-1.2.jar"/>
+        <pathelement location="../../.m2/repository/log4j/log4j/1.2.14/log4j-1.2.14.jar"/>
+        <pathelement location="../../.m2/repository/org/mozilla/jss/4/jss-4.jar"/>
+        <pathelement location="../../.m2/repository/junit/junit/4.0/junit-4.0.jar"/>
+        <pathelement location="../../.m2/repository/org/testng/testng/5.8/testng-5.8-jdk15.jar"/>
+    </path>
+    <path id="keyczar-parent.classpath">
+        <pathelement location="target/classes"/>
+        <pathelement location="target/test-classes"/>
         <path refid="JUnit 4.libraryclasspath"/>
-        <pathelement location="third_party/log4j/log4j-1.2.15.jar"/>
-        <pathelement location="third_party/gson/gson-1.1.1.jar"/>
+        <path refid="Maven Dependencies.libraryclasspath"/>
     </path>
     <target name="init">
-        <mkdir dir="bin"/>
-        <copy includeemptydirs="false" todir="bin">
+        <mkdir dir="target/classes"/>
+        <mkdir dir="target/test-classes"/>
+        <copy includeemptydirs="false" todir="target/classes">
             <fileset dir="src" excludes="**/BUILD, **/OWNERS, **/*.launch, **/*.testsuite, **/*.deploy, **/*.location, **/*.execution, **/*.datapool, **/*.artifact, **/*.html, **/*.svg, **/*.java"/>
         </copy>
-        <copy includeemptydirs="false" todir="bin">
+        <copy includeemptydirs="false" todir="target/test-classes">
             <fileset dir="tests" excludes="**/BUILD, **/OWNERS, **/*.launch, **/*.testsuite, **/*.deploy, **/*.location, **/*.execution, **/*.datapool, **/*.artifact, **/*.html, **/*.svg, **/*.java"/>
+        </copy>
+        <copy includeemptydirs="false" todir="target/test-classes">
+            <fileset dir="testdata" excludes="**/BUILD, **/OWNERS, **/*.launch, **/*.testsuite, **/*.deploy, **/*.location, **/*.execution, **/*.datapool, **/*.artifact, **/*.html, **/*.svg, **/*.java"/>
         </copy>
     </target>
     <target name="clean">
-        <delete dir="bin"/>
+        <delete dir="target/classes"/>
+        <delete dir="target/test-classes"/>
     </target>
     <target depends="clean" name="cleanall"/>
     <target depends="build-subprojects,build-project" name="build"/>
     <target name="build-subprojects"/>
     <target depends="init" name="build-project">
         <echo message="${ant.project.name}: ${ant.file}"/>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
+        <javac debug="true" debuglevel="${debuglevel}" destdir="target/classes" source="${source}" target="${target}">
             <src path="src"/>
-            <classpath refid="Keyczar-Java.classpath"/>
+            <classpath refid="keyczar-parent.classpath"/>
         </javac>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
+        <javac debug="true" debuglevel="${debuglevel}" destdir="target/test-classes" source="${source}" target="${target}">
             <src path="tests"/>
-            <classpath refid="Keyczar-Java.classpath"/>
+            <classpath refid="keyczar-parent.classpath"/>
+        </javac>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="target/test-classes" source="${source}" target="${target}">
+            <src path="testdata"/>
+            <exclude name="**"/>
+            <classpath refid="keyczar-parent.classpath"/>
         </javac>
     </target>
     <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
@@ -59,29 +75,5 @@
     <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
         <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
         <antcall target="build"/>
-    </target>
-    <target name="AllTests (2)">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="org.keyczar.AllTests" todir="${junit.output.dir}"/>
-            <classpath refid="Keyczar-Java.classpath"/>
-        </junit>
-    </target>
-    <target name="CrypterTest">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="org.keyczar.CrypterTest" todir="${junit.output.dir}"/>
-            <classpath refid="Keyczar-Java.classpath"/>
-        </junit>
-    </target>
-    <target name="junitreport">
-        <junitreport todir="${junit.output.dir}">
-            <fileset dir="${junit.output.dir}">
-                <include name="TEST-*.xml"/>
-            </fileset>
-            <report format="frames" todir="${junit.output.dir}"/>
-        </junitreport>
     </target>
 </project>
