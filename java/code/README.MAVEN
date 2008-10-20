@@ -1,8 +1,0 @@
-Third-Party JAR Setup Instructions for Maven:
-
-The Mozilla JSS Jar is apparently unavailable in any existing Maven
-repositories, so is included in the third_party/jss directory. To install it
-into your local Maven repository, run the "install_for_maven.sh" script under
-third_party, or just run the following Maven command:
-mvn install:install-file -Dfile={$PATH_TO_KEYCZAR}/third_party/jss/jss4.jar \
--DgroupId=org.mozilla -DartifactId=jss -Dversion=4 -Dpackaging=jar

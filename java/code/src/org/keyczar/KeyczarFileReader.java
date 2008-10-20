@@ -31,11 +31,11 @@ import java.io.RandomAccessFile;
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-class KeyczarFileReader implements KeyczarReader {
+public class KeyczarFileReader implements KeyczarReader {
   private String location;
   static final String META_FILE = "meta";
 
-  KeyczarFileReader(String fileLocation) {
+  public KeyczarFileReader(String fileLocation) {
     if (fileLocation != null && !fileLocation.endsWith(File.separator)) {
       fileLocation += File.separator;
     }

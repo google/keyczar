@@ -16,7 +16,6 @@
 
 package org.keyczar;
 
-
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.EncryptedReader;
 import org.keyczar.interfaces.KeyczarReader;
@@ -27,7 +26,7 @@ import org.keyczar.interfaces.KeyczarReader;
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-class KeyczarEncryptedReader implements EncryptedReader {
+public class KeyczarEncryptedReader implements EncryptedReader {
   private KeyczarReader reader;
   private Crypter crypter;
 
@@ -38,7 +37,7 @@ class KeyczarEncryptedReader implements EncryptedReader {
    * @param reader The reader to read files from.
    * @param crypter The crypter to decrypt keys with.
    */
-  KeyczarEncryptedReader(KeyczarReader reader, Crypter crypter) {
+  public KeyczarEncryptedReader(KeyczarReader reader, Crypter crypter) {
     this.reader = reader;
     this.crypter = crypter;
   }
