@@ -1,0 +1,13 @@
+{"publicKey":
+{
+  "modulus":"AMIK-fodFtJWUFY86PmFNwzL3Fq2VAbevdcxUs-VnJPUx1LcBc44jzmfa5yV9we_p517SW-rPwQclI42FxutlEucRf7twYT9dhZleBfv5eq83Fi4FWZgzgTnW5lZ2X-X-HIfhNlOeV78Pj8Vdm80zf52UtNLB-Mn2FDOfjJ_ugS3",
+  "publicExponent":"AQAB","size":2048
+},
+"privateExponent":"AK1YxvbE0-V2DHDuGycF9ibtW96B8dDtXeUHgDZILsf2F1cTjfAroO_WVnldk4ENmzzZrcIf1rzil2fwNHaae9X8XTEprESE0-7E-QwCj6m7aBUJm9hHV6XnfYKMpokse9tUhezCqLuRpLg9jsZmJNaVsn9AFQRaUdz1evDNX8tR",
+"primeP":"APP4W8_OO4dyD0NrYuCdPPkw0tvRp-R-ffg9ctXyiJ7C2w3NEpu_HkaBdcHn_nxYwhLkS1n-tT_Kt2VcOMioGP8",
+"primeQ":"AMucYnTL0KfWyoneNsX1I8rb-2MmVJTbxpWxXY-GKnbwCoMCecTsiUH5CDGbmhXUFigk2E58JR_5CK6VG6PxHEk",
+"primeExponentP":"DY3Zw_TIN-EtWeiIaMQzlACTZmUCd95TL0xyqdI8pt1agCzJgN-gVfhxS2GRMOVZeuU2DnzpIu8nOzlhajx0jw",
+"primeExponentQ":"ALtJpzrd-5lXNsiocWOXwQupW8xxBp5CpqEtG-2YMNlkpZaqoU2lcgAQTRwskAiCJLtaYOmYwiFt1jGYkGs1rpk",
+"crtCoefficient":"CiqlEdNh5BDNikswLjSFmdE9QWUXrU42kTKoFdbq8cmFZgaOZn8U8mYvzt4SgPkmGixc-IhO4JUSP5QgonuKMA",
+"size":2048
+}
