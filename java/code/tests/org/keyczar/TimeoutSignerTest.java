@@ -45,9 +45,9 @@ public class TimeoutSignerTest extends TestCase {
     
     
     // Create a valid signature, let it expire, and check that it is now invalid
-    sig = signer.timeoutSign(input, now + 500);
+    sig = signer.timeoutSign(input, now + 1000);
     assertTrue(signer.verify(input, sig));
-    Thread.sleep(500);
+    Thread.sleep(1000);
     assertFalse(signer.verify(input, sig));    
   }
   
