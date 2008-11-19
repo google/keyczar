@@ -24,22 +24,23 @@ Script to generate all Java Keyczar keysets and testdata.
 import os
 
 cwd = os.getcwd()
-
-gsonPath = cwd + "/../third_party/gson/gson-1.1.1.jar"
-log4jPath = cwd + "/../third_party/log4j/log4j-1.2.15.jar"
-binPath = cwd + "/../bin/"
+userPath = os.path.expanduser("~")
+gsonPath = userPath + "/.m2/repository/com/google/code/gson/gson/1.2/gson-1.2.jar"
+log4jPath = userPath + "/.m2/repository/log4j/log4j/1.2.14/log4j-1.2.14.jar"
+binPath = cwd + "/../target/classes/"
 paths = binPath + ":" + gsonPath + ":" + log4jPath
 cmd = "java -cp " + paths + " org.keyczar.KeyczarTool"
+testDataPrefix = cwd + "/../../Keyczar-Python/jtestdata/"
 
-keyFiles = [("../testdata/aes/", "crypt", None, None),
-            ("../testdata/rsa/", "crypt", "rsa", None),
-            ("../testdata/aes-crypted/", "crypt", None, "../testdata/aes/"),
-            ("../testdata/hmac/", "sign", None, None),
-            ("../testdata/dsa/", "sign", "dsa", None),
-            ("../testdata/rsa-sign/", "sign", "rsa", None)]
+keyFiles = [(testDataPrefix + "aes/", "crypt", None, None),
+            (testDataPrefix + "rsa/", "crypt", "rsa", None),
+            (testDataPrefix + "aes-crypted/", "crypt", None, testDataPrefix + "aes/"),
+            (testDataPrefix + "hmac/", "sign", None, None),
+            (testDataPrefix + "dsa/", "sign", "dsa", None),
+            (testDataPrefix + "rsa-sign/", "sign", "rsa", None)]
 
-pubKeyFiles = [("../testdata/dsa/", "../testdata/dsa.public/"),
-               ("../testdata/rsa-sign/", "../testdata/rsa-sign.public/")]
+pubKeyFiles = [(testDataPrefix + "dsa/", testDataPrefix + "dsa.public/"),
+               (testDataPrefix + "rsa-sign/", testDataPrefix + "rsa-sign.public/")]
 
 def cleanUp(directory):
   for file in os.listdir(directory):

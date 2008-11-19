@@ -36,7 +36,8 @@ import java.util.HashMap;
  */
 abstract class Keyczar {
   static final Logger KEYCZAR_LOGGER = Logger.getLogger(Keyczar.class);
-  static final byte VERSION = 1;
+  static final byte FORMAT_VERSION = 0;
+  static final byte[] FORMAT_BYTES = { FORMAT_VERSION };
   static final int KEY_HASH_SIZE = 4;
   static final int HEADER_SIZE = 1 + KEY_HASH_SIZE;
 

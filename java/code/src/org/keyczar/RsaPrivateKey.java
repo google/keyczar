@@ -28,17 +28,20 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.RSAPrivateCrtKeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
-
 
 /**
  * Wrapping class for RSA Private Keys
@@ -47,14 +50,22 @@ import javax.crypto.ShortBufferException;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-class RsaPrivateKey extends KeyczarPrivateKey {
+class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String CRYPT_ALGORITHM =
       "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
   private static final String KEY_GEN_ALGORITHM = "RSA";
 
   @Expose private RsaPublicKey publicKey;
-
+  @Expose private String privateExponent;
+  @Expose private String primeP;
+  @Expose private String primeQ;
+  @Expose private String primeExponentP;
+  @Expose private String primeExponentQ;
+  @Expose private String crtCoefficient;
+  
   private static final String SIG_ALGORITHM = "SHA1withRSA";
+
+  private RSAPrivateCrtKey jcePrivateKey;
 
   private RsaPrivateKey() {
     publicKey = new RsaPublicKey();
@@ -66,24 +77,13 @@ class RsaPrivateKey extends KeyczarPrivateKey {
   }
 
   @Override
-  String getKeyGenAlgorithm() {
-    return KEY_GEN_ALGORITHM;
-  }
-
-  @Override
   KeyType getType() {
     return KeyType.RSA_PRIV;
   }
 
   @Override
-  KeyczarPublicKey getPublic() {
-    return publicKey;
-  }
-
-  @Override
-  void setPublic(KeyczarPublicKey pub) throws KeyczarException {
-    publicKey = (RsaPublicKey) pub;
-    publicKey.init();
+  byte[] hash() {
+    return publicKey.hash();
   }
 
   static RsaPrivateKey read(String input) throws KeyczarException {
@@ -96,6 +96,35 @@ class RsaPrivateKey extends KeyczarPrivateKey {
     return generate(KeyType.RSA_PRIV.defaultSize());
   }
 
+  public KeyczarPublicKey getPublic() {
+    return publicKey;
+  }
+  
+  private void init() throws KeyczarException {
+    // Read all the JSON fields and use it to instantiate a RSAPrivateCrtKey
+    try {
+      KeyFactory factory = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
+      BigInteger mod = new BigInteger(Base64Coder.decode(publicKey.modulus));
+      BigInteger pubExp =
+        new BigInteger(Base64Coder.decode(publicKey.publicExponent));
+      
+      // Set the public key values
+      publicKey.set(mod, pubExp);
+      
+      BigInteger privExp = new BigInteger(Base64Coder.decode(privateExponent));
+      BigInteger p = new BigInteger(Base64Coder.decode(primeP));
+      BigInteger q = new BigInteger(Base64Coder.decode(primeQ));
+      BigInteger expP = new BigInteger(Base64Coder.decode(primeExponentP));
+      BigInteger expQ = new BigInteger(Base64Coder.decode(primeExponentQ));
+      BigInteger crt = new BigInteger(Base64Coder.decode(crtCoefficient));
+      RSAPrivateCrtKeySpec spec =
+        new RSAPrivateCrtKeySpec(mod, pubExp, privExp, p, q, expP, expQ, crt);
+      jcePrivateKey = (RSAPrivateCrtKey) factory.generatePrivate(spec);
+    } catch (GeneralSecurityException e) {
+      throw new KeyczarException(e);
+    }    
+  }
+
   static RsaPrivateKey generate(int keySize) throws KeyczarException {
     RsaPrivateKey key = new RsaPrivateKey();
     try {
@@ -104,13 +133,25 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       key.publicKey.size = key.size;
       kpg.initialize(key.size());
       KeyPair pair = kpg.generateKeyPair();
-      key.jcePrivateKey = pair.getPrivate();
-      key.getPublic().set(pair.getPublic().getEncoded());
+      key.jcePrivateKey = (RSAPrivateCrtKey) pair.getPrivate();
+      key.publicKey.set(key.jcePrivateKey.getModulus(),
+          key.jcePrivateKey.getPublicExponent());
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
-    key.pkcs8 = Base64Coder.encode(key.jcePrivateKey.getEncoded());
-    key.init();
+    // Set all the JSON fields for this RSA Private CRT key
+    key.privateExponent =
+      Base64Coder.encode(key.jcePrivateKey.getPrivateExponent().toByteArray());
+    key.primeP =
+      Base64Coder.encode(key.jcePrivateKey.getPrimeP().toByteArray());
+    key.primeQ =
+      Base64Coder.encode(key.jcePrivateKey.getPrimeQ().toByteArray());
+    key.primeExponentP =
+      Base64Coder.encode(key.jcePrivateKey.getPrimeExponentP().toByteArray());
+    key.primeExponentQ = 
+      Base64Coder.encode(key.jcePrivateKey.getPrimeExponentQ().toByteArray());
+    key.crtCoefficient =
+      Base64Coder.encode(key.jcePrivateKey.getCrtCoefficient().toByteArray());
     return key;
   }
 
@@ -177,7 +218,7 @@ class RsaPrivateKey extends KeyczarPrivateKey {
 
     public void initDecrypt(ByteBuffer input) throws KeyczarException {
       try {
-        cipher.init(Cipher.DECRYPT_MODE, getJcePrivateKey());
+        cipher.init(Cipher.DECRYPT_MODE, jcePrivateKey);
       } catch (InvalidKeyException e) {
         throw new KeyczarException(e);
       }
@@ -189,7 +230,7 @@ class RsaPrivateKey extends KeyczarPrivateKey {
 
     public void initSign() throws KeyczarException {
       try {
-        signature.initSign(getJcePrivateKey());
+        signature.initSign(jcePrivateKey);
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
@@ -242,5 +283,4 @@ class RsaPrivateKey extends KeyczarPrivateKey {
       return verifyingStream.verify(sig);
     }
   }
-
 }

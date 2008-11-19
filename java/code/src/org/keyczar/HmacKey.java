@@ -49,11 +49,6 @@ class HmacKey extends KeyczarKey {
   private Key hmacKey;
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
-  @Override
-  public String toString() {
-    return Util.gson().toJson(this);
-  }
-
   static HmacKey generate() throws KeyczarException {
     return generate(KeyType.HMAC_SHA1.defaultSize());
   }
@@ -69,9 +64,17 @@ class HmacKey extends KeyczarKey {
 
   void init() throws KeyczarException {
     byte[] keyBytes = Base64Coder.decode(hmacKeyString);
-    byte[] fullHash = Util.prefixHash(keyBytes);
+    byte[] fullHash = Util.hash(keyBytes);
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
     hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
+  }
+
+  /*
+   * This method is for AesKey to grab the key bytes to compute an identifying
+   * hash.
+   */
+  byte[] keyBytes() {
+    return hmacKey.getEncoded();
   }
 
   @Override

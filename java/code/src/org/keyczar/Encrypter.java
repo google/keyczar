@@ -74,7 +74,7 @@ public class Encrypter extends Keyczar {
   public Encrypter(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
-
+  
   /**
    * Returns the size of the ciphertext output that would result from encrypting
    * an input of the given length.

@@ -160,7 +160,30 @@ public class SignerTest extends TestCase {
   public final void testBadRsaVerify() throws Exception {
     testBadVerify("/rsa-sign");
   }
-      
+  
+  
+  private final void testUnversionedSignAndVerify(String subDir)
+      throws Exception {
+    UnversionedSigner signer = new UnversionedSigner(TEST_DATA + subDir);
+    byte[] sig = signer.sign(inputBytes);
+    assertTrue(signer.verify(inputBytes, sig));
+  }
+  
+  @Test
+  public final void testHmacUnversionedSignAndVerify() throws Exception {
+    testUnversionedSignAndVerify("/hmac");
+  }
+  
+  @Test
+  public final void testDsaUnversionedSignAndVerify() throws Exception {
+    testUnversionedSignAndVerify("/dsa");
+  }
+
+  @Test
+  public final void testRsaUnversionedSignAndVerify() throws Exception {
+    testUnversionedSignAndVerify("/rsa-sign");
+  }
+  
   @Test
   public final void testHmacBadSigs() throws KeyczarException {
     Signer hmacSigner = new Signer(TEST_DATA + "/hmac");

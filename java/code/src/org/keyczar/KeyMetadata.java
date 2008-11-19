@@ -59,7 +59,7 @@ class KeyMetadata {
       new HashMap<Integer, KeyVersion>(); // link version number to version
 
   @SuppressWarnings("unused")
-private KeyMetadata() {
+  private KeyMetadata() {
     // For GSON
   }
 

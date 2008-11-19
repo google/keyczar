@@ -58,11 +58,6 @@ class AesKey extends KeyczarKey {
 
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
-  @Override
-  public String toString() {
-    return Util.gson().toJson(this);
-  }
-
   static AesKey generate() throws KeyczarException {
     return generate(KeyType.AES.defaultSize());
   }
@@ -99,7 +94,8 @@ class AesKey extends KeyczarKey {
     byte[] aesBytes = Base64Coder.decode(aesKeyString);
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
     blockSize = aesBytes.length;
-    byte[] fullHash = Util.prefixHash(aesBytes, hmacKey.hash());
+    byte[] fullHash =
+      Util.hash(Util.fromInt(blockSize), aesBytes, hmacKey.keyBytes());
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
   }
 

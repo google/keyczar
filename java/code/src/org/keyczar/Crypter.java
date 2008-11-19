@@ -107,7 +107,7 @@ public class Crypter extends Encrypter {
       throw new ShortCiphertextException(inputCopy.remaining());
     }
     byte version = inputCopy.get();
-    if (version != VERSION) {
+    if (version != FORMAT_VERSION) {
       throw new BadVersionException(version);
     }
 

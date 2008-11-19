@@ -21,6 +21,7 @@ import com.google.gson.GsonBuilder;
 
 import org.keyczar.exceptions.KeyczarException;
 
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -50,6 +51,23 @@ public class Util {
     return GSON;
   }
 
+  public static byte[] stripLeadingZeros(byte[] input) {
+    int zeros = 0;
+    
+    // Find the first non-zero byte
+    while (zeros < input.length && input[zeros] == 0) {
+      zeros++;
+    }
+    
+    if (zeros == 0) {
+      return input;
+    } else {
+      byte[] output = new byte[input.length - zeros];
+      System.arraycopy(input, zeros, output, 0, output.length);
+      return output;
+    }
+  }
+  
   /**
    * Returns a byte array containing 4 big-endian ordered bytes representing the
    * given integer.
@@ -77,7 +95,10 @@ public class Util {
   }
 
   /**
-   * Hashes a variable number of inputs and returns a new byte array
+   * Takes a variable number of byte arrays as input and hashes each one
+   * prefixed by an integer representation of its size. For example, 
+   * prefixHash({0, 1, 2}, {1}) would hash the bytes equivalent to:
+   * {3, 0, 1, 2, 1, 1}
    *
    * @param inputs The inputs to hash
    * @return The hash output
@@ -94,6 +115,30 @@ public class Util {
     }
     for (byte[] array : inputs) {
       md.update(fromInt(array.length));
+      md.update(array);
+    }
+    byte[] digest = md.digest();
+    DIGEST_QUEUE.add(md);
+    return digest;
+  }
+  
+  /**
+   * Hashes a variable number of byte arrays
+   * 
+   * @param inputs The inputs to hash
+   * @return The hash output
+   * @throws KeyczarException If the SHA-1 algorithm is not found
+   */
+  public static byte[] hash(byte[]... inputs) throws KeyczarException {
+    MessageDigest md = DIGEST_QUEUE.poll();
+    if (md == null) {
+      try {
+        md = MessageDigest.getInstance("SHA-1");
+      } catch (NoSuchAlgorithmException e) {
+        throw new KeyczarException(e);
+      }
+    }
+    for (byte[] array : inputs) {
       md.update(array);
     }
     byte[] digest = md.digest();

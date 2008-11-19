@@ -16,16 +16,22 @@
 
 package org.keyczar;
 
+import com.google.gson.annotations.Expose;
+
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.spec.X509EncodedKeySpec;
 
 /**
  * Wrapping class for EC Public Keys. These must be exported from existing EC
@@ -38,14 +44,38 @@ class EcPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "EC";
   private static final String SIG_ALGORITHM = "SHA256withECDSA";
 
+  private PublicKey jcePublicKey;
+  @Expose String x509;
+
+  private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
+  
+  void init() throws KeyczarException {
+    byte[] x509Bytes = Base64Coder.decode(x509);
+    try {
+      KeyFactory kf = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
+      jcePublicKey = kf.generatePublic(new X509EncodedKeySpec(x509Bytes));
+      byte[] fullHash = Util.prefixHash(x509Bytes);
+      System.arraycopy(fullHash, 0, hash, 0, hash.length);
+    } catch (GeneralSecurityException e) {
+      throw new KeyczarException(e);
+    }
+  }
+
+  void set(byte[] x509Bytes) throws KeyczarException {
+    x509 = Base64Coder.encode(x509Bytes);
+    byte[] fullHash = Util.prefixHash(x509Bytes);
+    System.arraycopy(fullHash, 0, hash, 0, hash.length);
+    init();
+  }
+  
+  @Override
+  byte[] hash() {
+    return hash;
+  }
+  
   @Override
   public Stream getStream() throws KeyczarException {
     return new EcVerifyingStream();
-  }
-
-  @Override
-  String getKeyGenAlgorithm() {
-    return KEY_GEN_ALGORITHM;
   }
 
   @Override
@@ -76,7 +106,7 @@ class EcPublicKey extends KeyczarPublicKey {
 
     public void initVerify() throws KeyczarException {
       try {
-        signature.initVerify(getJcePublicKey());
+        signature.initVerify(jcePublicKey);
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }

@@ -26,12 +26,18 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.interfaces.DSAPrivateKey;
+import java.security.interfaces.DSAPublicKey;
+import java.security.spec.DSAPrivateKeySpec;
 
 /**
  * Wrapping class for DSA Private Keys
@@ -40,23 +46,29 @@ import java.security.SignatureException;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-class DsaPrivateKey extends KeyczarPrivateKey {
+class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String KEY_GEN_ALGORITHM = "DSA";
   private static final String SIG_ALGORITHM = "SHA1withDSA";
 
   @Expose private DsaPublicKey publicKey;
-
+  @Expose private String x;
+  
+  private DSAPrivateKey jcePrivateKey;
+  
   private DsaPrivateKey() {
     publicKey = new DsaPublicKey();
   }
-
+  
   @Override
-  String getKeyGenAlgorithm() {
+  byte[] hash() {
+    return getPublic().hash();
+  }
+
+  public String getKeyGenAlgorithm() {
     return KEY_GEN_ALGORITHM;
   }
 
-  @Override
-  KeyczarPublicKey getPublic() {
+  public KeyczarPublicKey getPublic() {
     return publicKey;
   }
 
@@ -70,8 +82,7 @@ class DsaPrivateKey extends KeyczarPrivateKey {
     return KeyType.DSA_PRIV;
   }
 
-  @Override
-  void setPublic(KeyczarPublicKey pub) throws KeyczarException {
+  public void setPublic(KeyczarPublicKey pub) throws KeyczarException {
     publicKey = (DsaPublicKey) pub;
     publicKey.init();
   }
@@ -80,19 +91,44 @@ class DsaPrivateKey extends KeyczarPrivateKey {
     return generate(KeyType.DSA_PRIV.defaultSize());
   }
 
-  static DsaPrivateKey generate(int keySize) throws KeyczarException {
-    DsaPrivateKey key = new DsaPrivateKey();
+  void init() throws KeyczarException {
+    publicKey.init();
+    
+    BigInteger xVal = new BigInteger(Base64Coder.decode(x));
+    BigInteger pVal = new BigInteger(Base64Coder.decode(publicKey.p));
+    BigInteger qVal = new BigInteger(Base64Coder.decode(publicKey.q));
+    BigInteger gVal = new BigInteger(Base64Coder.decode(publicKey.g));
+    DSAPrivateKeySpec spec = new DSAPrivateKeySpec(xVal, pVal, qVal, gVal);
+    
     try {
-      KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_GEN_ALGORITHM);
-      key.size = keySize;
-      kpg.initialize(key.size());
-      KeyPair pair = kpg.generateKeyPair();
-      key.jcePrivateKey = pair.getPrivate();
-      key.getPublic().set(pair.getPublic().getEncoded());
+      KeyFactory kf = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
+      jcePrivateKey = (DSAPrivateKey) kf.generatePrivate(spec);
+      
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
-    key.pkcs8 = Base64Coder.encode(key.jcePrivateKey.getEncoded());
+  }
+
+  
+  static DsaPrivateKey generate(int keySize) throws KeyczarException {
+    DsaPrivateKey key = new DsaPrivateKey();
+    KeyPairGenerator kpg;
+    try {
+      kpg = KeyPairGenerator.getInstance(KEY_GEN_ALGORITHM);
+    } catch (GeneralSecurityException e) {
+      throw new KeyczarException(e);
+    }
+    key.size = keySize;
+    kpg.initialize(key.size());
+    KeyPair pair = kpg.generateKeyPair();
+    key.jcePrivateKey = (DSAPrivateKey) pair.getPrivate();
+    DSAPublicKey pubKey = (DSAPublicKey) pair.getPublic();
+    key.publicKey.set(pubKey.getY(), pubKey.getParams().getP(),
+        pubKey.getParams().getQ(), pubKey.getParams().getG());
+    
+    // Initialize the private key's JSON fields
+    key.x = Base64Coder.encode(key.jcePrivateKey.getX().toByteArray());
+    
     key.init();
     return key;
   }
@@ -122,7 +158,7 @@ class DsaPrivateKey extends KeyczarPrivateKey {
 
     public void initSign() throws KeyczarException {
       try {
-        signature.initSign(getJcePrivateKey());
+        signature.initSign(jcePrivateKey);
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }

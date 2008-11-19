@@ -18,7 +18,7 @@
   <groupId>org.keyczar</groupId>
   <artifactId>keyczar</artifactId>
   <name>Keyczar</name>
-  <version>0.5b-SNAPSHOT</version>
+  <version>0.6b-SNAPSHOT</version>
   <developers>
     <developer>
       <id>arkajit.dey</id>

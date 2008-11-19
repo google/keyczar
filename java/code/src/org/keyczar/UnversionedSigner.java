@@ -30,59 +30,65 @@ import org.keyczar.util.Util;
 import java.nio.ByteBuffer;
 
 /**
- * Signers may both sign and verify data using sets of symmetric or private
- * keys. Sets of public keys may only be used with {@link Verifier} objects.
+ * UnversionedSigners may both sign and verify data using sets of symmetric or
+ * private keys. Sets of public keys may only be used with {@link Verifier}
+ * objects.
+ * 
+ * UnversionedSigners do not include any key versioning in their outputs. They
+ * will return standard signatures (i.e. HMAC-SHA1, RSA-SHA1, DSA-SHA1).
  *
- * {@link Signer} objects should be used with symmetric or private key sets to
+ * {@link UnversionedSigner} objects should be used with symmetric or private key sets to
  * generate signatures.
  *
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-public class Signer extends Verifier {
+public class UnversionedSigner extends UnversionedVerifier {
   static final int TIMESTAMP_SIZE = 8;
-  private static final Logger SIGNER_LOGGER = Logger.getLogger(Signer.class);
+  private static final Logger SIGNER_LOGGER = Logger.getLogger(UnversionedSigner.class);
   private final StreamQueue<SigningStream> SIGN_QUEUE =
     new StreamQueue<SigningStream>();
 
   /**
-   * Initialize a new Signer with a KeyczarReader. The corresponding key set
-   * must have a purpose {@link org.keyczar.enums.KeyPurpose#SIGN_AND_VERIFY}.
+   * Initialize a new UnversionedSigner with a KeyczarReader. The corresponding
+   * key set must have a purpose
+   * {@link org.keyczar.enums.KeyPurpose#SIGN_AND_VERIFY}.
    *
    * @param reader A reader to read keys from
    * @throws KeyczarException In the event of an IO error reading keys or if the
    * key set does not have the appropriate purpose.
    */
-  public Signer(KeyczarReader reader) throws KeyczarException {
+  public UnversionedSigner(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
 
   /**
-   * Initialize a new Signer with a key set location. This will attempt to
-   * read the keys using a KeyczarFileReader. The corresponding key set
-   * must have a purpose of {@link org.keyczar.enums.KeyPurpose#SIGN_AND_VERIFY}.
+   * Initialize a new UnversionedSigner with a key set location. This will
+   * attempt to read the keys using a KeyczarFileReader. The corresponding key
+   * set must have a purpose of
+   * {@link org.keyczar.enums.KeyPurpose#SIGN_AND_VERIFY}.
    *
    * @param fileLocation Directory containing a key set
    * @throws KeyczarException In the event of an IO error reading keys or if the
    * key set does not have the appropriate purpose.
    */
-  public Signer(String fileLocation) throws KeyczarException {
+  public UnversionedSigner(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
 
   /**
-   * Returns the size of signatures produced by this Signer.
+   * Returns the size of signatures produced by this UnversionedSigner.
    *
-   * @return The size of signatures produced by this Signer.
-   * @throws KeyczarException If this Signer does not have a primary or a
-   * JCE exception occurs.
+   * @return The size of signatures produced by this UnversionedSigner.
+   * @throws KeyczarException If this UnversionedSigner does not have a primary
+   *                          or a JCE exception occurs.
    */
   public int digestSize() throws KeyczarException {
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
       throw new NoPrimaryKeyException();
     }
-    return HEADER_SIZE + ((SigningStream) signingKey.getStream()).digestSize();
+    return ((SigningStream) signingKey.getStream()).digestSize();
   }
 
   /**
@@ -90,8 +96,8 @@ public class Signer extends Verifier {
    *
    * @param input The input to sign.
    * @return A byte array representation of a signature.
-   * @throws KeyczarException If this Signer does not have a primary or a
-   * JCE exception occurs.
+   * @throws KeyczarException If this UnversionedSigner does not have a primary
+   *                          or a JCE exception occurs.
    */
   public byte[] sign(byte[] input) throws KeyczarException {
     ByteBuffer output = ByteBuffer.allocate(digestSize());
@@ -103,30 +109,14 @@ public class Signer extends Verifier {
   }
 
   /**
-   * Sign the given input and write the signature to the given ByteBuffer
-   *
-   * @param input The input to sign.
-   * @param output The ByteBuffer to write the signature in.
-   * @throws KeyczarException If this Signer does not have a primary or a
-   * JCE exception occurs.
-   */
-  public void sign(ByteBuffer input, ByteBuffer output)
-      throws KeyczarException {
-    sign(input, null, 0, output);
-  }
-
-  /**
    * This allows other classes in the package to pass in hidden data and/or
    * expiration data to be signed.
    *
    * @param input The input to be signed
-   * @param hidden Hidden data to be signed
-   * @param expirationTime The expiration time of this signature
    * @param output The destination of this signature
    * @throws KeyczarException
    */
-  void sign(ByteBuffer input, ByteBuffer hidden, long expirationTime,
-      ByteBuffer output) throws KeyczarException {
+  void sign(ByteBuffer input, ByteBuffer output) throws KeyczarException {
     SIGNER_LOGGER.info(Messages.getString("Signer.Signing", input.remaining()));
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
@@ -138,40 +128,15 @@ public class Signer extends Verifier {
     }
 
     int spaceNeeded = digestSize();
-    if (expirationTime > 0) {
-      spaceNeeded += TIMESTAMP_SIZE;
-    }
     if (output.capacity() < spaceNeeded) {
       throw new ShortBufferException(output.capacity(), spaceNeeded);
     }
 
-    ByteBuffer header = ByteBuffer.allocate(HEADER_SIZE);
-    signingKey.copyHeader(header);
-    header.rewind();
     stream.initSign();
-
     // Sign the header and write it to the output buffer
     output.mark();
-    output.put(header);
-
-    if (expirationTime > 0) {
-      // Write an expiration time following the header and sign it.
-      ByteBuffer expiration = ByteBuffer.wrap(Util.fromLong(expirationTime));
-      output.put(expiration);
-      expiration.rewind();
-      stream.updateSign(expiration);
-    }
-
-    if (hidden != null && hidden.remaining() > 0) {
-      // Sign any hidden data
-      stream.updateSign(hidden);
-    }
-
     // Sign the input data
     stream.updateSign(input);
-    // Sign the version byte
-    stream.updateSign(ByteBuffer.wrap(FORMAT_BYTES));
-
     // Write the signature to the output
     stream.sign(output);
     output.limit(output.position());

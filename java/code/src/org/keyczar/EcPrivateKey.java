@@ -16,12 +16,7 @@
 
 package org.keyczar;
 
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.Signature;
-import java.security.SignatureException;
+import com.google.gson.annotations.Expose;
 
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
@@ -32,7 +27,15 @@ import org.keyczar.jce.EcCore;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import com.google.gson.annotations.Expose;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 /**
  * Wrapping class for EC Private Keys
@@ -40,25 +43,30 @@ import com.google.gson.annotations.Expose;
  * @author martclau@gmail.com
  * 
  */
-class EcPrivateKey extends KeyczarPrivateKey {
+class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String KEY_GEN_ALGORITHM = "EC";
   private static final String SIG_ALGORITHM = "SHA256withECDSA";
 
-  @Expose
-  private EcPublicKey publicKey;
+  @Expose private EcPublicKey publicKey;
+  @Expose private String pkcs8;
+
+  private PrivateKey jcePrivateKey;
 
   private EcPrivateKey() {
     publicKey = new EcPublicKey();
   }
 
-  @Override
-  String getKeyGenAlgorithm() {
+  public String getKeyGenAlgorithm() {
     return KEY_GEN_ALGORITHM;
   }
 
-  @Override
-  KeyczarPublicKey getPublic() {
+  public KeyczarPublicKey getPublic() {
     return publicKey;
+  }
+  
+  @Override
+  byte[] hash() {
+    return getPublic().hash();
   }
 
   @Override
@@ -71,8 +79,7 @@ class EcPrivateKey extends KeyczarPrivateKey {
     return KeyType.EC_PRIV;
   }
 
-  @Override
-  void setPublic(KeyczarPublicKey pub) throws KeyczarException {
+  public void setPublic(KeyczarPublicKey pub) throws KeyczarException {
     publicKey = (EcPublicKey) pub;
     publicKey.init();
   }
@@ -81,6 +88,17 @@ class EcPrivateKey extends KeyczarPrivateKey {
     return generate(KeyType.EC_PRIV.defaultSize());
   }
 
+  void init() throws KeyczarException {
+    byte[] pkcs8Bytes = Base64Coder.decode(pkcs8);
+    try {
+      KeyFactory kf = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
+      jcePrivateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(pkcs8Bytes));
+      publicKey.init();
+    } catch (GeneralSecurityException e) {
+      throw new KeyczarException(e);
+    }
+  }
+  
   static EcPrivateKey generate(int keySize) throws KeyczarException {
     EcPrivateKey key = new EcPrivateKey();
     try {
@@ -91,7 +109,7 @@ class EcPrivateKey extends KeyczarPrivateKey {
       kpg.initialize(key.size());
       KeyPair pair = kpg.generateKeyPair();
       key.jcePrivateKey = pair.getPrivate();
-      key.getPublic().set(pair.getPublic().getEncoded());
+      key.publicKey.set(pair.getPublic().getEncoded());
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
@@ -127,7 +145,7 @@ class EcPrivateKey extends KeyczarPrivateKey {
 
     public void initSign() throws KeyczarException {
       try {
-        signature.initSign(getJcePrivateKey());
+        signature.initSign(jcePrivateKey);
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }

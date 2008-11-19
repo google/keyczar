@@ -16,7 +16,6 @@
 
 package org.keyczar;
 
-
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.BadVersionException;
@@ -29,42 +28,48 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 
 import java.nio.ByteBuffer;
-
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 /**
-* Verifiers are used strictly to verify signatures. Typically, Verifiers will
-* read sets of public keys, although may also be instantiated with sets of
-* symmetric or private keys.
+* Unversioned Verifiers are used strictly to verify standard signatures
+* (i.e. HMAC-SHA1, DSA-SHA1, RSA-SHA1) with no key version information.
+* Typically, UnversionedVerifiers will read sets of public keys, although may
+* also be instantiated with sets of symmetric or private keys.
+* 
+* Since UnversionedVerifiers verify standard signatures, they will try all keys
+* in a set until one verifies. 
 *
-* {@link Signer} objects should be used with symmetric or private key sets to
-* generate signatures.
+* {@link UnversionedSigner} objects should be used with symmetric or private
+* key sets to generate unversioned signatures.
 *
 * @author steveweis@gmail.com (Steve Weis)
 *
 */
-public class Verifier extends Keyczar {
+public class UnversionedVerifier extends Keyczar {
   private static final Logger VERIFIER_LOGGER =
-    Logger.getLogger(Verifier.class);
+    Logger.getLogger(UnversionedVerifier.class);
   private static final StreamCache<VerifyingStream> VERIFY_CACHE
     = new StreamCache<VerifyingStream>();
 
   /**
-   * Initialize a new Verifier with a KeyczarReader. The corresponding key set
-   * must have a purpose of either {@link org.keyczar.enums.KeyPurpose#VERIFY} or
+   * Initialize a new UnversionedVerifier with a KeyczarReader.
+   * The corresponding key set must have a purpose of either
+   * {@link org.keyczar.enums.KeyPurpose#VERIFY} or
    * {@link org.keyczar.enums.KeyPurpose#SIGN_AND_VERIFY}.
    *
    * @param reader A reader to read keys from
    * @throws KeyczarException In the event of an IO error reading keys or if the
    * key set does not have the appropriate purpose.
    */
-  public Verifier(KeyczarReader reader) throws KeyczarException {
+  public UnversionedVerifier(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
 
   /**
-   * Initialize a new Verifier with a key set location. This will attempt to
-   * read the keys using a KeyczarFileReader. The corresponding key set
-   * must have a purpose of either
+   * Initialize a new UnversionedVerifier with a key set location. This will
+   * attempt to read the keys using a KeyczarFileReader. The corresponding key
+   * set must have a purpose of either
    * {@link org.keyczar.enums.KeyPurpose#VERIFY} or
    * {@link org.keyczar.enums.KeyPurpose#SIGN_AND_VERIFY}
    *
@@ -72,12 +77,12 @@ public class Verifier extends Keyczar {
    * @throws KeyczarException In the event of an IO error reading keys or if the
    * key set does not have the appropriate purpose.
    */
-  public Verifier(String fileLocation) throws KeyczarException {
+  public UnversionedVerifier(String fileLocation) throws KeyczarException {
     super(fileLocation);
   }
 
   /**
-   * Verifies a signature on the given byte array of data
+   * Verifies a standard signature on the given byte array of data
    *
    * @param data The data to verify the signature on
    * @param signature The signture to verify
@@ -90,7 +95,9 @@ public class Verifier extends Keyczar {
   }
 
   /**
-   * Verifies the signature on the data stored in the given ByteBuffer
+   * Verifies the standard signature on the data stored in the given ByteBuffer.
+   * This method will try all keys until one of them verifies the signature,
+   * or else will return false.
    *
    * @param data The data to verify the signature on
    * @param signature The signature to verify
@@ -101,36 +108,28 @@ public class Verifier extends Keyczar {
   public boolean verify(ByteBuffer data, ByteBuffer signature)
       throws KeyczarException {
     VERIFIER_LOGGER.info(
-        Messages.getString("Verifier.Verifying", data.remaining()));
-    if (signature.remaining() < HEADER_SIZE) {
-      throw new ShortSignatureException(signature.remaining());
+        Messages.getString("UnversionedVerifier.Verifying", data.remaining()));
+
+    // Try to verify the signature with each key in the set.
+    for (Iterator<Entry<KeyVersion, KeyczarKey>> iter =
+      versionMap.entrySet().iterator(); iter.hasNext(); ) {
+      KeyczarKey key = iter.next().getValue();
+      ByteBuffer dataCopy = data.duplicate();
+      ByteBuffer signatureCopy = signature.duplicate();
+      VerifyingStream stream = VERIFY_CACHE.get(key);
+      if (stream == null) {
+        stream = (VerifyingStream) key.getStream();
+      }
+      stream.initVerify();
+      stream.updateVerify(dataCopy);
+      boolean result = stream.verify(signatureCopy);
+      VERIFY_CACHE.put(key, stream);
+      if (result) {
+        return true;
+      }
     }
-
-    byte version = signature.get();
-    if (version != FORMAT_VERSION) {
-      throw new BadVersionException(version);
-    }
-
-    byte[] hash = new byte[KEY_HASH_SIZE];
-    signature.get(hash);
-    KeyczarKey key = getKey(hash);
-
-    if (key == null) {
-      throw new KeyNotFoundException(hash);
-    }
-
-    VerifyingStream stream = VERIFY_CACHE.get(key);
-    if (stream == null) {
-      stream = (VerifyingStream) key.getStream();
-    }
-    stream.initVerify();
-    stream.updateVerify(data);
-    // The signed data is terminated with the current Keyczar format 
-    stream.updateVerify(ByteBuffer.wrap(FORMAT_BYTES));
-
-    boolean result = stream.verify(signature);
-    VERIFY_CACHE.put(key, stream);
-    return result;
+    
+    return false;
   }
 
   /**

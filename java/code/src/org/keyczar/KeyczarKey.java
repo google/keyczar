@@ -43,7 +43,7 @@ abstract class KeyczarKey {
   @Expose int size = getType().defaultSize();
 
   void copyHeader(ByteBuffer dest) {
-    dest.put(Keyczar.VERSION);
+    dest.put(Keyczar.FORMAT_VERSION);
     dest.put(hash());
   }
 
@@ -93,6 +93,11 @@ abstract class KeyczarKey {
     return genKey(type, type.defaultSize());
   }
 
+  @Override
+  public String toString() {
+    return Util.gson().toJson(this);
+  }
+  
   /**
    * Generates private key of the desired type and size. Cannot generate public
    * key, instead must export public key set from private keys.

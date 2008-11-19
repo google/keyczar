@@ -17,6 +17,8 @@
 package org.keyczar;
 
 
+import com.google.gson.annotations.Expose;
+
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
@@ -24,13 +26,18 @@ import org.keyczar.interfaces.EncryptingStream;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.RSAPublicKeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
@@ -48,10 +55,16 @@ class RsaPublicKey extends KeyczarPublicKey {
     "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
   private static final String KEY_GEN_ALGORITHM = "RSA";
   private static final String SIG_ALGORITHM = "SHA1withRSA";
+  
+  private RSAPublicKey jcePublicKey;
+  @Expose String modulus;
+  @Expose String publicExponent;
 
+  private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
+  
   @Override
-  String getKeyGenAlgorithm() {
-    return KEY_GEN_ALGORITHM;
+  public byte[] hash() {
+    return hash;
   }
 
   @Override
@@ -62,6 +75,30 @@ class RsaPublicKey extends KeyczarPublicKey {
   @Override
   KeyType getType() {
     return KeyType.RSA_PUB;
+  }
+  
+  void set(BigInteger mod, BigInteger pubExp) throws KeyczarException {
+    modulus = Base64Coder.encode(mod.toByteArray());
+    publicExponent = Base64Coder.encode(pubExp.toByteArray());
+    init();
+  }
+  
+  void init() throws KeyczarException {
+    byte[] modBytes = Base64Coder.decode(modulus);
+    byte[] pubExpBytes = Base64Coder.decode(publicExponent);
+    BigInteger mod = new BigInteger(modBytes);
+    BigInteger pubExp = new BigInteger(pubExpBytes);
+    // Sets the JCE Public key value
+    try {
+      KeyFactory kf = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
+      RSAPublicKeySpec spec = new RSAPublicKeySpec(mod, pubExp);
+      jcePublicKey = (RSAPublicKey) kf.generatePublic(spec);
+    } catch (GeneralSecurityException e) {
+      throw new KeyczarException(e);
+    }
+    byte[] fullHash = Util.prefixHash(Util.stripLeadingZeros(modBytes),
+        Util.stripLeadingZeros(pubExpBytes));
+    System.arraycopy(fullHash, 0, hash, 0, hash.length);
   }
 
   static RsaPublicKey read(String input) throws KeyczarException {
@@ -121,7 +158,7 @@ class RsaPublicKey extends KeyczarPublicKey {
 
     public int initEncrypt(ByteBuffer output) throws KeyczarException {
       try {
-        cipher.init(Cipher.ENCRYPT_MODE, getJcePublicKey());
+        cipher.init(Cipher.ENCRYPT_MODE, jcePublicKey);
       } catch (InvalidKeyException e) {
         throw new KeyczarException(e);
       }
@@ -130,7 +167,7 @@ class RsaPublicKey extends KeyczarPublicKey {
 
     public void initVerify() throws KeyczarException {
       try {
-        signature.initVerify(getJcePublicKey());
+        signature.initVerify(jcePublicKey);
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
