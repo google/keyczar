@@ -174,9 +174,9 @@ class AesKey(SymmetricKey):
                              "hmacKey": simplejson.loads(str(self.hmac_key))})
 
   def _Hash(self):
-    fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)), self.key_bytes, 
-                         util.IntToBytes(keyczar.KEY_HASH_SIZE), 
-                         util.Decode(self.hmac_key.hash))
+    fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)),
+                         self.key_bytes,
+                         self.hmac_key.key_bytes)
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
 
   @staticmethod
@@ -296,6 +296,10 @@ class HmacKey(SymmetricKey):
     return simplejson.dumps({"size": self.size, 
                              "hmacKeyString": self.key_string})
   
+  def _Hash(self):
+    fullhash = util.Hash(self.key_bytes)
+    return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+  
   @staticmethod
   def Generate(size=keyinfo.HMAC_SHA1.default_size):
     """
@@ -355,44 +359,35 @@ class HmacKey(SymmetricKey):
 class PrivateKey(AsymmetricKey):
   """Represents private keys in Keyczar for asymmetric key pairs."""
   
-  def __init__(self, type, params, pkcs8, pub):
+  def __init__(self, type, params, pub):
     AsymmetricKey.__init__(self, type, params)
-    self.pkcs8 = pkcs8
     self.public_key = pub
-  
-  def __str__(self):
-    return simplejson.dumps({"publicKey": simplejson.loads(
-                                                          str(self.public_key)),
-                             "pkcs8": self.pkcs8, 
-                             "size": self.size})
-
-  def _GetKeyString(self):
-    return self.pkcs8
-  
+    
   def _Hash(self):
     return self.public_key.hash
 
 class PublicKey(AsymmetricKey):
   """Represents public keys in Keyczar for asymmetric key pairs."""
   
-  def __init__(self, type, params, x509):
+  def __init__(self, type, params):
     AsymmetricKey.__init__(self, type, params)
-    self.x509 = x509
   
-  def __str__(self):
-    return simplejson.dumps({"x509": self.x509, "size": self.size})
-  
-  def _GetKeyString(self):
-    return self.x509
-
 class DsaPrivateKey(PrivateKey):  
   """Represents DSA private keys in an asymmetric DSA key pair."""
   
-  def __init__(self, params, pkcs8, pub, key, 
+  def __init__(self, params, pub, key, 
                size=keyinfo.DSA_PRIV.default_size):
-    PrivateKey.__init__(self, keyinfo.DSA_PRIV, params, pkcs8, pub)
+    PrivateKey.__init__(self, keyinfo.DSA_PRIV, params, pub)
+    #PrivateKey.__init__(self, keyinfo.DSA_PRIV, params, pub)
     self.key = key
+    self.public_key = pub
+    self.params = params
     self.size = size
+  
+  def __str__(self):
+    return simplejson.dumps({"publicKey": simplejson.loads(str(self.public_key)),
+                             "x": util.Encode(self.params['x']), 
+                             "size": self.size})
   
   @staticmethod
   def Generate(size=keyinfo.DSA_PRIV.default_size):
@@ -406,11 +401,15 @@ class DsaPrivateKey(PrivateKey):
     @rtype: L{DsaPrivateKey}
     """
     key = DSA.generate(size, util.RandBytes)
-    params = {'g': key.g, 'p': key.p, 'q': key.q, 'y': key.y, 'x': key.x}
+    params = { 'x': util.PadBytes(util.BigIntToBytes(key.x), 1) }
     pubkey = key.publickey()
-    pub_params = {'g': pubkey.g, 'p': pubkey.p, 'q': pubkey.q, 'y': pubkey.y}
-    pub = DsaPublicKey(pub_params, util.ExportDsaX509(pub_params), pubkey, size)
-    return DsaPrivateKey(params, util.ExportDsaPkcs8(params), pub, key, size)
+    pub_params = { 'g': util.PadBytes(util.BigIntToBytes(pubkey.g), 1),
+                   'p': util.PadBytes(util.BigIntToBytes(pubkey.p), 1),
+                   'q': util.PadBytes(util.BigIntToBytes(pubkey.q), 1),
+                   'y': util.PadBytes(util.BigIntToBytes(pubkey.y), 1)
+                   }
+    pub = DsaPublicKey(pub_params, pubkey, size)
+    return DsaPrivateKey(params, pub, key, size)
   
   @staticmethod
   def Read(key):
@@ -425,10 +424,13 @@ class DsaPrivateKey(PrivateKey):
     """
     dsa = simplejson.loads(key)
     pub = DsaPublicKey.Read(simplejson.dumps(dsa['publicKey']))
-    params = util.ParsePkcs8(dsa['pkcs8'])
-    key = DSA.construct((pub._params['y'], params['g'], params['p'], params['q'], 
-                         params['x']))
-    return DsaPrivateKey(params, dsa['pkcs8'], pub, key, dsa['size'])
+    params = { 'x' : util.Decode(dsa['x']) }
+    key = DSA.construct((util.BytesToLong(pub._params['y']),
+                         util.BytesToLong(pub._params['g']),
+                         util.BytesToLong(pub._params['p']),
+                         util.BytesToLong(pub._params['q']), 
+                         util.BytesToLong(params['x'])))
+    return DsaPrivateKey(params, pub, key, dsa['size'])
   
   def Sign(self, msg):
     """
@@ -451,10 +453,11 @@ class DsaPrivateKey(PrivateKey):
 class RsaPrivateKey(PrivateKey):
   """Represents RSA private keys in an asymmetric RSA key pair."""
   
-  def __init__(self, params, pkcs8, pub, key, 
-               size=keyinfo.RSA_PRIV.default_size):
-    PrivateKey.__init__(self, keyinfo.RSA_PRIV, params, pkcs8, pub)
+  def __init__(self, params, pub, key, size=keyinfo.RSA_PRIV.default_size):
+    PrivateKey.__init__(self, keyinfo.RSA_PRIV, params, pub)
     self.key = key  # instance of PyCrypto RSA key
+    self.public_key = pub  # instance of Keyczar RsaPublicKey
+    self.params = params
     self.size = size
     
   def __Decode(self, em, p=""):
@@ -474,6 +477,16 @@ class RsaPrivateKey(PrivateKey):
       raise errors.KeyczarError("OAEP Decoding Error")
     return db[one+1:]  # the message
   
+  def __str__(self):
+    return simplejson.dumps({ "publicKey": simplejson.loads(str(self.public_key)),
+                              "privateExponent" : util.Encode(self.params['privateExponent']),
+                              "primeP" : util.Encode(self.params['primeP']),
+                              "primeQ" : util.Encode(self.params['primeQ']),
+                              "primeExponentP" : util.Encode(self.params['primeExponentP']),
+                              "primeExponentQ" : util.Encode(self.params['primeExponentQ']),
+                              "crtCoefficient" : util.Encode(self.params['crtCoefficient']),
+                              "size": self.size})
+  
   @staticmethod
   def Generate(size=keyinfo.RSA_PRIV.default_size):
     """
@@ -486,16 +499,20 @@ class RsaPrivateKey(PrivateKey):
     @rtype: L{RsaPrivateKey}
     """
     key = RSA.generate(size, util.RandBytes)
-    params = {'n': key.n, 'e': key.e, 'd': key.d, 'p': key.q, 'q': key.p,  
-              'dp': key.d % (key.q - 1), 'dq': key.d % (key.p - 1), 
-              'invq': key.u}
     #NOTE: PyCrypto stores p < q, u = p^{-1} mod q
     #But OpenSSL and PKCS8 stores q < p, invq = q^{-1} mod p
     #So we have to reverse the p and q values
+    params = { 'privateExponent': util.PadBytes(util.BigIntToBytes(key.d), 1),
+               'primeP': util.PadBytes(util.BigIntToBytes(key.q), 1),
+               'primeQ': util.PadBytes(util.BigIntToBytes(key.p), 1),
+               'primeExponentP': util.PadBytes(util.BigIntToBytes(key.d % (key.q - 1)), 1),
+               'primeExponentQ': util.PadBytes(util.BigIntToBytes(key.d % (key.p - 1)), 1),
+               'crtCoefficient': util.PadBytes(util.BigIntToBytes(key.u), 1)}
     pubkey = key.publickey()
-    pub_params = {'n': pubkey.n, 'e': pubkey.e}
-    pub = RsaPublicKey(pub_params, util.ExportRsaX509(pub_params), pubkey, size)
-    return RsaPrivateKey(params, util.ExportRsaPkcs8(params), pub, key, size)
+    pub_params = { 'modulus': util.PadBytes(util.BigIntToBytes(key.n), 1),
+                   'publicExponent': util.PadBytes(util.BigIntToBytes(key.e), 1)}
+    pub = RsaPublicKey(pub_params, pubkey, size)
+    return RsaPrivateKey(params, pub, key, size)
   
   @staticmethod
   def Read(key):
@@ -510,10 +527,21 @@ class RsaPrivateKey(PrivateKey):
     """
     rsa = simplejson.loads(key)
     pub = RsaPublicKey.Read(simplejson.dumps(rsa['publicKey']))
-    params = util.ParsePkcs8(rsa['pkcs8'])
-    key = RSA.construct((params['n'], params['e'], params['d'],
-                         params['q'], params['p'], params['invq']))
-    return RsaPrivateKey(params, rsa['pkcs8'], pub, key, rsa['size'])
+    params = {'privateExponent': util.Decode(rsa['privateExponent']),
+              'primeP': util.Decode(rsa['primeP']),
+              'primeQ': util.Decode(rsa['primeQ']),
+              'primeExponentP': util.Decode(rsa['primeExponentP']),
+              'primeExponentQ': util.Decode(rsa['primeExponentQ']), 
+              'crtCoefficient': util.Decode(rsa['crtCoefficient'])
+              }
+    
+    key = RSA.construct((util.BytesToLong(pub.params['modulus']),
+                         util.BytesToLong(pub.params['publicExponent']),
+                         util.BytesToLong(params['privateExponent']),
+                         util.BytesToLong(params['primeQ']),
+                         util.BytesToLong(params['primeP']),
+                         util.BytesToLong(params['crtCoefficient'])))
+    return RsaPrivateKey(params, pub, key, rsa['size'])
   
   def Encrypt(self, data):
     """@see: L{RsaPublicKey.Encrypt}"""
@@ -554,11 +582,26 @@ class DsaPublicKey(PublicKey):
   
   """Represents DSA public keys in an asymmetric DSA key pair."""
   
-  def __init__(self, params, x509, key, size=keyinfo.DSA_PUB.default_size):
-    PublicKey.__init__(self, keyinfo.DSA_PUB, params, x509)
+  def __init__(self, params, key, size=keyinfo.DSA_PUB.default_size):
+    PublicKey.__init__(self, keyinfo.DSA_PUB, params)
     self.key = key
+    self.params = params
     self.size = size
   
+  def __str__(self):
+    return simplejson.dumps({"p": util.Encode(self.params['p']), 
+                             "q": util.Encode(self.params['q']),
+                             "g": util.Encode(self.params['g']),
+                             "y": util.Encode(self.params['y']),
+                             "size": self.size})
+
+  def _Hash(self):
+    fullhash = util.PrefixHash(util.TrimBytes(self._params['p']),
+                         util.TrimBytes(self._params['q']),
+                         util.TrimBytes(self._params['g']),
+                         util.TrimBytes(self._params['y']))
+    return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+
   @staticmethod
   def Read(key):
     """
@@ -570,10 +613,17 @@ class DsaPublicKey(PublicKey):
     @return: a DSA public key
     @rtype: L{DsaPublicKey}
     """
+    
     dsa = simplejson.loads(key)
-    params = util.ParseX509(dsa['x509'])
-    pubkey = DSA.construct((params['y'], params['g'], params['p'], params['q']))
-    return DsaPublicKey(params, dsa['x509'], pubkey, dsa['size'])
+    params = {'y' : util.Decode(dsa['y']),
+              'p' : util.Decode(dsa['p']), 
+              'g' : util.Decode(dsa['g']),
+              'q' : util.Decode(dsa['q'])}
+    pubkey = DSA.construct((util.BytesToLong(params['y']),
+                            util.BytesToLong(params['g']),
+                            util.BytesToLong(params['p']),
+                            util.BytesToLong(params['q'])))
+    return DsaPublicKey(params, pubkey, dsa['size'])
   
   def Verify(self, msg, sig):
     """
@@ -599,15 +649,16 @@ class DsaPublicKey(PublicKey):
 class RsaPublicKey(PublicKey):
   """Represents RSA public keys in an asymmetric RSA key pair."""
   
-  def __init__(self, params, x509, key, size=keyinfo.RSA_PUB.default_size):
-    PublicKey.__init__(self, keyinfo.RSA_PUB, params, x509)
+  def __init__(self, params, key, size=keyinfo.RSA_PUB.default_size):
+    PublicKey.__init__(self, keyinfo.RSA_PUB, params)
     self.key = key
+    self.params = params
     self.size = size
-  
+    
   def __Encode(self, msg, p=""):
     if len(p) >= 2**61:  # the input limit for SHA-1
       raise errors.KeyczarError("OAEP parameter string too long.")
-    k = int(math.floor(math.log(self._params['n'], 256)) + 1) # num bytes in n
+    k = int(math.floor(math.log(self.key.n, 256)) + 1) # num bytes in n
     if len(msg) > k - 2 * util.HLEN - 2:
       raise errors.KeyczarError("Message too long to OAEP encode.")
     ph = util.Hash(p)
@@ -619,7 +670,17 @@ class RsaPublicKey(PublicKey):
     seed_mask = util.MGF(masked_db, util.HLEN)
     masked_seed = util.Xor(seed, seed_mask)
     return "".join([chr(0), masked_seed, masked_db])
-  
+
+  def __str__(self):
+    return simplejson.dumps({"modulus": util.Encode(self.params['modulus']), 
+                             "publicExponent": util.Encode(self.params['publicExponent']),
+                             "size": self.size})
+
+  def _Hash(self):
+    fullhash = util.PrefixHash(util.TrimBytes(self._params['modulus']),
+                               util.TrimBytes(self._params['publicExponent']))
+    return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+
   @staticmethod
   def Read(key):
     """
@@ -632,9 +693,12 @@ class RsaPublicKey(PublicKey):
     @rtype: L{RsaPublicKey}
     """
     rsa = simplejson.loads(key)
-    params = util.ParseX509(rsa['x509'])
-    pubkey = RSA.construct((params['n'], params['e']))
-    return RsaPublicKey(params, rsa['x509'], pubkey, rsa['size'])
+    params = {'modulus' : util.Decode(rsa['modulus']),
+              'publicExponent' : util.Decode(rsa['publicExponent'])}
+
+    pubkey = RSA.construct((util.BytesToLong(params['modulus']),
+                            util.BytesToLong(params['publicExponent'])))
+    return RsaPublicKey(params, pubkey, rsa['size'])
   
   def Encrypt(self, data):
     """
@@ -664,7 +728,7 @@ class RsaPublicKey(PublicKey):
     @rtype: boolean
     """
     try:
-      return self.key.verify(util.MakeEmsaMessage(msg, self.size), (util.BytesToInt(sig),))
+      return self.key.verify(util.MakeEmsaMessage(msg, self.size), (util.BytesToLong(sig),))
     except ValueError:
       # if sig is not a long, it's invalid
       return False

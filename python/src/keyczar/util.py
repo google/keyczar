@@ -244,26 +244,26 @@ def IntToBytes(n):
   bytes = [m % 256 for m in [n >> 24, n >> 16, n >> 8, n]]
   return "".join([chr(b) for b in bytes])  # byte array to byte string
 
-def BytesToInt(bytes):
+def BytesToLong(bytes):
   l = len(bytes)
-  return sum([ord(bytes[i]) * 256**(l - 1 - i) for i in range(l)])
+  return long(sum([ord(bytes[i]) * 256**(l - 1 - i) for i in range(l)]))
 
 def Xor(a, b):
   """Return a ^ b as a byte string where a and b are byte strings."""
   # pad shorter byte string with zeros to make length equal
   m = max(len(a), len(b))
-  a = _PadBytes(a, m - len(a))
-  b = _PadBytes(b, m - len(b))
+  a = PadBytes(a, m - len(a))
+  b = PadBytes(b, m - len(b))
   x = [ord(c) for c in a]
   y = [ord(c) for c in b]
   z = [chr(x[i] ^ y[i]) for i in range(m)]
-  return _TrimBytes("".join(z))
+  return TrimBytes("".join(z))
   
-def _PadBytes(bytes, n):
+def PadBytes(bytes, n):
   """Prepend a byte string with n zero bytes."""
   return n * chr(0) + bytes
 
-def _TrimBytes(bytes):
+def TrimBytes(bytes):
   """Trim leading zero bytes."""
   trimmed = bytes.lstrip(chr(0))
   if trimmed == "":  # was a string of all zero bytes
@@ -281,6 +281,15 @@ def Hash(*inputs):
   for i in inputs:
     md.update(i)
   return md.digest()
+
+def PrefixHash(*inputs):
+  """Return a SHA-1 hash over a variable number of inputs."""
+  md = sha.new()
+  for i in inputs:
+    md.update(IntToBytes(len(i)))
+    md.update(i)
+  return md.digest()
+
 
 def Encode(s):
   """

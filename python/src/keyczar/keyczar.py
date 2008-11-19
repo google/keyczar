@@ -32,7 +32,8 @@ import keys
 import readers
 import util
 
-VERSION = 1
+VERSION = 0
+VERSION_BYTE = '\x00'
 KEY_HASH_SIZE = 4
 HEADER_SIZE = 1 + KEY_HASH_SIZE
 
@@ -352,7 +353,56 @@ class Verifier(Keyczar):
     if len(sig_bytes) < HEADER_SIZE:
       raise errors.ShortSignatureError(len(sig_bytes))
     key = self._ParseHeader(sig_bytes[:HEADER_SIZE])
-    return key.Verify(sig_bytes[:HEADER_SIZE] + data, sig_bytes[HEADER_SIZE:])
+    return key.Verify(data + VERSION_BYTE, sig_bytes[HEADER_SIZE:])
+
+class UnversionedVerifier(Keyczar):  
+  """Capable of verifying unversioned, standard signatures only."""
+  
+  @staticmethod
+  def Read(location):
+    """
+    Return a UnversionedVerifier object created from FileReader at
+    given location.
+    
+    @param location: pathname of the directory storing the key files
+    @type location: string
+    
+    @return: a Verifier to manage the keys stored at the given location and
+      perform verify functions.
+    @rtype: L{Verifier}
+    """
+    return UnversionedVerifier(readers.FileReader(location))
+  
+  def IsAcceptablePurpose(self, purpose):
+    """Only valid if purpose includes verifying."""
+    return purpose == keyinfo.VERIFY or purpose == keyinfo.SIGN_AND_VERIFY
+  
+  def Verify(self, data, sig):
+    """
+    Verifies whether the signature corresponds to the given data. This is a 
+    stanard signature (i.e. HMAC-SHA1, RSA-SHA1, DSA-SHA1) that contains no
+    version information, so this will try to verify with each key in a keyset.
+    
+    @param data: message that has been signed with sig
+    @type data: string
+    
+    @param sig: Base64 string formatted as Header|Signature
+    @type sig: string
+    
+    @return: True if sig corresponds to data, False otherwise.
+    @rtype: boolean
+    """
+    sig_bytes = util.Decode(sig)
+
+    for version in self.versions:
+      key = self._keys[version]
+      # Try to verify with each key
+      result = key.Verify(data, sig_bytes)
+      if result:
+        return True
+
+    # None of the keys verified the signature
+    return False
 
 class Crypter(Encrypter):
   
@@ -435,4 +485,46 @@ class Signer(Verifier):
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
     header = signing_key.Header()
-    return util.Encode(header + signing_key.Sign(header + data))
+    return util.Encode(header + signing_key.Sign(data + VERSION_BYTE))
+  
+class UnversionedSigner(UnversionedVerifier):
+  """Capable of both signing and verifying. This outputs standard signatures 
+    (i.e. HMAC-SHA1, DSA-SHA1, RSA-SHA1) that contain no key versioning.
+  """
+  
+  @staticmethod
+  def Read(location):
+    """
+    Return an UnversionedSigner object created from FileReader at
+    given location.
+    
+    @param location: pathname of the directory storing the key files
+    @type location: string
+    
+    @return: a Signer to manage the keys stored at the given location and
+      perform sign and verify functions.
+    @rtype: L{Signer}
+    """
+    return UnversionedSigner(readers.FileReader(location))
+  
+  def IsAcceptablePurpose(self, purpose):
+    """Only valid if purpose includes signing."""
+    return purpose == keyinfo.SIGN_AND_VERIFY
+  
+  def Sign(self, data):
+    """
+    Sign given data and return corresponding signature. This signature
+    contains no header or version information.
+    
+    For message M, outputs the signature as Sig(M). 
+    
+    @param data: message to be signed
+    @type data: string
+    
+    @return: signature on the data encoded as a Base64 string
+    @rtype: string
+    """
+    signing_key = self.primary_key
+    if signing_key is None:
+      raise errors.NoPrimaryKeyError()
+    return util.Encode(signing_key.Sign(data))

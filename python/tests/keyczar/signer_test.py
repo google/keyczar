@@ -39,6 +39,11 @@ class SignerTest(unittest.TestCase):
     sig = signer.Sign(self.input)
     return (signer, sig)
   
+  def __unversionedSignInput(self, subdir):
+    unversioned_signer = keyczar.UnversionedSigner.Read(os.path.join(TEST_DATA, subdir))
+    sig = unversioned_signer.Sign(self.input)
+    return (unversioned_signer, sig)
+  
   def __readGoldenOutput(self, subdir, verifier=False, public=False):
     path = os.path.join(TEST_DATA, subdir)
     if verifier and not public:
@@ -55,6 +60,11 @@ class SignerTest(unittest.TestCase):
     (signer, sig) = self.__signInput(subdir)
     self.assertTrue(signer.Verify(self.input, sig))
     self.assertFalse(signer.Verify("Wrong string", sig))
+    
+  def __testUnversionedSignAndVerify(self, subdir):
+    (unversioned_signer, sig) = self.__unversionedSignInput(subdir)
+    self.assertTrue(unversioned_signer.Verify(self.input, sig))
+    self.assertFalse(unversioned_signer.Verify("Wrong string", sig))
   
   def __testSignerVerify(self, subdir):
     (signer, active_sig, primary_sig) = self.__readGoldenOutput(subdir)
@@ -80,7 +90,10 @@ class SignerTest(unittest.TestCase):
     
   def testHmacSignAndVerify(self):
     self.__testSignAndVerify("hmac")
-  
+    
+  def testHmacUnversionedSignAndVerify(self):
+    self.__testUnversionedSignAndVerify("hmac")
+
   def testHmacVerify(self):
     self.__testSignerVerify("hmac")
   
@@ -89,6 +102,9 @@ class SignerTest(unittest.TestCase):
   
   def testDsaSignAndVerify(self):
     self.__testSignAndVerify("dsa")
+
+  def testDsaUnversionedSignAndVerify(self):
+    self.__testUnversionedSignAndVerify("dsa")
   
   def testDsaSignerVerify(self):
     self.__testSignerVerify("dsa")
@@ -104,6 +120,9 @@ class SignerTest(unittest.TestCase):
   
   def testRsaSignAndVerify(self):
     self.__testSignAndVerify("rsa-sign")
+
+  def testRsaUnversionedSignAndVerify(self):
+    self.__testUnversionedSignAndVerify("rsa-sign")
   
   def testRsaSignerVerify(self):
     self.__testSignerVerify("rsa-sign")
