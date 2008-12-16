@@ -460,22 +460,46 @@ class RsaPrivateKey(PrivateKey):
     self.params = params
     self.size = size
     
-  def __Decode(self, em, p=""):
-    if len(p) >= 2**61 or len(em) < 2 * util.HLEN + 2:  
+  # em - encoded message
+  def __Decode(self, encoded_message, label=""):
+    # See PKCS#1 v2.1: ftp://ftp.rsasecurity.com/pub/pkcs/pkcs-1/pkcs-1v2-1.pdf
+    if len(label) >= 2**61:  
       # 2^61 = the input limit for SHA-1
-      raise errors.KeyczarError("OAEP Decoding Error")
-    # PyCrypto strips all leading zeros, can't check it
-    masked_seed = em[:util.HLEN]
-    masked_db = em[util.HLEN:]
-    seed_mask = util.MGF(masked_db, util.HLEN)
+      raise errors.KeyczarError("OAEP Decoding Error - label is too large %d" % len(label))
+    if len(encoded_message) < 2 * util.HLEN + 2:
+      raise errors.KeyczarError("OAEP Decoding Error - encoded_message is too small: %d" % len(encoded_message))
+
+    # Step 3b  EM = Y || maskedSeed || maskedDB
+    k = int(math.floor(math.log(self.key.n, 256)) + 1) # num bytes in n
+    diff_len = k - len(encoded_message)
+    # PyCrypto strips out leading zero bytes.
+    # In OAEP, the first byte is expected to be a zero, so we can ignore it
+    if diff_len > 1:
+      # If more bytes were chopped by PyCrypto, add zero bytes back on
+      encoded_message = '\x00' * (diff_len - 1) + encoded_message
+      
+    masked_seed = encoded_message[:util.HLEN]  
+    masked_datablock = encoded_message[util.HLEN:]
+    
+    # Step 3c,d
+    seed_mask = util.MGF(masked_datablock, util.HLEN)
     seed = util.Xor(masked_seed, seed_mask)
-    db_mask = util.MGF(seed, len(em) - util.HLEN)  # em already stripped of 0
-    db = util.Xor(masked_db, db_mask)
-    ph = db[:util.HLEN]
-    one = db.find(chr(1), util.HLEN)
-    if ph != util.Hash(p) or one == -1:
-      raise errors.KeyczarError("OAEP Decoding Error")
-    return db[one+1:]  # the message
+       
+    # Step 3e
+    datablock_mask = util.MGF(seed, len(masked_datablock))  # encoded_message already stripped of 0
+    
+    # Step 3f
+    datablock = util.Xor(masked_datablock, datablock_mask)
+    
+    label_hash = datablock[:util.HLEN]
+    expected_label_hash = util.Hash(label)  # Debugging
+    if label_hash != expected_label_hash:
+      raise errors.KeyczarError("OAEP Decoding Error - hash is invalid")
+    
+    delimited_message = datablock[util.HLEN:].lstrip('\x00')
+    if delimited_message[0] != '\x01':
+      raise errors.KeyczarError("OAEP Decoding Error - expected a 1 value")
+    return delimited_message[1:]  # The message
   
   def __str__(self):
     return simplejson.dumps({ "publicKey": simplejson.loads(str(self.public_key)),
@@ -655,21 +679,29 @@ class RsaPublicKey(PublicKey):
     self.params = params
     self.size = size
     
-  def __Encode(self, msg, p=""):
-    if len(p) >= 2**61:  # the input limit for SHA-1
+  def __Encode(self, msg, label=""):
+    if len(label) >= 2**61:  # the input limit for SHA-1
       raise errors.KeyczarError("OAEP parameter string too long.")
     k = int(math.floor(math.log(self.key.n, 256)) + 1) # num bytes in n
     if len(msg) > k - 2 * util.HLEN - 2:
       raise errors.KeyczarError("Message too long to OAEP encode.")
-    ph = util.Hash(p)
-    ps = (k - len(msg) - 2 * util.HLEN - 2) * chr(0)  # zero byte string
-    db = "".join([ph, ps, chr(1), msg])
+    label_hash = util.Hash(label)
+    pad_octets = (k - len(msg) - 2 * util.HLEN - 2)  # Number of zeros to pad
+    if pad_octets < 0:
+      raise errors.KeyczarError("Message is too long: %d" % len(msg))
+    datablock = label_hash + ('\x00' * pad_octets) + '\x01' + msg
     seed = util.RandBytes(util.HLEN)
-    db_mask = util.MGF(seed, k - util.HLEN - 1)
-    masked_db = util.Xor(db, db_mask)
-    seed_mask = util.MGF(masked_db, util.HLEN)
+    
+    # Steps 2e, f
+    datablock_mask = util.MGF(seed, k - util.HLEN - 1)
+    masked_datablock = util.Xor(datablock, datablock_mask)
+    
+    # Steps 2g, h
+    seed_mask = util.MGF(masked_datablock, util.HLEN)
     masked_seed = util.Xor(seed, seed_mask)
-    return "".join([chr(0), masked_seed, masked_db])
+
+    # Step 2i: Construct the encoded message
+    return '\x00' + masked_seed + masked_datablock
 
   def __str__(self):
     return simplejson.dumps({"modulus": util.Encode(self.params['modulus']), 

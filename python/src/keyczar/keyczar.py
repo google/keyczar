@@ -23,8 +23,6 @@ encrypt, decrypt, sign and verify.
 
 import os
 
-from Crypto.Cipher import AES
-
 import errors
 import keydata
 import keyinfo

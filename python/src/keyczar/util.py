@@ -252,16 +252,18 @@ def Xor(a, b):
   """Return a ^ b as a byte string where a and b are byte strings."""
   # pad shorter byte string with zeros to make length equal
   m = max(len(a), len(b))
-  a = PadBytes(a, m - len(a))
-  b = PadBytes(b, m - len(b))
+  if m > len(a):
+    a = PadBytes(a, m - len(a))
+  elif m > len(b):
+    b = PadBytes(b, m - len(b))
   x = [ord(c) for c in a]
   y = [ord(c) for c in b]
   z = [chr(x[i] ^ y[i]) for i in range(m)]
-  return TrimBytes("".join(z))
+  return "".join(z)
   
 def PadBytes(bytes, n):
   """Prepend a byte string with n zero bytes."""
-  return n * chr(0) + bytes
+  return n * '\x00' + bytes
 
 def TrimBytes(bytes):
   """Trim leading zero bytes."""
@@ -386,5 +388,8 @@ def MGF(seed, mlen):
   """
   if mlen > 2**32 * HLEN:
     raise errors.KeyczarError("MGF1 mask length too long.")
-  return ("".join([Hash(seed, IntToBytes(i))
-                   for i in range(int(math.ceil(mlen / float(HLEN))))]))[:mlen]
+  output = ""
+  for i in range(int(math.ceil(mlen / float(HLEN)))):
+    output += Hash(seed, IntToBytes(i))
+  return output[:mlen]
+  
