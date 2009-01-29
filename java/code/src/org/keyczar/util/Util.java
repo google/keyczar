@@ -158,7 +158,7 @@ public class Util {
       random = new SecureRandom();
     }
     random.nextBytes(dest);
-    RAND_QUEUE.poll();
+    RAND_QUEUE.add(random);
   }
 
   /**
