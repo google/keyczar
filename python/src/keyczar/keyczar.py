@@ -160,8 +160,14 @@ class GenericKeyczar(Keyczar):
     """
     if size is None:
       size = self.default_size
-  
-    version = keydata.KeyVersion(len(self.versions) + 1, status, False)
+
+    max_version_number = 0
+    for version in self.versions:
+      if max_version_number < version.version_number:
+        max_version_number = version.version_number
+    
+    # Make the new version number the max of the existing versions plus one      
+    version = keydata.KeyVersion(max_version_number + 1, status, False)
     
     if status == keyinfo.PRIMARY:
       if self.primary_version is not None:

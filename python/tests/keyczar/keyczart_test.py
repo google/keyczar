@@ -46,12 +46,13 @@ class KeyczartTest(unittest.TestCase):
     self.assertEquals(3, self.mock.numkeys)
     keyczart.main(['addkey', '--status=primary'])
     self.assertEquals(4, self.mock.numkeys)
-    self.assertEquals(keyinfo.PRIMARY, self.mock.GetStatus(4))
+    # The next version number will be 100, since the previous max was 99
+    self.assertEquals(keyinfo.PRIMARY, self.mock.GetStatus(100))
     self.assertEquals(keyinfo.ACTIVE, self.mock.GetStatus(42))
   
   def testAddKeySizeFlag(self):
     keyczart.main(['addkey', '--size=256'])
-    self.assertEquals(256, self.mock.GetKeySize(4))
+    self.assertEquals(256, self.mock.GetKeySize(100))
   
   def testPubKey(self):
     pubmock = readers.MockReader('PUBTEST', keyinfo.DECRYPT_AND_ENCRYPT, 
