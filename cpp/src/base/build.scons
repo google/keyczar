@@ -1,0 +1,105 @@
+# -*- mode: python; -*-
+
+Import('env')
+
+
+# Library
+
+env.Append(
+    CCFLAGS = [
+        '-Wno-write-strings',
+    ],
+)
+
+input_files = [
+    'at_exit.cc',
+    'base64.cc',
+    'base64w.cc',
+    'base_paths.cc',
+    'command_line.cc',
+    'debug_util.cc',
+    'dmg_fp/dtoa.cc',
+    'dmg_fp/g_fmt.cc',
+    'file_path.cc',
+    'file_util.cc',
+    'json_reader.cc',
+    'json_value_serializer.cc',
+    'json_writer.cc',
+    'lock.cc',
+    'logging.cc',
+    'modp/modp_b64.cc',
+    'modp/modp_b64w.cc',
+    'path_service.cc',
+    'ref_counted.cc',
+    'string16.cc',
+    'string_escape.cc',
+    'string_piece.cc',
+    'string_util.cc',
+    'string_util_icu.cc',
+    'thread_collision_warner.cc',
+    'values.cc',
+]
+
+input_files_posix = [
+    'debug_util_posix.cc',
+    'file_util_posix.cc',
+    'lock_impl_posix.cc',
+    'platform_thread_posix.cc',
+]
+
+input_files_linux = [
+    'atomicops_internals_x86_gcc.cc',
+    'base_paths_linux.cc',
+    'file_util_linux.cc',
+    'sys_string_conversions_linux.cc',
+]
+
+if env.Bit('linux'):
+  input_files.extend(input_files_posix)
+  input_files.extend(input_files_linux)
+
+env.ComponentLibrary('base', input_files, COMPONENT_STATIC=True)
+
+
+# Unittests
+
+test_env = env.Clone()
+
+test_env.Append(
+    CPPPATH = [
+        '../testing/gtest',
+        '../testing/gtest/include',
+    ],
+    LIBS = [
+        'base',
+        'gtest',
+        'icuuc',
+        'rt',
+    ],
+)
+
+input_files_unittests = [
+    'at_exit_unittest.cc',
+    'atomicops_unittest.cc',
+    'base64_unittest.cc',
+    'base64w_unittest.cc',
+    'command_line_unittest.cc',
+    'file_path_unittest.cc',
+    'file_util_unittest.cc',
+    'json_reader_unittest.cc',
+    'json_value_serializer_unittest.cc',
+    'json_writer_unittest.cc',
+    'path_service_unittest.cc',
+    'ref_counted_unittest.cc',
+    'run_all_unittests.cc',
+    'scoped_ptr_unittest.cc',
+    'singleton_unittest.cc',
+    'string_piece_unittest.cc',
+    'string_escape_unittest.cc',
+    'sys_string_conversions_unittest.cc',
+#    'thread_collision_warner_unittest.cc',
+    'tuple_unittest.cc',
+    'values_unittest.cc',
+]
+
+test_env.ComponentTestProgram('base_unittests', input_files_unittests)

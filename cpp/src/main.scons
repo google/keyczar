@@ -1,0 +1,59 @@
+# -*- mode: python; -*-
+
+# Defines option --swig
+AddOption('--swig',
+          dest='swig_option',
+          action="store_true",
+          help='Processes Swig files.')
+
+# Creates a base environment to describe what is common between platforms.
+base_env = Environment()
+base_env.Tool('component_setup')
+base_env.Append(
+    # All includes are relative to the main project directory.
+    CPPPATH = ['$MAIN_DIR'],
+    # The list of components common to all platforms.
+    BUILD_SCONSCRIPTS = ['testing', 'base', 'keyczar'],
+    SWIG_OPTION = GetOption('swig_option'),
+)
+
+
+
+#### Linux environment
+
+# Linux environnment
+linux_env = base_env.Clone()
+linux_env.Tool('target_platform_linux')
+linux_env.Append(
+    CCFLAGS = [
+	'-Wno-deprecated',
+    ],
+)
+
+# Debug Linux
+linux_debug_env = linux_env.Clone(
+    BUILD_TYPE = 'dbg-linux',
+    BUILD_TYPE_DESCRIPTION = 'Linux debug build',
+)
+# Use common debug settings.
+linux_debug_env.Tool('target_debug')
+# Add this variant to the set which is build by default.
+linux_debug_env.Append(BUILD_GROUPS = ['default'])
+
+# Optimized Linux
+linux_optimized_env = linux_env.Clone(
+    BUILD_TYPE = 'opt-linux',
+    BUILD_TYPE_DESCRIPTION = 'Linux optimized build',
+)
+linux_optimized_env.Tool('target_optimized')
+
+
+
+
+# Build the variants listed above.
+# This step will call each of the SConscripts (build.scons) listed,
+# once for each variant currently being built.
+BuildComponents([
+    linux_debug_env,
+    linux_optimized_env,
+])

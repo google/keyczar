@@ -1,0 +1,5 @@
+#!/bin/sh
+# find where this script is
+SCRIPT_DIR="$(dirname -- "$(echo "${0}" | sed -e "s,^\([^/]\),$(pwd)/\1,")")"
+# run the main script
+exec "$SCRIPT_DIR/../../hammer.sh" "${@}"

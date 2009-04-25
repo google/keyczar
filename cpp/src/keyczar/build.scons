@@ -1,0 +1,176 @@
+# -*- mode: python; -*-
+
+Import('env')
+
+## Library
+
+input_files = [
+    'aes_key.cc',
+    'cipher_mode.cc',
+    'crypto_factory.cc',
+    'dsa_private_key.cc',
+    'dsa_public_key.cc',
+    'hmac_impl.cc',
+    'hmac_key.cc',
+    'key.cc',
+    'key_purpose.cc',
+    'keyczar.cc',
+    'keyczar_tool.cc',
+    'keyset.cc',
+    'keyset_encrypted_file_reader.cc',
+    'keyset_encrypted_file_writer.cc',
+    'keyset_file_reader.cc',
+    'keyset_file_writer.cc',
+    'keyset_metadata.cc',
+    'key_status.cc',
+    'key_type.cc',
+    'key_util.cc',
+    'message_digest_impl.cc',
+    'openssl/aes.cc',
+    'openssl/dsa.cc',
+    'openssl/hmac.cc',
+    'openssl/message_digest.cc',
+    'openssl/rand.cc',
+    'openssl/rsa.cc',
+    'openssl/util.cc',
+    'private_key.cc',
+    'public_key.cc',
+    'rsa_private_key.cc',
+    'rsa_public_key.cc',
+    'secret_key.cc',
+]
+
+env.ComponentLibrary('keyczar', input_files, COMPONENT_STATIC=False)
+
+
+## keyczart
+
+keyczart_env = env.Clone()
+
+keyczart_env.Append(
+    LIBS = [
+	'keyczar',
+        'base',
+        'icuuc',
+        'rt',
+	'crypto',
+    ],
+)
+
+input_files_keyzart = [
+    'keyczart.cc',
+]
+
+keyczart_env.ComponentProgram('keyczart', input_files_keyzart)
+
+
+## testdata_gen
+
+testdata_gen_env = env.Clone()
+
+testdata_gen_env.Append(
+    LIBS = [
+	'keyczar',
+        'base',
+        'icuuc',
+        'rt',
+	'crypto',
+    ],
+)
+
+input_files_testdata_gen = [
+    'testdata_gen.cc',
+]
+
+testdata_gen_env.ComponentProgram('testdata_gen', input_files_testdata_gen)
+
+
+## basic_example
+
+basic_example_env = env.Clone()
+
+basic_example_env.Append(
+    LIBS = [
+	'keyczar',
+        'base',
+        'icuuc',
+        'rt',
+	'crypto',
+    ],
+)
+
+input_files_basic_example = [
+    'basic_example.cc',
+]
+
+basic_example_env.ComponentProgram('basic_example', input_files_basic_example)
+
+
+# Swig interface for Python
+
+keyczar_swig_env = env.Clone()
+
+import distutils.sysconfig
+
+keyczar_swig_env.Append(
+    LIBS = [
+	'keyczar',
+        'base',
+        'icuuc',
+        'rt',
+	'crypto',
+    ],
+    SWIGFLAGS = ['-c++', '-python'],
+    CPPPATH = [distutils.sysconfig.get_python_inc()],
+)
+
+keyczar_swig_env.Replace(
+    SHLIBPREFIX = ""
+)
+
+input_files_keyczar_swig = [
+    'keyczar.i',
+]
+
+if env.get('SWIG_OPTION'):
+    keyczar_swig_env.ComponentLibrary('_keyczar', input_files_keyczar_swig,
+                                      COMPONENT_STATIC=False)
+
+
+## Unittests
+
+unittests_env = env.Clone()
+
+unittests_env.Append(
+    CPPPATH = [
+        '../testing/gtest',
+        '../testing/gtest/include',
+    ],
+    LIBS = [
+        'keyczar',
+        'base',
+        'gtest',
+        'icuuc',
+        'rt',
+        'crypto',
+    ],
+)
+
+input_files_unittests = [
+    'aes_key_unittest.cc',
+    'dsa_key_unittest.cc',
+    'hmac_key_unittest.cc',
+    'keyczar_unittest.cc',
+    'keyset_reader_unittest.cc',
+    'keyset_metadata_unittest.cc',
+    'keyset_unittest.cc',
+    'openssl/aes_unittest.cc',
+    'openssl/dsa_unittest.cc',
+    'openssl/hmac_unittest.cc',
+    'openssl/message_digest_unittest.cc',
+    'openssl/rsa_unittest.cc',
+    'rsa_key_unittest.cc',
+    'run_all_unittests.cc',
+]
+
+unittests_env.ComponentTestProgram('keyczar_unittests', input_files_unittests)

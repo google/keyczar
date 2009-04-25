@@ -1,0 +1,10 @@
+# -*- mode: python; -*-
+
+Import('env')
+
+sconscript_files = [
+    'modp_b64.scons',
+    'modp_b64w.scons',
+    ]
+
+env.SConscript(sconscript_files, exports=['env'])
