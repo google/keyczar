@@ -1,0 +1,134 @@
+= Keyczar C++ for developers =
+
+
+== Implementing a new Reader ==
+
+A new reader would be useful for reading keys and metadata from a new support
+or being stored under a different format.
+
+Keyczar::Read() (keyczar/keyczar.h) initially expects string locations and
+automatically instanciates a KeysetFileReader object. However its Read()
+method is overloaded and also accepts Reader (keyczar/keyset_reader.h) objects,
+so it is possible to use new readers (for example KeysetEncryptedFileReader is
+used exactly like this).
+
+
+== Implementing a new Writer ==
+
+The main reason for implementing a new writer would be the need to create
+and update metadata and keys on a new support or represented in a different
+format. Note in this case it would be necessary to modify keyczart. Hopefully
+keyczart relies on KeyczarTool (keyczar/keyczar_tool.h) which is designed to
+be generic and instanciate its readers and writers through a factory. The steps
+for creating a new working writer would be:
+
+1- Implement a new writer inheriting from KeysetWriter (keyczar/keyset_writer.h)
+2- Update the enum in keyczar/keyczar_tool.h to accept this new LocationType.
+3- Create a new 'keyczart-xxx' program based on keyczar/keyczart.cc just change
+   the LocationType.
+
+
+== Supporting a new architecture ==
+
+For supporting a new architecture say MAC or Win it would be necessary to
+accomplish the following steps:
+
+- Update src/main.scons, src/base/build.scons and all the build files where
+  conditional builds depending on the platform have to be performed.
+- Update the directory src/base with the corresponding directory of Chromium
+  and resolve all the dependances concerning this new architecture.
+- Check if change have to be done in the source code inside src/keyczar/.
+- Read the next section.
+- FIXME: modifications for the install step.
+
+
+== Implementing a new crypto backend ==
+
+If one had to port this code to Win it would probably make sense to use
+MS CryptoAPI or CNG to implement the cryptographic operations. Roughly, what
+would then be required would be to implement a new subdirectory keyczar/capi/,
+for replacing the default implementation provided by keyczar/openssl/.
+
+Then the factory methods implemented inside CryptoFactory (see
+keyczar/crypto_factory.h) would have to be updated. The switch between the
+implementations could then be made at compile time by defines or at execution
+by implementing a switch() {}.
+
+For more insights on this design read the comments inside keyczar/key.h.
+
+If the cryptographic library has special steps for initializing the random
+number engine, implements what is required inside a RandImpl::Init()
+(keyczar/rand_impl.h) method and be sure to call it before any cryptographic
+operation using random numbers is performed. For example see
+keyczar/run_all_unittests.cc and keyczar/openssl/rand.h for how this
+initialization is implemented and should be called.
+
+
+== Advanced use of this library ==
+
+=== KeyczarTool ===
+
+It could be useful to use KeyczarTool (keyczar/keyczar_tool.h) for something else
+than for implementing keyczart. For example testdata_gen
+(keyczar/testdata_gen.cc) sucessfully use it for generating all the key sets
+of reference.
+
+=== Keyczar ===
+
+A Keyczar (keyczar/keyczar.h) subclass can directly be instanciated with a Keyset
+(keyczar/keyset.h) object as argument. Likewise it is possible to access the
+key set of an Keyczar instance by calling the keyset() method. These possibilities
+could provide better flexibility.
+
+=== Observer ===
+
+Observers are used for signaling key set writers that the key set has been updated
+and these changes should be written. FIXME.
+
+
+== C++ Style ==
+
+The following style guide is used as reference for developping this project:
+http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml
+
+
+== Exceptions ==
+
+C++ exceptions are not used for this project. The source code is compiled
+with -fno-exceptions. For a rationale read:
+http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml#Exceptions
+
+
+== Generating key sets of reference ==
+
+testdata_gen (keyczar/testdata_gen.cc) is used for generating the content of the
+subdirectory keyczar/data. This code needs to be updated each time a new
+cryptographic algorithm is implemented.
+
+
+== Namespaces ==
+
+- 'keyczar' is used as namespace for all the code inside src/keyczar.
+- 'keyczar::openssl' is used as namespace for all the code inside
+  src/keyczar/openssl. Each new crypto implementation should declare a
+  sub-namespace based on its directory's name.
+- 'keyczar::keyczar_tool' is used as namespace by src/keyczar/keyczar_tool.h.
+
+
+== src/base/ ==
+
+- Singleton (see base/singleton.h) such as implemented by this  class are really
+  useful but they require to instanciate an object on the stack before using
+  them which is not very appealing, thus for this reason Singleton are only used
+  in unittests.
+- Although cumbersome, icu and dmg_fp are required by the JSON library.
+- There are two kinds of asserts CHECK() and DCHECK() (see base/logging.h).
+  Both are fatals but only CHECK are triggered when the code is compiled with
+  mode=opt-linux. DCHECK is triggered only during debug mode. As principle this
+  project tries to avoid fatal interruptions during 'optimized' mode execution.
+  So the preferred way of handling errors is by returning NULL or false values.
+  On irrecoverable errors however CHECK are used.
+- scoped_ptr (see base/scoped_ptr.h) and scoped_refptr (see base/ref_counted.h)
+  are used for managing pointers. Altough multiple references should
+  be avoided, Key objects (keyczar/key.h) are managed through scoped_refptr
+  mostly because Keyset (keyczar/keyset.h) holds two references of each key.

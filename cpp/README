@@ -1,72 +1,59 @@
-= Stub C++ implementation of Keyczar =
-
-
-This implementation offers the same functionalities than the Java (excepted
-ECDSA) and Python implementations.
+= C++ implementation =
 
 
 == Dependancies ==
 
-- Install the following libraries:
-  - OpenSSL: package libssl-dev (Debian/Ubuntu)
-  - Unicode icu: packages libicu-dev and libicu38
-  - [optional] Swig: package swig
+- OpenSSL: package libssl-dev (Debian/Ubuntu)
+- Unicode icu: packages libicu-dev and libicu38
+- [Optional]: Python and Swig
 
 
-== Build ==
+== Local build ==
 
-Currently this implementation only works under Linux, follow these for
-compiling it:
+Currently this implementation only works under Linux, follow these steps to
+compile it:
 
-1- Install the packages mentioned in the previous section.
+1- Install the required packages mentioned in the previous section.
 
 2- Compilation:
-$ cd cpp/src/
-$ export SCONS_DIR="`pwd`/tools/scons/scons-local-1.2.0.d20090223/"
-$ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux
+   $ cd cpp/src/
+   $ export SCONS_DIR="`pwd`/tools/scons/scons-local-1.2.0.d20090223/"
+   $ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux
 
-Unittests are executed and libraries and executables are copied under:
-scons-out/opt-linux/
+3- If you also want to compile the Python interface, be sure that Swig is
+   installed, add the option '--swig' and recompile the source code:
+   $ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux --swig
 
-3- Execute keyczart like this:
-$ scons-out/opt-linux/staging/keyczart create --location=/tmp/k1 --purpose=crypt
-$ scons-out/opt-linux/staging/keyczart addkey --location=/tmp/k1
-
-4- See how to use this lib: read and execute a basic example
-   (src/keyczar/basic_example.cc):
-$ scons-out/opt-linux/staging/basic_example /tmp/k1
+Unittests are executed, libraries and executables are assembled under
+scons-out/opt-linux/.
 
 
-== Python interface ==
+== Install ==
 
-There is an experimental Python interface developped with Swig, for compiling
-it follow these steps:
+Files will be installed under /usr/local/ and under /usr/lib/python2.x/site-packages
 
-1- Install Swig 1.3: package swig
+1- Log as root:
+   $ sudo -s'
+   $ cd cpp/src
+   $ export SCONS_DIR="`pwd`/tools/scons/scons-local-1.2.0.d20090223/"
+3- For installing the C++ components only, run:
+   $ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux install
 
-2- Compile source code with option --swig, like e.g.:
-$ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux --swig
+   Or for also installing the Python module, run instead:
+   $ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux --swig install
+4- Cleanup the build and removes installed files by appending the '-c' option to
+   your previous command
+   $ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux --swig install -c
 
-3- It outputs the corresponding dynamic library _keyczar.so and the Python file
-   keyczar.py under scons-out/opt-linux/lib/
-
-4- Then this code should work from the Python interpreter (under
-   scons-out/opt-linux/lib/):
-     >>> import keyczar
-     # '/tmp/k1' is an AES key set
-     >>> crypter = keyczar.Crypter.Read("/tmp/k1")
-     # '/tmp/k2' is an encrypted AES key set
-     >>> reader = keyczar.KeysetEncryptedFileReader("/tmp/k2", crypter)
-     >>> encrypter = keyczar.Encrypter.Read(reader)
-     >>> encrypter.Encrypt("Secret message")
-     'AHAZYMg5XL7wtoDdVkmih5iIKsbQmJV8Jyea7kKcZPm41xCzId5CrGJPtaNPBCKbVpWlCDDG0sRo'
-     >>>
+Read the tutorial and the examples under src/examples/ and consults
+/usr/local/include/keyczar it contains all the header files of the library.
 
 
 == Source tree ==
 
 src/
   base/             -> Third party code mostly derived from Chromium
+  example/          -> Few examples to use when Keyczar is installed
   keyczar/          -> Keyczar C++ implementation
   scons-out/        -> Build
   testing/          -> Testing framework (gtest)
@@ -83,14 +70,14 @@ src/
   adding to this code a new concrete crypto implementation. In this perspective
   the current code is able (at least in theory) to support easily different
   crypto implementations.
-- There is no 'make install' mechanism.
+- Poor install mechanism and poor Swig support.
 - Numerous unittests are implemented but keyczart is not currently extensively
   tested.
 
 
-== Compliance with the specifications of Keyczar ==
+== Compliance with specifications ==
 
-- Strictly follows these specifications: http://code.google.com/p/keyczar/w/
+- This code follows Keyczar specifications http://code.google.com/p/keyczar/w/
 - Added a new attribute 'nextKeyVersionNumber' in the metadata to keep the
   count of the next key version number to use when a new key is generated. Key
   sets without this attribute are fully supported and are updated transparently

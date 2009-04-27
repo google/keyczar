@@ -59,67 +59,68 @@ TEST_F(KeyczarTest, AcceptablePurpose) {
   scoped_ptr<Crypter> crypter;
 
   const FilePath rsa_priv_crypt_path = data_path_.Append("rsa");
-  signer.reset(Signer::Read(rsa_priv_crypt_path));
+  signer.reset(Signer::Read(rsa_priv_crypt_path.value()));
   ASSERT_FALSE(signer.get());
-  unversioned_signer.reset(UnversionedSigner::Read(rsa_priv_crypt_path));
+  unversioned_signer.reset(
+      UnversionedSigner::Read(rsa_priv_crypt_path.value()));
   ASSERT_FALSE(unversioned_signer.get());
-  crypter.reset(Crypter::Read(rsa_priv_crypt_path));
+  crypter.reset(Crypter::Read(rsa_priv_crypt_path.value()));
   ASSERT_TRUE(crypter.get());
-  encrypter.reset(Encrypter::Read(rsa_priv_crypt_path));
+  encrypter.reset(Encrypter::Read(rsa_priv_crypt_path.value()));
   ASSERT_TRUE(encrypter.get());
 
   const FilePath rsa_priv_sign_path = data_path_.Append("rsa-sign");
-  crypter.reset(Crypter::Read(rsa_priv_sign_path));
+  crypter.reset(Crypter::Read(rsa_priv_sign_path.value()));
   ASSERT_FALSE(crypter.get());
-  signer.reset(Signer::Read(rsa_priv_sign_path));
+  signer.reset(Signer::Read(rsa_priv_sign_path.value()));
   ASSERT_TRUE(signer.get());
-  unversioned_signer.reset(UnversionedSigner::Read(rsa_priv_sign_path));
+  unversioned_signer.reset(UnversionedSigner::Read(rsa_priv_sign_path.value()));
   ASSERT_TRUE(unversioned_signer.get());
-  verifier.reset(Verifier::Read(rsa_priv_sign_path));
+  verifier.reset(Verifier::Read(rsa_priv_sign_path.value()));
   ASSERT_TRUE(verifier.get());
 
   const FilePath rsa_pub_sign_path = data_path_.Append("rsa-sign.public");
-  encrypter.reset(Encrypter::Read(rsa_pub_sign_path));
+  encrypter.reset(Encrypter::Read(rsa_pub_sign_path.value()));
   ASSERT_FALSE(encrypter.get());
-  signer.reset(Signer::Read(rsa_pub_sign_path));
+  signer.reset(Signer::Read(rsa_pub_sign_path.value()));
   ASSERT_FALSE(signer.get());
-  verifier.reset(Verifier::Read(rsa_pub_sign_path));
+  verifier.reset(Verifier::Read(rsa_pub_sign_path.value()));
   ASSERT_TRUE(verifier.get());
 
   const FilePath aes_path = data_path_.Append("aes");
-  signer.reset(Signer::Read(aes_path));
+  signer.reset(Signer::Read(aes_path.value()));
   ASSERT_FALSE(signer.get());
-  crypter.reset(Crypter::Read(aes_path));
+  crypter.reset(Crypter::Read(aes_path.value()));
   ASSERT_TRUE(crypter.get());
-  encrypter.reset(Encrypter::Read(aes_path));
+  encrypter.reset(Encrypter::Read(aes_path.value()));
   ASSERT_TRUE(encrypter.get());
 
   const FilePath hmac_path = data_path_.Append("hmac");
-  crypter.reset(Crypter::Read(hmac_path));
+  crypter.reset(Crypter::Read(hmac_path.value()));
   ASSERT_FALSE(crypter.get());
-  verifier.reset(Verifier::Read(hmac_path));
+  verifier.reset(Verifier::Read(hmac_path.value()));
   ASSERT_TRUE(verifier.get());
-  signer.reset(Signer::Read(hmac_path));
+  signer.reset(Signer::Read(hmac_path.value()));
   ASSERT_TRUE(signer.get());
-  unversioned_signer.reset(UnversionedSigner::Read(hmac_path));
+  unversioned_signer.reset(UnversionedSigner::Read(hmac_path.value()));
   ASSERT_TRUE(unversioned_signer.get());
 
   const FilePath dsa_priv_sign_path = data_path_.Append("dsa");
-  crypter.reset(Crypter::Read(dsa_priv_sign_path));
+  crypter.reset(Crypter::Read(dsa_priv_sign_path.value()));
   ASSERT_FALSE(crypter.get());
-  signer.reset(Signer::Read(dsa_priv_sign_path));
+  signer.reset(Signer::Read(dsa_priv_sign_path.value()));
   ASSERT_TRUE(signer.get());
-  unversioned_signer.reset(UnversionedSigner::Read(dsa_priv_sign_path));
+  unversioned_signer.reset(UnversionedSigner::Read(dsa_priv_sign_path.value()));
   ASSERT_TRUE(unversioned_signer.get());
-  verifier.reset(Verifier::Read(dsa_priv_sign_path));
+  verifier.reset(Verifier::Read(dsa_priv_sign_path.value()));
   ASSERT_TRUE(verifier.get());
 
   const FilePath dsa_pub_sign_path = data_path_.Append("dsa.public");
-  encrypter.reset(Encrypter::Read(dsa_pub_sign_path));
+  encrypter.reset(Encrypter::Read(dsa_pub_sign_path.value()));
   ASSERT_FALSE(encrypter.get());
-  signer.reset(Signer::Read(dsa_pub_sign_path));
+  signer.reset(Signer::Read(dsa_pub_sign_path.value()));
   ASSERT_FALSE(signer.get());
-  verifier.reset(Verifier::Read(dsa_pub_sign_path));
+  verifier.reset(Verifier::Read(dsa_pub_sign_path.value()));
   ASSERT_TRUE(verifier.get());
 }
 
@@ -127,11 +128,11 @@ TEST_F(KeyczarTest, RSAEncryptAndDecrypt) {
   std::string encrypted, decrypted;
 
   const FilePath private_path = data_path_.Append("rsa");
-  scoped_ptr<Encrypter> encrypter(Encrypter::Read(private_path));
+  scoped_ptr<Encrypter> encrypter(Encrypter::Read(private_path.value()));
   ASSERT_TRUE(encrypter.get());
   EXPECT_TRUE(encrypter->Encrypt(input_data_, &encrypted));
 
-  scoped_ptr<Crypter> crypter(Crypter::Read(private_path));
+  scoped_ptr<Crypter> crypter(Crypter::Read(private_path.value()));
   ASSERT_TRUE(crypter.get());
   EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
   EXPECT_EQ(input_data_, decrypted);
@@ -141,12 +142,12 @@ TEST_F(KeyczarTest, RSASignAnVerify) {
   std::string signature;
 
   const FilePath private_path = data_path_.Append("rsa-sign");
-  scoped_ptr<Signer> signer(Signer::Read(private_path));
+  scoped_ptr<Signer> signer(Signer::Read(private_path.value()));
   ASSERT_TRUE(signer.get());
   EXPECT_TRUE(signer->Sign(input_data_, &signature));
 
   const FilePath public_path = data_path_.Append("rsa-sign.public");
-  scoped_ptr<Verifier> verifier(Verifier::Read(public_path));
+  scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
@@ -164,13 +165,14 @@ TEST_F(KeyczarTest, RSASignAnVerifyUnversioned) {
   std::string signature;
 
   const FilePath private_path = data_path_.Append("rsa-sign");
-  scoped_ptr<UnversionedSigner> signer(UnversionedSigner::Read(private_path));
+  scoped_ptr<UnversionedSigner> signer(
+      UnversionedSigner::Read(private_path.value()));
   ASSERT_TRUE(signer.get());
   EXPECT_TRUE(signer->Sign(input_data_, &signature));
 
   const FilePath public_path = data_path_.Append("rsa-sign.public");
   scoped_ptr<UnversionedVerifier> verifier(
-      UnversionedVerifier::Read(public_path));
+      UnversionedVerifier::Read(public_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
@@ -182,7 +184,7 @@ TEST_F(KeyczarTest, RSADecrypt) {
   EXPECT_TRUE(file_util::ReadFileToString(
                   private_path.Append("1.out"), &encrypted));
 
-  scoped_ptr<Crypter> crypter(Crypter::Read(private_path));
+  scoped_ptr<Crypter> crypter(Crypter::Read(private_path.value()));
   ASSERT_TRUE(crypter.get());
   EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
   EXPECT_EQ(input_data_, decrypted);
@@ -196,7 +198,7 @@ TEST_F(KeyczarTest, RSAVerify) {
                   private_path.Append("1.out"), &signature));
 
   const FilePath public_path = data_path_.Append("rsa-sign.public");
-  scoped_ptr<Verifier> verifier(Verifier::Read(public_path));
+  scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
@@ -205,11 +207,11 @@ TEST_F(KeyczarTest, HMACSignAndVerify) {
   std::string signature;
 
   const FilePath hmac_path = data_path_.Append("hmac");
-  scoped_ptr<Signer> signer(Signer::Read(hmac_path));
+  scoped_ptr<Signer> signer(Signer::Read(hmac_path.value()));
   ASSERT_TRUE(signer.get());
   EXPECT_TRUE(signer->Sign(input_data_, &signature));
 
-  scoped_ptr<Verifier> verifier(Verifier::Read(hmac_path));
+  scoped_ptr<Verifier> verifier(Verifier::Read(hmac_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
@@ -218,12 +220,13 @@ TEST_F(KeyczarTest, HMACSignAndVerifyUnversioned) {
   std::string signature;
 
   const FilePath hmac_path = data_path_.Append("hmac");
-  scoped_ptr<UnversionedSigner> signer(UnversionedSigner::Read(hmac_path));
+  scoped_ptr<UnversionedSigner> signer(
+      UnversionedSigner::Read(hmac_path.value()));
   ASSERT_TRUE(signer.get());
   EXPECT_TRUE(signer->Sign(input_data_, &signature));
 
   scoped_ptr<UnversionedVerifier> verifier(
-      UnversionedVerifier::Read(hmac_path));
+      UnversionedVerifier::Read(hmac_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
@@ -234,7 +237,7 @@ TEST_F(KeyczarTest, HMACVerify) {
   EXPECT_TRUE(file_util::ReadFileToString(
                   hmac_path.Append("1.out"), &signature));
 
-  scoped_ptr<Verifier> verifier(Verifier::Read(hmac_path));
+  scoped_ptr<Verifier> verifier(Verifier::Read(hmac_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
@@ -243,11 +246,11 @@ TEST_F(KeyczarTest, AESEncryptAndDecrypt) {
   std::string encrypted, decrypted;
 
   const FilePath aes_path = data_path_.Append("aes");
-  scoped_ptr<Encrypter> encrypter(Encrypter::Read(aes_path));
+  scoped_ptr<Encrypter> encrypter(Encrypter::Read(aes_path.value()));
   ASSERT_TRUE(encrypter.get());
   EXPECT_TRUE(encrypter->Encrypt(input_data_, &encrypted));
 
-  scoped_ptr<Crypter> crypter(Crypter::Read(aes_path));
+  scoped_ptr<Crypter> crypter(Crypter::Read(aes_path.value()));
   ASSERT_TRUE(crypter.get());
   EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
   EXPECT_EQ(input_data_, decrypted);
@@ -260,7 +263,7 @@ TEST_F(KeyczarTest, AESDecrypt1) {
   EXPECT_TRUE(file_util::ReadFileToString(
                   aes_path.Append("1.out"), &encrypted));
 
-  scoped_ptr<Crypter> crypter(Crypter::Read(aes_path));
+  scoped_ptr<Crypter> crypter(Crypter::Read(aes_path.value()));
   ASSERT_TRUE(crypter.get());
   EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
   EXPECT_EQ(input_data_, decrypted);
@@ -273,7 +276,7 @@ TEST_F(KeyczarTest, AESDecrypt2) {
   EXPECT_TRUE(file_util::ReadFileToString(
                   aes_path.Append("2.out"), &encrypted));
 
-  scoped_ptr<Crypter> crypter(Crypter::Read(aes_path));
+  scoped_ptr<Crypter> crypter(Crypter::Read(aes_path.value()));
   ASSERT_TRUE(crypter.get());
   EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
   EXPECT_EQ(input_data_, decrypted);
@@ -281,11 +284,11 @@ TEST_F(KeyczarTest, AESDecrypt2) {
 
 TEST_F(KeyczarTest, AESCryptedEncryptAndDecrypt) {
   const FilePath aes_path = data_path_.Append("aes");
-  scoped_ptr<Crypter> decrypter(Crypter::Read(aes_path));
+  scoped_ptr<Crypter> decrypter(Crypter::Read(aes_path.value()));
   ASSERT_TRUE(decrypter.get());
 
   const FilePath aes_crypted_path = data_path_.Append("aes-crypted");
-  KeysetEncryptedFileReader encrypted_reader(aes_crypted_path,
+  KeysetEncryptedFileReader encrypted_reader(aes_crypted_path.value(),
                                              decrypter.release());
   scoped_ptr<Crypter> crypter(Crypter::Read(encrypted_reader));
   ASSERT_TRUE(crypter.get());
@@ -300,11 +303,11 @@ TEST_F(KeyczarTest, AESCryptedDecrypt1) {
   std::string encrypted, decrypted;
 
   const FilePath aes_path = data_path_.Append("aes");
-  scoped_ptr<Crypter> decrypter(Crypter::Read(aes_path));
+  scoped_ptr<Crypter> decrypter(Crypter::Read(aes_path.value()));
   ASSERT_TRUE(decrypter.get());
 
   const FilePath aes_crypted_path = data_path_.Append("aes-crypted");
-  KeysetEncryptedFileReader encrypted_reader(aes_crypted_path,
+  KeysetEncryptedFileReader encrypted_reader(aes_crypted_path.value(),
                                              decrypter.release());
   scoped_ptr<Crypter> crypter(Crypter::Read(encrypted_reader));
   ASSERT_TRUE(crypter.get());
@@ -319,11 +322,11 @@ TEST_F(KeyczarTest, AESCryptedDecrypt2) {
   std::string encrypted, decrypted;
 
   const FilePath aes_path = data_path_.Append("aes");
-  scoped_ptr<Crypter> decrypter(Crypter::Read(aes_path));
+  scoped_ptr<Crypter> decrypter(Crypter::Read(aes_path.value()));
   ASSERT_TRUE(decrypter.get());
 
   const FilePath aes_crypted_path = data_path_.Append("aes-crypted");
-  KeysetEncryptedFileReader encrypted_reader(aes_crypted_path,
+  KeysetEncryptedFileReader encrypted_reader(aes_crypted_path.value(),
                                              decrypter.release());
   scoped_ptr<Crypter> crypter(Crypter::Read(encrypted_reader));
   ASSERT_TRUE(crypter.get());
@@ -338,12 +341,12 @@ TEST_F(KeyczarTest, DSASignAnVerify) {
   std::string signature;
 
   const FilePath private_path = data_path_.Append("dsa");
-  scoped_ptr<Signer> signer(Signer::Read(private_path));
+  scoped_ptr<Signer> signer(Signer::Read(private_path.value()));
   ASSERT_TRUE(signer.get());
   EXPECT_TRUE(signer->Sign(input_data_, &signature));
 
   const FilePath public_path = data_path_.Append("dsa.public");
-  scoped_ptr<Verifier> verifier(Verifier::Read(public_path));
+  scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
@@ -352,13 +355,14 @@ TEST_F(KeyczarTest, DSASignAnVerifyUnversioned) {
   std::string signature;
 
   const FilePath private_path = data_path_.Append("dsa");
-  scoped_ptr<UnversionedSigner> signer(UnversionedSigner::Read(private_path));
+  scoped_ptr<UnversionedSigner> signer(
+      UnversionedSigner::Read(private_path.value()));
   ASSERT_TRUE(signer.get());
   EXPECT_TRUE(signer->Sign(input_data_, &signature));
 
   const FilePath public_path = data_path_.Append("dsa.public");
   scoped_ptr<UnversionedVerifier> verifier(
-      UnversionedVerifier::Read(public_path));
+      UnversionedVerifier::Read(public_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
@@ -371,7 +375,7 @@ TEST_F(KeyczarTest, DSAVerify) {
                   private_path.Append("1.out"), &signature));
 
   const FilePath public_path = data_path_.Append("dsa.public");
-  scoped_ptr<Verifier> verifier(Verifier::Read(public_path));
+  scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
@@ -380,7 +384,7 @@ TEST_F(KeyczarTest, AESBigBufferEncryptAndDecrypt) {
   std::string encrypted, decrypted, input;
 
   const FilePath aes_path = data_path_.Append("aes");
-  scoped_ptr<Crypter> crypter(Crypter::Read(aes_path));
+  scoped_ptr<Crypter> crypter(Crypter::Read(aes_path.value()));
   ASSERT_TRUE(crypter.get());
 
   scoped_ptr_malloc<char> input_buffer;

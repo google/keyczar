@@ -58,8 +58,8 @@ if env.Bit('linux'):
   input_files.extend(input_files_posix)
   input_files.extend(input_files_linux)
 
-env.ComponentLibrary('base', input_files, COMPONENT_STATIC=True)
-
+out = env.ComponentLibrary('keyczar_base', input_files, COMPONENT_STATIC=False)
+env.Install('/usr/local/lib', out[0])
 
 # Unittests
 
@@ -71,9 +71,10 @@ test_env.Append(
         '../testing/gtest/include',
     ],
     LIBS = [
-        'base',
+        'keyczar_base',
         'gtest',
         'icuuc',
+        'pthread',
         'rt',
     ],
 )

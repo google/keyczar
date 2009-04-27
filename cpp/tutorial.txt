@@ -1,0 +1,99 @@
+= Keyczar C++ Tutorial =
+
+First, read the README file and install Keyczar C++ with its Python interface.
+
+
+== C++ ==
+
+Save the following code in a file named basic_encrypt.cc:
+
+#include <iostream>
+#include <string>
+#include <keyczar/keyczar.h>
+
+int main(int argc, char** argv) {
+  if (argc != 2) {
+    std::cout << "An absolute key set location must be provided as argument"
+              << std::endl;
+    return 1;  // error
+  }
+
+  // The first argument must represent the keyset's location
+  const std::string location(argv[1]);
+
+  keyczar::Keyczar* encrypter = keyczar::Encrypter::Read(location);
+  if (!encrypter)
+    return 1;
+
+  std::string input = "Secret message";
+  std::string ciphertext;
+  std::cout << "Encrypting: " << input << std::endl;
+  bool result = encrypter->Encrypt(input, &ciphertext);
+  delete encrypter;
+  std::cout << "Ciphertext: " << ciphertext << std::endl;
+
+  if (!result)
+    return 1;
+  return 0;
+}
+
+And compile it with the following command:
+
+g++ -W -Wno-deprecated basic_encrypt.cc -lkeyczar_base -lkeyczar \
+    -lcrypto -licuuc -lrt -lpthread -o basic_encrypt
+
+Create a new key set:
+
+$ mkdir -p /tmp/k1-crypt
+$ keyczart create --location=/tmp/k1-crypt --purpose=crypt
+$ keyczart addkey --location=/tmp/k1-crypt --status=primary
+
+Finally execute basic_encrypt:
+
+$ ./basic_encrypt /tmp/k1-crypt
+Encrypting: Secret message
+Ciphertext: AD7EsEwmJn3Uxd_zlp3ET9HFUfuIeALgugyeMAM--SmTNCoqohhFN6enLlDJS8yzmRvu
+            2394T7t9
+
+
+== Python ==
+
+Save the following code in a file named basic_sign.py:
+
+import os
+import sys
+
+import keyczar
+
+def Sign(keyset_path):
+    if not os.path.isdir(keyset_path):
+        return
+
+    input = 'Message to sign'
+    signer = keyczar.Signer.Read(keyset_path)
+    signature = signer.Sign(input)
+
+    print 'Message:', input
+    print 'Signature:', signature
+
+    verifier = keyczar.Verifier.Read(keyset_path)
+    assert verifier.Verify(input, signature)
+
+if __name__ == '__main__':
+    if (len(sys.argv) != 2):
+        print >> sys.stderr, "Provide a key set path as argument."
+        sys.exit(1)
+    Sign(sys.argv[1])
+
+
+Create a new key set:
+
+$ mkdir -p /tmp/k2-sign
+$ keyczart create --location=/tmp/k2-sign --purpose=sign --asymetric=dsa
+$ keyczart addkey --location=/tmp/k2-sign --status=primary
+
+Finally execute basic_sign.py:
+
+$ python basic_sign.py /tmp/k2-sign
+Message: Message to sign
+Signature: AFLum40wLQIUN1q4iWSVmLqE92g38GbConPhbt0CFQCA6M6pg8-rPrdcayKFWxqjiVkpAg

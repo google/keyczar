@@ -22,6 +22,7 @@ input_files = [
     'keyset_file_reader.cc',
     'keyset_file_writer.cc',
     'keyset_metadata.cc',
+    'keyset_writer.cc',
     'key_status.cc',
     'key_type.cc',
     'key_util.cc',
@@ -40,7 +41,8 @@ input_files = [
     'secret_key.cc',
 ]
 
-env.ComponentLibrary('keyczar', input_files, COMPONENT_STATIC=False)
+out = env.ComponentLibrary('keyczar', input_files, COMPONENT_STATIC=False)
+env.Install('/usr/local/lib', out[0])
 
 
 ## keyczart
@@ -50,7 +52,8 @@ keyczart_env = env.Clone()
 keyczart_env.Append(
     LIBS = [
 	'keyczar',
-        'base',
+        'keyczar_base',
+        'pthread',
         'icuuc',
         'rt',
 	'crypto',
@@ -61,7 +64,8 @@ input_files_keyzart = [
     'keyczart.cc',
 ]
 
-keyczart_env.ComponentProgram('keyczart', input_files_keyzart)
+out = keyczart_env.ComponentProgram('keyczart', input_files_keyzart)
+keyczart_env.Install('/usr/local/bin', out)
 
 
 ## testdata_gen
@@ -71,7 +75,8 @@ testdata_gen_env = env.Clone()
 testdata_gen_env.Append(
     LIBS = [
 	'keyczar',
-        'base',
+        'keyczar_base',
+        'pthread',
         'icuuc',
         'rt',
 	'crypto',
@@ -92,7 +97,8 @@ basic_example_env = env.Clone()
 basic_example_env.Append(
     LIBS = [
 	'keyczar',
-        'base',
+        'keyczar_base',
+        'pthread',
         'icuuc',
         'rt',
 	'crypto',
@@ -115,7 +121,8 @@ import distutils.sysconfig
 keyczar_swig_env.Append(
     LIBS = [
 	'keyczar',
-        'base',
+        'keyczar_base',
+        'pthread',
         'icuuc',
         'rt',
 	'crypto',
@@ -133,8 +140,15 @@ input_files_keyczar_swig = [
 ]
 
 if env.get('SWIG_OPTION'):
-    keyczar_swig_env.ComponentLibrary('_keyczar', input_files_keyczar_swig,
-                                      COMPONENT_STATIC=False)
+    out = keyczar_swig_env.ComponentLibrary('_keyczar',
+                                            input_files_keyczar_swig,
+                                            COMPONENT_STATIC=False)
+    site_packages = distutils.sysconfig.get_python_lib()
+    env.Install(site_packages, out[0])
+    # FIXME: This part is even more ugly than the previous ugly part :(
+    py_file = str(out[0])[1:].split('.so')[0] + '.py'
+    import os
+    env.Install(site_packages, os.path.join(env['LIB_DIR'], py_file ))
 
 
 ## Unittests
@@ -148,7 +162,8 @@ unittests_env.Append(
     ],
     LIBS = [
         'keyczar',
-        'base',
+        'keyczar_base',
+        'pthread',
         'gtest',
         'icuuc',
         'rt',

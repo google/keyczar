@@ -11,20 +11,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/crypto_factory.h"
-#include "keyczar/keyczar_tool.h"
+#include "keyczar/keyset_writer.h"
 
-int main(int argc, char** argv) {
-  // Before any cryptographic operation initializes the random engine
-  // (seeding...). However this step is useless under Linux with OpenSSL.
-  keyczar::CryptoFactory::Rand();
+#include "base/scoped_ptr.h"
 
-  keyczar::keyczar_tool::KeyczarTool tool(
-      keyczar::keyczar_tool::KeyczarTool::DISK);
-  if (!tool.Init(argc, argv))
-    return 1;
-  if (!tool.ProcessCommandLine())
-    return 1;
+namespace keyczar {
 
-  return 0;
+void KeysetWriter::OnUpdatedKeysetMetadata(const KeysetMetadata& key_metadata) {
+  scoped_ptr<Value> metadata_value(key_metadata.GetValue(false));
+  WriteMetadata(metadata_value.get());
 }
+
+void KeysetWriter::OnNewKey(const Key& key, int version_number) {
+  scoped_ptr<Value> key_value(key.GetValue());
+  WriteKey(key_value.get(), version_number);
+}
+
+void KeysetWriter::OnRevokedKey(int version_number) {
+  // By default, does nothing.
+}
+
+}  // namespace keyczar

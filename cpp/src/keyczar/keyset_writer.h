@@ -17,10 +17,16 @@
 #include "base/basictypes.h"
 #include "base/values.h"
 
+#include "keyczar/key.h"
+#include "keyczar/keyset.h"
+#include "keyczar/keyset_metadata.h"
+
 namespace keyczar {
 
-// Keyser writer interface.
-class KeysetWriter {
+// Abstract Writer class. This class is also implemented as an Observer
+// for being notified by the class Keyset when the metadata or the keys
+// have to be written.
+class KeysetWriter : public Keyset::Observer {
  public:
   KeysetWriter() {}
   virtual ~KeysetWriter() {}
@@ -30,6 +36,19 @@ class KeysetWriter {
 
   // Abstract method for writing |key| of number |version|.
   virtual bool WriteKey(const Value* key, int version) const = 0;
+
+  // This method is called each time the metadata is updated and should be
+  // written back.
+  virtual void OnUpdatedKeysetMetadata(const KeysetMetadata& key_metadata);
+
+  // This method is called when a new key is added to the key set. This key
+  // must also be written with its writer.
+  virtual void OnNewKey(const Key& key, int version_number);
+
+  // This method is called when a key is revoked. Currently this function
+  // does nothing but the key |version_number| could be deleted from its
+  // support by its writer as well.
+  virtual void OnRevokedKey(int version_number);
 
  private:
   DISALLOW_COPY_AND_ASSIGN(KeysetWriter);

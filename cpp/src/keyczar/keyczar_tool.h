@@ -23,6 +23,8 @@
 #include "keyczar/key_status.h"
 #include "keyczar/keyset_file_reader.h"
 #include "keyczar/keyset_file_writer.h"
+#include "keyczar/keyset_reader.h"
+#include "keyczar/keyset_writer.h"
 
 namespace keyczar {
 
@@ -32,7 +34,14 @@ namespace keyczar_tool {
 // the appropriate commands.
 class KeyczarTool {
  public:
-  KeyczarTool() : command_line_(NULL) {}
+  enum LocationType {
+    // Locations represent directories containing metadata and
+    // keys files.
+    DISK
+  };
+
+  explicit KeyczarTool(LocationType location_type)
+      : location_type_(location_type), command_line_(NULL) {}
 
   // This function must be called before ProcessCommandLine().
   bool Init(int argc, char** argv);
@@ -57,13 +66,28 @@ class KeyczarTool {
   bool CmdRevoke(const std::string& location, int version) const;
 
  private:
+  // Factory method returns a reader object. The Reader's class is determined
+  // by the value of |location_type_|.
+  KeysetReader* GetReader(const std::string& location,
+                          const std::string& crypter_location) const;
+
+  // Factory method returns a writer object. The Writer's class is determined
+  // by the value of |location_type_|.
+  KeysetWriter* GetWriter(const std::string& location,
+                          const std::string& crypter_location) const;
+
   KeysetFileReader* GetFileReader(const std::string& location,
                                   const std::string& crypter_location) const;
 
   KeysetFileWriter* GetFileWriter(const std::string& location,
                                   const std::string& crypter_location) const;
 
+  // Will be used to decide which reader and writer to instanciate.
+  LocationType location_type_;
+
   CommandLine* command_line_;
+
+  DISALLOW_COPY_AND_ASSIGN(KeyczarTool);
 };
 
 }  // namespace keyczar_tool

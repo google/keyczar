@@ -29,6 +29,9 @@ linux_env.Append(
 	'-Wno-deprecated',
     ],
 )
+linux_env.Alias('install', '/usr')
+
+
 
 # Debug Linux
 linux_debug_env = linux_env.Clone(
@@ -57,3 +60,30 @@ BuildComponents([
     linux_debug_env,
     linux_optimized_env,
 ])
+
+
+
+# FIXME: temporary code for copying / removing refactored keyczar
+#        headers.
+import os
+import sys
+import shutil
+
+include_dir = '/usr/local/include'
+include_dir_keyczar = os.path.join(include_dir, 'keyczar')
+
+if GetOption('clean') and os.path.isdir(include_dir_keyczar):
+    shutil.rmtree(include_dir_keyczar)
+
+if not GetOption('clean') and 'install' in COMMAND_LINE_TARGETS:
+    import refactor_includes
+    keyczar_dir = os.path.join(os.getcwd(), 'keyczar')
+    base_dir = os.path.join(os.getcwd(), 'base')
+
+    if (not os.path.isdir(keyczar_dir) or not os.path.isdir(base_dir) or
+        not os.path.isdir(include_dir)):
+        print >> sys.stderr, "Cannot install Keyczar headers"
+        sys.exit(1)
+
+    refactor_includes.RefactorDir(keyczar_dir, include_dir)
+    refactor_includes.RefactorDir(base_dir, include_dir_keyczar)

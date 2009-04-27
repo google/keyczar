@@ -44,7 +44,7 @@ class Encrypter : public Keyczar {
   static Encrypter* Read(const std::string& location);
   static Encrypter* Read(const KeysetReader& reader);
 
-  std::string Encrypt(const std::string& data) const;
+  virtual std::string Encrypt(const std::string& data) const;
 
 /* FIXME: remove debug code. */
 /*

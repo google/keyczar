@@ -20,17 +20,12 @@
 #include "base/file_path.h"
 #include "base/values.h"
 
-#include "keyczar/key.h"
-#include "keyczar/keyset.h"
-#include "keyczar/keyset_metadata.h"
 #include "keyczar/keyset_writer.h"
 
 namespace keyczar {
 
-// Concrete class for writing metadata and keys to disk files. This class also
-// implements an Observer class which will provide notifications when data
-// has to be written.
-class KeysetFileWriter : public KeysetWriter, public Keyset::Observer {
+// Concrete class for writing metadata and keys to files.
+class KeysetFileWriter : public KeysetWriter {
  public:
   // |dirname| is the string path of the keyset to read.
   explicit KeysetFileWriter(const std::string& dirname);
@@ -43,19 +38,6 @@ class KeysetFileWriter : public KeysetWriter, public Keyset::Observer {
 
   // Writes |key| to file |version| inside the keyset directory.
   virtual bool WriteKey(const Value* key, int version) const;
-
-  // Function automatically called when the metadata has changed and must be
-  // written on disk.
-  virtual void OnUpdatedKeysetMetadata(const KeysetMetadata& key_metadata);
-
-  // Function automatically called when a new key is added to a keyset.
-  // Therefore this key must also be written on disk.
-  virtual void OnNewKey(const Key& key, int version_number);
-
-  // Function automatically called when a key was revoked. Currently this
-  // function does nothing but the key |version_number| could be deleted
-  // from disk as well.
-  virtual void OnRevokedKey(int version_number);
 
   FilePath dirname() const { return dirname_; }
 

@@ -24,6 +24,7 @@
 #include "keyczar/keyset.h"
 #include "keyczar/keyset_file_reader.h"
 #include "keyczar/keyset_file_writer.h"
+#include "keyczar/keyset_writer.h"
 
 namespace keyczar {
 
@@ -220,12 +221,12 @@ TEST_F(KeysetTest, Obervers) {
   file_util::CreateDirectory(temp_path_.Append("observer1"));
   file_util::CreateDirectory(temp_path_.Append("observer2"));
 
-  scoped_ptr<Keyset::Observer> file_writer1(
+  scoped_ptr<KeysetWriter> file_writer1(
       new KeysetFileWriter(temp_path_.Append("observer1")));
   ASSERT_TRUE(file_writer1.get());
   keyset->AddObserver(file_writer1.get());
 
-  scoped_ptr<Keyset::Observer> file_writer2(
+  scoped_ptr<KeysetWriter> file_writer2(
       new KeysetFileWriter(temp_path_.Append("observer2")));
   ASSERT_TRUE(file_writer2.get());
   keyset->AddObserver(file_writer2.get());

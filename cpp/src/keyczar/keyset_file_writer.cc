@@ -55,19 +55,4 @@ bool KeysetFileWriter::WriteKey(const Value* key, int version) const {
   return WriteJSONFile(key_file, key);
 }
 
-void KeysetFileWriter::OnUpdatedKeysetMetadata(
-    const KeysetMetadata& key_metadata) {
-  scoped_ptr<Value> metadata_value(key_metadata.GetValue(false));
-  WriteMetadata(metadata_value.get());
-}
-
-void KeysetFileWriter::OnNewKey(const Key& key, int version_number) {
-  scoped_ptr<Value> key_value(key.GetValue());
-  WriteKey(key_value.get(), version_number);
-}
-
-void KeysetFileWriter::OnRevokedKey(int version_number) {
-  // Does nothing.
-}
-
 }  // namespace keyczar

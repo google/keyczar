@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Copied from src/keyczar/testdata_gen.cc
+//
 // Program used for generating src/keyczar/data/ directory.
 #include <string>
 
-#include "base/file_util.h"
-#include "base/scoped_ptr.h"
-#include "base/string_util.h"
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/base/string_util.h>
 
-#include "keyczar/key_purpose.h"
-#include "keyczar/key_status.h"
-#include "keyczar/keyczar.h"
-#include "keyczar/keyczar_tool.h"
-#include "keyczar/keyset_encrypted_file_reader.h"
+#include <keyczar/key_purpose.h>
+#include <keyczar/key_status.h>
+#include <keyczar/keyczar.h>
+#include <keyczar/keyczar_tool.h>
+#include <keyczar/keyset_encrypted_file_reader.h>
 
 namespace {
 

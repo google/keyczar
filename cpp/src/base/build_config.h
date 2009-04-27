@@ -15,15 +15,21 @@
 #define BASE_BUILD_CONFIG_H_
 
 // A set of macros to use for platform detection.
-/* #if defined(__APPLE__) */
-/* #define OS_MACOSX 1 */
-/* #elif defined(__linux__) */
-/* #define OS_LINUX 1 */
-/* #elif defined(_WIN32) */
-/* #define OS_WIN 1 */
-/* #else */
-/* #error Please add support for your platform in base/build_config.h */
-/* #endif */
+#if defined(__APPLE__)
+#ifndef OS_MACOSX
+#define OS_MACOSX 1
+#endif
+#elif defined(__linux__)
+#ifndef OS_LINUX
+#define OS_LINUX 1
+#endif
+#elif defined(_WIN32)
+#ifndef OS_WIN
+#define OS_WIN 1
+#endif
+#else
+#error Please add support for your platform in base/build_config.h
+#endif
 
 // For access to standard POSIX features, use OS_POSIX instead of a more
 // specific macro.

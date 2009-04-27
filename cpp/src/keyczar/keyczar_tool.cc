@@ -227,8 +227,11 @@ bool KeyczarTool::CmdCreate(const std::string& location,
                             const KeyPurpose& key_purpose,
                             const std::string& name,
                             const std::string& asymmetric) const {
-  KeysetFileReader reader(location);
-  scoped_ptr<Value> metadata_value(reader.ReadMetadata());
+  scoped_ptr<KeysetReader> reader(GetReader(location, ""));
+  if (reader.get() == NULL)
+    return false;
+
+  scoped_ptr<Value> metadata_value(reader->ReadMetadata());
   if (metadata_value.get() != NULL) {
     LOG(ERROR) << "Metadata already exists, cannot overwrite.";
     return false;
@@ -236,8 +239,12 @@ bool KeyczarTool::CmdCreate(const std::string& location,
   metadata_value.reset();
 
   Keyset keyset;
-  KeysetFileWriter writer(location);
-  keyset.AddObserver(&writer);
+
+  scoped_ptr<KeysetWriter> writer(GetWriter(location, ""));
+  if (writer.get() == NULL)
+    return false;
+
+  keyset.AddObserver(writer.get());
 
   scoped_ptr<KeyType> key_type;
   if (key_purpose.type() == KeyPurpose::SIGN_AND_VERIFY) {
@@ -290,8 +297,7 @@ bool KeyczarTool::CmdAddKey(const std::string& location,
                             const KeyStatus& key_status,
                             int size,
                             const std::string& crypter_location) const {
-  scoped_ptr<KeysetFileReader> reader(GetFileReader(location,
-                                                    crypter_location));
+  scoped_ptr<KeysetReader> reader(GetReader(location, crypter_location));
   if (reader.get() == NULL)
     return false;
 
@@ -299,8 +305,7 @@ bool KeyczarTool::CmdAddKey(const std::string& location,
   if (keyset.get() == NULL)
     return false;
 
-  scoped_ptr<KeysetFileWriter> writer(GetFileWriter(location,
-                                                    crypter_location));
+  scoped_ptr<KeysetWriter> writer(GetWriter(location, crypter_location));
   if (writer.get() == NULL)
     return false;
 
@@ -322,8 +327,7 @@ bool KeyczarTool::CmdAddKey(const std::string& location,
 bool KeyczarTool::CmdPubKey(const std::string& location,
                             const std::string& destination,
                             const std::string& crypter_location) const {
-  scoped_ptr<KeysetFileReader> reader(GetFileReader(location,
-                                                    crypter_location));
+  scoped_ptr<KeysetReader> reader(GetReader(location, crypter_location));
   if (reader.get() == NULL)
     return false;
 
@@ -331,48 +335,92 @@ bool KeyczarTool::CmdPubKey(const std::string& location,
   if (keyset.get() == NULL)
     return false;
 
-  KeysetFileWriter writer(destination);
-  return keyset->PublicKeyExport(writer);
+  scoped_ptr<KeysetWriter> writer(GetWriter(destination, ""));
+  if (writer.get() == NULL)
+    return false;
+
+  return keyset->PublicKeyExport(*writer);
 }
 
 bool KeyczarTool::CmdPromote(const std::string& location, int version) const {
-  KeysetFileReader reader(location);
+  scoped_ptr<KeysetReader> reader(GetReader(location, ""));
+  if (reader.get() == NULL)
+    return false;
 
-  scoped_ptr<Keyset> keyset(Keyset::ReadMetadataOnly(reader));
+  scoped_ptr<Keyset> keyset(Keyset::ReadMetadataOnly(*reader));
   if (keyset.get() == NULL)
     return false;
 
-  KeysetFileWriter writer(location);
-  keyset->AddObserver(&writer);
+  scoped_ptr<KeysetWriter> writer(GetWriter(location, ""));
+  if (writer.get() == NULL)
+    return false;
+
+  keyset->AddObserver(writer.get());
 
   return keyset->PromoteKey(version);
 }
 
 bool KeyczarTool::CmdDemote(const std::string& location, int version) const {
-  KeysetFileReader reader(location);
+  scoped_ptr<KeysetReader> reader(GetReader(location, ""));
+  if (reader.get() == NULL)
+    return false;
 
-  scoped_ptr<Keyset> keyset(Keyset::ReadMetadataOnly(reader));
+  scoped_ptr<Keyset> keyset(Keyset::ReadMetadataOnly(*reader));
   if (keyset.get() == NULL)
     return false;
 
-  KeysetFileWriter writer(location);
-  keyset->AddObserver(&writer);
+  scoped_ptr<KeysetWriter> writer(GetWriter(location, ""));
+  if (writer.get() == NULL)
+    return false;
+
+  keyset->AddObserver(writer.get());
 
   return keyset->DemoteKey(version);
 }
 
 bool KeyczarTool::CmdRevoke(const std::string& location, int version) const {
-  KeysetFileReader reader(location);
+  scoped_ptr<KeysetReader> reader(GetReader(location, ""));
+  if (reader.get() == NULL)
+    return false;
 
-  scoped_ptr<Keyset> keyset(Keyset::ReadMetadataOnly(reader));
+  scoped_ptr<Keyset> keyset(Keyset::ReadMetadataOnly(*reader));
   if (keyset.get() == NULL)
     return false;
 
-  KeysetFileWriter writer(location);
-  keyset->AddObserver(&writer);
+  scoped_ptr<KeysetWriter> writer(GetWriter(location, ""));
+  if (writer.get() == NULL)
+    return false;
+
+  keyset->AddObserver(writer.get());
 
   // TODO(seb): currently the key version is not erased from disk.
   return keyset->RevokeKey(version);
+}
+
+KeysetReader* KeyczarTool::GetReader(
+    const std::string& location,
+    const std::string& crypter_location) const {
+  switch (location_type_) {
+    case DISK:
+      return GetFileReader(location, crypter_location);
+    default:
+      NOTREACHED();
+  }
+
+  return NULL;
+}
+
+KeysetWriter* KeyczarTool::GetWriter(
+    const std::string& location,
+    const std::string& crypter_location) const {
+  switch (location_type_) {
+    case DISK:
+      return GetFileWriter(location, crypter_location);
+    default:
+      NOTREACHED();
+  }
+
+  return NULL;
 }
 
 KeysetFileReader* KeyczarTool::GetFileReader(
