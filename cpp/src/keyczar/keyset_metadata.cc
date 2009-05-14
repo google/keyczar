@@ -200,10 +200,12 @@ Value* KeysetMetadata::GetValue(bool public_export) const {
   if (!metadata->SetBoolean(L"encrypted", encrypted()))
     return NULL;
 
+#ifndef COMPAT_KEYCZAR_05B
   if (!public_export)
     if (!metadata->SetInteger(L"nextKeyVersionNumber",
                               next_key_version_number()))
       return NULL;
+#endif
 
   ListValue* versions = new ListValue;
   if (versions == NULL)

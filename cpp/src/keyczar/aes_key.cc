@@ -21,6 +21,35 @@
 #include "keyczar/message_digest_impl.h"
 #include "keyczar/rand_impl.h"
 
+namespace {
+
+// This function returns 0 if it fails.
+static int GetHMACSizeFromAESSize(int size) {
+#ifdef COMPAT_KEYCZAR_05B
+  return 160;
+#else
+  // These choices follow the NIST recommendations, see SP800-57 part1
+  // pages 63-64.
+  int hmac_size = 0;
+  switch (size) {
+    case 128:
+      hmac_size = 160;
+      break;
+    case 192:
+      hmac_size = 224;
+      break;
+    case 256:
+      hmac_size = 256;
+      break;
+    default:
+      NOTREACHED();
+  }
+  return hmac_size;
+#endif
+}
+
+}  // namespace
+
 namespace keyczar {
 
 // static
@@ -51,6 +80,9 @@ AESKey* AESKey::CreateFromValue(const Value& root_key) {
     return NULL;
   }
 
+  if (!IsValidSize("AES", size))
+    return NULL;
+
   DictionaryValue* hmac_key_value = NULL;
   if (!aes_key->GetDictionary(L"hmacKey", &hmac_key_value))
     return NULL;
@@ -63,30 +95,23 @@ AESKey* AESKey::CreateFromValue(const Value& root_key) {
   if (aes_key_impl.get() == NULL)
     return NULL;
 
-  HMACKey* hmac_key = HMACKey::CreateFromValue(*hmac_key_value);
+  scoped_refptr<HMACKey> hmac_key = HMACKey::CreateFromValue(*hmac_key_value);
   if (hmac_key == NULL)
     return NULL;
 
-  return new AESKey(aes_key_impl.release(), cipher_mode.release(), hmac_key);
+  if (GetHMACSizeFromAESSize(size) != hmac_key->size()) {
+    LOG(ERROR) << "Incompatibles key sizes between AES key and HMAC key.";
+    return NULL;
+  }
+
+  return new AESKey(aes_key_impl.release(), cipher_mode.release(), size,
+                    hmac_key);
 }
 
 // static
 AESKey* AESKey::GenerateKey(int size) {
-  scoped_ptr<KeyType> aes_type(KeyType::Create("AES"));
-  if (aes_type.get() == NULL)
+  if (!IsValidSize("AES", size))
     return NULL;
-
-  if (!aes_type->IsValidSize(size)) {
-    LOG(ERROR) << "Invalid key size: " << size;
-    return NULL;
-  }
-
-  if (size < aes_type->default_size())
-    LOG(WARNING) << "Key size ("
-                 << size
-                 << ") shorter than recommanded ("
-                 << aes_type->default_size()
-                 << "), might be unsecure";
 
   // Currently only CBC mode is supported, so only CBC keys are generated.
   scoped_ptr<CipherMode> cipher_mode(CipherMode::Create("CBC"));
@@ -98,16 +123,16 @@ AESKey* AESKey::GenerateKey(int size) {
   if (aes_key_impl.get() == NULL)
     return NULL;
 
-  scoped_ptr<KeyType> hmac_type(KeyType::Create("HMAC_SHA1"));
-  if (hmac_type.get() == NULL)
+  int hmac_size = GetHMACSizeFromAESSize(size);
+  if (hmac_size == 0)
     return NULL;
 
-  // The HMAC key is generated from its default size.
-  HMACKey* hmac_key = HMACKey::GenerateKey(hmac_type->default_size());
+  HMACKey* hmac_key = HMACKey::GenerateKey(hmac_size);
   if (hmac_key == NULL)
     return NULL;
 
-  return new AESKey(aes_key_impl.release(), cipher_mode.release(), hmac_key);
+  return new AESKey(aes_key_impl.release(), cipher_mode.release(), size,
+                    hmac_key);
 }
 
 Value* AESKey::GetValue() const {
@@ -129,7 +154,7 @@ Value* AESKey::GetValue() const {
                              aes_key.get()))
     return NULL;
 
-  if (!aes_key->SetInteger(L"size", aes_impl_->GetKey().length() * 8))
+  if (!aes_key->SetInteger(L"size", size()))
     return NULL;
 
   Value* hmac_key_value = hmac_key()->GetValue();
@@ -162,11 +187,6 @@ bool AESKey::Hash(std::string* hash) const {
   return true;
 }
 
-const KeyType* AESKey::GetType() const {
-  static const KeyType* key_type = KeyType::Create("AES");
-  return key_type;
-}
-
 bool AESKey::Encrypt(const std::string& data, std::string* encrypted) const {
   if (encrypted == NULL || aes_impl_.get() == NULL || hmac_key() == NULL)
     return false;
@@ -176,7 +196,7 @@ bool AESKey::Encrypt(const std::string& data, std::string* encrypted) const {
     return false;
 
   std::string iv;
-  if (!rand_impl->RandBytes(aes_impl_->GetKeySize(), &iv))
+  if (!rand_impl->RandBytes(size() / 8, &iv))
     return false;
   DCHECK(iv.length() >= aes_impl_->GetKey().length());
 
@@ -202,12 +222,8 @@ bool AESKey::Decrypt(const std::string& encrypted, std::string* data) const {
   if (data == NULL || aes_impl_.get() == NULL || hmac_key() == NULL)
     return false;
 
-  MessageDigestImpl* digest_impl = CryptoFactory::SHA1();
-  if (digest_impl == NULL)
-    return false;
-
-  int key_size = aes_impl_->GetKeySize();
-  int digest_size = digest_impl->Size();
+  int key_size = size() / 8;
+  int digest_size = hmac_key()->size() / 8;
 
   std::string data_bytes = encrypted.substr(Key::GetHeaderSize());
   int data_bytes_len = data_bytes.length();

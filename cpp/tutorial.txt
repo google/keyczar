@@ -1,6 +1,6 @@
 = Keyczar C++ Tutorial =
 
-First, read the README file and install Keyczar C++ with its Python interface.
+First, read the README file and install Keyczar C++ with its Python binding.
 
 
 == C++ ==

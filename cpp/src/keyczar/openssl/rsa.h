@@ -36,20 +36,27 @@ class RSAOpenSSL : public RSAImpl {
 
   virtual ~RSAOpenSSL() {}
 
-  // Builds a concrete RSA implementation object from |key| and returns the
-  // result. The caller takes ownership over the returned object.
+  // Builds and returns a concrete RSA implementation object from |key|. The
+  // caller takes ownership over the returned object.
   static RSAOpenSSL* Create(const RSAIntermediateKey& key, bool private_key);
 
-  // Builds a concrete RSA implementation object from a new generated key of
-  // length |size| and returns the result to the caller who takes ownership
-  // over the returned instance. The value of |size| is expressed in bits.
+  // Builds and returns a concrete RSA implementation object from a new
+  // generated key of length |size|. The caller takes ownership over the
+  // returned instance. The value of |size| is expressed in bits.
   static RSAOpenSSL* GenerateKey(int size);
+
+  // Builds a concrete RSA implementation object from the PEM private key stored
+  // at |filename|. |passphrase| is the optional passphrase. Pass NULL if there
+  // is no passphrase of if it will be asked interactively. The caller takes
+  // ownership over the returned object.
+  static RSAOpenSSL* CreateFromPEMKey(const std::string& filename,
+                                      const std::string* passphrase);
 
   virtual bool GetAttributes(RSAIntermediateKey* key);
 
   virtual bool GetPublicAttributes(RSAIntermediateKey* key);
 
-  bool WriteKeyToPEMFile(const std::string& path);
+  bool WriteKeyToPEMFile(const std::string& filename);
 
   virtual bool Sign(const std::string& message_digest,
                     std::string* signature) const;
@@ -60,6 +67,8 @@ class RSAOpenSSL : public RSAImpl {
   virtual bool Encrypt(const std::string& data, std::string* encrypted) const;
 
   virtual bool Decrypt(const std::string& encrypted, std::string* data) const;
+
+  virtual int Size() const;
 
   bool Equals(const RSAOpenSSL& rhs) const;
 

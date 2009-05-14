@@ -35,14 +35,38 @@ HMACOpenSSL::~HMACOpenSSL() {
 // static
 HMACOpenSSL* HMACOpenSSL::Create(DigestAlgorithm digest_algorithm,
                                  const std::string& key) {
-  // Currently only SHA1 is supported.
+  const EVP_MD* (*evp_md)();
+
   switch (digest_algorithm) {
     case HMACImpl::SHA1:
-      return new HMACOpenSSL(EVP_sha1, key);
+      evp_md = EVP_sha1;
+      break;
+    case HMACImpl::SHA224:
+      evp_md = EVP_sha224;
+      break;
+    case HMACImpl::SHA256:
+      evp_md = EVP_sha256;
+      break;
+    case HMACImpl::SHA384:
+      evp_md = EVP_sha384;
+      break;
+    case HMACImpl::SHA512:
+      evp_md = EVP_sha512;
+      break;
     default:
       NOTREACHED();
+      evp_md = NULL;
   }
-  return NULL;
+
+  if (evp_md == NULL)
+    return NULL;
+
+  if (key.length() < EVP_MD_size(evp_md())) {
+    LOG(ERROR) << "HMAC key size must at least be equal to its output length";
+    return NULL;
+  }
+
+  return new HMACOpenSSL(evp_md, key);
 }
 
 // static

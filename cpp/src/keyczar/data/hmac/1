@@ -1,1 +1,5 @@
-{"hmacKeyString": "XDFF8MObPgdk6gNU3PGPoP5CDkMPlDWPQEY_OoL8NUg", "size": 256}
+{
+   "digest": "SHA1",
+   "hmacKeyString": "vcF6QDpKuf-3VL1xBjGqIgIrTQo",
+   "size": 160
+}

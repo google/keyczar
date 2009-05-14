@@ -32,17 +32,21 @@ class DSAPrivateKey : public PrivateKey {
   DSAPrivateKey(DSAImpl* dsa_impl, DSAPublicKey* public_key, int size)
       : PrivateKey(public_key, size), dsa_impl_(dsa_impl) {}
 
-  // The caller takes ownership of the returned Key.
+  // Creates a key from |root_key|. The caller takes ownership of the returned
+  // Key.
   static DSAPrivateKey* CreateFromValue(const Value& root_key);
 
-  // The caller takes ownership of the returned Key. The value of |size| is
-  // expressed in bits.
+  // Generates a |size| bits key. The caller takes ownership of the returned
+  // Key.
   static DSAPrivateKey* GenerateKey(int size);
+
+  // Imports a PEM key |filename| and creates a new key. |passphrase| is
+  // optional.
+  static DSAPrivateKey* CreateFromPEMKey(const std::string& filename,
+                                         const std::string* passphrase);
 
   // The caller takes ownership of the returned Value.
   virtual Value* GetValue() const;
-
-  virtual const KeyType* GetType() const;
 
   virtual bool Sign(const std::string& data, std::string* signature) const;
 

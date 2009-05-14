@@ -13,20 +13,19 @@
 // limitations under the License.
 #include "base/file_path.h"
 #include "base/file_util.h"
-#include "base/path_service.h"
 #include "base/values.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "keyczar/keyczar_test.h"
 #include "keyczar/keyset_file_reader.h"
 
 namespace keyczar {
 
-TEST(KeysetReader, ValidRead) {
-  FilePath path;
-  PathService::Get(base::DIR_SOURCE_ROOT, &path);
-  path = path.AppendASCII("keyczar");
-  path = path.AppendASCII("data");
-  path = path.AppendASCII("aes");
+class KeysetReaderTest : public KeyczarTest {
+};
+
+TEST_F(KeysetReaderTest, ValidRead) {
+  FilePath path = data_path_.Append("aes");
 
   KeysetFileReader reader(path.value());
   ASSERT_TRUE(file_util::PathExists(path.AppendASCII("meta")));

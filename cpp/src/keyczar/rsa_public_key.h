@@ -33,15 +33,14 @@ class RSAPublicKey : public PublicKey {
   RSAPublicKey(RSAImpl* rsa_impl, int size)
       : PublicKey(size), rsa_impl_(rsa_impl) {}
 
-  // The caller takes ownership of the returned Key.
+  // Creates a key from |root_key|. The caller takes ownership of the returned
+  // Key.
   static RSAPublicKey* CreateFromValue(const Value& root_key);
 
   // The caller takes ownership of the returned Value.
   virtual Value* GetValue() const;
 
   virtual bool Hash(std::string* hash) const;
-
-  virtual const KeyType* GetType() const;
 
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;

@@ -18,12 +18,12 @@
 #include "base/ref_counted.h"
 #include "base/file_path.h"
 #include "base/file_util.h"
-#include "base/path_service.h"
 #include "base/scoped_ptr.h"
 #include "base/values.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "keyczar/key_type.h"
+#include "keyczar/keyczar_test.h"
 #include "keyczar/keyset_file_reader.h"
 #include "keyczar/keyset_file_writer.h"
 #include "keyczar/openssl/rsa.h"
@@ -32,24 +32,8 @@
 
 namespace keyczar {
 
-class RSATest : public testing::Test {
+class RSATest : public KeyczarTest {
  protected:
-  virtual void SetUp() {
-    PathService::Get(base::DIR_TEMP, &temp_path_);
-    temp_path_ = temp_path_.AppendASCII("keyczar");
-    file_util::CreateDirectory(temp_path_);
-
-    PathService::Get(base::DIR_SOURCE_ROOT, &data_path_);
-    data_path_ = data_path_.AppendASCII("keyczar");
-    data_path_ = data_path_.AppendASCII("data");
-
-    input_data_ = "This is some test data";
-  }
-
-  virtual void TearDown() {
-    file_util::Delete(temp_path_, true);
-  }
-
   // TODO(seb): add a dynamic_cast for each new rsa implementation.
   bool Equals(const RSAPrivateKey& lhs, const RSAPrivateKey& rhs) {
     const openssl::RSAOpenSSL* lhs_impl = dynamic_cast<openssl::RSAOpenSSL*>(
@@ -97,48 +81,49 @@ class RSATest : public testing::Test {
     CHECK(public_key);
     return public_key;
   }
-
-  // Paths used in testing.
-  FilePath temp_path_;
-  FilePath data_path_;
-  std::string input_data_;
 };
 
 TEST_F(RSATest, GeneratePrivateKeyAndPublicEncrypt) {
   scoped_ptr<KeyType> rsa_type(KeyType::Create("RSA_PRIV"));
   ASSERT_TRUE(rsa_type.get());
-  int size = rsa_type->default_size();
+  const std::vector<int> sizes = rsa_type->sizes();
 
-  // Generates a new private key
-  scoped_refptr<RSAPrivateKey> private_key(RSAPrivateKey::GenerateKey(size));
-  ASSERT_TRUE(private_key.get());
-  EXPECT_TRUE(private_key->GetType() &&
-              private_key->GetType()->type() == KeyType::RSA_PRIV);
+  scoped_refptr<RSAPrivateKey> private_key;
+  for (std::vector<int>::const_iterator iter = sizes.begin();
+       iter != sizes.end(); ++iter) {
+    // Generates a new private key
+    private_key = RSAPrivateKey::GenerateKey(*iter);
+    ASSERT_TRUE(private_key.get());
 
-  // Attempts to encrypt and decrypt input data.
-  std::string encrypted_data;
-  EXPECT_TRUE(private_key->Encrypt(input_data_, &encrypted_data));
-  EXPECT_EQ(static_cast<int>(encrypted_data.length()),
-            Key::GetHeaderSize() + size / 8);
-  std::string decrypted_data;
-  EXPECT_TRUE(private_key->Decrypt(encrypted_data, &decrypted_data));
-  EXPECT_EQ(input_data_, decrypted_data);
+    // Attempts to encrypt and decrypt input data.
+    std::string encrypted_data;
+    EXPECT_TRUE(private_key->Encrypt(input_data_, &encrypted_data));
+    EXPECT_EQ(static_cast<int>(encrypted_data.length()),
+              Key::GetHeaderSize() + *iter / 8);
+    std::string decrypted_data;
+    EXPECT_TRUE(private_key->Decrypt(encrypted_data, &decrypted_data));
+    EXPECT_EQ(input_data_, decrypted_data);
+  }
 }
 
 TEST_F(RSATest, GeneratePrivateKeyAndPrivateSign) {
   scoped_ptr<KeyType> rsa_type(KeyType::Create("RSA_PRIV"));
   ASSERT_TRUE(rsa_type.get());
-  int size = rsa_type->default_size();
+  const std::vector<int> sizes = rsa_type->sizes();
 
-  // Generates a new private key.
-  scoped_refptr<RSAPrivateKey> private_key(RSAPrivateKey::GenerateKey(size));
-  ASSERT_TRUE(private_key.get());
+  scoped_refptr<RSAPrivateKey> private_key;
+  for (std::vector<int>::const_iterator iter = sizes.begin();
+       iter != sizes.end(); ++iter) {
+    // Generates a new private key.
+    private_key = RSAPrivateKey::GenerateKey(*iter);
+    ASSERT_TRUE(private_key.get());
 
-  // Attempts to sign and verify input data.
-  std::string signature;
-  EXPECT_TRUE(private_key->Sign(input_data_, &signature));
-  EXPECT_EQ(static_cast<int>(signature.length()), size / 8);
-  EXPECT_TRUE(private_key->Verify(input_data_, signature));
+    // Attempts to sign and verify input data.
+    std::string signature;
+    EXPECT_TRUE(private_key->Sign(input_data_, &signature));
+    EXPECT_EQ(static_cast<int>(signature.length()), *iter / 8);
+    EXPECT_TRUE(private_key->Verify(input_data_, signature));
+  }
 }
 
 TEST_F(RSATest, LoadPrivateKey) {
@@ -165,8 +150,6 @@ TEST_F(RSATest, LoadPublicKey) {
   // Loads the associated public key
   FilePath rsa_public_path = data_path_.AppendASCII("rsa-sign.public");
   scoped_refptr<RSAPublicKey> public_key = LoadRSAPublicKey(rsa_public_path, 1);
-  EXPECT_TRUE(public_key->GetType() &&
-              public_key->GetType()->type() == KeyType::RSA_PUB);
 
   // Attempts to verify the signature with this public key.
   EXPECT_TRUE(public_key->Verify(input_data_, signature));
@@ -219,7 +202,7 @@ TEST_F(RSATest, LoadPrivateKeyDumpAndExport) {
 }
 
 TEST_F(RSATest, CompareOutputHeader) {
-  FilePath rsa_path = data_path_.AppendASCII("rsa");
+  const FilePath rsa_path = data_path_.AppendASCII("rsa");
   scoped_refptr<RSAPrivateKey> private_key = LoadRSAPrivateKey(rsa_path, 1);
 
   // Loads the encrypted data file and retrieve the output header
@@ -237,7 +220,7 @@ TEST_F(RSATest, CompareOutputHeader) {
 }
 
 TEST_F(RSATest, CompareDecrypt) {
-  FilePath rsa_path = data_path_.AppendASCII("rsa");
+  const FilePath rsa_path = data_path_.AppendASCII("rsa");
   scoped_refptr<RSAPrivateKey> private_key = LoadRSAPrivateKey(rsa_path, 1);
 
   // Try to decrypt corresponding data file
@@ -254,7 +237,7 @@ TEST_F(RSATest, CompareDecrypt) {
 }
 
 TEST_F(RSATest, VerifyEncodedSignature) {
-  FilePath rsa_sign_pub_path = data_path_.Append("rsa-sign.public");
+  const FilePath rsa_sign_pub_path = data_path_.Append("rsa-sign.public");
   scoped_refptr<RSAPublicKey> public_key = LoadRSAPublicKey(rsa_sign_pub_path,
                                                             2);
 
@@ -275,7 +258,7 @@ TEST_F(RSATest, VerifyEncodedSignature) {
 }
 
 TEST_F(RSATest, CompareOriginalAndDumpedPrivateKey) {
-  FilePath rsa_path = data_path_.Append("rsa");
+  const FilePath rsa_path = data_path_.Append("rsa");
   scoped_refptr<RSAPrivateKey> original_key = LoadRSAPrivateKey(rsa_path, 1);
 
   // Dumps private key into temporary path
@@ -292,7 +275,7 @@ TEST_F(RSATest, CompareOriginalAndDumpedPrivateKey) {
 }
 
 TEST_F(RSATest, CompareOriginalAndExportedPublicKey) {
-  FilePath rsa_path = data_path_.Append("rsa-sign");
+  const FilePath rsa_path = data_path_.Append("rsa-sign");
   scoped_refptr<RSAPrivateKey> private_key = LoadRSAPrivateKey(rsa_path, 1);
 
   // Exports public key into temporary path
@@ -303,7 +286,7 @@ TEST_F(RSATest, CompareOriginalAndExportedPublicKey) {
   ASSERT_TRUE(file_util::PathExists(temp_path_.Append("1")));
 
   // Loads orginal public key
-  FilePath rsa_path_pub = data_path_.Append("rsa-sign.public");
+  const FilePath rsa_path_pub = data_path_.Append("rsa-sign.public");
   scoped_refptr<RSAPublicKey> public_key = LoadRSAPublicKey(rsa_path_pub, 1);
   ASSERT_TRUE(public_key);
 
@@ -313,6 +296,34 @@ TEST_F(RSATest, CompareOriginalAndExportedPublicKey) {
 
   // Expected to be the equals
   EXPECT_TRUE(Equals(*public_key, *dumped_key));
+}
+
+TEST_F(RSATest, LoadPEMKey) {
+  const FilePath rsa_pem_path = data_path_.AppendASCII("rsa_pem");
+  scoped_refptr<RSAPrivateKey> private_key;
+
+  const FilePath invalid_key = rsa_pem_path.AppendASCII(
+      "rsa_priv_wrong_size.pem");
+  private_key = RSAPrivateKey::CreateFromPEMKey(invalid_key.value(), NULL);
+  EXPECT_FALSE(private_key);
+
+  const FilePath simple_key = rsa_pem_path.AppendASCII("rsa_priv.pem");
+  private_key = RSAPrivateKey::CreateFromPEMKey(simple_key.value(), NULL);
+  EXPECT_TRUE(private_key);
+
+  const std::string passphrase("cartman");
+  const FilePath protected_key = rsa_pem_path.AppendASCII(
+      "rsa_priv_encrypted.pem");
+  private_key = RSAPrivateKey::CreateFromPEMKey(protected_key.value(),
+                                                &passphrase);
+  EXPECT_TRUE(private_key);
+
+  // Attempts to encrypt and decrypt input data.
+  std::string encrypted_data;
+  EXPECT_TRUE(private_key->Encrypt(input_data_, &encrypted_data));
+  std::string decrypted_data;
+  EXPECT_TRUE(private_key->Decrypt(encrypted_data, &decrypted_data));
+  EXPECT_EQ(input_data_, decrypted_data);
 }
 
 }  // namespace keyczar

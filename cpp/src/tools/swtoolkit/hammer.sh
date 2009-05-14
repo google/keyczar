@@ -54,6 +54,10 @@
 #   -s -k
 #      Don't print commands; keep going on build failures.
 
+if [ "$SCONS_DIR" = "" ]
+then
+    export SCONS_DIR="`pwd`/tools/scons/scons-local-1.2.0.d20090223/"
+fi
 export SCT_DIR="$(dirname -- "${0}")"
 export PYTHONPATH="$SCONS_DIR"
 

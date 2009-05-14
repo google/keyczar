@@ -1,0 +1,7 @@
+Keys were created with these commands:
+
+openssl ecparam -out ec_param.pem -name prime256v1
+openssl ecparam -in ec_param.pem -genkey -out ec_priv.pem
+openssl ecparam -in ec_param.pem -genkey | openssl ec -aes256 -out \
+   ec_priv_encrypted.pem
+   with 'cartman' as passphrase

@@ -18,6 +18,7 @@
 
 #include "keyczar/aes_impl.h"
 #include "keyczar/dsa_impl.h"
+#include "keyczar/ecdsa_impl.h"
 #include "keyczar/hmac_impl.h"
 #include "keyczar/message_digest_impl.h"
 #include "keyczar/rand_impl.h"
@@ -35,26 +36,62 @@ class CryptoFactory {
 
   static MessageDigestImpl* SHA1();
 
+  static MessageDigestImpl* SHA224();
+
+  static MessageDigestImpl* SHA256();
+
+  static MessageDigestImpl* SHA384();
+
+  static MessageDigestImpl* SHA512();
+
+  // Returns the appropriate SHA algorithm from its output |size| in bits.
+  static MessageDigestImpl* SHA(int size);
+
+  // Returns the SHA algorithm wich has a comparable security strength
+  // than an RSA or DSA key of length |size|.
+  static MessageDigestImpl* SHAFromFFCIFCSize(int size);
+
+  // Returns the SHA algorithm wich has a comparable security strength
+  // than an ECC key of length |size|.
+  static MessageDigestImpl* SHAFromECCSize(int size);
+
   static AESImpl* GenerateAES(const CipherMode& cipher_mode, int size);
 
   static AESImpl* CreateAES(const CipherMode& cipher_mode,
                             const std::string& key);
 
-  static HMACImpl* GenerateHMACSHA1(int size);
+  static HMACImpl* GenerateHMAC(int size);
 
-  static HMACImpl* CreateHMACSHA1(const std::string& key);
+  static HMACImpl* CreateHMAC(const std::string& key);
 
   static RSAImpl* GeneratePrivateRSA(int size);
 
   static RSAImpl* CreatePrivateRSA(const RSAImpl::RSAIntermediateKey& key);
 
+  static RSAImpl* CreatePrivateRSAFromPEMKey(const std::string& filename,
+                                             const std::string* passphrase);
+
   static RSAImpl* CreatePublicRSA(const RSAImpl::RSAIntermediateKey& key);
 
   static DSAImpl* GeneratePrivateDSA(int size);
 
+  static DSAImpl* CreatePrivateDSAFromPEMKey(const std::string& filename,
+                                             const std::string* passphrase);
+
   static DSAImpl* CreatePrivateDSA(const DSAImpl::DSAIntermediateKey& key);
 
   static DSAImpl* CreatePublicDSA(const DSAImpl::DSAIntermediateKey& key);
+
+  static ECDSAImpl* GeneratePrivateECDSA(ECDSAImpl::Curve curve);
+
+  static ECDSAImpl* CreatePrivateECDSAFromPEMKey(const std::string& filename,
+                                                 const std::string* passphrase);
+
+  static ECDSAImpl* CreatePrivateECDSA(
+      const ECDSAImpl::ECDSAIntermediateKey& key);
+
+  static ECDSAImpl* CreatePublicECDSA(
+      const ECDSAImpl::ECDSAIntermediateKey& key);
 
  private:
   CryptoFactory() {}

@@ -45,13 +45,8 @@ class PrivateKey : public Key {
   // The caller doesn't take ownership over the returned PublicKey object.
   const PublicKey* public_key() const { return public_key_.get(); }
 
-  // Returns the size in bits corresponding to this key.
-  int size() const { return size_; }
-
  private:
   scoped_refptr<PublicKey> public_key_;
-
-  int size_;
 
   DISALLOW_COPY_AND_ASSIGN(PrivateKey);
 };

@@ -6,6 +6,12 @@ AddOption('--swig',
           action="store_true",
           help='Processes Swig files.')
 
+# Defines option --compat
+AddOption('--compat',
+          dest='compat_option',
+          action="store_true",
+          help='Maintains compatibility with Keyczar 0.5b.')
+
 # Creates a base environment to describe what is common between platforms.
 base_env = Environment()
 base_env.Tool('component_setup')
@@ -29,8 +35,11 @@ linux_env.Append(
 	'-Wno-deprecated',
     ],
 )
+if GetOption('compat_option'):
+    linux_env.Append(
+        CPPDEFINES = ['COMPAT_KEYCZAR_05B']
+    )
 linux_env.Alias('install', '/usr')
-
 
 
 # Debug Linux
@@ -42,6 +51,7 @@ linux_debug_env = linux_env.Clone(
 linux_debug_env.Tool('target_debug')
 # Add this variant to the set which is build by default.
 linux_debug_env.Append(BUILD_GROUPS = ['default'])
+
 
 # Optimized Linux
 linux_optimized_env = linux_env.Clone(
@@ -72,18 +82,24 @@ import shutil
 include_dir = '/usr/local/include'
 include_dir_keyczar = os.path.join(include_dir, 'keyczar')
 
-if GetOption('clean') and os.path.isdir(include_dir_keyczar):
-    shutil.rmtree(include_dir_keyczar)
+if 'install' in COMMAND_LINE_TARGETS:
+    if GetOption('clean'):
+        if os.path.isdir(include_dir_keyczar):
+            shutil.rmtree(include_dir_keyczar)
+            print 'Removed', include_dir_keyczar
+    else:
+        import refactor_includes
+        keyczar_dir = os.path.join(os.getcwd(), 'keyczar')
+        base_dir = os.path.join(os.getcwd(), 'base')
 
-if not GetOption('clean') and 'install' in COMMAND_LINE_TARGETS:
-    import refactor_includes
-    keyczar_dir = os.path.join(os.getcwd(), 'keyczar')
-    base_dir = os.path.join(os.getcwd(), 'base')
+        if (not os.path.isdir(keyczar_dir) or not os.path.isdir(base_dir) or
+            not os.path.isdir(include_dir)):
+            print >> sys.stderr, "Cannot install Keyczar headers"
+            sys.exit(1)
 
-    if (not os.path.isdir(keyczar_dir) or not os.path.isdir(base_dir) or
-        not os.path.isdir(include_dir)):
-        print >> sys.stderr, "Cannot install Keyczar headers"
-        sys.exit(1)
+        refactor_includes.RefactorDir(keyczar_dir, include_dir)
+        refactor_includes.RefactorDir(base_dir, include_dir_keyczar)
 
-    refactor_includes.RefactorDir(keyczar_dir, include_dir)
-    refactor_includes.RefactorDir(base_dir, include_dir_keyczar)
+        # At exit update ld
+        import atexit
+        atexit.register(lambda: os.system("ldconfig"))

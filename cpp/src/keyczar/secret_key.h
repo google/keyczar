@@ -24,7 +24,8 @@ namespace keyczar {
 // Abstract secret key class.
 class SecretKey : public Key {
  public:
-  explicit SecretKey(HMACKey* hmac_key) : hmac_key_(hmac_key) {}
+  explicit SecretKey(int size, HMACKey* hmac_key)
+      : Key(size), hmac_key_(hmac_key) {}
 
   virtual ~SecretKey() = 0;
 

@@ -46,7 +46,14 @@ class DSAOpenSSL : public DSAImpl {
   // over the returned instance. The value of |size| is expressed in bits.
   static DSAOpenSSL* GenerateKey(int size);
 
-  bool WriteKeyToPEMFile(const std::string& path);
+  // Builds a concrete DSA implementation object from the PEM private key stored
+  // at |filename|. |passphrase| is the optional passphrase. Pass NULL if there
+  // is no passphrase of if it will be asked interactively. The caller takes
+  // ownership over the returned object.
+  static DSAOpenSSL* CreateFromPEMKey(const std::string& filename,
+                                      const std::string* passphrase);
+
+  bool WriteKeyToPEMFile(const std::string& filename);
 
   virtual bool GetAttributes(DSAIntermediateKey* key);
 
@@ -57,6 +64,8 @@ class DSAOpenSSL : public DSAImpl {
 
   virtual bool Verify(const std::string& message_digest,
                       const std::string& signature) const;
+
+  virtual int Size() const;
 
   bool Equals(const DSAOpenSSL& rhs) const;
 

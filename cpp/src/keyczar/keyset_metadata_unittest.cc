@@ -13,22 +13,21 @@
 // limitations under the License.
 #include "base/file_path.h"
 #include "base/file_util.h"
-#include "base/path_service.h"
 #include "base/values.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "keyczar/keyczar_test.h"
 #include "keyczar/keyset_metadata.h"
 #include "keyczar/keyset_file_reader.h"
 #include "keyczar/keyset_file_writer.h"
 
 namespace keyczar {
 
-TEST(KeysetMetadata, CreateFromValue) {
-  FilePath aes_path;
-  ASSERT_TRUE(PathService::Get(base::DIR_SOURCE_ROOT, &aes_path));
-  aes_path = aes_path.AppendASCII("keyczar");
-  aes_path = aes_path.AppendASCII("data");
-  aes_path = aes_path.AppendASCII("aes");
+class KeysetMetadataTest : public KeyczarTest {
+};
+
+TEST_F(KeysetMetadataTest, CreateFromValue) {
+  FilePath aes_path = data_path_.Append("aes");
 
   // Deserialize
   KeysetFileReader reader(aes_path.value());
@@ -43,29 +42,22 @@ TEST(KeysetMetadata, CreateFromValue) {
   EXPECT_NE(static_cast<Value*>(NULL), root_copy.get());
 
   // Serialize
-  FilePath written_path;
-  ASSERT_TRUE(PathService::Get(base::DIR_TEMP, &written_path));
-
-  FilePath written_meta = written_path.AppendASCII("meta");
-  ASSERT_FALSE(file_util::PathExists(written_meta));
-  KeysetFileWriter writer(written_path.value());
+  FilePath written_meta = temp_path_.AppendASCII("meta");
+  KeysetFileWriter writer(temp_path_.value());
   EXPECT_TRUE(writer.WriteMetadata(root_copy.get()));
   ASSERT_TRUE(file_util::PathExists(written_meta));
 
   // Compare
-  KeysetFileReader reader_copy(written_path.value());
+  KeysetFileReader reader_copy(temp_path_.value());
   scoped_ptr<Value> root_metadata_copy(reader_copy.ReadMetadata());
   EXPECT_NE(static_cast<Value*>(NULL), root_metadata_copy.get());
+#ifndef COMPAT_KEYCZAR_05B
   EXPECT_TRUE(root_metadata->Equals(root_metadata_copy.get()));
-  EXPECT_TRUE(file_util::Delete(written_meta, false));
+#endif
 }
 
-TEST(KeysetMetadata, WithoutNextKeyVersionNumber) {
-  FilePath aes_path;
-  ASSERT_TRUE(PathService::Get(base::DIR_SOURCE_ROOT, &aes_path));
-  aes_path = aes_path.AppendASCII("keyczar");
-  aes_path = aes_path.AppendASCII("data");
-  aes_path = aes_path.AppendASCII("aes-crypted");
+TEST_F(KeysetMetadataTest, WithoutNextKeyVersionNumber) {
+  FilePath aes_path = data_path_.Append("aes-crypted");
 
   KeysetFileReader reader(aes_path.value());
   scoped_ptr<Value> root_metadata(reader.ReadMetadata());

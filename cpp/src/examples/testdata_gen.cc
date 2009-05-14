@@ -14,7 +14,7 @@
 
 // Copied from src/keyczar/testdata_gen.cc
 //
-// Program used for generating src/keyczar/data/ directory.
+// Program used to generate src/keyczar/data/ directory.
 #include <string>
 
 #include <keyczar/base/file_util.h>
@@ -25,7 +25,7 @@
 #include <keyczar/key_status.h>
 #include <keyczar/keyczar.h>
 #include <keyczar/keyczar_tool.h>
-#include <keyczar/keyset_encrypted_file_reader.h>
+#include "keyczar/keyset_encrypted_file_reader.h"
 
 namespace {
 
@@ -115,6 +115,25 @@ int main(int argc, char** argv) {
 
     // DSA_PUB
     const FilePath destination = location.Append("dsa.public");
+    file_util::CreateDirectory(destination);
+    tool.CmdPubKey(cur_location.value(), destination.value(), empty_path);
+  }
+
+  {
+    // ECDSA_PRIV
+    const FilePath cur_location = location.Append("ecdsa");
+    file_util::CreateDirectory(cur_location);
+    tool.CmdCreate(cur_location.value(), *sign_purpose, "Test", "ecdsa");
+    scoped_ptr<keyczar::Signer> signer;
+    for (int i = 1; i < 3; ++i) {
+      tool.CmdAddKey(cur_location.value(), *primary_status, 0, empty_path);
+      signer.reset(keyczar::Signer::Read(cur_location.value()));
+      signer->Sign(input, &signature);
+      WriteToFile(signature, cur_location, i);
+    }
+
+    // ECDSA_PUB
+    const FilePath destination = location.Append("ecdsa.public");
     file_util::CreateDirectory(destination);
     tool.CmdPubKey(cur_location.value(), destination.value(), empty_path);
   }

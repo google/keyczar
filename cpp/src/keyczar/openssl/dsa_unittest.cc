@@ -15,10 +15,10 @@
 
 #include "base/file_path.h"
 #include "base/file_util.h"
-#include "base/path_service.h"
 #include "base/scoped_ptr.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "keyczar/keyczar_test.h"
 #include "keyczar/openssl/message_digest.h"
 #include "keyczar/openssl/dsa.h"
 
@@ -26,34 +26,14 @@ namespace keyczar {
 
 namespace openssl {
 
-class DSAOpenSSLTest : public testing::Test {
- protected:
-  virtual void SetUp() {
-    PathService::Get(base::DIR_TEMP, &temp_path_);
-    temp_path_ = temp_path_.AppendASCII("keyczar");
-    file_util::CreateDirectory(temp_path_);
-
-    PathService::Get(base::DIR_SOURCE_ROOT, &data_path_);
-    data_path_ = data_path_.AppendASCII("keyczar");
-    data_path_ = data_path_.AppendASCII("data");
-
-    input_data_ = "This is some test data";
-  }
-
-  virtual void TearDown() {
-    file_util::Delete(temp_path_, true);
-  }
-
-  // Paths used in testing.
-  FilePath temp_path_;
-  FilePath data_path_;
-  std::string input_data_;
+class DSAOpenSSLTest : public KeyczarTest {
 };
 
 TEST(DSAOpenSSL, CreateKeyAndCompare) {
   int size = 1024;
   scoped_ptr<DSAOpenSSL> dsa_generated(DSAOpenSSL::GenerateKey(size));
   ASSERT_TRUE(dsa_generated.get());
+  EXPECT_EQ(dsa_generated->Size(), size);
 
   DSAImpl::DSAIntermediateKey intermediate_key;
   ASSERT_TRUE(dsa_generated->GetAttributes(&intermediate_key));
@@ -79,6 +59,7 @@ TEST_F(DSAOpenSSLTest, GenerateKeyAndSign) {
   int size = 1024;
   scoped_ptr<DSAOpenSSL> dsa(DSAOpenSSL::GenerateKey(size));
   ASSERT_TRUE(dsa.get());
+  EXPECT_EQ(dsa->Size(), size);
 
   std::string signed_message_digest;
   EXPECT_TRUE(dsa->Sign(message_digest, &signed_message_digest));
@@ -89,10 +70,32 @@ TEST_F(DSAOpenSSLTest, ExportToPEMFile) {
   int size = 1024;
   scoped_ptr<DSAOpenSSL> dsa(DSAOpenSSL::GenerateKey(size));
   ASSERT_TRUE(dsa.get());
+  EXPECT_EQ(dsa->Size(), size);
 
   FilePath pem_file = temp_path_.Append("1_pub.pem");
   dsa->WriteKeyToPEMFile(pem_file.value());
   EXPECT_TRUE(file_util::PathExists(pem_file));
+}
+
+// Keys were created with these commands:
+//
+//  openssl dsaparam -genkey 1024 -out dsaparam
+//  openssl gendsa -out dsa_priv.pem dsaparam
+//  openssl gendsa -aes256 -out dsa_priv_encrypted.pem dsaparam
+//      with 'cartman' as passphrase
+TEST_F(DSAOpenSSLTest, CreateFromPEMKey) {
+  const FilePath dsa_pem = data_path_.Append("dsa_pem");
+
+  scoped_ptr<DSAOpenSSL> dsa(DSAOpenSSL::CreateFromPEMKey(
+                                 dsa_pem.Append("dsa_priv.pem").value(),
+                                 NULL));
+  EXPECT_TRUE(dsa.get());
+
+  const std::string passphrase("cartman");
+  dsa.reset(DSAOpenSSL::CreateFromPEMKey(
+                dsa_pem.Append("dsa_priv_encrypted.pem").value(),
+                &passphrase));
+  EXPECT_TRUE(dsa.get());
 }
 
 }  // namespace openssl

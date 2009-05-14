@@ -95,12 +95,12 @@ class Keyset {
   // and the observers added.
   static Keyset* Read(const KeysetReader& reader, bool load_keys);
 
-  // Instanciates a new Keyset object without loading its associated keys. This
-  // mode must only used when only operations on metadata are planned. In this
-  // case it can be useful for avoiding to have to decrypt encrypted keys even
-  // when only metadata operations are executed. Note that on RevokeKey
-  // operation it is still safe to implement an OnRevokedKey() function inside
-  // an Observer, this function will be called for every observers.
+  // Instanciates a new Keyset object without loading its associated keys. The
+  // only operations authorized in this mode are the operations modifying the
+  // metadata. Do not manipulate keys in this mode. The intent of this mode is
+  // to bypass key decryption by not loading them. For instance it is convenient
+  // for calls to promotekey, Demotekey. Note that RevokeKey still calls
+  // OnRevokedKey() for each one of its observers.
   static Keyset* ReadMetadataOnly(const KeysetReader& reader);
 
   // The caller keeps ownership over |obs|.
@@ -162,7 +162,7 @@ class Keyset {
   // already exists a key version in the |metadata_| object associated with this
   // version number. Moreover no other key must have been previously associated
   // with this key version. This function takes ownership of |key|. This method
-  // returns false if |key| was not added.
+  // returns false if |key| couldn't be added.
   bool AddKey(Key* key, int version_number);
 
   // Generates a new key. First, a new key version is built with |status| as key
@@ -177,6 +177,13 @@ class Keyset {
   // Generates a key with a default size specified by its type and with |status|
   // as status. This method returns 0 if an error happened.
   int GenerateDefaultKeySize(KeyStatus::Type status);
+
+  // Imports a PEM key with |status| as status at location |filename| on disk
+  // and with asscociated passphrase |passphrase|. A NULL value for |passphrase|
+  // means no passphrase. If a passphrase is required anyway to read this key,
+  // it will be prompted interactively.
+  int ImportPEMKey(KeyStatus::Type status, const std::string& filename,
+                   const std::string* passphrase);
 
   // Operations on keys.
 
@@ -210,6 +217,9 @@ class Keyset {
   const_iterator End() const { return version_number_map_.end(); }
   iterator End() { return version_number_map_.end(); }
 
+  // Returns true if the key set contains no keys.
+  bool Empty() const;
+
  private:
   // STL map used for associating |Key| to string hashes.
   typedef std::map<std::string, scoped_refptr<Key> > HashMap;
@@ -230,6 +240,10 @@ class Keyset {
   // version number and returns it. This class takes ownership of |key_version|.
   // It returns 0 if |key_version| insertion failed.
   int AddKeyVersion(KeysetMetadata::KeyVersion* key_version);
+
+  // Removes key version |version_number| from |metadata_| object. It returns
+  // true if it succeeds. This call is expected to always succeed.
+  bool RemoveKeyVersion(int version_number);
 
   // Holds metadata associated to this set.
   scoped_ptr<KeysetMetadata> metadata_;

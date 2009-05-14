@@ -56,6 +56,10 @@ class KeyczarTool {
   bool CmdAddKey(const std::string& location, const KeyStatus& key_status,
                  int size, const std::string& crypter_location) const;
 
+  bool CmdImportKey(const std::string& location, const KeyStatus& key_status,
+                    const std::string& filename, const std::string* passphrase,
+                    const std::string& crypter_location) const;
+
   bool CmdPubKey(const std::string& location, const std::string& destination,
                  const std::string& crypter_location) const;
 

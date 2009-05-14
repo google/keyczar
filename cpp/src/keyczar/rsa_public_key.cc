@@ -48,6 +48,10 @@ RSAPublicKey* RSAPublicKey::CreateFromValue(const Value& root_key) {
   if (rsa_public_key_impl.get() == NULL)
     return NULL;
 
+  // Check the provided size is valid.
+  if (size != rsa_public_key_impl->Size() || !IsValidSize("RSA_PUB", size))
+    return NULL;
+
   return new RSAPublicKey(rsa_public_key_impl.release(), size);
 }
 
@@ -96,17 +100,12 @@ bool RSAPublicKey::Hash(std::string* hash) const {
   return true;
 }
 
-const KeyType* RSAPublicKey::GetType() const {
-  static const KeyType* key_type = KeyType::Create("RSA_PUB");
-  return key_type;
-}
-
 bool RSAPublicKey::Verify(const std::string& data,
                           const std::string& signature) const {
   if (rsa_impl() == NULL)
     return false;
 
-  MessageDigestImpl* digest_impl = CryptoFactory::SHA1();
+  MessageDigestImpl* digest_impl = CryptoFactory::SHAFromFFCIFCSize(size());
   if (digest_impl == NULL)
     return false;
 

@@ -4,49 +4,60 @@
 == Dependancies ==
 
 - OpenSSL: package libssl-dev (Debian/Ubuntu)
-- Unicode icu: packages libicu-dev and libicu38
-- [Optional]: Python and Swig
+- Unicode icu: package libicu-dev
+- [Optional packages]: python and swig
 
 
 == Local build ==
 
-Currently this implementation only works under Linux, follow these steps to
-compile it:
+Currently this implementation only works under Linux, install the required
+packages and compile it:
 
-1- Install the required packages mentioned in the previous section.
+ $ cd cpp/src && ./tools/swtoolkit/hammer.sh --mode=opt-linux
 
-2- Compilation:
-   $ cd cpp/src/
-   $ export SCONS_DIR="`pwd`/tools/scons/scons-local-1.2.0.d20090223/"
-   $ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux
-
-3- If you also want to compile the Python interface, be sure that Swig is
-   installed, add the option '--swig' and recompile the source code:
-   $ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux --swig
-
-Unittests are executed, libraries and executables are assembled under
-scons-out/opt-linux/.
+Libraries and executables are assembled under scons-out/opt-linux/.
 
 
 == Install ==
 
 Files will be installed under /usr/local/ and under /usr/lib/python2.x/site-packages
 
-1- Log as root:
-   $ sudo -s'
-   $ cd cpp/src
-   $ export SCONS_DIR="`pwd`/tools/scons/scons-local-1.2.0.d20090223/"
-3- For installing the C++ components only, run:
-   $ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux install
+1- Log as root and execute these commands to install the C++ library:
 
-   Or for also installing the Python module, run instead:
-   $ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux --swig install
-4- Cleanup the build and removes installed files by appending the '-c' option to
-   your previous command
-   $ /<absolute_path>/cpp/src/tools/swtoolkit/hammer.sh --mode=opt-linux --swig install -c
+  $ cd cpp/src && ./tools/swtoolkit/hammer.sh --mode=opt-linux install
 
-Read the tutorial and the examples under src/examples/ and consults
-/usr/local/include/keyczar it contains all the header files of the library.
+For details on how to use this library, read the tutorial and the examples located
+under src/examples/ and also consult the header files /usr/local/include/keyczar.
+
+
+== Options ==
+
+install    -> install the C++ library and/or the Python binding
+-c         -> clean up the build and/or remove installed files
+--swig     -> compile the Python binding (requires Swig to be installed)
+--compat   -> ensure compatibility with Keyczar 0.5b specifications (see below)
+-jX        -> compile on X threads
+--mode=XX  -> where XX can be opt-linux or dbg-linux, dbg-linux enables debug
+              mode and opt-linux stands for optimized-linux.
+
+
+== Current limitations ==
+
+- This implementation only works under Linux with OpenSSL. The components and
+  tools used should be multi-plateform but it hasn't been tested and it would
+  likely require a lot of work if another cryptography library had to be used.
+- Poor install mechanism.
+
+
+== Adherence to specifications ==
+
+- When compiled with option --compat this implementation is entirely compatible
+  with Keyczar 0.5b (see detailed specifications at
+  http://code.google.com/p/keyczar/w/).
+- When compiled without this option this implementation use cryptographic
+  algorithms defined in algorithms.txt and use a new attribute
+  'nextKeyVersionNumber' in order to keep the next key version number to assign
+  to new key.
 
 
 == Source tree ==
@@ -59,30 +70,6 @@ src/
   testing/          -> Testing framework (gtest)
   tools/            -> Building tools SCons and swtoolkit
   main.scons        -> Entry script
-
-
-== Current limitations ==
-
-- This implementation has only been compiled and tested under Linux. The
-  components and tools used should be compatible with other platforms. However,
-  there is a lot of work to do, especially using OpenSSL on Windows doesnt seems
-  the best choice. It would rather be more judicious to use the MS CryptoAPI by
-  adding to this code a new concrete crypto implementation. In this perspective
-  the current code is able (at least in theory) to support easily different
-  crypto implementations.
-- Poor install mechanism and poor Swig support.
-- Numerous unittests are implemented but keyczart is not currently extensively
-  tested.
-
-
-== Compliance with specifications ==
-
-- This code follows Keyczar specifications http://code.google.com/p/keyczar/w/
-- Added a new attribute 'nextKeyVersionNumber' in the metadata to keep the
-  count of the next key version number to use when a new key is generated. Key
-  sets without this attribute are fully supported and are updated transparently
-  with this attribute. Exported public keys are emitted without this field (this
-  is indeed useless for them).
 
 
 == This implementation relies on those projects ==

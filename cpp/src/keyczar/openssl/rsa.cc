@@ -16,17 +16,9 @@
 #include <openssl/bn.h>
 #include <openssl/objects.h>
 #include <openssl/pem.h>
-#include <stdio.h>
 
 #include "base/file_util.h"
 #include "base/logging.h"
-
-namespace {
-
-typedef scoped_ptr_malloc<
-    BIGNUM, keyczar::openssl::OSSLDestroyer<BIGNUM, BN_free> > ScopedBIGNUM;
-
-}  // namespace
 
 namespace keyczar {
 
@@ -131,13 +123,48 @@ RSAOpenSSL* RSAOpenSSL::GenerateKey(int size) {
     return NULL;
   }
 
-  // Check private key
-  if (!RSA_check_key(rsa_key.get()))
+  // Check the validity of this key
+  if (!RSA_check_key(rsa_key.get())) {
+    LOG(ERROR) << "Invalid RSA key";
     return NULL;
+  }
 
   return new RSAOpenSSL(rsa_key.release(),
                         true /* private_key */);
 }
+
+// static
+RSAOpenSSL* RSAOpenSSL::CreateFromPEMKey(const std::string& filename,
+                                         const std::string* passphrase) {
+  // Load the disk based private key.
+  ScopedEVPPKey evp_pkey(ReadPEMKeyFromFile(filename, passphrase));
+  if (evp_pkey.get() == NULL) {
+    PrintOSSLErrors();
+    return NULL;
+  }
+
+  if (evp_pkey->pkey.rsa == NULL) {
+    LOG(ERROR) << "Invalid RSA private key";
+    return NULL;
+  }
+
+  // Duplicate the RSA key component.
+  ScopedRSAKey rsa_key(EVP_PKEY_get1_RSA(evp_pkey.get()));
+  if (rsa_key.get() == NULL) {
+    PrintOSSLErrors();
+    return NULL;
+  }
+
+  // Check the validity of this key
+  if (!RSA_check_key(rsa_key.get())) {
+    LOG(ERROR) << "Invalid RSA key";
+    return NULL;
+  }
+
+  return new RSAOpenSSL(rsa_key.release(),
+                        true /* private_key */);
+}
+
 
 bool RSAOpenSSL::GetAttributes(RSAIntermediateKey* key) {
   if (key == NULL || key_.get() == NULL)
@@ -235,18 +262,18 @@ bool RSAOpenSSL::GetPublicAttributes(RSAIntermediateKey* key) {
   return true;
 }
 
-bool RSAOpenSSL::WriteKeyToPEMFile(const std::string& path) {
+bool RSAOpenSSL::WriteKeyToPEMFile(const std::string& filename) {
   if (key_.get() == NULL)
     return false;
 
-  FILE* dest_file = file_util::OpenFile(path, "w+");
+  FILE* dest_file = file_util::OpenFile(filename, "w+");
   if (dest_file == NULL)
     return false;
 
   int return_value = 0;
   if (private_key_)
     return_value = PEM_write_RSAPrivateKey(dest_file, key_.get(), NULL,
-                                           NULL, 0, 0, NULL);
+                                           NULL, 0, NULL, NULL);
   else
     return_value = PEM_write_RSAPublicKey(dest_file, key_.get());
 
@@ -353,8 +380,15 @@ bool RSAOpenSSL::Decrypt(const std::string& encrypted,
   return true;
 }
 
+int RSAOpenSSL::Size() const {
+  if (key_.get() == NULL)
+    return 0;
+
+  return RSA_size(key_.get()) * 8;
+}
+
 bool RSAOpenSSL::Equals(const RSAOpenSSL& rhs) const {
-  if (private_key() != rhs.private_key())
+  if (key_.get() == NULL || private_key() != rhs.private_key())
     return false;
 
   const RSA* key_rhs = rhs.key();

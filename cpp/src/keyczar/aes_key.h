@@ -35,16 +35,19 @@ namespace keyczar {
 class AESKey : public SecretKey {
  public:
   // Takes ownership of |aes_impl|, |cipher_mode| and |hmac_key|.
-  AESKey(AESImpl* aes_impl, CipherMode* cipher_mode, HMACKey* hmac_key)
-      : SecretKey(hmac_key), cipher_mode_(cipher_mode), aes_impl_(aes_impl) {}
+  AESKey(AESImpl* aes_impl, CipherMode* cipher_mode, int size,
+         HMACKey* hmac_key)
+      : SecretKey(size, hmac_key), cipher_mode_(cipher_mode),
+        aes_impl_(aes_impl) {}
 
   virtual ~AESKey() {}
 
-  // The caller takes ownership of the returned Key.
+  // Creates a key from |root_key|. The caller takes ownership of the returned
+  // Key.
   static AESKey* CreateFromValue(const Value& root_key);
 
-  // The caller takes ownership of the returned Key. The value of |size| is
-  // expressed in bits.
+  // Generates a |size| bits key. The caller takes ownership of the returned
+  // Key.
   static AESKey* GenerateKey(int size);
 
   // Returns the main data structures of this key. The caller takes ownership
@@ -53,8 +56,6 @@ class AESKey : public SecretKey {
 
   // Returns the hash value of this key.
   virtual bool Hash(std::string* hash) const;
-
-  virtual const KeyType* GetType() const;
 
   virtual bool Encrypt(const std::string& data, std::string* encrypted) const;
 

@@ -1,0 +1,6 @@
+Keys were created with these commands:
+
+ openssl genrsa -f4 -out rsa_priv.pem 2048
+ openssl genrsa -f4 -out rsa_priv_wrong_size.pem 128
+ openssl genrsa -aes256 -f4 -out rsa_priv_encrypted.pem 2048
+   with 'cartman' as passphrase

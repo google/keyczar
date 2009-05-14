@@ -15,10 +15,10 @@
 
 #include "base/file_path.h"
 #include "base/file_util.h"
-#include "base/path_service.h"
 #include "base/scoped_ptr.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "keyczar/keyczar_test.h"
 #include "keyczar/openssl/message_digest.h"
 #include "keyczar/openssl/rsa.h"
 
@@ -26,28 +26,7 @@ namespace keyczar {
 
 namespace openssl {
 
-class RSAOpenSSLTest : public testing::Test {
- protected:
-  virtual void SetUp() {
-    PathService::Get(base::DIR_TEMP, &temp_path_);
-    temp_path_ = temp_path_.AppendASCII("keyczar");
-    file_util::CreateDirectory(temp_path_);
-
-    PathService::Get(base::DIR_SOURCE_ROOT, &data_path_);
-    data_path_ = data_path_.AppendASCII("keyczar");
-    data_path_ = data_path_.AppendASCII("data");
-
-    input_data_ = "This is some test data";
-  }
-
-  virtual void TearDown() {
-    file_util::Delete(temp_path_, true);
-  }
-
-  // Paths used in testing.
-  FilePath temp_path_;
-  FilePath data_path_;
-  std::string input_data_;
+class RSAOpenSSLTest : public KeyczarTest {
 };
 
 TEST_F(RSAOpenSSLTest, GenerateKeyAndEncrypt) {
@@ -67,6 +46,7 @@ TEST(RSAOpenSSL, CreateKeyAndCompare) {
   int size = 1024;
   scoped_ptr<RSAOpenSSL> rsa_generated(RSAOpenSSL::GenerateKey(size));
   ASSERT_TRUE(rsa_generated.get());
+  EXPECT_EQ(rsa_generated->Size(), size);
 
   RSAImpl::RSAIntermediateKey intermediate_key;
   ASSERT_TRUE(rsa_generated->GetAttributes(&intermediate_key));
@@ -92,6 +72,7 @@ TEST_F(RSAOpenSSLTest, GenerateKeyAndSign) {
   int size = 1024;
   scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::GenerateKey(size));
   ASSERT_TRUE(rsa.get());
+  EXPECT_EQ(rsa->Size(), size);
 
   std::string signed_message_digest;
   EXPECT_TRUE(rsa->Sign(message_digest, &signed_message_digest));
@@ -99,14 +80,41 @@ TEST_F(RSAOpenSSLTest, GenerateKeyAndSign) {
   EXPECT_TRUE(rsa->Verify(message_digest, signed_message_digest));
 }
 
-TEST_F(RSAOpenSSLTest, ExportToPEMFile) {
+TEST_F(RSAOpenSSLTest, WriteToPEMFile) {
   int size = 1024;
   scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::GenerateKey(size));
   ASSERT_TRUE(rsa.get());
+  EXPECT_EQ(rsa->Size(), size);
 
   FilePath pem_file = temp_path_.Append("1_pub.pem");
   rsa->WriteKeyToPEMFile(pem_file.value());
   EXPECT_TRUE(file_util::PathExists(pem_file));
+}
+
+// Keys were created with these commands:
+//
+//  openssl genrsa -f4 -out rsa_priv.pem 2048
+//  openssl genrsa -f4 -out rsa_priv_wrong_size.pem 128
+//  openssl genrsa -aes256 -f4 -out rsa_priv_encrypted.pem 2048
+//    with 'cartman' as passphrase
+TEST_F(RSAOpenSSLTest, CreateFromPEMKey) {
+  const FilePath rsa_pem = data_path_.Append("rsa_pem");
+
+  scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::CreateFromPEMKey(
+                                 rsa_pem.Append("rsa_priv.pem").value(),
+                                 NULL));
+  EXPECT_TRUE(rsa.get());
+
+  const std::string passphrase("cartman");
+  rsa.reset(RSAOpenSSL::CreateFromPEMKey(
+                rsa_pem.Append("rsa_priv_encrypted.pem").value(),
+                &passphrase));
+  EXPECT_TRUE(rsa.get());
+
+  // rsa.reset(RSAOpenSSL::CreateFromPEMKey(
+  //              rsa_pem.Append("rsa_priv_encrypted.pem").value(),
+  //              NULL));
+  // EXPECT_TRUE(rsa.get());
 }
 
 }  // namespace openssl

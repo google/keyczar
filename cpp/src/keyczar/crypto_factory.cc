@@ -18,6 +18,7 @@
 #include "keyczar/cipher_mode.h"
 #include "keyczar/openssl/aes.h"
 #include "keyczar/openssl/dsa.h"
+#include "keyczar/openssl/ecdsa.h"
 #include "keyczar/openssl/hmac.h"
 #include "keyczar/openssl/message_digest.h"
 #include "keyczar/openssl/rand.h"
@@ -39,6 +40,88 @@ MessageDigestImpl* CryptoFactory::SHA1() {
 }
 
 // static
+MessageDigestImpl* CryptoFactory::SHA224() {
+  static openssl::MessageDigestOpenSSL md(MessageDigestImpl::SHA224);
+  return &md;
+}
+
+// static
+MessageDigestImpl* CryptoFactory::SHA256() {
+  static openssl::MessageDigestOpenSSL md(MessageDigestImpl::SHA256);
+  return &md;
+}
+
+// static
+MessageDigestImpl* CryptoFactory::SHA384() {
+  static openssl::MessageDigestOpenSSL md(MessageDigestImpl::SHA384);
+  return &md;
+}
+
+// static
+MessageDigestImpl* CryptoFactory::SHA512() {
+  static openssl::MessageDigestOpenSSL md(MessageDigestImpl::SHA512);
+  return &md;
+}
+
+// static
+MessageDigestImpl* CryptoFactory::SHA(int size) {
+  switch (size) {
+    case 160:
+      return CryptoFactory::SHA1();
+    case 224:
+      return CryptoFactory::SHA224();
+    case 256:
+      return CryptoFactory::SHA256();
+    case 384:
+      return CryptoFactory::SHA384();
+    case 512:
+      return CryptoFactory::SHA512();
+    default:
+      NOTREACHED();
+  }
+  return NULL;
+}
+
+// static
+MessageDigestImpl* CryptoFactory::SHAFromFFCIFCSize(int size) {
+#ifdef COMPAT_KEYCZAR_05B
+  return CryptoFactory::SHA1();
+#else
+  // These choices follow the recommendations made by NIST in document
+  // SP800-57 part1 (Recommendation for Key Management) pages 63-64.
+  switch (size) {
+    case 1024:
+      return CryptoFactory::SHA1();
+    case 2048:
+      return CryptoFactory::SHA224();
+    case 3072:
+      return CryptoFactory::SHA256();
+    default:
+      NOTREACHED();
+  }
+  return NULL;
+#endif
+}
+
+// static
+MessageDigestImpl* CryptoFactory::SHAFromECCSize(int size) {
+  // These choices follow the recommendations made by NIST in document
+  // SP800-57 part1 (Recommendation for Key Management) pages 63-64 and
+  // the compatibility defined under section 4 of RFC5480.
+  switch (size) {
+    case 192:
+    case 224:
+    case 256:
+      return CryptoFactory::SHA256();
+    case 384:
+      return CryptoFactory::SHA384();
+    default:
+      NOTREACHED();
+  }
+  return NULL;
+}
+
+// static
 AESImpl* CryptoFactory::GenerateAES(const CipherMode& cipher_mode,
                                     int size) {
   return openssl::AESOpenSSL::GenerateKey(cipher_mode, size);
@@ -51,13 +134,70 @@ AESImpl* CryptoFactory::CreateAES(const CipherMode& cipher_mode,
 }
 
 // static
-HMACImpl* CryptoFactory::GenerateHMACSHA1(int size) {
-  return openssl::HMACOpenSSL::GenerateKey(HMACImpl::SHA1, size);
+HMACImpl* CryptoFactory::GenerateHMAC(int size) {
+#ifdef COMPAT_KEYCZAR_05B
+  switch (size) {
+    case 160:
+      return openssl::HMACOpenSSL::GenerateKey(HMACImpl::SHA1, 256);
+    default:
+      NOTREACHED();
+  }
+  return NULL;
+#else
+  // The key length will be equal to the algorithm output's length |size|.
+  // The RFC2104 says:
+  //    The key for HMAC can be of any length (keys longer than B bytes are
+  //    first hashed using H).  However, less than L bytes is strongly
+  //    discouraged as it would decrease the security strength of the
+  //    function.  Keys longer than L bytes are acceptable but the extra
+  //    length would not significantly increase the function strength. (A
+  //    longer key may be advisable if the randomness of the key is
+  //    considered weak.)
+  //
+  // If a modification is made here, the function GetDigestNameFromHMACKeySize
+  // (hmac_key.cc) would require to be updated accordingly.
+  switch (size) {
+    case 160:
+      return openssl::HMACOpenSSL::GenerateKey(HMACImpl::SHA1, size);
+    case 224:
+      return openssl::HMACOpenSSL::GenerateKey(HMACImpl::SHA224, size);
+    case 256:
+      return openssl::HMACOpenSSL::GenerateKey(HMACImpl::SHA256, size);
+    case 384:
+      return openssl::HMACOpenSSL::GenerateKey(HMACImpl::SHA384, size);
+    case 512:
+      return openssl::HMACOpenSSL::GenerateKey(HMACImpl::SHA512, size);
+    default:
+      NOTREACHED();
+  }
+  return NULL;
+#endif
 }
 
 // static
-HMACImpl* CryptoFactory::CreateHMACSHA1(const std::string& key) {
+HMACImpl* CryptoFactory::CreateHMAC(const std::string& key) {
+#ifdef COMPAT_KEYCZAR_05B
   return openssl::HMACOpenSSL::Create(HMACImpl::SHA1, key);
+#else
+  int size = key.length() * 8;
+
+  // See comment above.
+  switch (size) {
+    case 160:
+      return openssl::HMACOpenSSL::Create(HMACImpl::SHA1, key);
+    case 224:
+      return openssl::HMACOpenSSL::Create(HMACImpl::SHA224, key);
+    case 256:
+      return openssl::HMACOpenSSL::Create(HMACImpl::SHA256, key);
+    case 384:
+      return openssl::HMACOpenSSL::Create(HMACImpl::SHA384, key);
+    case 512:
+      return openssl::HMACOpenSSL::Create(HMACImpl::SHA512, key);
+    default:
+      NOTREACHED();
+  }
+  return NULL;
+#endif
 }
 
 // static
@@ -69,6 +209,12 @@ RSAImpl* CryptoFactory::GeneratePrivateRSA(int size) {
 RSAImpl* CryptoFactory::CreatePrivateRSA(
     const RSAImpl::RSAIntermediateKey& key) {
   return openssl::RSAOpenSSL::Create(key, true);
+}
+
+// static
+RSAImpl* CryptoFactory::CreatePrivateRSAFromPEMKey(
+    const std::string& filename, const std::string* passphrase) {
+  return openssl::RSAOpenSSL::CreateFromPEMKey(filename, passphrase);
 }
 
 // static
@@ -89,9 +235,38 @@ DSAImpl* CryptoFactory::CreatePrivateDSA(
 }
 
 // static
+DSAImpl* CryptoFactory::CreatePrivateDSAFromPEMKey(
+    const std::string& filename, const std::string* passphrase) {
+  return openssl::DSAOpenSSL::CreateFromPEMKey(filename, passphrase);
+}
+
+// static
 DSAImpl* CryptoFactory::CreatePublicDSA(
     const DSAImpl::DSAIntermediateKey& key) {
   return openssl::DSAOpenSSL::Create(key, false);
+}
+
+// static
+ECDSAImpl* CryptoFactory::GeneratePrivateECDSA(ECDSAImpl::Curve curve) {
+  return openssl::ECDSAOpenSSL::GenerateKey(curve);
+}
+
+// static
+ECDSAImpl* CryptoFactory::CreatePrivateECDSA(
+    const ECDSAImpl::ECDSAIntermediateKey& key) {
+  return openssl::ECDSAOpenSSL::Create(key, true);
+}
+
+// static
+ECDSAImpl* CryptoFactory::CreatePrivateECDSAFromPEMKey(
+    const std::string& filename, const std::string* passphrase) {
+  return openssl::ECDSAOpenSSL::CreateFromPEMKey(filename, passphrase);
+}
+
+// static
+ECDSAImpl* CryptoFactory::CreatePublicECDSA(
+    const ECDSAImpl::ECDSAIntermediateKey& key) {
+  return openssl::ECDSAOpenSSL::Create(key, false);
 }
 
 }  // namespace keyczar

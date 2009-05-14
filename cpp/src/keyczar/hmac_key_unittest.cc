@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <string>
+#include <vector>
 
 #include "base/base64w.h"
 #include "base/logging.h"
 #include "base/ref_counted.h"
 #include "base/file_path.h"
 #include "base/file_util.h"
-#include "base/path_service.h"
 #include "base/scoped_ptr.h"
 #include "base/values.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -26,28 +26,13 @@
 #include "keyczar/hmac_key.h"
 #include "keyczar/key.h"
 #include "keyczar/key_type.h"
+#include "keyczar/keyczar_test.h"
 #include "keyczar/keyset_file_reader.h"
 
 namespace keyczar {
 
-class HMACTest : public testing::Test {
+class HMACTest : public KeyczarTest {
  protected:
-  virtual void SetUp() {
-    PathService::Get(base::DIR_TEMP, &temp_path_);
-    temp_path_ = temp_path_.AppendASCII("keyczar");
-    file_util::CreateDirectory(temp_path_);
-
-    PathService::Get(base::DIR_SOURCE_ROOT, &data_path_);
-    data_path_ = data_path_.AppendASCII("keyczar");
-    data_path_ = data_path_.AppendASCII("data");
-
-    input_data_ = "This is some test data";
-  }
-
-  virtual void TearDown() {
-    file_util::Delete(temp_path_, true);
-  }
-
   // Loads HMAC key from JSON file.
   scoped_refptr<HMACKey> LoadHMACKey(const FilePath& path,
                                      int key_version) {
@@ -58,26 +43,27 @@ class HMACTest : public testing::Test {
     CHECK(hmac_key);
     return hmac_key;
   }
-
-  // Paths used in testing.
-  FilePath temp_path_;
-  FilePath data_path_;
-  std::string input_data_;
 };
 
 TEST_F(HMACTest, GenerateKeyAndSign) {
+#ifdef COMPAT_KEYCZAR_05B
   scoped_ptr<KeyType> key_type(KeyType::Create("HMAC_SHA1"));
+#else
+  scoped_ptr<KeyType> key_type(KeyType::Create("HMAC"));
+#endif
   ASSERT_TRUE(key_type.get());
+  const std::vector<int> sizes = key_type->sizes();
 
-  scoped_refptr<HMACKey> hmac_key(HMACKey::GenerateKey(
-                                     key_type->default_size()));
-  ASSERT_TRUE(hmac_key.get());
-  EXPECT_TRUE(hmac_key->GetType() &&
-              hmac_key->GetType()->type() == KeyType::HMAC_SHA1);
-
+  scoped_refptr<HMACKey> hmac_key;
   std::string signature;
-  EXPECT_TRUE(hmac_key->Sign(input_data_, &signature));
-  EXPECT_TRUE(hmac_key->Verify(input_data_, signature));
+  for (std::vector<int>::const_iterator iter = sizes.begin();
+       iter != sizes.end(); ++iter) {
+    hmac_key = HMACKey::GenerateKey(*iter);
+    ASSERT_TRUE(hmac_key.get());
+
+    EXPECT_TRUE(hmac_key->Sign(input_data_, &signature));
+    EXPECT_TRUE(hmac_key->Verify(input_data_, signature));
+  }
 }
 
 TEST_F(HMACTest, LoadKeyAndVerify) {

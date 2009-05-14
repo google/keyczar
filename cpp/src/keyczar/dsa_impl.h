@@ -50,6 +50,9 @@ class DSAImpl {
   virtual bool Verify(const std::string& message,
                       const std::string& signature) const = 0;
 
+  // Returns the key size in bits.
+  virtual int Size() const = 0;
+
  private:
   DISALLOW_COPY_AND_ASSIGN(DSAImpl);
 };

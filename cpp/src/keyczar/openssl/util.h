@@ -15,6 +15,8 @@
 #define KEYCZAR_OPENSSL_UTIL_H_
 
 #include <openssl/err.h>
+#include <openssl/evp.h>
+#include <string>
 
 #include "base/logging.h"
 
@@ -30,7 +32,19 @@ struct OSSLDestroyer {
   }
 };
 
+typedef scoped_ptr_malloc<BIGNUM, OSSLDestroyer<BIGNUM, BN_free> > ScopedBIGNUM;
+
+typedef scoped_ptr_malloc<
+    EVP_PKEY, OSSLDestroyer<EVP_PKEY, EVP_PKEY_free> > ScopedEVPPKey;
+
 void PrintOSSLErrors();
+
+// Reads a private key |filename| with the associated |passphrase|. |passphrase|
+// is optionnal, if the value NULL is provided instead but that a passprhase is
+// required an interactive prompt will be issued. The caller takes ownership of
+// the returned key object.
+EVP_PKEY* ReadPEMKeyFromFile(const std::string& filename,
+                             const std::string* passphrase);
 
 }  // namespace openssl
 

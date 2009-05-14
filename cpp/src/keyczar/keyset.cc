@@ -56,7 +56,9 @@ Keyset* Keyset::Read(const KeysetReader& reader, bool load_keys) {
       scoped_refptr<Key> key = Key::CreateFromValue(*key_type, *root_key);
       if (key == NULL)
         return NULL;
-      keyset->AddKey(key, version_number);
+
+      if (!keyset->AddKey(key, version_number))
+        return NULL;
     }
 
     if (version_iterator->second == NULL ||
@@ -135,6 +137,11 @@ bool Keyset::AddKey(Key* key, int version_number) {
   if (!key->Hash(&hash))
     return false;
 
+  if (hash_map_.find(hash) != hash_map_.end()) {
+    LOG(ERROR) << "A key set cannot have multiple identical keys.";
+    return false;
+  }
+
   version_number_map_[version_number] = key;
   hash_map_[hash] = key;
 
@@ -178,8 +185,10 @@ int Keyset::GenerateKey(KeyStatus::Type status, int size) {
   if (version_number == 0)
     return 0;
 
-  if (!AddKey(key, version_number))
+  if (!AddKey(key, version_number)) {
+    DCHECK(RemoveKeyVersion(version_number));
     return 0;
+  }
 
   return version_number;
 }
@@ -195,6 +204,54 @@ int Keyset::GenerateDefaultKeySize(KeyStatus::Type status) {
   return GenerateKey(status, key_type->default_size());
 }
 
+int Keyset::ImportPEMKey(KeyStatus::Type status, const std::string& filename,
+                         const std::string* passphrase) {
+  if (metadata_.get() == NULL)
+    return 0;
+
+  const KeyType* key_type = metadata_->key_type();
+  if (key_type == NULL)
+    return 0;
+
+  scoped_refptr<Key> key = Key::CreateFromPEMKey(*key_type, filename,
+                                                 passphrase);
+  if (key == NULL)
+    return 0;
+
+  std::string hash;
+  if (!key->Hash(&hash))
+    return 0;
+
+  if (hash_map_.find(hash) != hash_map_.end()) {
+    LOG(ERROR) << "This key is already part of the key set.";
+    return 0;
+  }
+
+  if (status == KeyStatus::PRIMARY && primary_key_version_number() > 0 &&
+      !DemoteKey(primary_key_version_number()))
+    return 0;
+
+  const KeyStatus* key_status = new KeyStatus(status);
+  if (key_status == NULL)
+    return 0;
+
+  scoped_refptr<KeysetMetadata::KeyVersion> key_version;
+  key_version =  new KeysetMetadata::KeyVersion(0, key_status, false);
+  if (key_version == NULL)
+    return 0;
+
+  int version_number = AddKeyVersion(key_version);
+  if (version_number == 0)
+    return 0;
+
+  if (!AddKey(key, version_number)) {
+    DCHECK(RemoveKeyVersion(version_number));
+    return 0;
+  }
+
+  return version_number;
+}
+
 bool Keyset::PromoteKey(int version_number) {
   if (version_number <= 0 || metadata_.get() == NULL ||
       metadata_->GetVersion(version_number) == NULL)
@@ -208,7 +265,7 @@ bool Keyset::PromoteKey(int version_number) {
   KeyStatus::Type current_key_status = key_version->key_status()->type();
   switch (current_key_status) {
     case KeyStatus::PRIMARY:
-      LOG(WARNING) << "Cant promote primary key";
+      LOG(WARNING) << "Cannot promote a primary key.";
       return false;
     case KeyStatus::ACTIVE:
       return UpdateKeyStatus(KeyStatus::PRIMARY, key_version);
@@ -239,7 +296,7 @@ bool Keyset::DemoteKey(int version_number) {
     case KeyStatus::ACTIVE:
       return UpdateKeyStatus(KeyStatus::INACTIVE, key_version);
     case KeyStatus::INACTIVE:
-      LOG(WARNING) << "Cant demote inactive key";
+      LOG(WARNING) << "Cannot demote an inactive key.";
       return false;
     default:
       NOTREACHED();
@@ -258,14 +315,17 @@ bool Keyset::RevokeKey(int version_number) {
     return false;
 
   if (key_version->key_status()->type() != KeyStatus::INACTIVE) {
-    LOG(WARNING) << "Cant revoke active key";
+    LOG(WARNING) << "Cannot revoke an active key.";
     return false;
   }
+
   // Remove key version and key
-  bool result = false;
-  CHECK(metadata_->RemoveVersion(version_number));
-  NotifyOnUpdatedKeysetMetadata(*metadata_.get());
-  CHECK(RemoveKey(version_number));
+  CHECK(RemoveKeyVersion(version_number));
+  // There is one case where this call can fail, it is when the key set has
+  // been instanciated through ReadMetadataOnly. Thus, the return value is
+  // ignored and NotifyOnRevokedKey is always called. The consistency is
+  // primarly based on the metadata so this is not wrong to do so.
+  RemoveKey(version_number);
   NotifyOnRevokedKey(version_number);
   return true;
 }
@@ -285,6 +345,18 @@ bool Keyset::PublicKeyExport(const KeysetWriter& writer) const {
       if (key_purpose->type() == KeyPurpose::SIGN_AND_VERIFY) {
         meta.reset(new KeysetMetadata(metadata()->name(),
                                       KeyType::Create("DSA_PUB"),
+                                      new KeyPurpose(KeyPurpose::VERIFY),
+                                      false,
+                                      metadata()->next_key_version_number()));
+      } else {
+        NOTREACHED();
+        return false;
+      }
+      break;
+    case KeyType::ECDSA_PRIV:
+      if (key_purpose->type() == KeyPurpose::SIGN_AND_VERIFY) {
+        meta.reset(new KeysetMetadata(metadata()->name(),
+                                      KeyType::Create("ECDSA_PUB"),
                                       new KeyPurpose(KeyPurpose::VERIFY),
                                       false,
                                       metadata()->next_key_version_number()));
@@ -316,7 +388,7 @@ bool Keyset::PublicKeyExport(const KeysetWriter& writer) const {
     default:
       std::string type_name;
       key_type->GetName(&type_name);
-      LOG(ERROR) << "Key type " << type_name << " cannot be exported";
+      LOG(ERROR) << "Key type " << type_name << " cannot be exported.";
       NOTREACHED();
       return false;
   }
@@ -353,6 +425,10 @@ bool Keyset::PublicKeyExport(const KeysetWriter& writer) const {
     return false;
 
   return true;
+}
+
+bool Keyset::Empty() const {
+  return hash_map_.empty() && version_number_map_.empty();
 }
 
 bool Keyset::UpdateKeyStatus(KeyStatus::Type new_status,
@@ -413,6 +489,26 @@ int Keyset::AddKeyVersion(KeysetMetadata::KeyVersion* key_version) {
 
   NotifyOnUpdatedKeysetMetadata(*metadata_.get());
   return key_version->version_number();
+}
+
+bool Keyset::RemoveKeyVersion(int version_number) {
+  if (version_number <= 0 || metadata_.get() == NULL ||
+      metadata_->GetVersion(version_number) == NULL)
+    return false;
+
+  KeysetMetadata::KeyVersion* key_version = metadata_->GetVersion(
+      version_number);
+  if (!key_version)
+    return false;
+
+  // Remove key version
+  if (!metadata_->RemoveVersion(version_number))
+    return false;
+
+  // Notify observers
+  NotifyOnUpdatedKeysetMetadata(*metadata_.get());
+
+  return true;
 }
 
 }  // namespace keyczar

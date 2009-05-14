@@ -20,7 +20,7 @@
 namespace keyczar {
 
 PrivateKey::PrivateKey(PublicKey* public_key, int size)
-    : public_key_(public_key), size_(size) {}
+    : Key(size), public_key_(public_key) {}
 
 PrivateKey::~PrivateKey() {}
 

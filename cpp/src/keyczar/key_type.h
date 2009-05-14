@@ -25,14 +25,19 @@ class KeyType {
  public:
   enum Type {
     AES = 0,
+#ifdef COMPAT_KEYCZAR_05B
     HMAC_SHA1,
+#else
+    HMAC,
+#endif
     DSA_PRIV,
     DSA_PUB,
+    ECDSA_PRIV,
+    ECDSA_PUB,
     RSA_PRIV,
     RSA_PUB
   };
-  KeyType(Type type, int output_size, const std::vector<int>& valid_sizes,
-          int default_size);
+  KeyType(Type type, const std::vector<int>& valid_sizes, int default_size);
 
   // Creates KeyStatus instance from string |name|. The caller takes
   // ownership of the result.
@@ -42,20 +47,21 @@ class KeyType {
 
   bool GetName(std::string* name) const;
 
-  int output_size() const { return output_size_; }
-
   int default_size() const { return default_size_; }
 
   bool IsValidSize(int size) const;
 
+  std::vector<int> sizes() { return sizes_; }
+
  private:
   Type type_;
-  int output_size_;
   std::vector<int> sizes_;
   int default_size_;
 
   DISALLOW_COPY_AND_ASSIGN(KeyType);
 };
+
+bool IsValidSize(const std::string& key_type_name, int size);
 
 }  // namespace keyczar
 

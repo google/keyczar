@@ -23,16 +23,11 @@ namespace keyczar {
 // Abstract public key class.
 class PublicKey : public Key {
  public:
-  explicit PublicKey(int size) : size_(size) {}
+  explicit PublicKey(int size) : Key(size) {}
 
   virtual ~PublicKey() = 0;
 
-  // Returns the size in bits corresponding to this key.
-  int size() const { return size_; }
-
  private:
-  int size_;
-
   DISALLOW_COPY_AND_ASSIGN(PublicKey);
 };
 

@@ -58,11 +58,14 @@ DSAPrivateKey* DSAPrivateKey::CreateFromValue(const Value& root_key) {
   if (!public_key->GetInteger(L"size", &size_public))
     return NULL;
 
-  DCHECK(size == size_public);
-
   scoped_ptr<DSAImpl> dsa_private_key_impl(
       CryptoFactory::CreatePrivateDSA(intermediate_key));
   if (dsa_private_key_impl.get() == NULL)
+    return NULL;
+
+  // Check the provided size is valid.
+  if (size != size_public || size != dsa_private_key_impl->Size() ||
+      !IsValidSize("DSA_PRIV", size))
     return NULL;
 
   scoped_ptr<DSAImpl> dsa_public_key_impl(
@@ -82,25 +85,53 @@ DSAPrivateKey* DSAPrivateKey::CreateFromValue(const Value& root_key) {
 
 // static
 DSAPrivateKey* DSAPrivateKey::GenerateKey(int size) {
-  scoped_ptr<KeyType> key_type(KeyType::Create("DSA_PRIV"));
-  if (key_type.get() == NULL)
+  if (!IsValidSize("DSA_PRIV", size))
     return NULL;
-
-  if (!key_type->IsValidSize(size)) {
-    LOG(ERROR) << "Invalid key size: " << size;
-    return NULL;
-  }
-
-  if (size < key_type->default_size())
-    LOG(WARNING) << "Key size ("
-                 << size
-                 << ") shorter than recommanded ("
-                 << key_type->default_size()
-                 << "), might be unsecure";
 
   scoped_ptr<DSAImpl> dsa_private_key_impl(
       CryptoFactory::GeneratePrivateDSA(size));
   if (dsa_private_key_impl.get() == NULL)
+    return NULL;
+
+  // This case could happen if it returned slightly less bits than expected. In
+  // this case for the consistency of the key set, this key is not accepted.
+  if (dsa_private_key_impl->Size() != size)
+    return NULL;
+
+  DSAImpl::DSAIntermediateKey intermediate_public_key;
+  dsa_private_key_impl->GetPublicAttributes(&intermediate_public_key);
+
+  scoped_ptr<DSAImpl> dsa_public_key_impl(
+      CryptoFactory::CreatePublicDSA(intermediate_public_key));
+  if (dsa_public_key_impl.get() == NULL)
+    return NULL;
+
+  DSAPublicKey* dsa_public_key = new DSAPublicKey(dsa_public_key_impl.release(),
+                                                  size);
+  if (dsa_public_key == NULL)
+    return NULL;
+
+  return new DSAPrivateKey(dsa_private_key_impl.release(),
+                           dsa_public_key,
+                           size);
+}
+
+// static
+DSAPrivateKey* DSAPrivateKey::CreateFromPEMKey(const std::string& filename,
+                                               const std::string* passphrase) {
+  scoped_ptr<DSAImpl> dsa_private_key_impl(
+      CryptoFactory::CreatePrivateDSAFromPEMKey(filename, passphrase));
+  if (dsa_private_key_impl.get() == NULL)
+    return NULL;
+
+  // If the size of the imported key does not match the sizes accepted by
+  // this application, this key is rejected. Moreover, it could happen that
+  // for instance a 1024 bits DSA key is rejected, this would happen because
+  // internally the most significant bit of this key would not be the 1024th
+  // bit. This key would be valid but for the consistency of our key set it
+  // is rejected.
+  const int size = dsa_private_key_impl->Size();
+  if (!IsValidSize("DSA_PRIV", size))
     return NULL;
 
   DSAImpl::DSAIntermediateKey intermediate_public_key;
@@ -146,23 +177,28 @@ Value* DSAPrivateKey::GetValue() const {
   return private_key.release();
 }
 
-const KeyType* DSAPrivateKey::GetType() const {
-  static const KeyType* key_type = KeyType::Create("DSA_PRIV");
-  return key_type;
-}
-
 bool DSAPrivateKey::Sign(const std::string& data,
                          std::string* signature) const {
   if (dsa_impl() == NULL || signature == NULL)
     return false;
 
-  MessageDigestImpl* digest_impl = CryptoFactory::SHA1();
+  MessageDigestImpl* digest_impl = CryptoFactory::SHAFromFFCIFCSize(size());
   if (digest_impl == NULL)
     return false;
 
   std::string message_digest;
   if (!digest_impl->Digest(data, &message_digest))
     return false;
+
+  // Cryptographic libraries like OpenSSL don't support inputs greater
+  // than the size of q (ie 160 bits), so if necessary the message digest
+  // value is truncated to q's length.
+  DSAImpl::DSAIntermediateKey dsa_public_key;
+  if (!dsa_impl()->GetPublicAttributes(&dsa_public_key))
+    return false;
+  int q_length = dsa_public_key.q.length();
+  if (message_digest.length() > q_length)
+    message_digest = message_digest.substr(0, q_length);
 
   return dsa_impl()->Sign(message_digest, signature);
 }

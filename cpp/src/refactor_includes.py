@@ -19,8 +19,8 @@ def IsHeader(filename):
 
 def IterateSources(path) :
     for root, dirlist, filelist in os.walk(path) :
-        for filename in filelist :
-            if IsHeader(filename) :
+        for filename in filelist:
+            if IsHeader(filename):
                 yield root, filename
 
 def RefactorDir(src_path, dst_path, prefix='keyczar'):
@@ -42,7 +42,7 @@ def RefactorDir(src_path, dst_path, prefix='keyczar'):
         finally:
             fo.close()
 
-        print >> sys.stdout, "Updating file", filename
+        print >> sys.stdout, "refactor_includes: updating file", filename
 
         # Rewrite "base/..." includes
         header_mod = re.sub(r'#include\s+"base/(.+)"',

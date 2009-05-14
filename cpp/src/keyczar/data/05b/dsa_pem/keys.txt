@@ -1,0 +1,6 @@
+Keys were created with these commands:
+
+ openssl dsaparam -genkey 1024 -out dsaparam
+ openssl gendsa -out dsa_priv.pem dsaparam
+ openssl gendsa -aes256 -out dsa_priv_encrypted.pem dsaparam
+     with 'cartman' as passphrase

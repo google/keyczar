@@ -7,23 +7,28 @@ import sys
 
 import keyczar
 
-def Encrypt(keyset_path):
-    if not os.path.isdir(keyset_path):
-        return
-
+def EncryptAndDecrypt(keyset_path):
     input = 'Secret message'
     encrypter = keyczar.Encrypter.Read(keyset_path)
-    ciphertext = encrypter.Encrypt(input)
+    ciphertext_b64 = encrypter.Encrypt(input)
 
     print 'plaintext:', input
-    print 'ciphertext:', ciphertext
+    print 'ciphertext (base64w):', ciphertext_b64
 
     crypter = keyczar.Crypter.Read(keyset_path)
-    decrypted = crypter.Decrypt(ciphertext)
-    assert decrypted == input
+    assert crypter.Decrypt(ciphertext_b64) == input
+
+def EncryptAndDecryptBytes(keyset_path):
+    input = 'Secret message'
+    crypter = keyczar.Crypter.Read(keyset_path)
+    crypter.set_encoding(crypter.NO_ENCODING)
+    ciphertext_bytes = crypter.Encrypt(input)
+    assert crypter.Decrypt(ciphertext_bytes) == input
+
 
 if __name__ == '__main__':
-    if (len(sys.argv) != 2):
+    if (len(sys.argv) != 2 or not os.path.isdir(sys.argv[1])):
         print >> sys.stderr, "Provide a key set path as argument."
         sys.exit(1)
-    Encrypt(sys.argv[1])
+    EncryptAndDecrypt(sys.argv[1])
+    EncryptAndDecryptBytes(sys.argv[1])

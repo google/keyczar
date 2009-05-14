@@ -28,21 +28,21 @@ namespace keyczar {
 class HMACKey : public Key {
  public:
   // Takes ownership of |hmac_impl|.
-  explicit HMACKey(HMACImpl* hmac_impl) : hmac_impl_(hmac_impl) {}
+  explicit HMACKey(HMACImpl* hmac_impl, int size)
+      : Key(size), hmac_impl_(hmac_impl) {}
 
-  // The caller takes ownership of the returned Key.
+  // Creates a key from |root_key|. The caller takes ownership of the returned
+  // Key.
   static HMACKey* CreateFromValue(const Value& root_key);
 
-  // The caller takes ownership of the returned Key. The value of |size|
-  // is expressed in bits.
+  // Generates a |size| bits key. The caller takes ownership of the returned
+  // Key.
   static HMACKey* GenerateKey(int size);
 
   // The caller takes ownership of the returned Value.
   virtual Value* GetValue() const;
 
   virtual bool Hash(std::string* hash) const;
-
-  virtual const KeyType* GetType() const;
 
   virtual bool Sign(const std::string& data, std::string* signature) const;
 

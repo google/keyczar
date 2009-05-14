@@ -59,6 +59,9 @@ class RSAImpl {
   virtual bool Decrypt(const std::string& encrypted,
                        std::string* data) const = 0;
 
+  // Returns the key size in bits.
+  virtual int Size() const = 0;
+
  private:
   DISALLOW_COPY_AND_ASSIGN(RSAImpl);
 };

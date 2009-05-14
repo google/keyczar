@@ -64,17 +64,25 @@ class MessageDigestImpl;
 //
 class Key : public base::RefCounted<Key> {
  public:
-  Key() {}
+Key(int size) : size_(size) {}
   virtual ~Key() {}
 
-  // Factory generating a key of type |key_type| with value |root|. The
+  // Factory to create a key of type |key_type| with value |root|. The
   // caller takes ownership of the returned Key.
   static Key* CreateFromValue(const KeyType& key_type, const Value& root);
 
-  // Factory generating a key of type |key_type| and of length |size|. The
-  // caller takes ownership of the returned Key. Returns NULL is |size| is
-  // not valid.
+  // Factory to generate a key of type |key_type| and of length |size|. The
+  // caller takes ownership of the returned Key. Returns NULL if |size| is
+  // not valid or if it fails.
   static Key* GenerateKey(const KeyType& key_type, int size);
+
+  // Factory to create a key of type |key_type| from a PEM key with location
+  // |filename| and optional passphrase |passphrase|. If |passphrase| value
+  // is NULL, it means no passphrase. This function returns NULL if it fails.
+  // The caller takes ownership of the returned Key.
+  static Key* CreateFromPEMKey(const KeyType& key_type,
+                               const std::string& filename,
+                               const std::string* passphrase);
 
   // Build a Value object from the key attributes and returns the result.
   // The caller takes ownership of the returned instance. It returns NULL
@@ -107,9 +115,6 @@ class Key : public base::RefCounted<Key> {
   // or if it fails.
   virtual bool Decrypt(const std::string& encrypted, std::string* data) const;
 
-  // Returns the type of this key.
-  virtual const KeyType* GetType() const = 0;
-
   // Returns the hash assembled from the values of various fields of this
   // instance. This hash will be used as unique identifier of this key.
   virtual bool Hash(std::string* hash) const = 0;
@@ -123,6 +128,9 @@ class Key : public base::RefCounted<Key> {
   // Returns header value.
   bool Header(std::string* header) const;
 
+  // Returns the size in bits corresponding to this key.
+  int size() const { return size_; }
+
  protected:
   // Helper function for building the Hash value. Be sure to have properly
   // initialized the message digest object before calling it the first time.
@@ -130,6 +138,9 @@ class Key : public base::RefCounted<Key> {
                  MessageDigestImpl& digest_impl) const;
 
  private:
+  // Key size in bits
+  int size_;
+
   DISALLOW_COPY_AND_ASSIGN(Key);
 };
 

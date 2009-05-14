@@ -52,6 +52,10 @@ DSAPublicKey* DSAPublicKey::CreateFromValue(const Value& root_key) {
   if (dsa_public_key_impl.get() == NULL)
     return NULL;
 
+  // Check the provided size is valid.
+  if (size != dsa_public_key_impl->Size() || !IsValidSize("DSA_PUB", size))
+    return NULL;
+
   return new DSAPublicKey(dsa_public_key_impl.release(), size);
 }
 
@@ -105,23 +109,28 @@ bool DSAPublicKey::Hash(std::string* hash) const {
   return true;
 }
 
-const KeyType* DSAPublicKey::GetType() const {
-  static const KeyType* key_type = KeyType::Create("DSA_PUB");
-  return key_type;
-}
-
 bool DSAPublicKey::Verify(const std::string& data,
                           const std::string& signature) const {
   if (dsa_impl() == NULL)
     return false;
 
-  MessageDigestImpl* digest_impl = CryptoFactory::SHA1();
+  MessageDigestImpl* digest_impl = CryptoFactory::SHAFromFFCIFCSize(size());
   if (digest_impl == NULL)
     return false;
 
   std::string message_digest;
   if (!digest_impl->Digest(data, &message_digest))
     return false;
+
+  // Cryptographic libraries like OpenSSL don't support inputs greater
+  // than the size of q (ie 160 bits), so if necessary the message digest
+  // value is truncated to q's length.
+  DSAImpl::DSAIntermediateKey dsa_public_key;
+  if (!dsa_impl()->GetPublicAttributes(&dsa_public_key))
+    return false;
+  int q_length = dsa_public_key.q.length();
+  if (message_digest.length() > q_length)
+    message_digest = message_digest.substr(0, q_length);
 
   return dsa_impl()->Verify(message_digest, signature);
 }

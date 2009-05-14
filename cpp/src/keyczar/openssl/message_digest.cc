@@ -21,11 +21,25 @@ namespace openssl {
 
 MessageDigestOpenSSL::MessageDigestOpenSSL(DigestAlgorithm digest_algorithm)
     : context_(EVP_MD_CTX_create()), evp_md_(NULL), engine_(NULL) {
-  // Currently only SHA1 is supported.
-  if (digest_algorithm == SHA1)
-    evp_md_ = EVP_sha1;
-  else
-    NOTREACHED();
+  switch (digest_algorithm) {
+    case SHA1:
+      evp_md_ = EVP_sha1;
+      break;
+    case SHA224:
+      evp_md_ = EVP_sha224;
+      break;
+    case SHA256:
+      evp_md_ = EVP_sha256;
+      break;
+    case SHA384:
+      evp_md_ = EVP_sha384;
+      break;
+    case SHA512:
+      evp_md_ = EVP_sha512;
+      break;
+    default:
+      NOTREACHED();
+  }
 }
 
 bool MessageDigestOpenSSL::Init() {

@@ -33,24 +33,36 @@ static const char kUsageMessage[] =
     "Commands: create addkey pubkey promote demote revoke\n"
     "Flags: location name size status purpose destination version asymmetric\n"
     "       crypter\n\n"
-    "Command Usage:\n"
+    "Command usage:\n\n"
     "create --location=/path/to/keys --purpose=(crypt|sign) --name=\"A name\""
-    " --asymmetric=(dsa|rsa)\n"
+    " \\\n"
+    "       --asymmetric=(dsa|rsa|ecdsa)\n"
     "   Creates a new, empty key set in the given location. This key set must\n"
     "   have a purpose of either \"crypt\" or \"sign\" and may optionally be\n"
     "   given a name. The optional asymmetric flag will generate a public \n"
-    "   key set of the given algorithm. The \"dsa\" asymmetric value is valid\n"
-    "   only for sets with \"sign\" purpose. with the given purpose.\n\n"
-    "addkey --location=/path/to/keys --status=(active|primary) --size=size "
-    "--crypter=crypterLocation\n"
+    "   key set of the given algorithm. The \"dsa\" and \"ecdsa\" asymmetric\n"
+    "   values are valid only for sets with \"sign\" purpose.\n\n"
+    "addkey --location=/path/to/keys --status=(active|primary) --size=size \\\n"
+    "       --crypter=crypterLocation\n"
     "   Adds a new key to an existing key set. Optionally specify a purpose,\n"
-    "   which is active by default. Optionally specify a key size in bits.\n"
-    "   Also optionally specify the location of a set of crypting keys, which\n"
-    "   will be used to encrypt this key set.\n\n"
-    "pubkey --location=/path/to/keys --destination=/destination"
-    " --crypter=crypterLocation\n"
+    "   which is \"active\" by default. Optionally specify a key size in\n"
+    "   bits. Also optionally specify the location of a set of crypting keys,\n"
+    "   which will be used to encrypt this key set.\n\n"
+    "importkey --location=/path/to/keys --status=(active|primary) \\\n"
+    "          --key=keyFileLocation --passphrase=\"passphrase\" \\\n"
+    "          --crypter=crypterLocation\n"
+    "   Imports a private key (RSA, DSA or ECDSA) to an existing key set.\n"
+    "   keyFileLocation is the key file to import, it must have a PEM\n"
+    "   representation. Optionally provide its passphrase. If a mandatory\n"
+    "   passphrase is not specified as argument it will be prompted\n"
+    "   interactively from the shell when this command is executed.\n"
+    "   Optionally specify a purpose, which is \"active\" by default. Also\n"
+    "   optionally the location of a set of crypting keys, which will be used\n"
+    "   to encrypt this key set.\n\n"
+    "pubkey --location=/path/to/keys --destination=/path/to/destination \\\n"
+    "       --crypter=crypterLocation\n"
     "   Extracts public keys from a given key set and writes them to the\n"
-    "   destination. The \"pubkey\" command Only works for key sets that were\n"
+    "   destination. The \"pubkey\" command only works for key sets that were\n"
     "   created with the \"--asymmetric\" flag.\n\n"
     "promote --location=/path/to/keys --version=versionNumber\n"
     "   Promotes the status of the given key version in the given location.\n"
@@ -184,6 +196,36 @@ bool KeyczarTool::ProcessCommandLine() {
     return CmdAddKey(location, *status, size, crypter);
   }
 
+  // Command importkey
+  if (loose_values[0] == L"importkey") {
+    // status
+    std::string status_string("ACTIVE");
+    GetSwitchValue(*command_line_, L"status", &status_string, true);
+    scoped_ptr<KeyStatus> status(KeyStatus::Create(
+                                     StringToUpperASCII(status_string)));
+    if (status.get() == NULL) {
+      LOG(ERROR) << "Invalid status '" << status_string << "'.";
+      return false;
+    }
+
+    // filename
+    std::string key_filename;
+    if (!GetSwitchValue(*command_line_, L"key", &key_filename, false))
+      return false;
+
+    // passphrase
+    std::string passphrase_string;
+    std::string* passphrase = NULL;
+    if (GetSwitchValue(*command_line_, L"passphrase", &passphrase_string, true))
+      passphrase = &passphrase_string;
+
+    // crypter
+    std::string crypter;
+    GetSwitchValue(*command_line_, L"crypter", &crypter, true);
+
+    return CmdImportKey(location, *status, key_filename, passphrase, crypter);
+  }
+
   // Command pubkey
   if (loose_values[0] == L"pubkey") {
     // destination
@@ -249,7 +291,11 @@ bool KeyczarTool::CmdCreate(const std::string& location,
   scoped_ptr<KeyType> key_type;
   if (key_purpose.type() == KeyPurpose::SIGN_AND_VERIFY) {
     if (asymmetric.empty()) {
+#ifdef COMPAT_KEYCZAR_05B
       key_type.reset(KeyType::Create("HMAC_SHA1"));
+#else
+      key_type.reset(KeyType::Create("HMAC"));
+#endif
     } else {
       if (asymmetric == "rsa") {
         key_type.reset(KeyType::Create("RSA_PRIV"));
@@ -257,8 +303,12 @@ bool KeyczarTool::CmdCreate(const std::string& location,
         if (asymmetric == "dsa") {
           key_type.reset(KeyType::Create("DSA_PRIV"));
         } else {
-          LOG(ERROR) << "Invalid asymmetric argument '" << asymmetric << "'.";
-          return false;
+          if (asymmetric == "ecdsa") {
+            key_type.reset(KeyType::Create("ECDSA_PRIV"));
+          } else {
+            LOG(ERROR) << "Invalid asymmetric argument '" << asymmetric << "'.";
+            return false;
+          }
         }
       }
     }
@@ -305,6 +355,13 @@ bool KeyczarTool::CmdAddKey(const std::string& location,
   if (keyset.get() == NULL)
     return false;
 
+  if (!crypter_location.empty() && !keyset->Empty() && keyset->metadata() &&
+      !keyset->metadata()->encrypted()) {
+    LOG(ERROR) << "This is a non encrypted key set which already contains "
+               << "non encrypted keys.";
+    return false;
+  }
+
   scoped_ptr<KeysetWriter> writer(GetWriter(location, crypter_location));
   if (writer.get() == NULL)
     return false;
@@ -318,6 +375,40 @@ bool KeyczarTool::CmdAddKey(const std::string& location,
     if (keyset->GenerateKey(key_status.type(), size) == 0)
       return false;
   }
+
+  if (!crypter_location.empty())
+    keyset->set_encrypted(true);
+  return true;
+}
+
+bool KeyczarTool::CmdImportKey(const std::string& location,
+                               const KeyStatus& key_status,
+                               const std::string& filename,
+                               const std::string* passphrase,
+                               const std::string& crypter_location) const {
+  scoped_ptr<KeysetReader> reader(GetReader(location, crypter_location));
+  if (reader.get() == NULL)
+    return false;
+
+  scoped_ptr<Keyset> keyset(Keyset::Read(*reader, true));
+  if (keyset.get() == NULL)
+    return false;
+
+  if (!crypter_location.empty() && !keyset->Empty() && keyset->metadata() &&
+      !keyset->metadata()->encrypted()) {
+    LOG(ERROR) << "This is a non encrypted key set which already contains "
+               << "non encrypted keys.";
+    return false;
+  }
+
+  scoped_ptr<KeysetWriter> writer(GetWriter(location, crypter_location));
+  if (writer.get() == NULL)
+    return false;
+
+  keyset->AddObserver(writer.get());
+
+  if (keyset->ImportPEMKey(key_status.type(), filename, passphrase) == 0)
+    return false;
 
   if (!crypter_location.empty())
     keyset->set_encrypted(true);

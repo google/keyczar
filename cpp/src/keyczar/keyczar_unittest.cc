@@ -20,35 +20,12 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "keyczar/keyczar.h"
+#include "keyczar/keyczar_test.h"
 #include "keyczar/keyset_encrypted_file_reader.h"
 #include "keyczar/keyset_file_reader.h"
 #include "keyczar/keyset_file_writer.h"
 
 namespace keyczar {
-
-class KeyczarTest : public testing::Test {
- protected:
-  virtual void SetUp() {
-    PathService::Get(base::DIR_TEMP, &temp_path_);
-    temp_path_ = temp_path_.Append("keyczar");
-    file_util::CreateDirectory(temp_path_);
-
-    PathService::Get(base::DIR_SOURCE_ROOT, &data_path_);
-    data_path_ = data_path_.Append("keyczar");
-    data_path_ = data_path_.Append("data");
-
-    input_data_ = "This is some test data";
-  }
-
-  virtual void TearDown() {
-    file_util::Delete(temp_path_, true);
-  }
-
-  // Paths used in testing.
-  FilePath temp_path_;
-  FilePath data_path_;
-  std::string input_data_;
-};
 
 TEST_F(KeyczarTest, AcceptablePurpose) {
   scoped_ptr<Signer> signer;
@@ -256,6 +233,30 @@ TEST_F(KeyczarTest, AESEncryptAndDecrypt) {
   EXPECT_EQ(input_data_, decrypted);
 }
 
+TEST_F(KeyczarTest, AESEncryptAndDecryptNoEncoding) {
+  std::string encrypted, decrypted;
+
+  const FilePath aes_path = data_path_.Append("aes");
+  scoped_ptr<Encrypter> encrypter(Encrypter::Read(aes_path.value()));
+  ASSERT_TRUE(encrypter.get());
+
+  EXPECT_EQ(encrypter->encoding(), Keyczar::BASE64W);
+  encrypter->set_encoding(Keyczar::NO_ENCODING);
+  EXPECT_EQ(encrypter->encoding(), Keyczar::NO_ENCODING);
+
+  EXPECT_TRUE(encrypter->Encrypt(input_data_, &encrypted));
+
+  scoped_ptr<Crypter> crypter(Crypter::Read(aes_path.value()));
+  ASSERT_TRUE(crypter.get());
+
+  EXPECT_EQ(crypter->encoding(), Keyczar::BASE64W);
+  crypter->set_encoding(Keyczar::NO_ENCODING);
+  EXPECT_EQ(crypter->encoding(), Keyczar::NO_ENCODING);
+
+  EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
+  EXPECT_EQ(input_data_, decrypted);
+}
+
 TEST_F(KeyczarTest, AESDecrypt1) {
   std::string encrypted, decrypted;
 
@@ -375,6 +376,49 @@ TEST_F(KeyczarTest, DSAVerify) {
                   private_path.Append("1.out"), &signature));
 
   const FilePath public_path = data_path_.Append("dsa.public");
+  scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
+  ASSERT_TRUE(verifier.get());
+  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+}
+
+TEST_F(KeyczarTest, ECDSASignAnVerify) {
+  std::string signature;
+
+  const FilePath private_path = data_path_.Append("ecdsa");
+  scoped_ptr<Signer> signer(Signer::Read(private_path.value()));
+  ASSERT_TRUE(signer.get());
+  EXPECT_TRUE(signer->Sign(input_data_, &signature));
+
+  const FilePath public_path = data_path_.Append("ecdsa.public");
+  scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
+  ASSERT_TRUE(verifier.get());
+  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+}
+
+TEST_F(KeyczarTest, ECDSASignAnVerifyUnversioned) {
+  std::string signature;
+
+  const FilePath private_path = data_path_.Append("ecdsa");
+  scoped_ptr<UnversionedSigner> signer(
+      UnversionedSigner::Read(private_path.value()));
+  ASSERT_TRUE(signer.get());
+  EXPECT_TRUE(signer->Sign(input_data_, &signature));
+
+  const FilePath public_path = data_path_.Append("ecdsa.public");
+  scoped_ptr<UnversionedVerifier> verifier(
+      UnversionedVerifier::Read(public_path.value()));
+  ASSERT_TRUE(verifier.get());
+  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+}
+
+TEST_F(KeyczarTest, ECDSAVerify) {
+  std::string signature;
+
+  const FilePath private_path = data_path_.Append("ecdsa");
+  EXPECT_TRUE(file_util::ReadFileToString(
+                  private_path.Append("1.out"), &signature));
+
+  const FilePath public_path = data_path_.Append("ecdsa.public");
   scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));

@@ -16,17 +16,9 @@
 #include <openssl/bn.h>
 #include <openssl/objects.h>
 #include <openssl/pem.h>
-#include <stdio.h>
 
 #include "base/file_util.h"
 #include "base/logging.h"
-
-namespace {
-
-typedef scoped_ptr_malloc<
-    BIGNUM, keyczar::openssl::OSSLDestroyer<BIGNUM, BN_free> > ScopedBIGNUM;
-
-}  // namespace
 
 namespace keyczar {
 
@@ -105,6 +97,52 @@ DSAOpenSSL* DSAOpenSSL::GenerateKey(int size) {
                         true /* private_key */);
 }
 
+// static
+DSAOpenSSL* DSAOpenSSL::CreateFromPEMKey(const std::string& filename,
+                                         const std::string* passphrase) {
+  // Load the disk based private key.
+  ScopedEVPPKey evp_pkey(ReadPEMKeyFromFile(filename, passphrase));
+  if (evp_pkey.get() == NULL) {
+    PrintOSSLErrors();
+    return NULL;
+  }
+
+  if (evp_pkey->pkey.dsa == NULL) {
+    LOG(ERROR) << "Invalid DSA private key";
+    return NULL;
+  }
+
+  // Duplicate the DSA key component.
+  ScopedDSAKey dsa_key(EVP_PKEY_get1_DSA(evp_pkey.get()));
+  if (dsa_key.get() == NULL) {
+    PrintOSSLErrors();
+    return NULL;
+  }
+
+  return new DSAOpenSSL(dsa_key.release(),
+                        true /* private_key */);
+}
+
+bool DSAOpenSSL::WriteKeyToPEMFile(const std::string& filename) {
+  if (key_.get() == NULL)
+    return false;
+
+  FILE* dest_file = file_util::OpenFile(filename, "w+");
+  if (dest_file == NULL)
+    return false;
+
+  int return_value = 0;
+  if (private_key_)
+    return_value = PEM_write_DSAPrivateKey(dest_file, key_.get(), NULL,
+                                           NULL, 0, NULL, NULL);
+  else
+    return_value = PEM_write_DSA_PUBKEY(dest_file, key_.get());
+
+  if (!return_value)
+    return false;
+  return true;
+}
+
 bool DSAOpenSSL::GetAttributes(DSAIntermediateKey* key) {
   if (key == NULL || key_.get() == NULL)
     return false;
@@ -173,26 +211,6 @@ bool DSAOpenSSL::GetPublicAttributes(DSAIntermediateKey* key) {
   return true;
 }
 
-bool DSAOpenSSL::WriteKeyToPEMFile(const std::string& path) {
-  if (key_.get() == NULL)
-    return false;
-
-  FILE* dest_file = file_util::OpenFile(path, "w+");
-  if (dest_file == NULL)
-    return false;
-
-  int return_value = 0;
-  if (private_key_)
-    return_value = PEM_write_DSAPrivateKey(dest_file, key_.get(), NULL,
-                                           NULL, 0, 0, NULL);
-  else
-    return_value = PEM_write_DSA_PUBKEY(dest_file, key_.get());
-
-  if (!return_value)
-    return false;
-  return true;
-}
-
 bool DSAOpenSSL::Sign(const std::string& message_digest,
                       std::string* signature) const {
   if (key_.get() == NULL || signature == NULL || !private_key_)
@@ -239,8 +257,18 @@ bool DSAOpenSSL::Verify(const std::string& message_digest,
   return false;
 }
 
+int DSAOpenSSL::Size() const {
+  if (key_.get() == NULL)
+    return 0;
+
+  // TODO(seb): This method is not bullet proof see man BN_num_bits, but
+  // currently there is no such method in openssl, DSA_size() returns
+  // the signature size not the key size.
+  return BN_num_bytes(key_->p) * 8;
+}
+
 bool DSAOpenSSL::Equals(const DSAOpenSSL& rhs) const {
-  if (private_key() != rhs.private_key())
+  if (key_.get() == NULL || private_key() != rhs.private_key())
     return false;
 
   const DSA* key_rhs = rhs.key();

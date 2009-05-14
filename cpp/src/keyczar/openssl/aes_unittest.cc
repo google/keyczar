@@ -16,39 +16,18 @@
 
 #include "base/file_path.h"
 #include "base/file_util.h"
-#include "base/path_service.h"
 #include "base/scoped_ptr.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "keyczar/cipher_mode.h"
+#include "keyczar/keyczar_test.h"
 #include "keyczar/openssl/aes.h"
 
 namespace keyczar {
 
 namespace openssl {
 
-class AESOpenSSLTest : public testing::Test {
- protected:
-  virtual void SetUp() {
-    PathService::Get(base::DIR_TEMP, &temp_path_);
-    temp_path_ = temp_path_.AppendASCII("keyczar");
-    file_util::CreateDirectory(temp_path_);
-
-    PathService::Get(base::DIR_SOURCE_ROOT, &data_path_);
-    data_path_ = data_path_.AppendASCII("keyczar");
-    data_path_ = data_path_.AppendASCII("data");
-
-    input_data_ = "This is some test data";
-  }
-
-  virtual void TearDown() {
-    file_util::Delete(temp_path_, true);
-  }
-
-  // Paths used in testing.
-  FilePath temp_path_;
-  FilePath data_path_;
-  std::string input_data_;
+class AESOpenSSLTest : public KeyczarTest {
 };
 
 TEST_F(AESOpenSSLTest, EncryptAndDecrypt128) {

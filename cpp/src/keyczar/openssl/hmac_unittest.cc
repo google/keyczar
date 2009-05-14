@@ -27,15 +27,20 @@ TEST(HMACOpenSSL, SHA1) {
   // >>> import hmac
   // >>> import hashlib
   // >>> import base64
-  // >>> a = hmac.new("my secret key", "hello world!", hashlib.sha1)
+  // >>> a = hmac.new("my secret key my secret key","hello world!",hashlib.sha1)
   // >>> base64.urlsafe_b64encode(a.digest())
-  // 'XaCMGJxdsDPlj_7lBs2yruDX-H0='
+  // 'gdRgzs51Fb4yfmUM4J50aNNkLMI='
 
   const std::string message("hello world!");
-  const std::string key("my secret key");
-  const std::string digest("XaCMGJxdsDPlj_7lBs2yruDX-H0");
+  const std::string key("my secret key my secret key");
+  const std::string digest("gdRgzs51Fb4yfmUM4J50aNNkLMI");
 
-  scoped_ptr<HMACOpenSSL> hmac(HMACOpenSSL::Create(HMACImpl::SHA1, key));
+  scoped_ptr<HMACOpenSSL> hmac;
+
+  hmac.reset(HMACOpenSSL::Create(HMACImpl::SHA1, key.substr(0, 19)));
+  ASSERT_FALSE(hmac.get());
+
+  hmac.reset(HMACOpenSSL::Create(HMACImpl::SHA1, key));
   ASSERT_TRUE(hmac.get());
 
   // Method 1

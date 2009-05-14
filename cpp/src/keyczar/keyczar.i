@@ -29,6 +29,11 @@ class KeysetEncryptedFileReader : public KeysetFileReader {
 
 class Keyczar {
  public:
+  enum Encoding {
+    NO_ENCODING,
+    BASE64W
+  };
+
   virtual ~Keyczar() = 0;
 
   virtual std::string Sign(const std::string& data) const;
@@ -36,6 +41,9 @@ class Keyczar {
                       const std::string& signature) const;
   virtual std::string Encrypt(const std::string& data) const;
   virtual std::string Decrypt(const std::string& ciphertext) const;
+
+  Encoding encoding() const;
+  void set_encoding(Encoding encoding);
 };
 
 %nodefaultctor Encrypter;

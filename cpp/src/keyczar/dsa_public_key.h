@@ -32,15 +32,14 @@ class DSAPublicKey : public PublicKey {
   DSAPublicKey(DSAImpl* dsa_impl, int size)
       : PublicKey(size), dsa_impl_(dsa_impl) {}
 
-  // The caller takes ownership of the returned Key.
+  // Creates a key from |root_key|. The caller takes ownership of the returned
+  // Key.
   static DSAPublicKey* CreateFromValue(const Value& root_key);
 
   // The caller takes ownership of the returned Value.
   virtual Value* GetValue() const;
 
   virtual bool Hash(std::string* hash) const;
-
-  virtual const KeyType* GetType() const;
 
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;

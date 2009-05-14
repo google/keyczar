@@ -31,7 +31,8 @@ class KeysetReader;
 // decrypting and signing / verifying data depending on the type and on the
 // purpose of the loaded key set. Keys are automatically selected for each
 // operations. Clients should access cryptographic operations through this
-// interface.
+// interface. By default, all cryptographic operations returns web-safe base64
+// encoded strings.
 //
 // Inheritance tree:
 //
@@ -69,8 +70,15 @@ class KeysetReader;
 //
 class Keyczar {
  public:
+  // Update the corresponding enum structure inside keyczar.i if this one
+  // is modified.
+  enum Encoding {
+    NO_ENCODING,  // No encoding
+    BASE64W       // Web-safe base64 encoding (used by default)
+  };
+
   // This constructor takes ownership of the provided Keyset object |keyset|.
-  explicit Keyczar(Keyset* keyset) : keyset_(keyset) {}
+  explicit Keyczar(Keyset* keyset) : keyset_(keyset), encoding_(BASE64W) {}
 
   virtual ~Keyczar() {}
 
@@ -107,6 +115,10 @@ class Keyczar {
   // the current keyset.
   virtual bool IsAcceptablePurpose() const = 0;
 
+  Encoding encoding() const { return encoding_; }
+
+  void set_encoding(Encoding encoding) { encoding_ = encoding; }
+
   // Returns the Keyset instance.
   const Keyset* keyset() const { return keyset_.get(); }
 
@@ -115,8 +127,21 @@ class Keyczar {
 
   bool GetHash(const std::string& bytes, std::string* hash) const;
 
+  // Retrieves the current encoding format, encodes |input_value| and assigns
+  // the result to |encoded_value|. Returns false if it fails.
+  bool Encode(const std::string& input_value, std::string* encoded_value) const;
+
+  // Retrieves the current encoding format, decodes |encoded_value| and assigns
+  // the result to |decoded_value|. Returns false if it fails.
+  bool Decode(const std::string& encoded_value,
+              std::string* decoded_value) const;
+
  private:
   const scoped_ptr<Keyset> keyset_;
+
+  // Encoding format used for cryptographic operations. The default encoding
+  // format used is BASE64W.
+  Encoding encoding_;
 
   DISALLOW_COPY_AND_ASSIGN(Keyczar);
 };

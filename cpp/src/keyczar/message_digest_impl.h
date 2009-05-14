@@ -26,7 +26,11 @@ class MessageDigestImpl {
   // List of supported digest algorithms. This type is used for
   // communicating the algorithm to use to the concrete implementations.
   enum DigestAlgorithm {
-    SHA1
+    SHA1,
+    SHA224,
+    SHA256,
+    SHA384,
+    SHA512,
   };
 
   MessageDigestImpl() {}

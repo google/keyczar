@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Program used for generating src/keyczar/data/ directory.
+// Program used to generate src/keyczar/data/ directory.
 #include <string>
 
 #include "base/file_util.h"
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
   }
 
   {
-    // HMAC_SHA1
+    // HMAC
     const FilePath cur_location = location.Append("hmac");
     file_util::CreateDirectory(cur_location);
     tool.CmdCreate(cur_location.value(), *sign_purpose, "Test", "");
@@ -113,6 +113,25 @@ int main(int argc, char** argv) {
 
     // DSA_PUB
     const FilePath destination = location.Append("dsa.public");
+    file_util::CreateDirectory(destination);
+    tool.CmdPubKey(cur_location.value(), destination.value(), empty_path);
+  }
+
+  {
+    // ECDSA_PRIV
+    const FilePath cur_location = location.Append("ecdsa");
+    file_util::CreateDirectory(cur_location);
+    tool.CmdCreate(cur_location.value(), *sign_purpose, "Test", "ecdsa");
+    scoped_ptr<keyczar::Signer> signer;
+    for (int i = 1; i < 3; ++i) {
+      tool.CmdAddKey(cur_location.value(), *primary_status, 0, empty_path);
+      signer.reset(keyczar::Signer::Read(cur_location.value()));
+      signer->Sign(input, &signature);
+      WriteToFile(signature, cur_location, i);
+    }
+
+    // ECDSA_PUB
+    const FilePath destination = location.Append("ecdsa.public");
     file_util::CreateDirectory(destination);
     tool.CmdPubKey(cur_location.value(), destination.value(), empty_path);
   }

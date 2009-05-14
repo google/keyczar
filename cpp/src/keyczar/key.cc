@@ -19,6 +19,8 @@
 #include "keyczar/aes_key.h"
 #include "keyczar/dsa_private_key.h"
 #include "keyczar/dsa_public_key.h"
+#include "keyczar/ecdsa_private_key.h"
+#include "keyczar/ecdsa_public_key.h"
 #include "keyczar/hmac_key.h"
 #include "keyczar/message_digest_impl.h"
 #include "keyczar/rsa_private_key.h"
@@ -50,12 +52,20 @@ Key* Key::CreateFromValue(const KeyType& key_type, const Value& root) {
   switch (key_type.type()) {
     case KeyType::AES:
       return AESKey::CreateFromValue(root);
+#ifdef COMPAT_KEYCZAR_05B
     case KeyType::HMAC_SHA1:
+#else
+    case KeyType::HMAC:
+#endif
       return HMACKey::CreateFromValue(root);
     case KeyType::DSA_PRIV:
       return DSAPrivateKey::CreateFromValue(root);
     case KeyType::DSA_PUB:
       return DSAPublicKey::CreateFromValue(root);
+    case KeyType::ECDSA_PRIV:
+      return ECDSAPrivateKey::CreateFromValue(root);
+    case KeyType::ECDSA_PUB:
+      return ECDSAPublicKey::CreateFromValue(root);
     case KeyType::RSA_PRIV:
       return RSAPrivateKey::CreateFromValue(root);
     case KeyType::RSA_PUB:
@@ -71,15 +81,50 @@ Key* Key::GenerateKey(const KeyType& key_type, int size) {
   switch (key_type.type()) {
     case KeyType::AES:
       return AESKey::GenerateKey(size);
+#ifdef COMPAT_KEYCZAR_05B
     case KeyType::HMAC_SHA1:
+#else
+    case KeyType::HMAC:
+#endif
       return HMACKey::GenerateKey(size);
     case KeyType::DSA_PRIV:
       return DSAPrivateKey::GenerateKey(size);
+    case KeyType::ECDSA_PRIV:
+      return ECDSAPrivateKey::GenerateKey(size);
     case KeyType::RSA_PRIV:
       return RSAPrivateKey::GenerateKey(size);
     case KeyType::DSA_PUB:
+    case KeyType::ECDSA_PUB:
     case KeyType::RSA_PUB:
       LOG(ERROR) << "Public keys must be exported from private keys";
+      return NULL;
+    default:
+      NOTREACHED();
+  }
+  return NULL;
+}
+
+// static
+Key* Key::CreateFromPEMKey(const KeyType& key_type,
+                           const std::string& filename,
+                           const std::string* passphrase) {
+  switch (key_type.type()) {
+    case KeyType::DSA_PRIV:
+      return DSAPrivateKey::CreateFromPEMKey(filename, passphrase);
+    case KeyType::ECDSA_PRIV:
+      return ECDSAPrivateKey::CreateFromPEMKey(filename, passphrase);
+    case KeyType::RSA_PRIV:
+      return RSAPrivateKey::CreateFromPEMKey(filename, passphrase);
+#ifdef COMPAT_KEYCZAR_05B
+    case KeyType::HMAC_SHA1:
+#else
+    case KeyType::HMAC:
+#endif
+    case KeyType::AES:
+    case KeyType::DSA_PUB:
+    case KeyType::ECDSA_PUB:
+    case KeyType::RSA_PUB:
+      LOG(ERROR) << "Only private keys are imported from PEM keys";
       return NULL;
     default:
       NOTREACHED();

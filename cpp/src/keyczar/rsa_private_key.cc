@@ -70,11 +70,14 @@ RSAPrivateKey* RSAPrivateKey::CreateFromValue(const Value& root_key) {
   if (!public_key->GetInteger(L"size", &size_public))
     return NULL;
 
-  DCHECK(size == size_public);
-
   scoped_ptr<RSAImpl> rsa_private_key_impl(
       CryptoFactory::CreatePrivateRSA(intermediate_key));
   if (rsa_private_key_impl.get() == NULL)
+    return NULL;
+
+  // Check the provided size is valid.
+  if (size != size_public || size != rsa_private_key_impl->Size() ||
+      !IsValidSize("RSA_PRIV", size))
     return NULL;
 
   scoped_ptr<RSAImpl> rsa_public_key_impl(
@@ -94,25 +97,42 @@ RSAPrivateKey* RSAPrivateKey::CreateFromValue(const Value& root_key) {
 
 // static
 RSAPrivateKey* RSAPrivateKey::GenerateKey(int size) {
-  scoped_ptr<KeyType> key_type(KeyType::Create("RSA_PRIV"));
-  if (key_type.get() == NULL)
+  if (!IsValidSize("RSA_PRIV", size))
     return NULL;
-
-  if (!key_type->IsValidSize(size)) {
-    LOG(ERROR) << "Invalid key size: " << size;
-    return NULL;
-  }
-
-  if (size < key_type->default_size())
-    LOG(WARNING) << "Key size ("
-                 << size
-                 << ") shorter than recommanded ("
-                 << key_type->default_size()
-                 << "), might be unsecure";
 
   scoped_ptr<RSAImpl> rsa_private_key_impl(
       CryptoFactory::GeneratePrivateRSA(size));
   if (rsa_private_key_impl.get() == NULL)
+    return NULL;
+
+  RSAImpl::RSAIntermediateKey intermediate_public_key;
+  rsa_private_key_impl->GetPublicAttributes(&intermediate_public_key);
+
+  scoped_ptr<RSAImpl> rsa_public_key_impl(
+      CryptoFactory::CreatePublicRSA(intermediate_public_key));
+  if (rsa_public_key_impl.get() == NULL)
+    return NULL;
+
+  RSAPublicKey* rsa_public_key = new RSAPublicKey(rsa_public_key_impl.release(),
+                                                  size);
+  if (rsa_public_key == NULL)
+    return NULL;
+
+  return new RSAPrivateKey(rsa_private_key_impl.release(),
+                           rsa_public_key,
+                           size);
+}
+
+// static
+RSAPrivateKey* RSAPrivateKey::CreateFromPEMKey(const std::string& filename,
+                                               const std::string* passphrase) {
+  scoped_ptr<RSAImpl> rsa_private_key_impl(
+      CryptoFactory::CreatePrivateRSAFromPEMKey(filename, passphrase));
+  if (rsa_private_key_impl.get() == NULL)
+    return NULL;
+
+  const int size = rsa_private_key_impl->Size();
+  if (!IsValidSize("RSA_PRIV", size))
     return NULL;
 
   RSAImpl::RSAIntermediateKey intermediate_public_key;
@@ -172,17 +192,12 @@ Value* RSAPrivateKey::GetValue() const {
   return private_key.release();
 }
 
-const KeyType* RSAPrivateKey::GetType() const {
-  static const KeyType* key_type = KeyType::Create("RSA_PRIV");
-  return key_type;
-}
-
 bool RSAPrivateKey::Sign(const std::string& data,
                          std::string* signature) const {
   if (rsa_impl() == NULL || signature == NULL)
     return false;
 
-  MessageDigestImpl* digest_impl = CryptoFactory::SHA1();
+  MessageDigestImpl* digest_impl = CryptoFactory::SHAFromFFCIFCSize(size());
   if (digest_impl == NULL)
     return false;
 

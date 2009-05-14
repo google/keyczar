@@ -16,11 +16,11 @@
 #include "base/base64w.h"
 #include "base/file_path.h"
 #include "base/file_util.h"
-#include "base/path_service.h"
 #include "base/scoped_ptr.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "keyczar/key.h"
+#include "keyczar/keyczar_test.h"
 #include "keyczar/keyset.h"
 #include "keyczar/keyset_file_reader.h"
 #include "keyczar/keyset_file_writer.h"
@@ -28,25 +28,7 @@
 
 namespace keyczar {
 
-class KeysetTest : public testing::Test {
- protected:
-  virtual void SetUp() {
-    PathService::Get(base::DIR_TEMP, &temp_path_);
-    temp_path_ = temp_path_.AppendASCII("keyczar");
-    file_util::CreateDirectory(temp_path_);
-
-    PathService::Get(base::DIR_SOURCE_ROOT, &data_path_);
-    data_path_ = data_path_.AppendASCII("keyczar");
-    data_path_ = data_path_.AppendASCII("data");
-  }
-
-  virtual void TearDown() {
-    file_util::Delete(temp_path_, true);
-  }
-
-  // Paths used in testing.
-  FilePath temp_path_;
-  FilePath data_path_;
+class KeysetTest : public KeyczarTest {
 };
 
 TEST_F(KeysetTest, KeyOperations) {

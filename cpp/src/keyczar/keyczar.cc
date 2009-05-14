@@ -76,6 +76,42 @@ bool Keyczar::GetHash(const std::string& bytes, std::string* hash) const {
   return true;
 }
 
+bool Keyczar::Encode(const std::string& input_value,
+                     std::string* encoded_value) const {
+  if (encoded_value == NULL)
+    return false;
+
+  const Encoding enc = encoding();
+  switch (enc) {
+    case NO_ENCODING:
+      encoded_value->assign(input_value);
+      return true;
+    case BASE64W:
+      return Base64WEncode(input_value, encoded_value);
+    default:
+      NOTREACHED();
+  }
+  return false;
+}
+
+bool Keyczar::Decode(const std::string& encoded_value,
+                     std::string* decoded_value) const {
+  if (decoded_value == NULL)
+    return false;
+
+  const Encoding enc = encoding();
+  switch (enc) {
+    case NO_ENCODING:
+      decoded_value->assign(encoded_value);
+      return true;
+    case BASE64W:
+      return Base64WDecode(encoded_value, decoded_value);
+    default:
+      NOTREACHED();
+  }
+  return false;
+}
+
 // static
 Encrypter* Encrypter::Read(const std::string& location) {
   const KeysetFileReader reader(location);
@@ -104,7 +140,8 @@ Encrypter* Encrypter::Read(const KeysetReader& reader) {
   return encrypter.release();
 }
 
-bool Encrypter::Encrypt(const std::string& data, std::string* ciphertext) const {
+bool Encrypter::Encrypt(const std::string& data,
+                        std::string* ciphertext) const {
   if (keyset() == NULL)
     return false;
 
@@ -116,7 +153,7 @@ bool Encrypter::Encrypt(const std::string& data, std::string* ciphertext) const 
   if (!key->Encrypt(data, &ciphertext_bytes))
     return false;
 
-  if (!Base64WEncode(ciphertext_bytes, ciphertext))
+  if (!Encode(ciphertext_bytes, ciphertext))
     return false;
 
   return true;
@@ -172,7 +209,7 @@ bool Crypter::Decrypt(const std::string& ciphertext, std::string* data) const {
     return false;
 
   std::string ciphertext_bytes;
-  if (!Base64WDecode(ciphertext, &ciphertext_bytes))
+  if (!Decode(ciphertext, &ciphertext_bytes))
     return false;
 
   std::string hash;
@@ -239,7 +276,7 @@ bool Verifier::Verify(const std::string& data,
     return false;
 
   std::string signature_bytes;
-  if (!Base64WDecode(signature, &signature_bytes))
+  if (!Decode(signature, &signature_bytes))
     return false;
 
   std::string hash;
@@ -302,7 +339,7 @@ bool UnversionedVerifier::Verify(const std::string& data,
     return false;
 
   std::string signature_bytes;
-  if (!Base64WDecode(signature, &signature_bytes))
+  if (!Decode(signature, &signature_bytes))
     return false;
 
   std::string hash;
@@ -381,7 +418,7 @@ bool Signer::Sign(const std::string& data, std::string* signature) const {
   std::string message(header);
   message.append(signed_bytes);
 
-  if (!Base64WEncode(message, signature))
+  if (!Encode(message, signature))
     return false;
 
   return true;
@@ -444,7 +481,7 @@ bool UnversionedSigner::Sign(const std::string& data,
   if (!key->Sign(data, &signed_bytes))
     return false;
 
-  if (!Base64WEncode(signed_bytes, signature))
+  if (!Encode(signed_bytes, signature))
     return false;
 
   return true;

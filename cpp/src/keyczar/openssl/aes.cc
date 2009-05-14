@@ -120,8 +120,7 @@ bool AESOpenSSL::EVPCipher(const std::string* iv, const std::string& in_data,
 
   scoped_ptr_malloc<unsigned char> out_buffer;
   out_buffer.reset(reinterpret_cast<unsigned char*>(
-                       malloc((in_data.length() + evp_cipher_()->block_size) *
-                              sizeof(unsigned char))));
+                       malloc(in_data.length() + evp_cipher_()->block_size)));
   if (out_buffer.get() == NULL)
     return false;
 
