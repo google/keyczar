@@ -10,7 +10,7 @@ AddOption('--swig',
 AddOption('--compat',
           dest='compat_option',
           action="store_true",
-          help='Maintains compatibility with Keyczar 0.5b.')
+          help='Maintains compatibility with Keyczar 0.6b')
 
 # Creates a base environment to describe what is common between platforms.
 base_env = Environment()
@@ -37,7 +37,7 @@ linux_env.Append(
 )
 if GetOption('compat_option'):
     linux_env.Append(
-        CPPDEFINES = ['COMPAT_KEYCZAR_05B']
+        CPPDEFINES = ['COMPAT_KEYCZAR_06B']
     )
 linux_env.Alias('install', '/usr')
 

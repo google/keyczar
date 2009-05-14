@@ -33,8 +33,8 @@ class KeyczarTest : public testing::Test {
     data_path_ = data_path_.Append("keyczar");
     data_path_ = data_path_.Append("data");
 
-#ifdef COMPAT_KEYCZAR_05B
-    data_path_ = data_path_.Append("05b");
+#ifdef COMPAT_KEYCZAR_06B
+    data_path_ = data_path_.Append("06b");
 #endif
 
     input_data_ = "This is some test data";

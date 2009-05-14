@@ -84,7 +84,7 @@ MessageDigestImpl* CryptoFactory::SHA(int size) {
 
 // static
 MessageDigestImpl* CryptoFactory::SHAFromFFCIFCSize(int size) {
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
   return CryptoFactory::SHA1();
 #else
   // These choices follow the recommendations made by NIST in document
@@ -135,7 +135,7 @@ AESImpl* CryptoFactory::CreateAES(const CipherMode& cipher_mode,
 
 // static
 HMACImpl* CryptoFactory::GenerateHMAC(int size) {
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
   switch (size) {
     case 160:
       return openssl::HMACOpenSSL::GenerateKey(HMACImpl::SHA1, 256);
@@ -176,7 +176,7 @@ HMACImpl* CryptoFactory::GenerateHMAC(int size) {
 
 // static
 HMACImpl* CryptoFactory::CreateHMAC(const std::string& key) {
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
   return openssl::HMACOpenSSL::Create(HMACImpl::SHA1, key);
 #else
   int size = key.length() * 8;

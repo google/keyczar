@@ -35,7 +35,7 @@ KeyType* KeyType::Create(const std::string& name) {
                        sizes,
                        128);  /* default_size */
   }
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
   if (name.compare("HMAC_SHA1") == 0) {
     sizes.push_back(160);
     return new KeyType(HMAC_SHA1, sizes, 160);
@@ -76,7 +76,7 @@ KeyType* KeyType::Create(const std::string& name) {
     return new KeyType(ECDSA_PUB, sizes, 224);
   }
   if (name.compare("RSA_PRIV") == 0) {
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
     sizes.push_back(512);
     sizes.push_back(768);
 #endif
@@ -86,7 +86,7 @@ KeyType* KeyType::Create(const std::string& name) {
     return new KeyType(RSA_PRIV, sizes, 2048);
   }
   if (name.compare("RSA_PUB") == 0) {
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
     sizes.push_back(512);
     sizes.push_back(768);
 #endif
@@ -107,7 +107,7 @@ bool KeyType::GetName(std::string* name) const {
     case AES:
       name->assign("AES");
       return true;
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
     case HMAC_SHA1:
       name->assign("HMAC_SHA1");
 #else

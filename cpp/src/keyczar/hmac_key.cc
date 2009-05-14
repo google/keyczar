@@ -67,7 +67,7 @@ HMACKey* HMACKey::CreateFromValue(const Value& root_key) {
   if (!hmac_key->GetInteger(L"size", &size))
     return NULL;
 
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
   CHECK(size == 256);
   size = 160;
 
@@ -102,7 +102,7 @@ HMACKey* HMACKey::CreateFromValue(const Value& root_key) {
 
 // static
 HMACKey* HMACKey::GenerateKey(int size) {
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
   CHECK(size == 160);
   if (!IsValidSize("HMAC_SHA1", size))
 #else
@@ -129,7 +129,7 @@ Value* HMACKey::GetValue() const {
                              hmac_key.get()))
     return NULL;
 
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
   CHECK(size() == 160);
   if (!hmac_key->SetInteger(L"size", 256))
 #else

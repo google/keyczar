@@ -291,7 +291,7 @@ bool KeyczarTool::CmdCreate(const std::string& location,
   scoped_ptr<KeyType> key_type;
   if (key_purpose.type() == KeyPurpose::SIGN_AND_VERIFY) {
     if (asymmetric.empty()) {
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
       key_type.reset(KeyType::Create("HMAC_SHA1"));
 #else
       key_type.reset(KeyType::Create("HMAC"));

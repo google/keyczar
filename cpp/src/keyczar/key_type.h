@@ -25,7 +25,7 @@ class KeyType {
  public:
   enum Type {
     AES = 0,
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
     HMAC_SHA1,
 #else
     HMAC,

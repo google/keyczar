@@ -25,7 +25,7 @@ namespace {
 
 // This function returns 0 if it fails.
 static int GetHMACSizeFromAESSize(int size) {
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
   return 160;
 #else
   // These choices follow the NIST recommendations, see SP800-57 part1

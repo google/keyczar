@@ -200,7 +200,7 @@ Value* KeysetMetadata::GetValue(bool public_export) const {
   if (!metadata->SetBoolean(L"encrypted", encrypted()))
     return NULL;
 
-#ifndef COMPAT_KEYCZAR_05B
+#ifndef COMPAT_KEYCZAR_06B
   if (!public_export)
     if (!metadata->SetInteger(L"nextKeyVersionNumber",
                               next_key_version_number()))

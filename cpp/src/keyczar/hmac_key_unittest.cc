@@ -46,7 +46,7 @@ class HMACTest : public KeyczarTest {
 };
 
 TEST_F(HMACTest, GenerateKeyAndSign) {
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
   scoped_ptr<KeyType> key_type(KeyType::Create("HMAC_SHA1"));
 #else
   scoped_ptr<KeyType> key_type(KeyType::Create("HMAC"));

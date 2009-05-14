@@ -52,7 +52,7 @@ Key* Key::CreateFromValue(const KeyType& key_type, const Value& root) {
   switch (key_type.type()) {
     case KeyType::AES:
       return AESKey::CreateFromValue(root);
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
     case KeyType::HMAC_SHA1:
 #else
     case KeyType::HMAC:
@@ -81,7 +81,7 @@ Key* Key::GenerateKey(const KeyType& key_type, int size) {
   switch (key_type.type()) {
     case KeyType::AES:
       return AESKey::GenerateKey(size);
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
     case KeyType::HMAC_SHA1:
 #else
     case KeyType::HMAC:
@@ -115,7 +115,7 @@ Key* Key::CreateFromPEMKey(const KeyType& key_type,
       return ECDSAPrivateKey::CreateFromPEMKey(filename, passphrase);
     case KeyType::RSA_PRIV:
       return RSAPrivateKey::CreateFromPEMKey(filename, passphrase);
-#ifdef COMPAT_KEYCZAR_05B
+#ifdef COMPAT_KEYCZAR_06B
     case KeyType::HMAC_SHA1:
 #else
     case KeyType::HMAC:

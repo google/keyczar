@@ -51,7 +51,7 @@ TEST_F(KeysetMetadataTest, CreateFromValue) {
   KeysetFileReader reader_copy(temp_path_.value());
   scoped_ptr<Value> root_metadata_copy(reader_copy.ReadMetadata());
   EXPECT_NE(static_cast<Value*>(NULL), root_metadata_copy.get());
-#ifndef COMPAT_KEYCZAR_05B
+#ifndef COMPAT_KEYCZAR_06B
   EXPECT_TRUE(root_metadata->Equals(root_metadata_copy.get()));
 #endif
 }
