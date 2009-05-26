@@ -5,9 +5,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,7 +22,11 @@ Utility functions for keyczar package.
 
 import base64
 import math
-import sha
+try:
+  # Import hashlib if Python >= 2.5
+  from hashlib import sha1
+except ImportError:
+  from sha import sha as sha1
 
 from Crypto.Util import randpool
 from pyasn1.codec.der import decoder
@@ -31,7 +35,7 @@ from pyasn1.type import univ
 
 import errors
 
-HLEN = sha.digest_size  # length of the hash output
+HLEN = sha1().digest_size  # length of the hash output
 
 #RSAPrivateKey ::= SEQUENCE {
 #  version Version,
@@ -154,8 +158,8 @@ def ExportRsaX509(params):
   return Encode(encoder.encode(seq))
 
 def ExportDsaX509(params):
-  alg_params = ASN1Sequence(univ.Integer(params['p']), 
-                            univ.Integer(params['q']), 
+  alg_params = ASN1Sequence(univ.Integer(params['p']),
+                            univ.Integer(params['q']),
                             univ.Integer(params['g']))
   oid = ASN1Sequence(DSA_OID, alg_params)
   binkey = BytesToBin(encoder.encode(univ.Integer(params['y'])))
@@ -166,15 +170,15 @@ def ExportDsaX509(params):
 def MakeDsaSig(r, s):
   """
   Given the raw parameters of a DSA signature, return a Base64 signature.
-  
+
   @param r: parameter r of DSA signature
   @type r: long int
-  
+
   @param s: parameter s of DSA signature
   @type s: long int
-  
+
   @return: raw byte string formatted as an ASN.1 sequence of r and s
-  @rtype: string   
+  @rtype: string
   """
   seq = ASN1Sequence(univ.Integer(r), univ.Integer(s))
   return encoder.encode(seq)
@@ -182,14 +186,14 @@ def MakeDsaSig(r, s):
 def ParseDsaSig(sig):
   """
   Given a raw byte string, return tuple of DSA signature parameters.
-  
+
   @param sig: byte string of ASN.1 representation
   @type sig: string
-  
+
   @return: parameters r, s as a tuple
   @rtype: tuple
-  
-  @raise KeyczarErrror: if the DSA signature format is invalid 
+
+  @raise KeyczarErrror: if the DSA signature format is invalid
   """
   seq = decoder.decode(sig)[0]
   if len(seq) != 2:
@@ -200,7 +204,7 @@ def ParseDsaSig(sig):
 
 def MakeEmsaMessage(msg, modulus_size):
   """Algorithm EMSA_PKCS1-v1_5 from PKCS 1 version 2"""
-  magic_sha1_header = [0x30, 0x21, 0x30, 0x9, 0x6, 0x5, 0x2b, 0xe, 0x3, 0x2, 
+  magic_sha1_header = [0x30, 0x21, 0x30, 0x9, 0x6, 0x5, 0x2b, 0xe, 0x3, 0x2,
                        0x1a, 0x5, 0x0, 0x4, 0x14]
   encoded = "".join([chr(c) for c in magic_sha1_header]) + Hash(msg)
   pad_string = chr(0xFF) * (modulus_size / 8 - len(encoded) - 3)
@@ -260,7 +264,7 @@ def Xor(a, b):
   y = [ord(c) for c in b]
   z = [chr(x[i] ^ y[i]) for i in range(m)]
   return "".join(z)
-  
+
 def PadBytes(bytes, n):
   """Prepend a byte string with n zero bytes."""
   return n * '\x00' + bytes
@@ -279,14 +283,14 @@ def RandBytes(n):
 
 def Hash(*inputs):
   """Return a SHA-1 hash over a variable number of inputs."""
-  md = sha.new()
+  md = sha1()
   for i in inputs:
     md.update(i)
   return md.digest()
 
 def PrefixHash(*inputs):
   """Return a SHA-1 hash over a variable number of inputs."""
-  md = sha.new()
+  md = sha1()
   for i in inputs:
     md.update(IntToBytes(len(i)))
     md.update(i)
@@ -296,33 +300,33 @@ def PrefixHash(*inputs):
 def Encode(s):
   """
   Return Base64 encoding of s. Suppress padding characters (=).
-  
+
   Uses URL-safe alphabet: - replaces +, _ replaces /. Will convert s of type
   unicode to string type first.
-  
+
   @param s: string to encode as Base64
   @type s: string
-  
+
   @return: Base64 representation of s.
   @rtype: string
   """
   return base64.urlsafe_b64encode(str(s)).replace("=", "")
-  
+
 
 def Decode(s):
   """
   Return decoded version of given Base64 string. Ignore whitespace.
-  
+
   Uses URL-safe alphabet: - replaces +, _ replaces /. Will convert s of type
   unicode to string type first.
-  
+
   @param s: Base64 string to decode
   @type s: string
-  
+
   @return: original string that was encoded as Base64
   @rtype: string
-  
-  @raise Base64DecodingError: If length of string (ignoring whitespace) is one 
+
+  @raise Base64DecodingError: If length of string (ignoring whitespace) is one
     more than a multiple of four.
   """
   s = str(s.replace(" ", ""))  # kill whitespace, make string (not unicode)
@@ -338,14 +342,14 @@ def Decode(s):
 def WriteFile(data, loc):
   """
   Writes data to file at given location.
-  
+
   @param data: contents to be written to file
   @type data: string
-   
+
   @param loc: name of file to write to
-  @type loc: string 
-  
-  @raise KeyczarError: if unable to write to file because of IOError 
+  @type loc: string
+
+  @raise KeyczarError: if unable to write to file because of IOError
   """
   try:
     f = open(loc, "w")
@@ -357,14 +361,14 @@ def WriteFile(data, loc):
 def ReadFile(loc):
   """
   Read data from file at given location.
-  
+
   @param loc: name of file to read from
   @type loc: string
-  
+
   @return: contents of the file
   @rtype: string
-  
-  @raise KeyczarError: if unable to read from file because of IOError 
+
+  @raise KeyczarError: if unable to read from file because of IOError
   """
   try:
     return open(loc).read()
@@ -374,17 +378,17 @@ def ReadFile(loc):
 def MGF(seed, mlen):
   """
   Mask Generation Function (MGF1) with SHA-1 as hash.
-  
+
   @param seed: used to generate mask, a byte string
   @type seed: string
-  
+
   @param mlen: desired length of mask
   @type mlen: integer
-  
+
   @return: mask, byte string of length mlen
   @rtype: string
-  
-  @raise KeyczarError: if mask length too long, > 2^32 * hash_length  
+
+  @raise KeyczarError: if mask length too long, > 2^32 * hash_length
   """
   if mlen > 2**32 * HLEN:
     raise errors.KeyczarError("MGF1 mask length too long.")
@@ -392,4 +396,3 @@ def MGF(seed, mlen):
   for i in range(int(math.ceil(mlen / float(HLEN)))):
     output += Hash(seed, IntToBytes(i))
   return output[:mlen]
-  
