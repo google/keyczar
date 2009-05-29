@@ -361,7 +361,13 @@ class HmacKey(SymmetricKey):
     @return: True if signature is valid for message. False otherwise.
     @rtype: boolean
     """
-    return self.Sign(msg) == sig_bytes
+    correctMac = self.Sign(msg)
+    if len(sig_bytes) != len(correctMac):
+      return False
+    result = 0
+    for x, y in zip(correctMac, sig_bytes):
+      result |= ord(x) ^ ord(y)
+    return result == 0
 
 class PrivateKey(AsymmetricKey):
   """Represents private keys in Keyczar for asymmetric key pairs."""
