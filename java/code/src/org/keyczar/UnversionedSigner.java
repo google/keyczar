@@ -25,7 +25,6 @@ import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
 

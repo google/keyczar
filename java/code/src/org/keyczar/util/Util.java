@@ -21,7 +21,6 @@ import com.google.gson.GsonBuilder;
 
 import org.keyczar.exceptions.KeyczarException;
 
-import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -275,5 +274,29 @@ public class Util {
     dest[offset++] = (byte) (input >> 16);
     dest[offset++] = (byte) (input >> 8);
     dest[offset++] = (byte) (input);
+  }
+  
+  /**
+   * An array comparison that is safe from timing attacks. If two arrays are
+   * of equal length, this code will always check all elements, rather than
+   * exiting once it encounters a differing byte. 
+   * 
+   * @param a1 An array to compare
+   * @param a2 Another array to compare
+   * @return True if these arrays are both null or if they have equal length
+   *         and equal bytes in all elements
+   */
+  public static boolean safeArrayEquals(byte[] a1, byte[] a2) {
+    if (a1 == null || a2 == null) {
+        return (a1 == a2);
+    }
+    if (a1.length != a2.length) {
+      return false;
+    }
+    byte result = 0;
+    for (int i = 0; i < a1.length; i++) {
+      result |= a1[i] ^ a2[i];
+    }
+    return (result == 0);
   }
 }

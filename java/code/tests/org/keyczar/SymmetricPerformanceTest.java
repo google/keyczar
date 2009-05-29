@@ -16,7 +16,6 @@
 
 package org.keyczar;
 
-
 import org.keyczar.Crypter;
 import org.keyczar.Signer;
 import org.keyczar.exceptions.KeyczarException;
@@ -106,7 +105,6 @@ public class SymmetricPerformanceTest {
   
   static class SignerRunnable implements Runnable {
     private Signer signer;
-    private int size;
     private int trials;
     private ByteBuffer input;
     private ByteBuffer output;
@@ -115,7 +113,6 @@ public class SymmetricPerformanceTest {
       this.input = ByteBuffer.wrap(new byte[size]);
       this.output = ByteBuffer.allocate(25);
       this.signer = signer;
-      this.size = size;
       this.trials = trials;
     }
 
@@ -134,7 +131,6 @@ public class SymmetricPerformanceTest {
   
   static class CrypterRunnable implements Runnable {
     private Crypter crypter;
-    private int size;
     private int trials;
     private ByteBuffer input;
     private ByteBuffer output;
@@ -143,7 +139,6 @@ public class SymmetricPerformanceTest {
       this.input = ByteBuffer.wrap(new byte[size]);
       this.output = ByteBuffer.allocate(size + 58);
       this.crypter = crypter;
-      this.size = size;
       this.trials = trials;
     }
 

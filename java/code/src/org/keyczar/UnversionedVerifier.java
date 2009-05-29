@@ -18,10 +18,7 @@ package org.keyczar;
 
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
-import org.keyczar.exceptions.BadVersionException;
-import org.keyczar.exceptions.KeyNotFoundException;
 import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.exceptions.ShortSignatureException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.VerifyingStream;

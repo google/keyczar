@@ -17,7 +17,6 @@
 package org.keyczar;
 
 import org.junit.Test;
-import org.keyczar.interfaces.KeyczarReader;
 
 import junit.framework.TestCase;
 
@@ -35,10 +34,7 @@ public class CrossCompatibilityTest extends TestCase {
   private static final String TEST_DATA = "./testdata/crosscomp";
   private String plaintext = "This is not a test, this is a real string";
   private String morePlaintext = "Some text to encrypt";
-  private final void testDecrypt(KeyczarReader reader, String subDir)
-      throws Exception {
-  }
-
+  
   @Test
   public final void testAesDecrypt() throws Exception {
     String dir = TEST_DATA + "/aes";

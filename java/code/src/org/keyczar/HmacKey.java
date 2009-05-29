@@ -29,7 +29,6 @@ import org.keyczar.util.Util;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.Key;
-import java.util.Arrays;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -141,7 +140,7 @@ class HmacKey extends KeyczarKey {
       byte[] sigBytes = new byte[signature.remaining()];
       signature.get(sigBytes);
 
-      return Arrays.equals(hmac.doFinal(), sigBytes);
+      return Util.safeArrayEquals(hmac.doFinal(), sigBytes);
     }
   }
 }

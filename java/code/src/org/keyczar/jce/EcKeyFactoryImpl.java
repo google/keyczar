@@ -3,7 +3,6 @@ package org.keyczar.jce;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactorySpi;
 import java.security.PrivateKey;
