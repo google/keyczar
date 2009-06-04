@@ -170,7 +170,7 @@ class AesKey(SymmetricKey):
                mode=keyinfo.CBC):
     SymmetricKey.__init__(self, keyinfo.AES, key_string)
     self.hmac_key = hmac_key
-    self.block_size = len(self.key_bytes)
+    self.block_size = 16  # pycrypto AES's block size is fixed to 16 bytes
     self.size = size
     self.mode = mode
 
