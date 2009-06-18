@@ -1,14 +1,6 @@
 from distutils.core import setup
 
 import sys
-try:
-    from setuptools import setup
-    kw = {
-        'install_requires': 'pycrypto >= 1.9',
-    }
-except ImportError:
-    from distutils.core import setup
-    kw = {}
 
 setup(name='python-keyczar',
       description='Toolkit for safe and simple cryptography',
@@ -17,5 +9,6 @@ setup(name='python-keyczar',
       url='http://www.keyczar.org/',
       version='0.6b',
       packages=['keyczar'],
-      **kw
+      package_dir={'keyczar': 'src/keyczar'},
+      requires=['pycrypto (>2.0)'],
 )
