@@ -22,9 +22,9 @@ Encodes the two classes storing data about keys:
 @author: arkajit.dey@gmail.com (Arkajit Dey)
 """
 try:
-  import json as simplejson
+  import simplejson as json
 except ImportError:
-  import simplejson
+  import json
 
 import errors
 import keyinfo
@@ -42,12 +42,11 @@ class KeyMetadata(object):
   versions = property(lambda self: self.__versions.values())
 
   def __str__(self):
-    return simplejson.dumps({"name": self.name,
-                             "purpose": str(self.purpose),
-                             "type": str(self.type),
-                             "encrypted": self.encrypted,
-                             "versions": [simplejson.loads(str(v))
-                                          for v in self.versions]})
+    return json.dumps({"name": self.name,
+                       "purpose": str(self.purpose),                              
+                       "type": str(self.type),
+                       "encrypted": self.encrypted,
+                       "versions": [json.loads(str(v)) for v in self.versions]})
 
   def AddVersion(self, version):
     """
@@ -111,7 +110,7 @@ class KeyMetadata(object):
     @return: the constructed KeyMetadata object
     @rtype: L{KeyMetadata}
     """
-    meta = simplejson.loads(json_string)
+    meta = json.loads(json_string)
     kmd = KeyMetadata(meta['name'], keyinfo.GetPurpose(meta['purpose']),
                       keyinfo.GetType(meta['type']), meta['encrypted'])
     for version in meta['versions']:
@@ -131,7 +130,7 @@ class KeyVersion(object):
   status = property(lambda self: self.__status, __SetStatus)
 
   def __str__(self):
-    return simplejson.dumps({"versionNumber": self.version_number,
+    return json.dumps({"versionNumber": self.version_number,
                              "status": str(self.status),
                              "exportable": self.exportable})
 

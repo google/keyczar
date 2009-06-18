@@ -35,9 +35,9 @@ from Crypto.Cipher import AES
 from Crypto.PublicKey import DSA
 from Crypto.PublicKey import RSA
 try:
-  import json as simplejson
+  import simplejson as json
 except ImportError:
-  import simplejson
+  import json
 
 import errors
 import keyczar
@@ -175,10 +175,10 @@ class AesKey(SymmetricKey):
     self.mode = mode
 
   def __str__(self):
-    return simplejson.dumps({"mode": str(self.mode),
-                             "size": self.size,
-                             "aesKeyString": self.key_string,
-                             "hmacKey": simplejson.loads(str(self.hmac_key))})
+    return json.dumps({"mode": str(self.mode),
+                       "size": self.size,
+                       "aesKeyString": self.key_string,
+                       "hmacKey": json.loads(str(self.hmac_key))})
 
   def _Hash(self):
     fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)),
@@ -213,7 +213,7 @@ class AesKey(SymmetricKey):
     @return: an AES key
     @rtype: L{AesKey}
     """
-    aes = simplejson.loads(key)
+    aes = json.loads(key)
     hmac = aes['hmacKey']
     return AesKey(aes['aesKeyString'],
                   HmacKey(hmac['hmacKeyString'], hmac['size']),
@@ -300,8 +300,7 @@ class HmacKey(SymmetricKey):
     self.size = size
 
   def __str__(self):
-    return simplejson.dumps({"size": self.size,
-                             "hmacKeyString": self.key_string})
+    return json.dumps({"size": self.size, "hmacKeyString": self.key_string})
 
   def _Hash(self):
     fullhash = util.Hash(self.key_bytes)
@@ -333,7 +332,7 @@ class HmacKey(SymmetricKey):
     @return: an HMAC-SHA1 key
     @rtype: L{HmacKey}
     """
-    mac = simplejson.loads(key)
+    mac = json.loads(key)
     return HmacKey(mac['hmacKeyString'], mac['size'])
 
   def Sign(self, msg):
@@ -398,9 +397,9 @@ class DsaPrivateKey(PrivateKey):
     self.size = size
 
   def __str__(self):
-    return simplejson.dumps({"publicKey": simplejson.loads(str(self.public_key)),
-                             "x": util.Encode(self.params['x']),
-                             "size": self.size})
+    return json.dumps({"publicKey": json.loads(str(self.public_key)),
+                       "x": util.Encode(self.params['x']),
+                       "size": self.size})
 
   @staticmethod
   def Generate(size=keyinfo.DSA_PRIV.default_size):
@@ -435,8 +434,8 @@ class DsaPrivateKey(PrivateKey):
     @return: an DSA private key
     @rtype: L{DsaPrivateKey}
     """
-    dsa = simplejson.loads(key)
-    pub = DsaPublicKey.Read(simplejson.dumps(dsa['publicKey']))
+    dsa = json.loads(key)
+    pub = DsaPublicKey.Read(json.dumps(dsa['publicKey']))
     params = { 'x' : util.Decode(dsa['x']) }
     key = DSA.construct((util.BytesToLong(pub._params['y']),
                          util.BytesToLong(pub._params['g']),
@@ -455,7 +454,8 @@ class DsaPrivateKey(PrivateKey):
     @return: byte string formatted as an ASN.1 sequnce of r and s
     @rtype: string
     """
-    k = random.randint(2, self.key.q-1)  # need to chose a random k per-message
+    # need to chose a random k per-message
+    k = random.SystemRandom().randint(2, self.key.q-1)
     (r, s) = self.key.sign(util.Hash(msg), k)
     return util.MakeDsaSig(r, s)
 
@@ -515,14 +515,14 @@ class RsaPrivateKey(PrivateKey):
     return delimited_message[1:]  # The message
 
   def __str__(self):
-    return simplejson.dumps({ "publicKey": simplejson.loads(str(self.public_key)),
-                              "privateExponent" : util.Encode(self.params['privateExponent']),
-                              "primeP" : util.Encode(self.params['primeP']),
-                              "primeQ" : util.Encode(self.params['primeQ']),
-                              "primeExponentP" : util.Encode(self.params['primeExponentP']),
-                              "primeExponentQ" : util.Encode(self.params['primeExponentQ']),
-                              "crtCoefficient" : util.Encode(self.params['crtCoefficient']),
-                              "size": self.size})
+    return json.dumps({ "publicKey": json.loads(str(self.public_key)),
+                       "privateExponent" : util.Encode(self.params['privateExponent']),
+                       "primeP" : util.Encode(self.params['primeP']),
+                       "primeQ" : util.Encode(self.params['primeQ']),
+                       "primeExponentP" : util.Encode(self.params['primeExponentP']),
+                       "primeExponentQ" : util.Encode(self.params['primeExponentQ']),
+                       "crtCoefficient" : util.Encode(self.params['crtCoefficient']),
+                       "size": self.size})
 
   @staticmethod
   def Generate(size=keyinfo.RSA_PRIV.default_size):
@@ -562,8 +562,8 @@ class RsaPrivateKey(PrivateKey):
     @return: a RSA private key
     @rtype: L{RsaPrivateKey}
     """
-    rsa = simplejson.loads(key)
-    pub = RsaPublicKey.Read(simplejson.dumps(rsa['publicKey']))
+    rsa = json.loads(key)
+    pub = RsaPublicKey.Read(json.dumps(rsa['publicKey']))
     params = {'privateExponent': util.Decode(rsa['privateExponent']),
               'primeP': util.Decode(rsa['primeP']),
               'primeQ': util.Decode(rsa['primeQ']),
@@ -626,11 +626,11 @@ class DsaPublicKey(PublicKey):
     self.size = size
 
   def __str__(self):
-    return simplejson.dumps({"p": util.Encode(self.params['p']),
-                             "q": util.Encode(self.params['q']),
-                             "g": util.Encode(self.params['g']),
-                             "y": util.Encode(self.params['y']),
-                             "size": self.size})
+    return json.dumps({"p": util.Encode(self.params['p']),
+                       "q": util.Encode(self.params['q']),
+                       "g": util.Encode(self.params['g']),
+                       "y": util.Encode(self.params['y']),
+                       "size": self.size})
 
   def _Hash(self):
     fullhash = util.PrefixHash(util.TrimBytes(self._params['p']),
@@ -651,7 +651,7 @@ class DsaPublicKey(PublicKey):
     @rtype: L{DsaPublicKey}
     """
 
-    dsa = simplejson.loads(key)
+    dsa = json.loads(key)
     params = {'y' : util.Decode(dsa['y']),
               'p' : util.Decode(dsa['p']),
               'g' : util.Decode(dsa['g']),
@@ -717,9 +717,9 @@ class RsaPublicKey(PublicKey):
     return '\x00' + masked_seed + masked_datablock
 
   def __str__(self):
-    return simplejson.dumps({"modulus": util.Encode(self.params['modulus']),
-                             "publicExponent": util.Encode(self.params['publicExponent']),
-                             "size": self.size})
+    return json.dumps({"modulus": util.Encode(self.params['modulus']),
+                       "publicExponent": util.Encode(self.params['publicExponent']),
+                       "size": self.size})
 
   def _Hash(self):
     fullhash = util.PrefixHash(util.TrimBytes(self._params['modulus']),
@@ -737,7 +737,7 @@ class RsaPublicKey(PublicKey):
     @return: a RSA public key
     @rtype: L{RsaPublicKey}
     """
-    rsa = simplejson.loads(key)
+    rsa = json.loads(key)
     params = {'modulus' : util.Decode(rsa['modulus']),
               'publicExponent' : util.Decode(rsa['publicExponent'])}
 
