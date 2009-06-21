@@ -11,24 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/message_digest_impl.h"
+#include "keyczar/util.h"
 
 namespace keyczar {
 
-bool MessageDigestImpl::Digest(const std::string& data, std::string* digest) {
-  if (digest == NULL)
+bool SafeStringEquals(const std::string& s1, const std::string& s2) {
+  if (s1.length() != s2.length())
     return false;
 
-  if (!Init())
-    return false;
-
-  if (!Update(data))
-    return false;
-
-  if (!Final(digest))
-    return false;
-
-  return true;
+  int result = 0;
+  for (int i = 0; i < s1.length(); ++i)
+    result |= s1[i] ^ s2[i];
+  return result == 0;
 }
 
 }  // namespace keyczar

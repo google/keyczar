@@ -112,7 +112,7 @@ ECDSAOpenSSL* ECDSAOpenSSL::Create(const ECDSAIntermediateKey& key,
     return new ECDSAOpenSSL(ecdsa_key.release(), private_key);
 
   // private_key
-  ScopedBIGNUM private_key_bn;
+  ScopedSecretBIGNUM private_key_bn;
   private_key_bn.reset(BN_bin2bn(reinterpret_cast<unsigned char*>(
                                      const_cast<char*>(key.private_key.data())),
                                  key.private_key.length(),

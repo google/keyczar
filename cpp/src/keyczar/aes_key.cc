@@ -191,30 +191,33 @@ bool AESKey::Encrypt(const std::string& data, std::string* encrypted) const {
   if (encrypted == NULL || aes_impl_.get() == NULL || hmac_key() == NULL)
     return false;
 
-  RandImpl* rand_impl = CryptoFactory::Rand();
-  if (rand_impl == NULL)
-    return false;
-
+  std::string ciphertext;
   std::string iv;
-  if (!rand_impl->RandBytes(size() / 8, &iv))
+  if (!aes_impl_->Encrypt(data, &ciphertext, &iv))
     return false;
-  DCHECK(iv.length() >= aes_impl_->GetKey().length());
 
-  std::string aes_bytes;
-  if (!aes_impl_->Encrypt(&iv, data, &aes_bytes))
-    return false;
+  // Fixme: trick to provide same data format than Java implementation.
+  // AES use an IV size equals to its block size but for preserving the
+  // compatibilty with Java implementation the IV is serialized on the
+  // key length bytes. The rightmost bytes should not be considered by
+  // mains AES implementations (including OpenSSL). These implementations
+  // use a block size of 16 bytes even for AES 192 and AES 256. When an IV
+  // of 32 bytes used with AES 256 is transmitted to OpenSSL, only its 16
+  // first bytes are effectively, ignoring the last 16 bytes.
+  if (iv.length() < aes_impl_->GetKey().length())
+    iv.append(aes_impl_->GetKey().length() - iv.length(), '\0');
 
   std::string header;
   if (!Header(&header))
     return false;
 
-  std::string message_bytes = header + iv + aes_bytes;
+  std::string all_bytes = header + iv + ciphertext;
 
-  std::string signature_bytes;
-  if (!hmac_key()->Sign(message_bytes, &signature_bytes))
+  std::string signature;
+  if (!hmac_key()->Sign(all_bytes, &signature))
     return false;
 
-  encrypted->assign(message_bytes + signature_bytes);
+  encrypted->assign(all_bytes + signature);
   return true;
 }
 
@@ -238,7 +241,7 @@ bool AESKey::Decrypt(const std::string& encrypted, std::string* data) const {
           signature_bytes))
     return false;
 
-  if (!aes_impl_->Decrypt(&iv_bytes, aes_bytes, data))
+  if (!aes_impl_->Decrypt(iv_bytes, aes_bytes, data))
     return false;
 
   return true;

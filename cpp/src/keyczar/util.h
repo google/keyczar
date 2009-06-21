@@ -11,24 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/message_digest_impl.h"
+#ifndef KEYCZAR_UTIL_H_
+#define KEYCZAR_UTIL_H_
+
+#include <string>
+
+#include "base/basictypes.h"
 
 namespace keyczar {
 
-bool MessageDigestImpl::Digest(const std::string& data, std::string* digest) {
-  if (digest == NULL)
-    return false;
-
-  if (!Init())
-    return false;
-
-  if (!Update(data))
-    return false;
-
-  if (!Final(digest))
-    return false;
-
-  return true;
-}
+// An string comparison that is safe from timing attacks. If two strings are
+// of equal length, this code will always check all elements, rather than
+// exiting once it encounters a differing character.
+bool SafeStringEquals(const std::string& s1, const std::string& s2);
 
 }  // namespace keyczar
+
+#endif  // KEYCZAR_UTIL_H_

@@ -16,6 +16,9 @@
 namespace keyczar {
 
 bool HMACImpl::Digest(const std::string& data, std::string* digest) {
+  if (digest == NULL)
+    return false;
+
   if (!Init())
     return false;
 

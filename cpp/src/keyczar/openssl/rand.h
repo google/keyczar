@@ -36,6 +36,8 @@ class RandOpenSSL : public RandImpl {
 
   virtual bool is_initialized() const { return is_initialized_; }
 
+  // Returns |num| cryptographically strong pseudo-random bytes in |bytes|.
+  // This function returns false if it fails.
   virtual bool RandBytes(int num, std::string* bytes) const;
 
  private:

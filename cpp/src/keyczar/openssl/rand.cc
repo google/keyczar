@@ -25,7 +25,7 @@ bool RandOpenSSL::Init() {
   // transparently, see:
   // http://www.openssl.org/docs/crypto/RAND_add.html#DESCRIPTION
 #else
-  // Appropriate seeding might need to be implemented on others architectures.
+  // Appropriate seeding might be needed on others architectures.
   NOTIMPLEMENTED();
   return false;
 #endif
@@ -34,6 +34,9 @@ bool RandOpenSSL::Init() {
 }
 
 bool RandOpenSSL::RandBytes(int num, std::string* bytes) const {
+  if (bytes == NULL)
+    return false;
+
   unsigned char buffer[num];
 
   if (RAND_bytes(buffer, num) != 1) {

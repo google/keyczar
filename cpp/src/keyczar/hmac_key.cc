@@ -19,6 +19,7 @@
 #include "keyczar/crypto_factory.h"
 #include "keyczar/key_util.h"
 #include "keyczar/message_digest_impl.h"
+#include "keyczar/util.h"
 
 namespace {
 
@@ -179,7 +180,7 @@ bool HMACKey::Verify(const std::string& data,
   if (!hmac_impl_->Digest(data, &digest))
     return false;
 
-  return digest == signature;
+  return SafeStringEquals(digest, signature);
 }
 
 }  // namespace keyczar

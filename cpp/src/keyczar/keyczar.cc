@@ -205,7 +205,7 @@ Crypter* Crypter::Read(const KeysetReader& reader) {
 }
 
 bool Crypter::Decrypt(const std::string& ciphertext, std::string* data) const {
-  if (keyset() == NULL)
+  if (keyset() == NULL || data == NULL)
     return false;
 
   std::string ciphertext_bytes;
@@ -397,7 +397,7 @@ Signer* Signer::Read(const KeysetReader& reader) {
 }
 
 bool Signer::Sign(const std::string& data, std::string* signature) const {
-  if (keyset() == NULL)
+  if (keyset() == NULL || signature == NULL)
     return false;
 
   const Key* key = keyset()->primary_key();

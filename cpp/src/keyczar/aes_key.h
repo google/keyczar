@@ -1,8 +1,3 @@
-#ifndef KEYCZAR_AES_KEY_H_
-#define KEYCZAR_AES_KEY_H_
-
-#include <string>
-
 // Copyright 2009 Sebastien Martini (seb@dbzteam.org)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef KEYCZAR_AES_KEY_H_
+#define KEYCZAR_AES_KEY_H_
+
+#include <string>
+
 #include "base/basictypes.h"
 #include "base/scoped_ptr.h"
 #include "base/values.h"

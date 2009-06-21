@@ -32,7 +32,13 @@ struct OSSLDestroyer {
   }
 };
 
+// This BIGNUM should be used only for public components, its memory isn't
+// cleared when it is deleted.
 typedef scoped_ptr_malloc<BIGNUM, OSSLDestroyer<BIGNUM, BN_free> > ScopedBIGNUM;
+
+// The memory of this BIGNUM is cleared when it is destructed.
+typedef scoped_ptr_malloc<BIGNUM, OSSLDestroyer<BIGNUM,
+    BN_clear_free> > ScopedSecretBIGNUM;
 
 typedef scoped_ptr_malloc<
     EVP_PKEY, OSSLDestroyer<EVP_PKEY, EVP_PKEY_free> > ScopedEVPPKey;

@@ -30,49 +30,44 @@ namespace openssl {
 class AESOpenSSLTest : public KeyczarTest {
 };
 
-TEST_F(AESOpenSSLTest, EncryptAndDecrypt128) {
-  unsigned char key_buffer[16];
-  EXPECT_TRUE(RAND_bytes(key_buffer, 16));
-  std::string key(reinterpret_cast<char*>(key_buffer), 16);
+TEST_F(AESOpenSSLTest, EncryptAndDecrypt) {
+  std::string iv, encrypted, decrypted;
 
-  scoped_ptr<AESOpenSSL> aes(AESOpenSSL::Create(*CipherMode::Create("CBC"),
-                                                key));
-  ASSERT_TRUE(aes.get());
+  for (int s = 16; s <= 32; s += 8) {
+    encrypted.clear();
+    decrypted.clear();
 
-  int iv_len = aes->GetKeySize();
-  EXPECT_EQ(iv_len, 16);
-  unsigned char iv_buffer[iv_len];
-  EXPECT_TRUE(RAND_bytes(iv_buffer, iv_len));
-  std::string iv(reinterpret_cast<char*>(iv_buffer), iv_len);
+    unsigned char key_buffer[s];
+    EXPECT_TRUE(RAND_bytes(key_buffer, s));
+    std::string key(reinterpret_cast<char*>(key_buffer), s);
 
-  std::string encrypted, decrypted;
-  EXPECT_FALSE(aes->Encrypt(NULL, input_data_, &encrypted));
-  EXPECT_TRUE(aes->Encrypt(&iv, input_data_, &encrypted));
-  EXPECT_TRUE(aes->Decrypt(&iv, encrypted, &decrypted));
+    scoped_ptr<AESOpenSSL> aes(AESOpenSSL::Create(*CipherMode::Create("CBC"),
+                                                  key));
+    ASSERT_TRUE(aes.get());
 
-  EXPECT_EQ(input_data_, decrypted);
-}
+    EXPECT_TRUE(aes->Encrypt(input_data_, &encrypted, &iv));
+    EXPECT_EQ(iv.length(), 16);
 
-TEST_F(AESOpenSSLTest, EncryptAndDecrypt256) {
-  unsigned char key_buffer[32];
-  EXPECT_TRUE(RAND_bytes(key_buffer, 32));
-  std::string key(reinterpret_cast<char*>(key_buffer), 32);
+    EXPECT_TRUE(aes->Decrypt(iv, encrypted, &decrypted));
+    EXPECT_EQ(input_data_, decrypted);
 
-  scoped_ptr<AESOpenSSL> aes(AESOpenSSL::Create(*CipherMode::Create("CBC"),
-                                                key));
-  ASSERT_TRUE(aes.get());
+    encrypted.clear();
+    decrypted.clear();
 
-  int iv_len = aes->GetKeySize();
-  EXPECT_EQ(iv_len, 32);
-  unsigned char iv_buffer[iv_len];
-  EXPECT_TRUE(RAND_bytes(iv_buffer, iv_len));
-  std::string iv(reinterpret_cast<char*>(iv_buffer), iv_len);
+    EXPECT_TRUE(aes->EncryptInit(&iv));
+    EXPECT_EQ(iv.length(), 16);
+    EXPECT_TRUE(aes->EncryptUpdate(input_data_.substr(0, 5), &encrypted));
+    EXPECT_TRUE(aes->EncryptUpdate(input_data_.substr(5), &encrypted));
+    EXPECT_TRUE(aes->EncryptFinal(&encrypted));
 
-  std::string encrypted, decrypted;
-  EXPECT_TRUE(aes->Encrypt(&iv, input_data_, &encrypted));
-  EXPECT_TRUE(aes->Decrypt(&iv, encrypted, &decrypted));
+    EXPECT_TRUE(aes->DecryptInit(iv));
+    EXPECT_TRUE(aes->DecryptUpdate(encrypted.substr(0, 5), &decrypted));
+    EXPECT_TRUE(aes->DecryptUpdate(encrypted.substr(5), &decrypted));
+    EXPECT_TRUE(aes->DecryptFinal(&decrypted));
+    EXPECT_EQ(iv.length(), 16);
 
-  EXPECT_EQ(input_data_, decrypted);
+    EXPECT_EQ(input_data_, decrypted);
+  }
 }
 
 }  // namespace openssl

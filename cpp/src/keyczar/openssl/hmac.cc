@@ -106,6 +106,9 @@ bool HMACOpenSSL::Update(const std::string& data) {
 }
 
 bool HMACOpenSSL::Final(std::string* digest) {
+  if (digest == NULL)
+    return false;
+
   unsigned char md_buffer[EVP_MAX_MD_SIZE];
   uint32 md_len = 0;
 

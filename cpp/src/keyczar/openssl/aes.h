@@ -49,15 +49,60 @@ class AESOpenSSL : public AESImpl {
   // The value of |size| is expressed in bits.
   static AESOpenSSL* GenerateKey(const CipherMode& cipher_mode, int size);
 
-  // Encrypts |data| and put the cipher text inside |encrypted|. If needed
-  // |iv| must be provided. If this function fails it returns false.
-  virtual bool Encrypt(const std::string* iv, const std::string& data,
-                       std::string* encrypted) const;
+  // Atomically encrypts |plaintext| and put the cipher text and the
+  // corresponding IV respectively into |ciphertext| and |iv|. Internally
+  // an IV is generated at random before encryption. This method successively
+  // calls EncryptInit, EncryptUpdate, EncryptFinal and EncryptContextCleanup.
+  // If this function fails it returns false.
+  virtual bool Encrypt(const std::string& plaintext, std::string* ciphertext,
+                       std::string* iv) const;
 
-  // Decrypts |encrypted| data and put the plain text inside |data|. If needed
-  // |iv| must be provided. If this function fails it returns false.
-  virtual bool Decrypt(const std::string* iv, const std::string& encrypted,
-                       std::string* data) const;
+  // Initializes encryption context. When the encryption is accomplished through
+  // this set of methods (EncryptInit, EncryptUpdate, EncryptFinal) it is not
+  // possible to encrypt two differents plaintexts at same time because the
+  // Encrypt* methods share the same context. Therefore one must be sure to not
+  // interleave multiple encryptions. However one encryption can be interleaved
+  // with one decryption because encryption and decryption use two separate
+  // contexts. This method generates an IV and returns it as |iv|.
+  virtual bool EncryptInit(std::string* iv) const;
+
+  // Encrypts |plaintext| and appends the result into |ciphertext|. This method
+  // can be called multiple times to encrypt small plaintexts chunks into
+  // |ciphertext|. Therefore |ciphertext| must be empty during the first call to
+  // this method.
+  virtual bool EncryptUpdate(const std::string& plaintext,
+                             std::string* ciphertext) const;
+
+  // Finalizes encryption, the last block is written to |ciphertext|. This
+  // method should be called after EncryptUpdate.
+  virtual bool EncryptFinal(std::string* ciphertext) const;
+
+  // Atomically decrypts |ciphertext| and put the corresponding plaintext inside
+  // |plaintext|. |iv| must be provided. If this function fails it returns
+  // false. This method internally successively calls DecryptInit,
+  // DecryptUpdate, DecryptFinal and DecryptContextCleanup.
+  virtual bool Decrypt(const std::string& iv, const std::string& ciphertext,
+                       std::string* plaintext) const;
+
+  // Initializes decryption context. When the decryption is accomplished through
+  // this set of methods (DecryptInit, DecryptUpdate, DecryptFinal) it is not
+  // possible to decrypt two differents plaintexts at same time because the
+  // Decrypt* methods share the same context. Therefore one must be sure to not
+  // interleave multiple decryptions. However one decryption can be interleaved
+  // with one encryption because encryption and decryption use two separate
+  // contexts.
+  virtual bool DecryptInit(const std::string& iv) const;
+
+  // Decrypts |ciphertext| and appends the result into |plaintext|. This method
+  // can be called multiple times to decrypt small ciphertexts chunks into
+  // |plaintext|. Therefore |plaintext| must be empty during the first call to
+  // this method.
+  virtual bool DecryptUpdate(const std::string& ciphertext,
+                             std::string* plaintext) const;
+
+  // Finalizes decryption, the last block is written to |plaintext|. This
+  // method should be called after DecryptUpdate.
+  virtual bool DecryptFinal(std::string* plaintext) const;
 
   virtual std::string GetKey() const { return key_; }
 
@@ -72,8 +117,23 @@ class AESOpenSSL : public AESImpl {
       EVP_CIPHER_CTX, openssl::OSSLDestroyer<EVP_CIPHER_CTX,
       EVP_CIPHER_CTX_free> > ScopedCipherCtx;
 
-  bool EVPCipher(const std::string* iv, const std::string& in_data,
-                 std::string* out_data, int encrypt) const;
+  // This method securely erase the current encryption context. It should be
+  // called after each completed encryption (that the encryption succeeded or
+  // failed).
+  virtual void EncryptContextCleanup() const;
+
+  // This method securely erase the current decryption context. It should be
+  // called after each completed decryption (that the decryption succeeded or
+  // failed).
+  virtual void DecryptContextCleanup() const;
+
+  bool CipherInit(const std::string& iv, bool encrypt,
+                  EVP_CIPHER_CTX* context) const;
+
+  bool CipherUpdate(const std::string& in_data, std::string* out_data,
+                    EVP_CIPHER_CTX* context) const;
+
+  bool CipherFinal(std::string* out_data, EVP_CIPHER_CTX* context) const;
 
   // TODO(seb): Currently EVP_CIPHER is obtained each time by calling this
   // function because I'm not sure how the pointer would be released in the
@@ -83,11 +143,11 @@ class AESOpenSSL : public AESImpl {
   // This is the secret key.
   std::string key_;
 
-  // When this context will be released, EVP_CIPHER_CTX_cleanup() will
-  // also automatically called. This context is used for both encryption
-  // and decryption functions, this is not a problem because these functions
-  // are executed atomically et do not have to maintain states.
-  ScopedCipherCtx context_;
+  // Encryption context used by encryption methods.
+  ScopedCipherCtx encryption_context_;
+
+  // Decryption context used by decryption methods.
+  ScopedCipherCtx decryption_context_;
 
   // The caller keeps ownership over the engine. Note: the use of a true engine
   // is currently not supported.

@@ -43,6 +43,7 @@ input_files = [
     'rsa_private_key.cc',
     'rsa_public_key.cc',
     'secret_key.cc',
+    'util.cc',
 ]
 
 out = env.ComponentLibrary('keyczar', input_files, COMPONENT_STATIC=False)

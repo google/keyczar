@@ -25,9 +25,11 @@ namespace openssl {
 
 AESOpenSSL::AESOpenSSL(const EVP_CIPHER* (*evp_cipher)(),
                        const std::string& key)
-    : evp_cipher_(evp_cipher), key_(key), context_(EVP_CIPHER_CTX_new()),
+    : evp_cipher_(evp_cipher), key_(key),
+      encryption_context_(EVP_CIPHER_CTX_new()),
+      decryption_context_(EVP_CIPHER_CTX_new()),
       engine_(NULL) {
-  CHECK(evp_cipher()->key_len == static_cast<int>(key.length()));
+  CHECK(EVP_CIPHER_key_length(evp_cipher()) == static_cast<int>(key.length()));
 }
 
 // static
@@ -54,8 +56,7 @@ AESOpenSSL* AESOpenSSL::Create(const CipherMode& cipher_mode,
 }
 
 // static
-AESOpenSSL* AESOpenSSL::GenerateKey(const CipherMode& cipher_mode,
-                                    int size) {
+AESOpenSSL* AESOpenSSL::GenerateKey(const CipherMode& cipher_mode, int size) {
   RandImpl* rand_impl = CryptoFactory::Rand();
   if (rand_impl == NULL)
     return NULL;
@@ -68,54 +69,121 @@ AESOpenSSL* AESOpenSSL::GenerateKey(const CipherMode& cipher_mode,
   return AESOpenSSL::Create(cipher_mode, key);
 }
 
-bool AESOpenSSL::Encrypt(const std::string* iv, const std::string& data,
-                         std::string* encrypted) const {
-  return EVPCipher(iv, data, encrypted, 1);
+bool AESOpenSSL::Encrypt(const std::string& plaintext, std::string* ciphertext,
+                         std::string* iv) const {
+  if (!EncryptInit(iv))
+    return false;
+
+  if (!EncryptUpdate(plaintext, ciphertext))
+    return false;
+
+  if (!EncryptFinal(ciphertext))
+    return false;
+
+  return true;
 }
 
-bool AESOpenSSL::Decrypt(const std::string* iv, const std::string& encrypted,
-                         std::string* data) const {
-  return EVPCipher(iv, encrypted, data, 0);
+bool AESOpenSSL::EncryptInit(std::string* iv) const {
+  if (evp_cipher_ == NULL || iv == NULL)
+    return false;
+
+  RandImpl* rand_impl = CryptoFactory::Rand();
+  if (rand_impl == NULL)
+    return false;
+
+  // Generate a random IV
+  // Note: OpenSSL only takes the 16 first bytes of the iv string for the
+  // AES ciphers (128, 192, 256).
+  if (!rand_impl->RandBytes(EVP_CIPHER_iv_length(evp_cipher_()), iv))
+     return false;
+
+  bool init = CipherInit(*iv, true, encryption_context_.get());
+  if (!init)
+    EncryptContextCleanup();
+  return init;
 }
 
-bool AESOpenSSL::EVPCipher(const std::string* iv, const std::string& in_data,
-                           std::string* out_data, int encrypt) const {
-  if (encrypt != 1 && encrypt != 0)
+bool AESOpenSSL::EncryptUpdate(const std::string& plaintext,
+                               std::string* ciphertext) const {
+  bool update = CipherUpdate(plaintext, ciphertext, encryption_context_.get());
+  if (!update)
+    EncryptContextCleanup();
+  return update;
+}
+
+bool AESOpenSSL::EncryptFinal(std::string* ciphertext) const {
+  bool final = CipherFinal(ciphertext, encryption_context_.get());
+  EncryptContextCleanup();
+  return final;
+}
+
+bool AESOpenSSL::Decrypt(const std::string& iv, const std::string& ciphertext,
+                         std::string* plaintext) const {
+  if (!DecryptInit(iv))
     return false;
 
-  if (evp_cipher_ == NULL)
+  if (!DecryptUpdate(ciphertext, plaintext))
     return false;
 
-  // Checks if an iv is needed and in this case if it is provided. If iv is
-  // required its length must be at least equal to block size.
-  if ((evp_cipher_()->iv_len == 0 && iv != NULL) ||
-      (evp_cipher_()->iv_len > 0 &&
-       (iv == NULL ||
-        static_cast<int>(iv->length()) < evp_cipher_()->block_size)))
+  if (!DecryptFinal(plaintext))
     return false;
 
-  if (context_.get() == NULL)
+  return true;
+}
+
+bool AESOpenSSL::DecryptInit(const std::string& iv) const {
+  bool init = CipherInit(iv, false, decryption_context_.get());
+  if (!init)
+    DecryptContextCleanup();
+  return init;
+}
+
+bool AESOpenSSL::DecryptUpdate(const std::string& ciphertext,
+                               std::string* plaintext) const {
+  bool update = CipherUpdate(ciphertext, plaintext, decryption_context_.get());
+  if (!update)
+    DecryptContextCleanup();
+  return update;
+}
+
+bool AESOpenSSL::DecryptFinal(std::string* plaintext) const {
+  bool final = CipherFinal(plaintext, decryption_context_.get());
+  DecryptContextCleanup();
+  return final;
+}
+
+void AESOpenSSL::EncryptContextCleanup() const {
+  EVP_CIPHER_CTX_cleanup(encryption_context_.get());
+}
+
+void AESOpenSSL::DecryptContextCleanup() const {
+  EVP_CIPHER_CTX_cleanup(decryption_context_.get());
+}
+
+bool AESOpenSSL::CipherInit(const std::string& iv, bool encrypt,
+                            EVP_CIPHER_CTX* context) const {
+  int do_encrypt = 0;
+  if (encrypt)
+    do_encrypt = 1;
+
+  if (context == NULL || evp_cipher_ == NULL)
     return false;
 
-  int ret_val = 0;
-  if (iv == NULL)
-    ret_val = EVP_CipherInit_ex(context_.get(),
-                             evp_cipher_(),
-                             engine_,
-                             reinterpret_cast<unsigned char*>(
-                                 const_cast<char*>(key_.data())),
-                             NULL,
-                             encrypt);
-  else
-    ret_val = EVP_CipherInit_ex(context_.get(),
-                             evp_cipher_(),
-                             engine_,
-                             reinterpret_cast<unsigned char*>(
-                                 const_cast<char*>(key_.data())),
-                             reinterpret_cast<unsigned char*>(
-                                 const_cast<char*>(iv->data())),
-                             encrypt);
-  if (!ret_val)
+  if (EVP_CipherInit_ex(context,
+                        evp_cipher_(),
+                        engine_,
+                        reinterpret_cast<unsigned char*>(
+                            const_cast<char*>(key_.data())),
+                        reinterpret_cast<unsigned char*>(
+                            const_cast<char*>(iv.data())),
+                        do_encrypt) != 1)
+    return false;
+  return true;
+}
+
+bool AESOpenSSL::CipherUpdate(const std::string& in_data, std::string* out_data,
+                              EVP_CIPHER_CTX* context) const {
+  if (out_data == NULL || context == NULL || evp_cipher_ == NULL)
     return false;
 
   scoped_ptr_malloc<unsigned char> out_buffer;
@@ -124,31 +192,43 @@ bool AESOpenSSL::EVPCipher(const std::string* iv, const std::string& in_data,
   if (out_buffer.get() == NULL)
     return false;
 
-  int update_length = 0;
-  ret_val = EVP_CipherUpdate(context_.get(),
-                             out_buffer.get(),
-                             &update_length,
-                             reinterpret_cast<unsigned char*>(
-                                 const_cast<char*>(in_data.data())),
-                             in_data.length());
-  if (!ret_val)
+  int out_buffer_length = 0;
+  if (EVP_CipherUpdate(context, out_buffer.get(), &out_buffer_length,
+                       reinterpret_cast<unsigned char*>(
+                           const_cast<char*>(in_data.data())),
+                       in_data.length()) != 1)
     return false;
 
-  int final_length = 0;
-  ret_val = EVP_CipherFinal_ex(context_.get(),
-                               out_buffer.get() + update_length,
-                               &final_length);
-  if (!ret_val)
+  out_data->append(reinterpret_cast<char*>(out_buffer.get()),
+                   out_buffer_length);
+
+  return true;
+}
+
+bool AESOpenSSL::CipherFinal(std::string* out_data,
+                             EVP_CIPHER_CTX* context) const {
+  if (out_data == NULL || context == NULL || evp_cipher_ == NULL)
     return false;
 
-  out_data->assign(reinterpret_cast<char*>(out_buffer.get()),
-                   update_length + final_length);
+  scoped_ptr_malloc<unsigned char> out_buffer;
+  out_buffer.reset(reinterpret_cast<unsigned char*>(
+                       malloc(evp_cipher_()->block_size)));
+  if (out_buffer.get() == NULL)
+    return false;
+
+  int out_buffer_length = 0;
+  if (EVP_CipherFinal_ex(context, out_buffer.get(), &out_buffer_length) != 1)
+    return false;
+
+  out_data->append(reinterpret_cast<char*>(out_buffer.get()),
+                   out_buffer_length);
+
   return true;
 }
 
 int AESOpenSSL::GetKeySize() const {
   int key_length = static_cast<int>(key_.length());
-  DCHECK(evp_cipher_ && key_length >= evp_cipher_()->iv_len);
+  DCHECK(evp_cipher_ && key_length >= EVP_CIPHER_iv_length(evp_cipher_()));
   return key_length;
 }
 

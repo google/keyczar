@@ -63,7 +63,7 @@ bool MessageDigestOpenSSL::Update(const std::string& data) {
 }
 
 bool MessageDigestOpenSSL::Final(std::string* digest) {
-  if (context_.get() == NULL)
+  if (digest == NULL || context_.get() == NULL)
     return false;
 
   unsigned char md_buffer[EVP_MAX_MD_SIZE];
