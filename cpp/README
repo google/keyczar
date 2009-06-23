@@ -13,7 +13,9 @@
 Currently this implementation only works under Linux, install the required
 packages and compile it:
 
- $ cd cpp/src && ./tools/swtoolkit/hammer.sh --mode=opt-linux
+ $ cd cpp/src && ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat
+
+Please read the 'Note' in the next section.
 
 Libraries and executables are assembled under scons-out/opt-linux/.
 
@@ -24,7 +26,12 @@ Files will be installed under /usr/local/ and under /usr/lib/python2.x/site-pack
 
 1- Log as root and execute these commands to install the C++ library:
 
-  $ cd cpp/src && ./tools/swtoolkit/hammer.sh --mode=opt-linux install
+  $ cd cpp/src && ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat install
+
+/!\ Note: it is actually recommanded to only use the compatibility (--compat)
+mode which provides full compatibility with previous versions and others
+implementations. The 'normal' mode is in development and future changes will
+probably break compatibility with it.
 
 For details on how to use this library, read the tutorial and the examples located
 under src/examples/ and also consult the header files /usr/local/include/keyczar.
