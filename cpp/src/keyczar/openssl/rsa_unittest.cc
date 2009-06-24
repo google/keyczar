@@ -75,9 +75,11 @@ TEST_F(RSAOpenSSLTest, GenerateKeyAndSign) {
   EXPECT_EQ(rsa->Size(), size);
 
   std::string signed_message_digest;
-  EXPECT_TRUE(rsa->Sign(message_digest, &signed_message_digest));
+  EXPECT_TRUE(rsa->Sign(MessageDigestImpl::SHA1,
+                        message_digest, &signed_message_digest));
   EXPECT_EQ(static_cast<int>(signed_message_digest.length()), size / 8);
-  EXPECT_TRUE(rsa->Verify(message_digest, signed_message_digest));
+  EXPECT_TRUE(rsa->Verify(MessageDigestImpl::SHA1,
+                          message_digest, signed_message_digest));
 }
 
 TEST_F(RSAOpenSSLTest, WriteToPEMFile) {

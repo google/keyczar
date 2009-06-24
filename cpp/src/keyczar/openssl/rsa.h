@@ -58,10 +58,12 @@ class RSAOpenSSL : public RSAImpl {
 
   bool WriteKeyToPEMFile(const std::string& filename);
 
-  virtual bool Sign(const std::string& message_digest,
+  virtual bool Sign(const MessageDigestImpl::DigestAlgorithm digest_algorithm,
+                    const std::string& message_digest,
                     std::string* signature) const;
 
-  virtual bool Verify(const std::string& message_digest,
+  virtual bool Verify(const MessageDigestImpl::DigestAlgorithm digest_algorithm,
+                      const std::string& message_digest,
                       const std::string& signature) const;
 
   virtual bool Encrypt(const std::string& data, std::string* encrypted) const;

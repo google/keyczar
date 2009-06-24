@@ -366,6 +366,7 @@ bool ECDSAOpenSSL::Equals(const ECDSAOpenSSL& rhs) const {
 
   const EC_KEY* key_rhs = rhs.key();
 
+  // Compares public components.
   if (EC_GROUP_cmp(EC_KEY_get0_group(key_.get()),
                    EC_KEY_get0_group(key_rhs), NULL) != 0)
     return false;
@@ -393,6 +394,7 @@ bool ECDSAOpenSSL::Equals(const ECDSAOpenSSL& rhs) const {
   if (!private_key())
     return true;
 
+  // Compares private components.
   if (BN_cmp(EC_KEY_get0_private_key(key_.get()),
              EC_KEY_get0_private_key(key_rhs)) != 0)
     return false;

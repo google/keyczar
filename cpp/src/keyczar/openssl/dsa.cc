@@ -273,6 +273,7 @@ bool DSAOpenSSL::Equals(const DSAOpenSSL& rhs) const {
 
   const DSA* key_rhs = rhs.key();
 
+  // Compares public components.
   if (BN_cmp(key_->p, key_rhs->p) != 0 || BN_cmp(key_->q, key_rhs->q) != 0 ||
       BN_cmp(key_->g, key_rhs->g) != 0 ||
       BN_cmp(key_->pub_key, key_rhs->pub_key) != 0)
@@ -281,6 +282,7 @@ bool DSAOpenSSL::Equals(const DSAOpenSSL& rhs) const {
   if (!private_key())
     return true;
 
+  // Compares private components.
   if (BN_cmp(key_->priv_key, key_rhs->priv_key) != 0)
     return false;
 

@@ -20,6 +20,29 @@
 #include "base/file_util.h"
 #include "base/logging.h"
 
+namespace {
+
+int DigestAlgorithmToNid(
+    const keyczar::MessageDigestImpl::DigestAlgorithm digest_algorithm) {
+  switch (digest_algorithm) {
+    case keyczar::MessageDigestImpl::SHA1:
+      return NID_sha1;
+    case keyczar::MessageDigestImpl::SHA224:
+      return NID_sha224;
+    case keyczar::MessageDigestImpl::SHA256:
+      return NID_sha256;
+    case keyczar::MessageDigestImpl::SHA384:
+      return NID_sha384;
+    case keyczar::MessageDigestImpl::SHA512:
+      return NID_sha512;
+    default:
+      NOTREACHED();
+  }
+  return 0;
+}
+
+}  // namespace
+
 namespace keyczar {
 
 namespace openssl {
@@ -282,7 +305,8 @@ bool RSAOpenSSL::WriteKeyToPEMFile(const std::string& filename) {
   return true;
 }
 
-bool RSAOpenSSL::Sign(const std::string& message_digest,
+bool RSAOpenSSL::Sign(const MessageDigestImpl::DigestAlgorithm digest_algorithm,
+                      const std::string& message_digest,
                       std::string* signature) const {
   if (key_.get() == NULL || signature == NULL || !private_key_)
     return false;
@@ -291,7 +315,11 @@ bool RSAOpenSSL::Sign(const std::string& message_digest,
   unsigned char signature_buffer[rsa_size];
   uint32 signature_length = 0;
 
-  if (RSA_sign(NID_sha1,
+  int nid = DigestAlgorithmToNid(digest_algorithm);
+  if (nid == 0)
+    return false;
+
+  if (RSA_sign(nid,
                reinterpret_cast<unsigned char*>(
                    const_cast<char*>(message_digest.data())),
                message_digest.length(),
@@ -307,12 +335,17 @@ bool RSAOpenSSL::Sign(const std::string& message_digest,
   return true;
 }
 
-bool RSAOpenSSL::Verify(const std::string& message_digest,
+bool RSAOpenSSL::Verify(const MessageDigestImpl::DigestAlgorithm digest_algorithm,
+                        const std::string& message_digest,
                         const std::string& signature) const {
   if (key_.get() == NULL)
     return false;
 
-  if (RSA_verify(NID_sha1,
+  int nid = DigestAlgorithmToNid(digest_algorithm);
+  if (nid == 0)
+    return false;
+
+  if (RSA_verify(nid,
                  reinterpret_cast<unsigned char*>(
                      const_cast<char*>(message_digest.data())),
                  message_digest.length(),
@@ -399,15 +432,21 @@ bool RSAOpenSSL::Equals(const RSAOpenSSL& rhs) const {
   if (!private_key())
     return true;
 
-  if (BN_cmp(key_->d, key_rhs->d) != 0 ||
-      BN_cmp(key_->p, key_rhs->p) != 0 ||
-      BN_cmp(key_->q, key_rhs->q) != 0 ||
-      BN_cmp(key_->dmp1, key_rhs->dmp1) != 0 ||
-      BN_cmp(key_->dmq1, key_rhs->dmq1) != 0 ||
-      BN_cmp(key_->iqmp, key_rhs->iqmp) != 0)
-    return false;
+  bool result = true;
+  if (BN_cmp(key_->d, key_rhs->d) != 0)
+    result = false;
+  if (BN_cmp(key_->p, key_rhs->p) != 0)
+    result = false;
+  if (BN_cmp(key_->q, key_rhs->q) != 0)
+    result = false;
+  if (BN_cmp(key_->dmp1, key_rhs->dmp1) != 0)
+    result = false;
+  if (BN_cmp(key_->dmq1, key_rhs->dmq1) != 0)
+    result = false;
+  if (BN_cmp(key_->iqmp, key_rhs->iqmp) != 0)
+    result = false;
 
-  return true;
+  return result;
 }
 
 }  // namespace openssl

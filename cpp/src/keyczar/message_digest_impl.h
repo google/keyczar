@@ -33,7 +33,8 @@ class MessageDigestImpl {
     SHA512,
   };
 
-  MessageDigestImpl() {}
+  MessageDigestImpl(const DigestAlgorithm digest_algorithm)
+      : digest_algorithm_(digest_algorithm) {}
 
   virtual ~MessageDigestImpl() {}
 
@@ -56,7 +57,11 @@ class MessageDigestImpl {
   // Returns the size of the message digest i.e. the hash.
   virtual int Size() const = 0;
 
+  DigestAlgorithm digest_algorithm() const { return digest_algorithm_; }
+
  private:
+  const DigestAlgorithm digest_algorithm_;
+
   DISALLOW_COPY_AND_ASSIGN(MessageDigestImpl);
 };
 

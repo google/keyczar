@@ -18,6 +18,8 @@
 
 #include "base/basictypes.h"
 
+#include "keyczar/message_digest_impl.h"
+
 namespace keyczar {
 
 // Cryptographic RSA interface.
@@ -47,10 +49,12 @@ class RSAImpl {
   // In this case only public attributes are copied into |key|.
   virtual bool GetPublicAttributes(RSAIntermediateKey* key) = 0;
 
-  virtual bool Sign(const std::string& message,
+  virtual bool Sign(const MessageDigestImpl::DigestAlgorithm digest_algorithm,
+                    const std::string& message,
                     std::string* signature) const = 0;
 
-  virtual bool Verify(const std::string& message,
+  virtual bool Verify(const MessageDigestImpl::DigestAlgorithm digest_algorithm,
+                      const std::string& message,
                       const std::string& signature) const = 0;
 
   virtual bool Encrypt(const std::string& data,

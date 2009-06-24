@@ -205,7 +205,8 @@ bool RSAPrivateKey::Sign(const std::string& data,
   if (!digest_impl->Digest(data, &message_digest))
     return false;
 
-  return rsa_impl()->Sign(message_digest, signature);
+  return rsa_impl()->Sign(digest_impl->digest_algorithm(),
+                          message_digest, signature);
 }
 
 bool RSAPrivateKey::Decrypt(const std::string& encrypted,

@@ -113,7 +113,8 @@ bool RSAPublicKey::Verify(const std::string& data,
   if (!digest_impl->Digest(data, &message_digest))
     return false;
 
-  return rsa_impl()->Verify(message_digest, signature);
+  return rsa_impl()->Verify(digest_impl->digest_algorithm(),
+                            message_digest, signature);
 }
 
 bool RSAPublicKey::Encrypt(const std::string& data,

@@ -24,7 +24,8 @@ namespace keyczar {
 class HMACImpl {
  public:
   // List of supported digest algorithms. This type is used for
-  // communicating the algorithm to use to the concrete implementations.
+  // communicating the algorithm to be used by the concrete
+  // implementations.
   enum DigestAlgorithm {
     SHA1,
     SHA224,

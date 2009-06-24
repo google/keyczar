@@ -20,7 +20,8 @@ namespace keyczar {
 namespace openssl {
 
 MessageDigestOpenSSL::MessageDigestOpenSSL(DigestAlgorithm digest_algorithm)
-    : context_(EVP_MD_CTX_create()), evp_md_(NULL), engine_(NULL) {
+    : MessageDigestImpl(digest_algorithm), context_(EVP_MD_CTX_create()),
+      evp_md_(NULL), engine_(NULL) {
   switch (digest_algorithm) {
     case SHA1:
       evp_md_ = EVP_sha1;
