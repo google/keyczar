@@ -127,7 +127,8 @@ class Key(object):
 
   def _Hash(self):
     """Compute and return the hash id of this key. Can override default hash."""
-    fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)), self.key_bytes)
+    fullhash = util.Hash('SHA1', util.IntToBytes(len(self.key_bytes)),
+                         self.key_bytes)
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
 
   def __Hash(self):
@@ -181,7 +182,8 @@ class AesKey(SymmetricKey):
                        "hmacKey": json.loads(str(self.hmac_key))})
 
   def _Hash(self):
-    fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)),
+    fullhash = util.Hash('SHA1',
+                         util.IntToBytes(len(self.key_bytes)),
                          self.key_bytes,
                          self.hmac_key.key_bytes)
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
@@ -303,7 +305,7 @@ class HmacKey(SymmetricKey):
     return json.dumps({"size": self.size, "hmacKeyString": self.key_string})
 
   def _Hash(self):
-    fullhash = util.Hash(self.key_bytes)
+    fullhash = util.Hash('SHA1', self.key_bytes)
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
 
   @staticmethod
@@ -456,7 +458,7 @@ class DsaPrivateKey(PrivateKey):
     """
     # need to chose a random k per-message
     k = random.SystemRandom().randint(2, self.key.q-1)
-    (r, s) = self.key.sign(util.Hash(msg), k)
+    (r, s) = self.key.sign(util.Hash('SHA1', msg), k)
     return util.MakeDsaSig(r, s)
 
   def Verify(self, msg, sig):
@@ -505,7 +507,7 @@ class RsaPrivateKey(PrivateKey):
     datablock = util.Xor(masked_datablock, datablock_mask)
 
     label_hash = datablock[:util.HLEN]
-    expected_label_hash = util.Hash(label)  # Debugging
+    expected_label_hash = util.Hash('SHA1', label)  # Debugging
     if label_hash != expected_label_hash:
       raise errors.KeyczarError("OAEP Decoding Error - hash is invalid")
 
@@ -515,13 +517,14 @@ class RsaPrivateKey(PrivateKey):
     return delimited_message[1:]  # The message
 
   def __str__(self):
-    return json.dumps({ "publicKey": json.loads(str(self.public_key)),
+    return json.dumps({"publicKey": json.loads(str(self.public_key)),
                        "privateExponent" : util.Encode(self.params['privateExponent']),
                        "primeP" : util.Encode(self.params['primeP']),
                        "primeQ" : util.Encode(self.params['primeQ']),
                        "primeExponentP" : util.Encode(self.params['primeExponentP']),
                        "primeExponentQ" : util.Encode(self.params['primeExponentQ']),
                        "crtCoefficient" : util.Encode(self.params['crtCoefficient']),
+                       "digest": self.params['digest'],
                        "size": self.size})
 
   @staticmethod
@@ -544,10 +547,12 @@ class RsaPrivateKey(PrivateKey):
                'primeQ': util.PadBytes(util.BigIntToBytes(key.p), 1),
                'primeExponentP': util.PadBytes(util.BigIntToBytes(key.d % (key.q - 1)), 1),
                'primeExponentQ': util.PadBytes(util.BigIntToBytes(key.d % (key.p - 1)), 1),
-               'crtCoefficient': util.PadBytes(util.BigIntToBytes(key.u), 1)}
+               'crtCoefficient': util.PadBytes(util.BigIntToBytes(key.u), 1),
+               'digest': 'SHA256'}
     pubkey = key.publickey()
     pub_params = { 'modulus': util.PadBytes(util.BigIntToBytes(key.n), 1),
-                   'publicExponent': util.PadBytes(util.BigIntToBytes(key.e), 1)}
+                   'publicExponent': util.PadBytes(util.BigIntToBytes(key.e), 1),
+                   'digest': 'SHA256'}
     pub = RsaPublicKey(pub_params, pubkey, size)
     return RsaPrivateKey(params, pub, key, size)
 
@@ -569,7 +574,8 @@ class RsaPrivateKey(PrivateKey):
               'primeQ': util.Decode(rsa['primeQ']),
               'primeExponentP': util.Decode(rsa['primeExponentP']),
               'primeExponentQ': util.Decode(rsa['primeExponentQ']),
-              'crtCoefficient': util.Decode(rsa['crtCoefficient'])
+              'crtCoefficient': util.Decode(rsa['crtCoefficient']),
+              'digest': rsa.get('digest', 'SHA1')
               }
 
     key = RSA.construct((util.BytesToLong(pub.params['modulus']),
@@ -608,7 +614,7 @@ class RsaPrivateKey(PrivateKey):
     @return: string representation of long int signature over message
     @rtype: string
     """
-    emsa_encoded = util.MakeEmsaMessage(msg, self.size)
+    emsa_encoded = util.MakeEmsaMessage(msg, self.size, self.params['digest'])
     return util.BigIntToBytes(self.key.sign(emsa_encoded, None)[0])
 
   def Verify(self, msg, sig):
@@ -678,7 +684,7 @@ class DsaPublicKey(PublicKey):
     """
     try:
       (r, s) = util.ParseDsaSig(sig)
-      return self.key.verify(util.Hash(msg), (r, s))
+      return self.key.verify(util.Hash('SHA1', msg), (r, s))
     except errors.KeyczarError:
       # if signature is not in correct format
       return False
@@ -698,7 +704,7 @@ class RsaPublicKey(PublicKey):
     k = int(math.floor(math.log(self.key.n, 256)) + 1) # num bytes in n
     if len(msg) > k - 2 * util.HLEN - 2:
       raise errors.KeyczarError("Message too long to OAEP encode.")
-    label_hash = util.Hash(label)
+    label_hash = util.Hash('SHA1', label)
     pad_octets = (k - len(msg) - 2 * util.HLEN - 2)  # Number of zeros to pad
     if pad_octets < 0:
       raise errors.KeyczarError("Message is too long: %d" % len(msg))
@@ -719,6 +725,7 @@ class RsaPublicKey(PublicKey):
   def __str__(self):
     return json.dumps({"modulus": util.Encode(self.params['modulus']),
                        "publicExponent": util.Encode(self.params['publicExponent']),
+                       "digest": self.params['digest'],
                        "size": self.size})
 
   def _Hash(self):
@@ -739,7 +746,9 @@ class RsaPublicKey(PublicKey):
     """
     rsa = json.loads(key)
     params = {'modulus' : util.Decode(rsa['modulus']),
-              'publicExponent' : util.Decode(rsa['publicExponent'])}
+              'publicExponent' : util.Decode(rsa['publicExponent']),
+              'digest': rsa.get('digest', 'SHA1')}
+
 
     pubkey = RSA.construct((util.BytesToLong(params['modulus']),
                             util.BytesToLong(params['publicExponent'])))
@@ -773,7 +782,9 @@ class RsaPublicKey(PublicKey):
     @rtype: boolean
     """
     try:
-      return self.key.verify(util.MakeEmsaMessage(msg, self.size), (util.BytesToLong(sig),))
+      return self.key.verify(util.MakeEmsaMessage(msg, self.size,
+                                                  self.params['digest']),
+                             (util.BytesToLong(sig),))
     except ValueError:
       # if sig is not a long, it's invalid
       return False

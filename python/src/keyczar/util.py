@@ -25,8 +25,10 @@ import math
 try:
   # Import hashlib if Python >= 2.5
   from hashlib import sha1
+  from hashlib import sha256
 except ImportError:
   from sha import sha as sha1
+  from Crypto.Hash.SHA256 import new as sha256
 
 from Crypto.Util import randpool
 from pyasn1.codec.der import decoder
@@ -202,11 +204,21 @@ def ParseDsaSig(sig):
   s = long(seq.getComponentByPosition(1))
   return (r, s)
 
-def MakeEmsaMessage(msg, modulus_size):
+def MakeEmsaMessage(msg, modulus_size, digest):
   """Algorithm EMSA_PKCS1-v1_5 from PKCS 1 version 2"""
   magic_sha1_header = [0x30, 0x21, 0x30, 0x9, 0x6, 0x5, 0x2b, 0xe, 0x3, 0x2,
                        0x1a, 0x5, 0x0, 0x4, 0x14]
-  encoded = "".join([chr(c) for c in magic_sha1_header]) + Hash(msg)
+  magic_sha256_header = [0x30, 0x31, 0x30, 0xd, 0x6, 0x9, 0x60, 0x86, 0x48,
+                         0x1, 0x65, 0x3, 0x4, 0x2, 0x1, 0x5, 0x0, 0x4, 0x20]
+
+  if digest == 'SHA1':
+    header = magic_sha1_header
+  elif digest == 'SHA256':
+    header = magic_sha256_header
+  else:
+    raise errors.KeyczarError("Unknown digest algorithm %s" % digest)
+
+  encoded = "".join([chr(c) for c in header]) + Hash(digest, msg)
   pad_string = chr(0xFF) * (modulus_size / 8 - len(encoded) - 3)
   return chr(1) + pad_string + chr(0) + encoded
 
@@ -281,9 +293,12 @@ def RandBytes(n):
   """Return n random bytes."""
   return randpool.RandomPool(512).get_bytes(n)
 
-def Hash(*inputs):
+def Hash(digest, *inputs):
   """Return a SHA-1 hash over a variable number of inputs."""
-  md = sha1()
+  try:
+    md = {'SHA1': sha1, 'SHA256': sha256}[digest]()
+  except KeyError:
+    raise errors.KeyczarError("Unknown digest algorithm %s" % digest)
   for i in inputs:
     md.update(i)
   return md.digest()
@@ -394,5 +409,5 @@ def MGF(seed, mlen):
     raise errors.KeyczarError("MGF1 mask length too long.")
   output = ""
   for i in range(int(math.ceil(mlen / float(HLEN)))):
-    output += Hash(seed, IntToBytes(i))
+    output += Hash('SHA1', seed, IntToBytes(i))
   return output[:mlen]
