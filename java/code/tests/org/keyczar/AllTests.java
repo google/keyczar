@@ -43,6 +43,7 @@ public class AllTests extends TestSuite {
     suite.addTestSuite(UriSignerTest.class);
     suite.addTestSuite(KeyczarToolTest.class);
     suite.addTestSuite(I18nTest.class);
+    suite.addTestSuite(CrossCompatibilityTest.class);
     return suite;
   }
 }
