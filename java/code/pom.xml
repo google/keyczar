@@ -64,6 +64,11 @@
        <name>jms jars</name>
        <url>http://repository.jboss.com/maven2</url>
      </repository>
+     <repository>
+     	<id>keyczar repository</id>
+     	<name>Keyczar Repository</name>
+     	<url>http://keyczar.googlecode.com/svn/trunk/java/maven/</url>
+     </repository>
   </repositories>
   <build>
     <finalName>${project.artifactId}-${project.version}</finalName>
