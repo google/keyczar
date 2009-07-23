@@ -16,11 +16,10 @@
 
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/ref_counted.h"
-#include "base/values.h"
-
-#include "keyczar/key_type.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/ref_counted.h>
+#include <keyczar/base/values.h>
+#include <keyczar/key_type.h>
 
 namespace keyczar {
 
@@ -34,19 +33,20 @@ class MessageDigestImpl;
 //
 // Current inheritance hierarchy:
 //
-//                                Key
+//                               /Key/
 //                                 ^
 //                                 |
-//       --------------------------------------------------------
-//      |         |                |                             |
-//      |         |                |                             |
-//  SecretKey  HMACKey          PrivateKey                   PublicKey
-//      ^                          ^                             ^
-//      |                          |                             |
-//      |                    -------------                 -------------
-//   AESKey                 |             |               |             |
-//                          |             |               |             |
-//                    DSAPrivateKey  RSAPrivateKey   DSAPublicKey  RSAPublicKey
+//       ---------------------------------------------------
+//      |         |          |                              |
+//      |         |          |                              |
+//  SecretKey  HMACKey   PrivateKey                     PublicKey
+//      ^                    ^                              ^
+//      |                    |                              |
+//      |        -----------------------            --------------------
+//   AESKey     |            |          |          |        |           |
+//         DSAPrivateKey     |    RSAPrivateKey    |    ECDSAPublicKey  |
+//                   ECDSAPrivateKey           DSAPublicKey        RSAPublicKey
+
 //
 //
 // Each key aggregates a concrete implementation through an abstract interface

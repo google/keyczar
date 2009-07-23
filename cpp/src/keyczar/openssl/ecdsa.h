@@ -15,14 +15,13 @@
 #define KEYCZAR_OPENSSL_ECDSA_H_
 
 #include <openssl/ecdsa.h>
+
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/scoped_ptr.h"
-#include "testing/gtest/include/gtest/gtest_prod.h"
-
-#include "keyczar/ecdsa_impl.h"
-#include "keyczar/openssl/util.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/ecdsa_impl.h>
+#include <keyczar/openssl/util.h>
 
 namespace keyczar {
 

@@ -16,11 +16,10 @@
 
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/scoped_ptr.h"
-#include "base/file_path.h"
-
-#include "keyczar/keyset.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/base/file_path.h>
+#include <keyczar/keyset.h>
 
 namespace keyczar {
 
@@ -36,7 +35,7 @@ class KeysetReader;
 //
 // Inheritance tree:
 //
-//                Keyczar
+//               /Keyczar/
 //                   ^
 //                   |
 //       -------------------------
@@ -77,38 +76,64 @@ class Keyczar {
     BASE64W       // Web-safe base64 encoding (used by default)
   };
 
+  // Update the corresponding enum structure inside keyczar.i if this one
+  // is modified.
+  enum Compression {
+    NO_COMPRESSION,  // No compression
+    GZIP,            // GZIP compression generally used when compressing files
+    ZLIB             // Simple zlib compression
+  };
+
   // This constructor takes ownership of the provided Keyset object |keyset|.
-  explicit Keyczar(Keyset* keyset) : keyset_(keyset), encoding_(BASE64W) {}
+  // By default all the results are web-safe base64 encoded and all input
+  // plaintext messages are not compressed.
+  explicit Keyczar(Keyset* keyset)
+      : keyset_(keyset), encoding_(BASE64W), compression_(NO_COMPRESSION) {}
 
   virtual ~Keyczar() {}
 
-  // This method must be implemented by signers subclasses. It returns
-  // false if it is not implemented or if it fails.
+  // All the following methods must be implemented by the relevant subclasses.
+  // Returning false if not implemented or if it failed.
+
+  // Signs the given input string |data| and put the result as a web-safe
+  // Base64 encoded string into |signature|. This method uses the current
+  // encoding format to encode the resulting signature. This method returns
+  // false if it fails.
   virtual bool Sign(const std::string& data, std::string* signature) const;
 
-  // This method must be implemented by signers subclasses. It returns an
-  // empty string if it is not implemented or if it fails.
+  // Signs |data| and returns the signature as string value. This method
+  // overloads the previous Encrypt method and internally calls it. It returns
+  // an empty string if it fails.
   virtual std::string Sign(const std::string& data) const;
 
-  // This method must be implemented by verifiers subclasses. It returns
-  // false if it is not implemented or if it fails.
+  // Verifies the |signature| of the corresponding |data|.
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
 
-  // This method must be implemented by encrypters subclasses. It returns
-  // false if it is not implemented or if it fails.
-  virtual bool Encrypt(const std::string& data, std::string* ciphertext) const;
+  // Encrypts the given input string |plaintext| and put the result as a
+  // web-safe Base64 encoded string into |ciphertext|. This method uses the
+  // current format compression to compress the |plaintext| before encryption
+  // and uses the current encoding format to encode the resulting |ciphertext|.
+  // This method returns false if it fails.
+  virtual bool Encrypt(const std::string& plaintext,
+                       std::string* ciphertext) const;
 
-  // This method must be implemented by encrypters subclasses. It returns an
-  // empty string if it is not implemented or if it fails.
-  virtual std::string Encrypt(const std::string& data) const;
+  // Encrypts |plaintext| and returns the ciphertext as string value. This
+  // method overloads the previous Encrypt method and internally calls it. This
+  // method returns an empty string if it fails.
+  virtual std::string Encrypt(const std::string& plaintext) const;
 
-  // This method must be implemented by crypters subclasses. It returns
-  // false if it is not implemented or if it fails.
-  virtual bool Decrypt(const std::string& ciphertext, std::string* data) const;
+  // Decrypts web-safe Base64 encoded string |ciphertext| and writes the
+  // decrypted plaintext into |plaintext|. It uses the current encoding
+  // format to decode the |ciphertext| and the current format compression to
+  // decompress the resulting |plaintext| after having decrypted it. This
+  // method returns false if it fails.
+  virtual bool Decrypt(const std::string& ciphertext,
+                       std::string* plaintext) const;
 
-  // This method must be implemented by crypters subclasses. It returns an
-  // empty string if it is not implemented or if it fails.
+  // Decrypts |ciphertext| and returns the plaintext as string value. This
+  // method overloads the previous Encrypt method and internally calls it. This
+  // method returns an empty string if it fails.
   virtual std::string Decrypt(const std::string& ciphertext) const;
 
   // Returns true if the operations implemented by this class can be applied to
@@ -117,7 +142,13 @@ class Keyczar {
 
   Encoding encoding() const { return encoding_; }
 
+  // Modifies encoding format.
   void set_encoding(Encoding encoding) { encoding_ = encoding; }
+
+  Compression compression() const { return compression_; }
+
+  // Modifies compression format.
+  void set_compression(Compression compression) { compression_ = compression; }
 
   // Returns the Keyset instance.
   const Keyset* keyset() const { return keyset_.get(); }
@@ -128,35 +159,49 @@ class Keyczar {
   bool GetHash(const std::string& bytes, std::string* hash) const;
 
   // Retrieves the current encoding format, encodes |input_value| and assigns
-  // the result to |encoded_value|. Returns false if it fails.
+  // the result into |encoded_value|. Returns false if it fails.
   bool Encode(const std::string& input_value, std::string* encoded_value) const;
 
   // Retrieves the current encoding format, decodes |encoded_value| and assigns
-  // the result to |decoded_value|. Returns false if it fails.
+  // the result into |decoded_value|. Returns false if it fails.
   bool Decode(const std::string& encoded_value,
               std::string* decoded_value) const;
+
+  // Retrieves the current compression format, compresses |input| and put
+  // the result into |output|. Returns false if it fails.
+  bool Compress(const std::string& input, std::string* output) const;
+
+  // Retrieves the current compression format, decompresses |input| and put
+  // the result into |output|. Returns false if it fails.
+  bool Decompress(const std::string& input, std::string* output) const;
 
  private:
   const scoped_ptr<Keyset> keyset_;
 
-  // Encoding format used for cryptographic operations. The default encoding
-  // format used is BASE64W.
+  // Encoding format used for representing cryptographic operations results. The
+  // default encoding format used is BASE64W. It applies to encryption and
+  // signatures operations.
   Encoding encoding_;
+
+  // Compression format used to compress input plaintext or input data about
+  // to be signed. The default compression mode is set to NO_COMPRESSION.
+  // It applies to encryption operations.
+  Compression compression_;
 
   DISALLOW_COPY_AND_ASSIGN(Keyczar);
 };
 
-// Encrypters are used strictly to encrypt data. Typically, Encrypters will read
-// sets of public keys, although may also be instantiated with sets of symmetric
-// keys. Crypter objects should be used with symmetric or private key sets to
-// decrypt data.
+// An Encrypter is exclusively used to encrypt data. Typically, Encrypters use
+// symmetric keys to encrypt the provided data, although RSA public keys may
+// also be used for encryption. However public keys are only able to encrypt
+// limited sizes of data.
 class Encrypter : public Keyczar {
  public:
   explicit Encrypter(Keyset* keyset) : Keyczar(keyset) {}
 
-  // This factory returns a new Crypter. This will attempt to read the keys
+  // This factory returns a new Encrypter. This will attempt to read the keys
   // from |location| using a KeysetReader. The corresponding key set must
-  // have a purpose of ENCRYPT or DECRYPT_AND_ENCRYPT.
+  // have as purpose: ENCRYPT or DECRYPT_AND_ENCRYPT.
   static Encrypter* Read(const std::string& location);
 
   static Encrypter* Read(const FilePath& location);
@@ -165,13 +210,8 @@ class Encrypter : public Keyczar {
   // read key set from unconventionnal readers e.g. from an encrypted reader.
   static Encrypter* Read(const KeysetReader& reader);
 
-  // Encrypts the given input string |data| and put the result as a web-safe
-  // Base64 encoded string into |ciphertext|. This method returns false if it
-  // fails.
   virtual bool Encrypt(const std::string& data, std::string* ciphertext) const;
 
-  // Encrypts |data| and returns the ciphertext as string value. Returns an
-  // empty string if it fails.
   virtual std::string Encrypt(const std::string& data) const;
 
   virtual bool IsAcceptablePurpose() const;
@@ -180,15 +220,16 @@ class Encrypter : public Keyczar {
   DISALLOW_COPY_AND_ASSIGN(Encrypter);
 };
 
-// Crypters may both encrypt and decrypt data using sets of symmetric or private
-// keys. Sets of public keys may only be used with Encrypter objects.
+// A Crypter extends its base class Encrypter by providing a decryption
+// method which then can be used with a secret symmetric key or a private
+// RSA key to decrypt the data.
 class Crypter : public Encrypter {
  public:
   explicit Crypter(Keyset* keyset) : Encrypter(keyset) {}
 
   // This factory returns a new Crypter. This will attempt to read the keys
   // from |location| using a KeysetReader. The corresponding key set must
-  // have a purpose of DECRYPT_AND_ENCRYPT.
+  // have as purpose: DECRYPT_AND_ENCRYPT.
   static Crypter* Read(const std::string& location);
 
   static Crypter* Read(const FilePath& location);
@@ -197,12 +238,8 @@ class Crypter : public Encrypter {
   // read key set from unconventionnal readers e.g. from an encrypted reader.
   static Crypter* Read(const KeysetReader& reader);
 
-  // Decrypts the web-safe Base64 encoded string |ciphertext| and write the
-  // decrypted plaintext into |data|. This method returns false if it fails.
   virtual bool Decrypt(const std::string& ciphertext, std::string* data) const;
 
-  // Decrypts |ciphertext| and returns the plaintext as string value. Returns
-  // an empty string if it fails.
   virtual std::string Decrypt(const std::string& ciphertext) const;
 
   virtual bool IsAcceptablePurpose() const;
@@ -211,26 +248,24 @@ class Crypter : public Encrypter {
   DISALLOW_COPY_AND_ASSIGN(Crypter);
 };
 
-// Verifiers are used strictly to verify signatures. Typically, Verifiers will
-// read sets of public keys, although may also be instantiated with sets of
-// symmetric or private keys. Signer objects should be used with symmetric or
-// private key sets to generate signatures.
+// A Verifier is exclusively used to verify the validity of signatures. This
+// class can be instanciated with a symmetric HMAC key or with an asymmetric
+// key.
 class Verifier : public Keyczar {
  public:
   explicit Verifier(Keyset* keyset) : Keyczar(keyset) {}
 
   // This factory returns a new Verifier. This will attempt to read the
   // keys from |location| using a KeysetReader. The corresponding key set
-  // must have a purpose of VERIFY or SIGN_AND_VERIFY.
+  // must have as purpose: VERIFY or SIGN_AND_VERIFY.
   static Verifier* Read(const std::string& location);
 
   static Verifier* Read(const FilePath& location);
 
   // This factory returns a new Verifier directly from a reader. This permit to
-  // read key set from unconventionnal readers e.g. from an encrypted reader.
+  // read key set from unconventionnal readers.
   static Verifier* Read(const KeysetReader& reader);
 
-  // Verifies the |signature| on the given |data|.
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
 
@@ -240,8 +275,8 @@ class Verifier : public Keyczar {
   DISALLOW_COPY_AND_ASSIGN(Verifier);
 };
 
-// Unversioned Verifiers are used strictly to verify standard signatures
-// (i.e. HMAC-SHA1, DSA-SHA1, RSA-SHA1) with no key version information.
+// Unversioned Verifiers are exclusively used to verify standard signatures
+// (i.e. HMAC, DSA, ECDSA, RSA) with no key version information.
 // Typically, UnversionedVerifiers will read sets of public keys, although may
 // also be instantiated with sets of symmetric or private keys.
 //
@@ -256,17 +291,15 @@ class UnversionedVerifier : public Keyczar {
 
   // This factory returns a new UnversionedVerifier. This will attempt to read
   // the keys from |location| using a KeysetReader. The corresponding key set
-  // must have a purpose of VERIFY or SIGN_AND_VERIFY.
+  // must have as purpose: VERIFY or SIGN_AND_VERIFY.
   static UnversionedVerifier* Read(const std::string& location);
 
   static UnversionedVerifier* Read(const FilePath& location);
 
   // This factory returns a new UnversionedVerifier directly from a reader. This
-  // permit to read key set from unconventionnal readers e.g. from an encrypted
-  // reader.
+  // permit to read key set from unconventionnal readers.
   static UnversionedVerifier* Read(const KeysetReader& reader);
 
-  // Verifies the |signature| on the given |data|.
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
 
@@ -276,8 +309,8 @@ class UnversionedVerifier : public Keyczar {
   DISALLOW_COPY_AND_ASSIGN(UnversionedVerifier);
 };
 
-// Signers may both sign and verify data using sets of symmetric or private
-// keys. Sets of public keys may only be used with Verifier objects.
+// A Signer may both sign and verify data using a symmetric or private
+// key.
 //
 // Signer objects should be used with symmetric or private key sets to
 // generate signatures.
@@ -287,22 +320,17 @@ class Signer : public Verifier {
 
   // This factory returns a new Signer. This will attempt to read the keys
   // from |location| using a KeysetReader. The corresponding key set must
-  // have a purpose of SIGN_AND_VERIFY.
+  // have as purpose: SIGN_AND_VERIFY.
   static Signer* Read(const std::string& location);
 
   static Signer* Read(const FilePath& location);
 
   // This factory returns a new Signer directly from a reader. This permit to
-  // read key set from unconventionnal readers e.g. from an encrypted reader.
+  // read key set from unconventionnal readers.
   static Signer* Read(const KeysetReader& reader);
 
-  // Signs the given input string |data| and put the result as a web-safe
-  // Base64 encoded string into |signature|. This method returns false if it
-  // fails.
   virtual bool Sign(const std::string& data, std::string* signature) const;
 
-  // Signs |data| and returns the signature as string value. It returns an
-  // empty string if it fails.
   virtual std::string Sign(const std::string& data) const;
 
   virtual bool IsAcceptablePurpose() const;
@@ -311,12 +339,11 @@ class Signer : public Verifier {
   DISALLOW_COPY_AND_ASSIGN(Signer);
 };
 
-// UnversionedSigners may both sign and verify data using sets of symmetric or
-// private keys. Sets of public keys may only be used with Verifier
-// objects.
+// An UnversionedSigner may both sign and verify data using a symmetric or
+// private key. A public key may only be used with Verifier objects.
 //
 // UnversionedSigners do not include any key versioning in their outputs. They
-// will return standard signatures (i.e. HMAC-SHA1, RSA-SHA1, DSA-SHA1).
+// will return standard signatures (i.e. HMAC, RSA, DSA, ECDSA).
 //
 // UnversionedSigner objects should be used with symmetric or private key sets
 // to generate signatures.
@@ -332,17 +359,11 @@ class UnversionedSigner : public UnversionedVerifier {
   static UnversionedSigner* Read(const FilePath& location);
 
   // This factory returns a new UnversionedSigner directly from a reader. This
-  // permit to read key set from unconventionnal readers e.g. from an encrypted
-  // reader.
+  // permit to read key set from unconventionnal readers.
   static UnversionedSigner* Read(const KeysetReader& reader);
 
-  // Signs the given input string |data| and put the result as a web-safe
-  // Base64 encoded string into |signature|. This method returns false if it
-  // fails.
   virtual bool Sign(const std::string& data, std::string* signature) const;
 
-  // Signs |data| and returns the signature as string value. It returns an
-  // empty string if it fails.
   virtual std::string Sign(const std::string& data) const;
 
   virtual bool IsAcceptablePurpose() const;

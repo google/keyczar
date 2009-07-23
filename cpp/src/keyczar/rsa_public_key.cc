@@ -11,16 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/rsa_public_key.h"
+#include <keyczar/rsa_public_key.h>
 
-#include "base/base64w.h"
-#include "base/logging.h"
-#include "base/values.h"
-
-#include "keyczar/crypto_factory.h"
-#include "keyczar/key_type.h"
-#include "keyczar/key_util.h"
-#include "keyczar/message_digest_impl.h"
+#include <keyczar/base/base64w.h>
+#include <keyczar/base/logging.h>
+#include <keyczar/base/values.h>
+#include <keyczar/crypto_factory.h>
+#include <keyczar/key_type.h>
+#include <keyczar/key_util.h>
+#include <keyczar/message_digest_impl.h>
 
 namespace keyczar {
 
@@ -94,7 +93,7 @@ bool RSAPublicKey::Hash(std::string* hash) const {
   AddToHash(key.e, *digest_impl);
   std::string full_hash;
   digest_impl->Final(&full_hash);
-  DCHECK(Key::GetHashSize() <= static_cast<int>(full_hash.length()));
+  CHECK_LE(Key::GetHashSize(), static_cast<int>(full_hash.length()));
 
   Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
   return true;

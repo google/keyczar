@@ -14,8 +14,8 @@
 #ifndef KEYCZAR_KEYSET_READER_H_
 #define KEYCZAR_KEYSET_READER_H_
 
-#include "base/basictypes.h"
-#include "base/values.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/values.h>
 
 namespace keyczar {
 

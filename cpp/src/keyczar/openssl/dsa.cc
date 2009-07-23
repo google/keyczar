@@ -11,14 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/openssl/dsa.h"
+#include <keyczar/openssl/dsa.h>
 
 #include <openssl/bn.h>
 #include <openssl/objects.h>
 #include <openssl/pem.h>
 
-#include "base/file_util.h"
-#include "base/logging.h"
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/logging.h>
+#include <keyczar/base/stl_util-inl.h>
 
 namespace keyczar {
 
@@ -217,22 +218,23 @@ bool DSAOpenSSL::Sign(const std::string& message_digest,
     return false;
 
   int dsa_size = DSA_size(key_.get());
-  unsigned char signature_buffer[dsa_size];
-  uint32 signature_length = 0;
+  base::STLStringResizeUninitialized(signature, dsa_size);
 
+  uint32 signature_length = 0;
   if (DSA_sign(0,
                reinterpret_cast<unsigned char*>(
                    const_cast<char*>(message_digest.data())),
                message_digest.length(),
-               signature_buffer,
+               reinterpret_cast<unsigned char*>(
+                   base::string_as_array(signature)),
                &signature_length,
                key_.get()) != 1) {
     PrintOSSLErrors();
     return false;
   }
 
-  signature->assign(reinterpret_cast<char*>(signature_buffer),
-                    signature_length);
+  CHECK_LE(signature_length, dsa_size);
+  signature->resize(signature_length);
   return true;
 }
 

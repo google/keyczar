@@ -11,13 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/keyset.h"
+#include <keyczar/keyset.h>
 
-#include "base/logging.h"
-
-#include "keyczar/key.h"
-#include "keyczar/keyset_reader.h"
-#include "keyczar/keyset_writer.h"
+#include <keyczar/base/logging.h>
+#include <keyczar/key.h>
+#include <keyczar/keyset_reader.h>
+#include <keyczar/keyset_writer.h>
 
 namespace keyczar {
 

@@ -11,13 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/keyset_encrypted_file_writer.h"
+#include <keyczar/keyset_encrypted_file_writer.h>
 
-#include "base/file_util.h"
-#include "base/json_value_serializer.h"
-#include "base/string_util.h"
-
-#include "keyczar/keyczar.h"
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/json_value_serializer.h>
+#include <keyczar/base/string_util.h>
+#include <keyczar/keyczar.h>
 
 namespace keyczar {
 

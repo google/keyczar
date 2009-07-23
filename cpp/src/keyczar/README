@@ -1,0 +1,7 @@
+= Source tree =
+
+keyczar/            -> Keyczar C++ implementation
+  base/             -> Third party code mostly derived from Chromium
+  data/             -> Data used for testing
+  openssl/          -> OpenSSL crypto backend
+  build.scons       -> scons script

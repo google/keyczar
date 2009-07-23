@@ -16,13 +16,12 @@
 
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/scoped_ptr.h"
-#include "base/values.h"
-
-#include "keyczar/private_key.h"
-#include "keyczar/dsa_impl.h"
-#include "keyczar/dsa_public_key.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/base/values.h>
+#include <keyczar/private_key.h>
+#include <keyczar/dsa_impl.h>
+#include <keyczar/dsa_public_key.h>
 
 namespace keyczar {
 

@@ -64,7 +64,7 @@ def KillProcessTree(pid):
                                      env={'PATH':killproc_path})
     killproc_task.communicate()
 
-  elif sys.platform in ('linux', 'linux2', 'darwin'):
+  elif sys.platform in ('linux', 'linux2', 'darwin', 'openbsd4'):
     # Use ps to get a list of processes
     ps_task = subprocess.Popen(['/bin/ps', 'x', '-o', 'pid,ppid'], stdout=subprocess.PIPE)
     ps_out = ps_task.communicate()[0]

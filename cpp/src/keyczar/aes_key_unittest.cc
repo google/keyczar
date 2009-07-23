@@ -13,19 +13,19 @@
 // limitations under the License.
 #include <string>
 
-#include "base/base64w.h"
-#include "base/logging.h"
-#include "base/ref_counted.h"
-#include "base/file_path.h"
-#include "base/file_util.h"
-#include "base/scoped_ptr.h"
-#include "base/values.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include <testing/gtest/include/gtest/gtest.h>
 
-#include "keyczar/aes_key.h"
-#include "keyczar/keyczar_test.h"
-#include "keyczar/keyset_file_reader.h"
-#include "keyczar/keyset_file_writer.h"
+#include <keyczar/aes_key.h>
+#include <keyczar/base/base64w.h>
+#include <keyczar/base/logging.h>
+#include <keyczar/base/ref_counted.h>
+#include <keyczar/base/file_path.h>
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/base/values.h>
+#include <keyczar/keyczar_test.h>
+#include <keyczar/keyset_file_reader.h>
+#include <keyczar/keyset_file_writer.h>
 
 namespace keyczar {
 

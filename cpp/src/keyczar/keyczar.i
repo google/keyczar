@@ -1,9 +1,9 @@
 %module keyczar
 %{
-#include "keyczar/keyczar.h"
-#include "keyczar/keyset_reader.h"
-#include "keyczar/keyset_file_reader.h"
-#include "keyczar/keyset_encrypted_file_reader.h"
+#include <keyczar/keyczar.h>
+#include <keyczar/keyset_reader.h>
+#include <keyczar/keyset_file_reader.h>
+#include <keyczar/keyset_encrypted_file_reader.h>
 %}
 
 %include "std_string.i"
@@ -34,16 +34,25 @@ class Keyczar {
     BASE64W
   };
 
+  enum Compression {
+    NO_COMPRESSION,
+    GZIP,
+    ZLIB
+  };
+
   virtual ~Keyczar() = 0;
 
   virtual std::string Sign(const std::string& data) const;
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
-  virtual std::string Encrypt(const std::string& data) const;
+  virtual std::string Encrypt(const std::string& plaintext) const;
   virtual std::string Decrypt(const std::string& ciphertext) const;
 
   Encoding encoding() const;
   void set_encoding(Encoding encoding);
+
+  Compression compression() const;
+  void set_compression(Compression compression);
 };
 
 %nodefaultctor Encrypter;
@@ -52,20 +61,7 @@ class Encrypter : public Keyczar {
   static Encrypter* Read(const std::string& location);
   static Encrypter* Read(const KeysetReader& reader);
 
-  virtual std::string Encrypt(const std::string& data) const;
-
-/* FIXME: remove debug code. */
-/*
-%extend {
-  std::string Encrypt2(const std::string& data) const {
-    std::string ciphertext;
-    bool result = self->Encrypt(data, &ciphertext);
-    if (!result)
-      return "";
-    return ciphertext;
-  }
-}
-*/
+  virtual std::string Encrypt(const std::string& plaintext) const;
 };
 
 %nodefaultctor Crypter;

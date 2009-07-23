@@ -14,10 +14,9 @@
 #ifndef KEYCZAR_SECRET_KEY_H_
 #define KEYCZAR_SECRET_KEY_H_
 
-#include "base/basictypes.h"
-
-#include "keyczar/key.h"
-#include "keyczar/hmac_key.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/key.h>
+#include <keyczar/hmac_key.h>
 
 namespace keyczar {
 

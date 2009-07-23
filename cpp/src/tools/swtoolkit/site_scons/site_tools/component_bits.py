@@ -256,6 +256,8 @@ def generate(env):
   env['_BITS'] = set()
 
   # Declare bits for common target platforms
+  DeclareBit('bsd', 'Target platform is bsd.',
+             exclusive_groups=('target_platform'))
   DeclareBit('linux', 'Target platform is linux.',
              exclusive_groups=('target_platform'))
   DeclareBit('mac', 'Target platform is mac.',
@@ -264,6 +266,8 @@ def generate(env):
              exclusive_groups=('target_platform'))
 
   # Declare bits for common host platforms
+  DeclareBit('host_bsd', 'Host platform is bsd.',
+             exclusive_groups=('host_platform'))
   DeclareBit('host_linux', 'Host platform is linux.',
              exclusive_groups=('host_platform'))
   DeclareBit('host_mac', 'Host platform is mac.',
@@ -277,6 +281,7 @@ def generate(env):
 
   # Set the appropriate host platform bit
   host_platform_to_bit = {
+      'BSD': 'host_bsd',
       'MAC': 'host_mac',
       'LINUX': 'host_linux',
       'WINDOWS': 'host_windows',

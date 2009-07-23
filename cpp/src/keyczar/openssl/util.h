@@ -16,9 +16,11 @@
 
 #include <openssl/err.h>
 #include <openssl/evp.h>
+
 #include <string>
 
-#include "base/logging.h"
+#include <keyczar/base/logging.h>
+#include <keyczar/base/scoped_ptr.h>
 
 namespace keyczar {
 

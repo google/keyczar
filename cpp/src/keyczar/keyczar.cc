@@ -11,15 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/keyczar.h"
+#include <keyczar/keyczar.h>
 
-#include "base/base64w.h"
-#include "base/file_path.h"
-
-#include "keyczar/key.h"
-#include "keyczar/key_purpose.h"
-#include "keyczar/keyset_file_reader.h"
-#include "keyczar/keyset_metadata.h"
+#include <keyczar/base/base64w.h>
+#include <keyczar/base/file_path.h>
+#include <keyczar/base/stl_util-inl.h>
+#include <keyczar/base/zlib.h>
+#include <keyczar/key.h>
+#include <keyczar/key_purpose.h>
+#include <keyczar/keyset_file_reader.h>
+#include <keyczar/keyset_metadata.h>
 
 namespace keyczar {
 
@@ -36,15 +37,17 @@ bool Keyczar::Verify(const std::string& data,
   return false;
 }
 
-bool Keyczar::Encrypt(const std::string& data, std::string* ciphertext) const {
+bool Keyczar::Encrypt(const std::string& plaintext,
+                      std::string* ciphertext) const {
   return false;
 }
 
-std::string Keyczar::Encrypt(const std::string& data) const {
+std::string Keyczar::Encrypt(const std::string& plaintext) const {
   return "";
 }
 
-bool Keyczar::Decrypt(const std::string& ciphertext, std::string* data) const {
+bool Keyczar::Decrypt(const std::string& ciphertext,
+                      std::string* plaintext) const {
   return false;
 }
 
@@ -112,6 +115,50 @@ bool Keyczar::Decode(const std::string& encoded_value,
   return false;
 }
 
+bool Keyczar::Compress(const std::string& input,
+                       std::string* output) const {
+  if (output == NULL)
+    return false;
+
+  const Compression comp = compression();
+  switch (comp) {
+    case NO_COMPRESSION:
+      output->assign(input);
+      return true;
+#if HAVE_ZLIB
+    case GZIP:
+      return base::Zlib::Compress(base::Zlib::GZIP, input, output);
+    case ZLIB:
+      return base::Zlib::Compress(base::Zlib::ZLIB, input, output);
+#endif  // HAVE_ZLIB
+    default:
+      LOG(ERROR) << "Unsupported compression format (" << comp << ")";
+  }
+  return false;
+}
+
+bool Keyczar::Decompress(const std::string& input,
+                         std::string* output) const {
+  if (output == NULL)
+    return false;
+
+  const Compression comp = compression();
+  switch (comp) {
+    case NO_COMPRESSION:
+      output->assign(input);
+      return true;
+#if HAVE_ZLIB
+    case GZIP:
+      return base::Zlib::Decompress(base::Zlib::GZIP, input, output);
+    case ZLIB:
+      return base::Zlib::Decompress(base::Zlib::ZLIB, input, output);
+#endif  // HAVE_ZLIB
+    default:
+      LOG(ERROR) << "Unsupported compression format (" << comp << ")";
+  }
+  return false;
+}
+
 // static
 Encrypter* Encrypter::Read(const std::string& location) {
   const KeysetFileReader reader(location);
@@ -140,7 +187,7 @@ Encrypter* Encrypter::Read(const KeysetReader& reader) {
   return encrypter.release();
 }
 
-bool Encrypter::Encrypt(const std::string& data,
+bool Encrypter::Encrypt(const std::string& plaintext,
                         std::string* ciphertext) const {
   if (keyset() == NULL)
     return false;
@@ -149,8 +196,12 @@ bool Encrypter::Encrypt(const std::string& data,
   if (key == NULL)
     return false;
 
+  std::string compressed_plaintext;
+  if (!Compress(plaintext, &compressed_plaintext))
+    return false;
+
   std::string ciphertext_bytes;
-  if (!key->Encrypt(data, &ciphertext_bytes))
+  if (!key->Encrypt(compressed_plaintext, &ciphertext_bytes))
     return false;
 
   if (!Encode(ciphertext_bytes, ciphertext))
@@ -159,9 +210,9 @@ bool Encrypter::Encrypt(const std::string& data,
   return true;
 }
 
-std::string Encrypter::Encrypt(const std::string& data) const {
+std::string Encrypter::Encrypt(const std::string& plaintext) const {
   std::string ciphertext;
-  bool result = Encrypt(data, &ciphertext);
+  bool result = Encrypt(plaintext, &ciphertext);
   if (!result)
     return "";
   return ciphertext;
@@ -204,8 +255,9 @@ Crypter* Crypter::Read(const KeysetReader& reader) {
   return crypter.release();
 }
 
-bool Crypter::Decrypt(const std::string& ciphertext, std::string* data) const {
-  if (keyset() == NULL || data == NULL)
+bool Crypter::Decrypt(const std::string& ciphertext,
+                      std::string* plaintext) const {
+  if (keyset() == NULL || plaintext == NULL)
     return false;
 
   std::string ciphertext_bytes;
@@ -220,10 +272,11 @@ bool Crypter::Decrypt(const std::string& ciphertext, std::string* data) const {
   if (key == NULL)
     return false;
 
-  if (!key->Decrypt(ciphertext_bytes, data))
+  std::string compressed_plaintext;
+  if (!key->Decrypt(ciphertext_bytes, &compressed_plaintext))
     return false;
 
-  return true;
+  return Decompress(compressed_plaintext, plaintext);
 }
 
 std::string Crypter::Decrypt(const std::string& ciphertext) const {
@@ -340,10 +393,6 @@ bool UnversionedVerifier::Verify(const std::string& data,
 
   std::string signature_bytes;
   if (!Decode(signature, &signature_bytes))
-    return false;
-
-  std::string hash;
-  if (!GetHash(signature_bytes, &hash))
     return false;
 
   Keyset::const_iterator key_iterator = keyset()->Begin();

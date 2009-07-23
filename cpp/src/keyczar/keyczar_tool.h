@@ -16,15 +16,14 @@
 
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/command_line.h"
-
-#include "keyczar/key_purpose.h"
-#include "keyczar/key_status.h"
-#include "keyczar/keyset_file_reader.h"
-#include "keyczar/keyset_file_writer.h"
-#include "keyczar/keyset_reader.h"
-#include "keyczar/keyset_writer.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/command_line.h>
+#include <keyczar/key_purpose.h>
+#include <keyczar/key_status.h>
+#include <keyczar/keyset_file_reader.h>
+#include <keyczar/keyset_file_writer.h>
+#include <keyczar/keyset_reader.h>
+#include <keyczar/keyset_writer.h>
 
 namespace keyczar {
 

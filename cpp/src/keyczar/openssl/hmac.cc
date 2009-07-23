@@ -11,12 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/openssl/hmac.h"
+#include <keyczar/openssl/hmac.h>
 
-#include "base/logging.h"
-
-#include "keyczar/crypto_factory.h"
-#include "keyczar/rand_impl.h"
+#include <keyczar/base/logging.h>
+#include <keyczar/crypto_factory.h>
+#include <keyczar/rand_impl.h>
 
 namespace keyczar {
 
@@ -79,7 +78,7 @@ HMACOpenSSL* HMACOpenSSL::GenerateKey(DigestAlgorithm digest_algorithm,
   std::string key;
   if (!rand_impl->RandBytes(size / 8, &key))
     return NULL;
-  DCHECK(static_cast<int>(key.length()) == size / 8);
+  CHECK_EQ(static_cast<int>(key.length()), size / 8);
 
   return HMACOpenSSL::Create(digest_algorithm, key);
 }
@@ -88,6 +87,8 @@ bool HMACOpenSSL::Init() {
   if (evp_md_ == NULL)
     return false;
 
+  // TODO(seb): for backward compatibility the return value avalaible in the
+  // most recent versions of openssl is currently ignored.
   HMAC_Init_ex(&context_,
                reinterpret_cast<unsigned char*>(
                    const_cast<char*>(key_.data())),
@@ -98,6 +99,8 @@ bool HMACOpenSSL::Init() {
 }
 
 bool HMACOpenSSL::Update(const std::string& data) {
+  // TODO(seb): for backward compatibility the return value avalaible in the
+  // most recent versions of openssl is currently ignored.
   HMAC_Update(&context_,
               reinterpret_cast<unsigned char*>(
                   const_cast<char*>(data.data())),
@@ -112,6 +115,8 @@ bool HMACOpenSSL::Final(std::string* digest) {
   unsigned char md_buffer[EVP_MAX_MD_SIZE];
   uint32 md_len = 0;
 
+  // TODO(seb): for backward compatibility the return value avalaible in the
+  // most recent versions of openssl is currently ignored.
   HMAC_Final(&context_, md_buffer, &md_len);
   digest->assign(reinterpret_cast<char*>(md_buffer), md_len);
   return true;

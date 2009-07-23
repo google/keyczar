@@ -14,12 +14,11 @@
 #ifndef KEYCZAR_KEYSET_WRITER_H_
 #define KEYCZAR_KEYSET_WRITER_H_
 
-#include "base/basictypes.h"
-#include "base/values.h"
-
-#include "keyczar/key.h"
-#include "keyczar/keyset.h"
-#include "keyczar/keyset_metadata.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/values.h>
+#include <keyczar/key.h>
+#include <keyczar/keyset.h>
+#include <keyczar/keyset_metadata.h>
 
 namespace keyczar {
 

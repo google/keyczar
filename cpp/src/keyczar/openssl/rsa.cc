@@ -11,14 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/openssl/rsa.h"
+#include <keyczar/openssl/rsa.h>
 
 #include <openssl/bn.h>
 #include <openssl/objects.h>
 #include <openssl/pem.h>
 
-#include "base/file_util.h"
-#include "base/logging.h"
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/logging.h>
+#include <keyczar/base/stl_util-inl.h>
 
 namespace {
 
@@ -311,33 +312,35 @@ bool RSAOpenSSL::Sign(const MessageDigestImpl::DigestAlgorithm digest_algorithm,
   if (key_.get() == NULL || signature == NULL || !private_key_)
     return false;
 
-  int rsa_size = RSA_size(key_.get());
-  unsigned char signature_buffer[rsa_size];
-  uint32 signature_length = 0;
-
   int nid = DigestAlgorithmToNid(digest_algorithm);
   if (nid == 0)
     return false;
 
+  int rsa_size = RSA_size(key_.get());
+  base::STLStringResizeUninitialized(signature, rsa_size);
+
+  uint32 signature_length = 0;
   if (RSA_sign(nid,
                reinterpret_cast<unsigned char*>(
                    const_cast<char*>(message_digest.data())),
                message_digest.length(),
-               signature_buffer,
+               reinterpret_cast<unsigned char*>(
+                   base::string_as_array(signature)),
                &signature_length,
                key_.get()) != 1) {
     PrintOSSLErrors();
     return false;
   }
 
-  signature->assign(reinterpret_cast<char*>(signature_buffer),
-                    signature_length);
+  CHECK_LE(signature_length, rsa_size);
+  signature->resize(signature_length);
   return true;
 }
 
-bool RSAOpenSSL::Verify(const MessageDigestImpl::DigestAlgorithm digest_algorithm,
-                        const std::string& message_digest,
-                        const std::string& signature) const {
+bool RSAOpenSSL::Verify(
+    const MessageDigestImpl::DigestAlgorithm digest_algorithm,
+    const std::string& message_digest,
+    const std::string& signature) const {
   if (key_.get() == NULL)
     return false;
 
@@ -383,7 +386,7 @@ bool RSAOpenSSL::Encrypt(const std::string& data,
     PrintOSSLErrors();
     return false;
   }
-  DCHECK(encrypted_len == static_cast<int>(rsa_size));
+  CHECK_EQ(encrypted_len, static_cast<int>(rsa_size));
 
   encrypted->assign(reinterpret_cast<char*>(encrypted_buffer), rsa_size);
   return true;
@@ -407,7 +410,7 @@ bool RSAOpenSSL::Decrypt(const std::string& encrypted,
     PrintOSSLErrors();
     return false;
   }
-  DCHECK(data_len < rsa_size - 41);
+  CHECK_LT(data_len, rsa_size - 41);
 
   data->assign(reinterpret_cast<char*>(data_buffer), data_len);
   return true;

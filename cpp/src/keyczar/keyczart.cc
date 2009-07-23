@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/crypto_factory.h"
-#include "keyczar/keyczar_tool.h"
+#include <keyczar/crypto_factory.h>
+#include <keyczar/keyczar_tool.h>
 
 int main(int argc, char** argv) {
   // Before any cryptographic operation initializes the random engine

@@ -13,14 +13,14 @@
 // limitations under the License.
 #include <string>
 
-#include "base/file_path.h"
-#include "base/file_util.h"
-#include "base/scoped_ptr.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include <testing/gtest/include/gtest/gtest.h>
 
-#include "keyczar/keyczar_test.h"
-#include "keyczar/openssl/message_digest.h"
-#include "keyczar/openssl/dsa.h"
+#include <keyczar/base/file_path.h>
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/keyczar_test.h>
+#include <keyczar/openssl/message_digest.h>
+#include <keyczar/openssl/dsa.h>
 
 namespace keyczar {
 

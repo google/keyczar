@@ -16,14 +16,18 @@
 
 #include <string>
 
-#include "base/basictypes.h"
+#include <keyczar/base/basictypes.h>
 
 namespace keyczar {
+
+namespace util {
 
 // An string comparison that is safe from timing attacks. If two strings are
 // of equal length, this code will always check all elements, rather than
 // exiting once it encounters a differing character.
 bool SafeStringEquals(const std::string& s1, const std::string& s2);
+
+}  // namespace util
 
 }  // namespace keyczar
 

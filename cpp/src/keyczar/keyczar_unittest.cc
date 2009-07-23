@@ -13,17 +13,17 @@
 // limitations under the License.
 #include <string>
 
-#include "base/file_path.h"
-#include "base/file_util.h"
-#include "base/path_service.h"
-#include "base/scoped_ptr.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include <testing/gtest/include/gtest/gtest.h>
 
-#include "keyczar/keyczar.h"
-#include "keyczar/keyczar_test.h"
-#include "keyczar/keyset_encrypted_file_reader.h"
-#include "keyczar/keyset_file_reader.h"
-#include "keyczar/keyset_file_writer.h"
+#include <keyczar/base/file_path.h>
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/path_service.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/keyczar.h>
+#include <keyczar/keyczar_test.h>
+#include <keyczar/keyset_encrypted_file_reader.h>
+#include <keyczar/keyset_file_reader.h>
+#include <keyczar/keyset_file_writer.h>
 
 namespace keyczar {
 
@@ -442,6 +442,36 @@ TEST_F(KeyczarTest, AESBigBufferEncryptAndDecrypt) {
   EXPECT_TRUE(crypter->Encrypt(input, &encrypted));
   EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
   EXPECT_EQ(input, decrypted);
+}
+
+TEST_F(KeyczarTest, Compression) {
+  const FilePath private_path = data_path_.Append("rsa");
+  scoped_ptr<Crypter> crypter(Crypter::Read(private_path.value()));
+  ASSERT_TRUE(crypter.get());
+
+  EXPECT_EQ(crypter->compression(), Keyczar::NO_COMPRESSION);
+
+#if HAVE_ZLIB
+  crypter->set_compression(Keyczar::GZIP);
+  EXPECT_EQ(crypter->compression(), Keyczar::GZIP);
+
+  {
+    std::string encrypted, decrypted;
+    EXPECT_TRUE(crypter->Encrypt(input_data_, &encrypted));
+    EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
+    EXPECT_EQ(input_data_, decrypted);
+  }
+
+  crypter->set_compression(Keyczar::ZLIB);
+  EXPECT_EQ(crypter->compression(), Keyczar::ZLIB);
+
+  {
+    std::string encrypted, decrypted;
+    EXPECT_TRUE(crypter->Encrypt(input_data_, &encrypted));
+    EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
+    EXPECT_EQ(input_data_, decrypted);
+  }
+#endif  // HAVE_ZLIB
 }
 
 }  // namespace keyczar

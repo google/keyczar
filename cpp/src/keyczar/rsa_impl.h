@@ -16,9 +16,8 @@
 
 #include <string>
 
-#include "base/basictypes.h"
-
-#include "keyczar/message_digest_impl.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/message_digest_impl.h>
 
 namespace keyczar {
 

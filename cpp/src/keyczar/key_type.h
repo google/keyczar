@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "base/basictypes.h"
+#include <keyczar/base/basictypes.h>
 
 namespace keyczar {
 

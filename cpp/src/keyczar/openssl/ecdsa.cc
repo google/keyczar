@@ -11,16 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/openssl/ecdsa.h"
+#include <keyczar/openssl/ecdsa.h>
 
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <openssl/objects.h>
 #include <openssl/pem.h>
+
 #include <string.h>
 
-#include "base/file_util.h"
-#include "base/logging.h"
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/logging.h>
+#include <keyczar/base/stl_util-inl.h>
 
 namespace {
 
@@ -310,22 +312,23 @@ bool ECDSAOpenSSL::Sign(const std::string& message_digest,
     return false;
 
   int ecdsa_size = ECDSA_size(key_.get());
-  unsigned char signature_buffer[ecdsa_size];
-  uint32 signature_length = 0;
+  base::STLStringResizeUninitialized(signature, ecdsa_size);
 
+  uint32 signature_length = 0;
   if (ECDSA_sign(0,
                  reinterpret_cast<unsigned char*>(
                      const_cast<char*>(message_digest.data())),
                  message_digest.length(),
-                 signature_buffer,
+                 reinterpret_cast<unsigned char*>(
+                     base::string_as_array(signature)),
                  &signature_length,
                  key_.get()) != 1) {
     PrintOSSLErrors();
     return false;
   }
 
-  signature->assign(reinterpret_cast<char*>(signature_buffer),
-                    signature_length);
+  CHECK_LE(signature_length, ecdsa_size);
+  signature->resize(signature_length);
   return true;
 }
 

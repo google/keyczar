@@ -11,15 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "base/file_path.h"
-#include "base/file_util.h"
-#include "base/values.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include <testing/gtest/include/gtest/gtest.h>
 
-#include "keyczar/keyczar_test.h"
-#include "keyczar/keyset_metadata.h"
-#include "keyczar/keyset_file_reader.h"
-#include "keyczar/keyset_file_writer.h"
+#include <keyczar/base/file_path.h>
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/values.h>
+#include <keyczar/keyczar_test.h>
+#include <keyczar/keyset_metadata.h>
+#include <keyczar/keyset_file_reader.h>
+#include <keyczar/keyset_file_writer.h>
 
 namespace keyczar {
 

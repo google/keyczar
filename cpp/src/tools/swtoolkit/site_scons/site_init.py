@@ -53,7 +53,7 @@ def _HostPlatform():
   check env.Bit('host_windows') / env.Bit('host_linux') / env.Bit('host_mac').
 
   Returns:
-    The host platform name - one of ('WINDOWS', 'LINUX', 'MAC').
+    The host platform name - one of ('WINDOWS', 'LINUX', 'MAC', 'BSD').
   """
 
   platform_map = {
@@ -62,6 +62,11 @@ def _HostPlatform():
       'linux': 'LINUX',
       'linux2': 'LINUX',
       'darwin': 'MAC',
+      'openbsd4': 'BSD',
+      'freebsd6': 'BSD',
+      'freebsd7': 'BSD',
+      'netbsd4': 'BSD',
+      'netbsd5': 'BSD',
   }
 
   if sys.platform not in platform_map:

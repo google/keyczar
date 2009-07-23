@@ -1,97 +1,100 @@
-= C++ implementation =
-
+= Keyczar C++ =
 
 == Dependancies ==
 
-- OpenSSL: package libssl-dev (Debian/Ubuntu)
-- Unicode icu: package libicu-dev
-- [Optional packages]: python and swig
+- C++ compiler
+- Python for running the build system
+- OpenSSL (>= 0.9.8b)
+- Unicode ICU
+- [Optional dependancy]: Zlib (for compression)
+- [Optional dependancy]: Swig (Python binding)
+
+=== Ubuntu/Debian ===
+
+Packages g++ make libssl-dev libicu-dev zlib1-dev python python-dev swig
+
+=== MacOSX Leopard ===
+
+XCode > 3.1 and MacPorts with the following packages: zlib openssl icu swig
+
+
+== Supported architectures and systems ==
+
+Processors: x86, x86_64, ARM
+Systems: Linux, MacOSX (with MacPorts), BSD (OpenBSD, FreeBSD)
+
+Note: only Linux x86 has been tested extensively
 
 
 == Local build ==
 
-Currently this implementation only works under Linux, install the required
-packages and compile it:
+For a local build of Keyczar C++ on Linux run these commands:
 
- $ cd cpp/src && ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat
+ $ cd cpp/src && sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat
 
-Please read the 'Note' in the next section.
-
-Libraries and executables are assembled under scons-out/opt-linux/.
+- Replace opt-linux by opt-bsd or op-mac depending on your system
+- The Python binding is built automatically if swig is detected
+- Libraries and executables are assembled under scons-out/opt-linux/
 
 
 == Install ==
 
-Files will be installed under /usr/local/ and under /usr/lib/python2.x/site-packages
+You need to log as root and execute these commands:
 
-1- Log as root and execute these commands to install the C++ library:
+  $ cd cpp/src && sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat install
 
-  $ cd cpp/src && ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat install
+/!\ Note: it is actually highly recommanded to use the compatibility (--compat)
+mode. This mode provides full compatibility with previous versions and others
+Keyczar implementations (Java, pure Python). Without this option different
+crypto choices are used (see algorithms.txt for details) breaking the
+compatibility. Moreover these choices could be modified again in the future.
 
-/!\ Note: it is actually recommanded to only use the compatibility (--compat)
-mode which provides full compatibility with previous versions and others
-implementations. The 'normal' mode is in development and future changes will
-probably break compatibility with it.
-
-For details on how to use this library, read the tutorial and the examples located
-under src/examples/ and also consult the header files /usr/local/include/keyczar.
+- By default the prefix used is /usr/local/ and /usr/lib/python2.x/site-packages
+  for Python stuffs. See src/options.conf for overriding these choices.
+- Learn how to use this library by reading the tutorial (on the wiki), the
+  examples located under src/examples/ and the main header src/keyczar/keyczar.h
 
 
 == Options ==
 
-install    -> install the C++ library and/or the Python binding
--c         -> clean up the build and/or remove installed files
---swig     -> compile the Python binding (requires Swig to be installed)
+--mode=XX  -> where XX can be opt-linux, opt-mac, opt-bsd, dbg-linux, dbg-mac or
+              dbg-bsd. 'opt' stands for optimized mode and 'dbg' for debug mode.
 --compat   -> ensure compatibility with Keyczar 0.6b specifications (see below)
+install    -> install the C++ library and optionally its Python binding
 -jX        -> compile on X threads
---mode=XX  -> where XX can be opt-linux or dbg-linux, dbg-linux enables debug
-              mode and opt-linux stands for optimized-linux.
+-c         -> clean up the build and/or remove installed files
 
 
-== Current limitations ==
+== Current Limitations ==
 
-- This implementation only works under Linux with OpenSSL. The components and
-  tools used should be multi-plateform but it hasn't been tested and it would
-  likely require a lot of work if another cryptography library had to be used.
-- Poor install mechanism.
+- Does not work on Windows (should be relatively easy to make a port using
+  OpenSSL however it would require much more work to use MS CAPI instead).
+- Build system needs to be improved.
 
 
-== Adherence to specifications ==
+== Compatibility ==
 
-- When compiled with option --compat this implementation is entirely compatible
-  with Keyczar 0.6b (see detailed specifications at
+- When compiled with option --compat this implementation is expected to be
+  fully compatible with Keyczar 0.6b (see detailed specifications at
   http://code.google.com/p/keyczar/w/).
 - When compiled without this option this implementation use cryptographic
   algorithms defined in algorithms.txt and use a new attribute
   'nextKeyVersionNumber' in order to keep the next key version number to assign
-  to new key.
+  to new keys.
 
 
-== Source tree ==
+== This implementation relies on these projects ==
 
-src/
-  base/             -> Third party code mostly derived from Chromium
-  example/          -> Few examples to use when Keyczar is installed
-  keyczar/          -> Keyczar C++ implementation
-  scons-out/        -> Build
-  testing/          -> Testing framework (gtest)
-  tools/            -> Building tools SCons and swtoolkit
-  main.scons        -> Entry script
-
-
-== This implementation relies on those projects ==
-
-- C++ Style Guide: http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml
-- Chromium: http://src.chromium.org/viewvc/chrome/branches/chrome_official_branch/src/base/
-- Dtoa: http://www.netlib.org/fp/
-- gtest: http://code.google.com/p/googletest/
-- Keyczar: http://code.google.com/p/keyczar/
-- OpenSSL: http://www.openssl.org/docs/crypto/crypto.html
-- SCons: http://www.scons.org/
-- Stringencoders: http://code.google.com/p/stringencoders/
-- Swig: http://www.swig.org/
-- Swtoolkit: http://code.google.com/p/swtoolkit/
+- Chromium:        http://code.google.com/intl/en/chromium/
+- Protobuf:        http://code.google.com/p/protobuf/
+- gtest:           http://code.google.com/p/googletest/
+- Keyczar:         http://code.google.com/p/keyczar/
+- OpenSSL:         http://www.openssl.org/docs/crypto/crypto.html
+- SCons:           http://www.scons.org/
+- Stringencoders:  http://code.google.com/p/stringencoders/
+- Swig:            http://www.swig.org/
+- Swtoolkit:       http://code.google.com/p/swtoolkit/
 
 
-Credit to all the authors of those projects and to the originals authors of
-Keyczar.
+Credits to all the authors of those open projects and to the originals authors
+and designers of Keyczar.

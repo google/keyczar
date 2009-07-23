@@ -11,25 +11,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/crypto_factory.h"
+#include <keyczar/crypto_factory.h>
 
-#include "base/logging.h"
-
-#include "keyczar/cipher_mode.h"
-#include "keyczar/openssl/aes.h"
-#include "keyczar/openssl/dsa.h"
-#include "keyczar/openssl/ecdsa.h"
-#include "keyczar/openssl/hmac.h"
-#include "keyczar/openssl/message_digest.h"
-#include "keyczar/openssl/rand.h"
-#include "keyczar/openssl/rsa.h"
+#include <keyczar/base/logging.h>
+#include <keyczar/cipher_mode.h>
+#include <keyczar/openssl/aes.h>
+#include <keyczar/openssl/dsa.h>
+#include <keyczar/openssl/ecdsa.h>
+#include <keyczar/openssl/hmac.h>
+#include <keyczar/openssl/message_digest.h>
+#include <keyczar/openssl/rand.h>
+#include <keyczar/openssl/rsa.h>
 
 namespace keyczar {
 
 RandImpl* CryptoFactory::Rand() {
   static openssl::RandOpenSSL rand;
   if (!rand.is_initialized())
-    DCHECK(rand.Init());
+    CHECK(rand.Init());
   return &rand;
 }
 

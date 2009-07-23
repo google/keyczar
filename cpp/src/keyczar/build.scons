@@ -1,10 +1,92 @@
 # -*- mode: python; -*-
-
 Import('env')
 
-## Library
+installer = env['INSTALLER']
 
-input_files = [
+lib_name = 'keyczar'
+
+#### Optionnaly add dependancy on zlib
+if env.get('ZLIB_OPTION'):
+    env.Append(
+        LIBS = [
+            'z'
+        ],
+    )
+
+
+#### Keyczar Library
+
+keyczar_lib_env = env.Clone()
+
+if env.Bit('mac'):
+    keyczar_lib_env.Append(
+        FRAMEWORKS = [
+            'Foundation',
+            'Cocoa',
+            ],
+        )
+
+keyczar_lib_env.Append(
+    LIBS = [
+        'icuuc',
+        'crypto',
+        ],
+    )
+
+base_sources = [
+    'base/base64w.cc',
+    'base/base_paths.cc',
+    'base/command_line.cc',
+    'base/file_path.cc',
+    'base/file_util.cc',
+    'base/json_reader.cc',
+    'base/json_value_serializer.cc',
+    'base/json_writer.cc',
+    'base/logging.cc',
+    'base/modp/modp_b64w.cc',
+    'base/path_service.cc',
+    'base/ref_counted.cc',
+    'base/stl_util-inl.cc',
+    'base/string16.cc',
+    'base/string_escape.cc',
+    'base/string_piece.cc',
+    'base/string_util.cc',
+    'base/string_util_icu.cc',
+    'base/values.cc',
+    'base/zlib.cc',
+    ]
+
+base_posix_sources = [
+    'base/file_util_posix.cc',
+    ]
+
+base_linux_sources = [
+    'base/base_paths_linux.cc',
+    'base/file_util_linux.cc',
+    'base/sys_string_conversions_linux.cc',
+    ]
+
+base_mac_sources = [
+    'base/base_paths_mac.mm',
+    'base/file_util_mac.mm',
+    'base/sys_string_conversions_mac.mm',
+    ]
+
+base_bsd_sources = [
+    'base/base_paths_bsd.cc',
+    'base/file_util_linux.cc',
+    'base/sys_string_conversions_linux.cc',
+    ]
+
+base_win_sources = [
+    'base/base_paths_win.cc',
+    'base/file_util_win.cc',
+    'base/registry.cc',
+    'base/sys_string_conversions_win.cc',
+    'base/win_util.cc',
+    ]
+
+keyczar_sources = [
     'aes_key.cc',
     'cipher_mode.cc',
     'crypto_factory.cc',
@@ -30,6 +112,15 @@ input_files = [
     'key_type.cc',
     'key_util.cc',
     'message_digest_impl.cc',
+    'private_key.cc',
+    'public_key.cc',
+    'rsa_private_key.cc',
+    'rsa_public_key.cc',
+    'secret_key.cc',
+    'util.cc',
+    ]
+
+openssl_sources = [
     'openssl/aes.cc',
     'openssl/dsa.cc',
     'openssl/ecdsa.cc',
@@ -38,122 +129,112 @@ input_files = [
     'openssl/rand.cc',
     'openssl/rsa.cc',
     'openssl/util.cc',
-    'private_key.cc',
-    'public_key.cc',
-    'rsa_private_key.cc',
-    'rsa_public_key.cc',
-    'secret_key.cc',
-    'util.cc',
-]
+    ]
 
-out = env.ComponentLibrary('keyczar', input_files, COMPONENT_STATIC=False)
-env.Install('/usr/local/lib', out[0])
+if env.Bit('linux'):
+    base_sources.extend(base_posix_sources)
+    base_sources.extend(base_linux_sources)
+
+if env.Bit('mac'):
+    base_sources.extend(base_posix_sources)
+    base_sources.extend(base_mac_sources)
+
+if env.Bit('bsd'):
+    base_sources.extend(base_posix_sources)
+    base_sources.extend(base_bsd_sources)
+
+#if env.Bit('win'):
+#    base_sources.extend(base_win_sources)
+
+lib_sources = base_sources + keyczar_sources + openssl_sources
+out_lib = keyczar_lib_env.ComponentLibrary(lib_name, lib_sources,
+                                           COMPONENT_STATIC=False)
+installer.AddLibrary(out_lib[0])
+installer.AddHeaders(keyczar_lib_env.get('KEYCZAR_SRC_DIR'), "*.h",
+                     lib_name, True)
 
 
-## keyczart
+#### keyczart
 
 keyczart_env = env.Clone()
 
 keyczart_env.Append(
     LIBS = [
-	'keyczar',
-        'keyczar_base',
-        'pthread',
+        lib_name,
         'icuuc',
-        'rt',
 	'crypto',
-    ],
-)
+        ],
+    )
 
-input_files_keyzart = [
+keyzart_sources = [
     'keyczart.cc',
-]
+    ]
 
-out = keyczart_env.ComponentProgram('keyczart', input_files_keyzart)
-keyczart_env.Install('/usr/local/bin', out)
+out_program = keyczart_env.ComponentProgram('keyczart', keyzart_sources)
+installer.AddProgram(out_program)
 
 
-## testdata_gen
+#### testdata_gen
 
 testdata_gen_env = env.Clone()
 
 testdata_gen_env.Append(
     LIBS = [
-	'keyczar',
-        'keyczar_base',
-        'pthread',
+        lib_name,
         'icuuc',
-        'rt',
 	'crypto',
-    ],
-)
+        ],
+    )
 
-input_files_testdata_gen = [
+testdata_gen_sources = [
     'testdata_gen.cc',
-]
+    ]
 
-testdata_gen_env.ComponentProgram('testdata_gen', input_files_testdata_gen)
-
-
-## basic_example
-
-basic_example_env = env.Clone()
-
-basic_example_env.Append(
-    LIBS = [
-	'keyczar',
-        'keyczar_base',
-        'pthread',
-        'icuuc',
-        'rt',
-	'crypto',
-    ],
-)
-
-input_files_basic_example = [
-    'basic_example.cc',
-]
-
-basic_example_env.ComponentProgram('basic_example', input_files_basic_example)
+testdata_gen_env.ComponentProgram('testdata_gen', testdata_gen_sources)
 
 
-# Swig interface for Python
+#### Swig interface for Python
 
 keyczar_swig_env = env.Clone()
 
 import distutils.sysconfig
 
+if env.Bit('mac'):
+    keyczar_swig_env.Append(
+        FRAMEWORKS = [
+            'Python',
+            ],
+        )
+
 keyczar_swig_env.Append(
     LIBS = [
-	'keyczar',
-        'keyczar_base',
-        'pthread',
+        lib_name,
         'icuuc',
-        'rt',
 	'crypto',
-    ],
+        ],
     SWIGFLAGS = ['-c++', '-python'],
     CPPPATH = [distutils.sysconfig.get_python_inc()],
-)
+    )
 
 keyczar_swig_env.Replace(
     SHLIBPREFIX = ""
-)
+    )
 
-input_files_keyczar_swig = [
+if env.Bit('mac'):
+    keyczar_swig_env.Replace(
+        SHLIBSUFFIX = ".so",
+        )
+
+keyczar_swig_sources = [
     'keyczar.i',
-]
+    ]
 
 if env.get('SWIG_OPTION'):
-    out = keyczar_swig_env.ComponentLibrary('_keyczar',
-                                            input_files_keyczar_swig,
+    prefix = '_'
+    out = keyczar_swig_env.ComponentLibrary(prefix + lib_name,
+                                            keyczar_swig_sources,
                                             COMPONENT_STATIC=False)
-    site_packages = distutils.sysconfig.get_python_lib()
-    env.Install(site_packages, out[0])
-    # FIXME: This part is even more ugly than the previous ugly part :(
-    py_file = str(out[0])[1:].split('.so')[0] + '.py'
-    import os
-    env.Install(site_packages, os.path.join(env['LIB_DIR'], py_file ))
+    installer.AddPythonModule(out[0], lib_name)
 
 
 ## Unittests
@@ -164,19 +245,66 @@ unittests_env.Append(
     CPPPATH = [
         '../testing/gtest',
         '../testing/gtest/include',
-    ],
+        ],
     LIBS = [
-        'keyczar',
-        'keyczar_base',
-        'pthread',
+        lib_name,
         'gtest',
         'icuuc',
-        'rt',
         'crypto',
-    ],
-)
+        ],
+    )
 
-input_files_unittests = [
+base_unittests = [
+    'base/base64w_unittest.cc',
+    'base/command_line_unittest.cc',
+    'base/file_path_unittest.cc',
+    'base/file_util_unittest.cc',
+    'base/json_reader_unittest.cc',
+    'base/json_value_serializer_unittest.cc',
+    'base/json_writer_unittest.cc',
+    'base/path_service_unittest.cc',
+    'base/ref_counted_unittest.cc',
+    'base/run_all_unittests.cc',
+    'base/scoped_ptr_unittest.cc',
+    'base/string_piece_unittest.cc',
+    'base/string_escape_unittest.cc',
+    'base/sys_string_conversions_unittest.cc',
+    'base/values_unittest.cc',
+    'base/zlib_unittest.cc',
+    ]
+
+base_posix_unittests = [
+    ]
+
+base_linux_unittests = [
+    ]
+
+base_mac_unittests = [
+    ]
+
+base_bsd_unittests = [
+    ]
+
+base_win_unittests = [
+    'base/win_util_unittest.cc',
+    ]
+
+if env.Bit('linux'):
+    base_unittests.extend(base_posix_unittests)
+    base_unittests.extend(base_linux_unittests)
+
+if env.Bit('mac'):
+    base_unittests.extend(base_posix_unittests)
+    base_unittests.extend(base_mac_unittests)
+
+if env.Bit('bsd'):
+    base_sources.extend(base_posix_unittests)
+    base_sources.extend(base_bsd_unittests)
+
+#if env.Bit('win'):
+#    base_unittests.extend(base_win_unittests)
+
+keyczar_unittests = [
     'aes_key_unittest.cc',
     'dsa_key_unittest.cc',
     'ecdsa_key_unittest.cc',
@@ -185,14 +313,19 @@ input_files_unittests = [
     'keyset_reader_unittest.cc',
     'keyset_metadata_unittest.cc',
     'keyset_unittest.cc',
+    'rsa_key_unittest.cc',
+    'run_all_unittests.cc',
+    ]
+
+openssl_unittests = [
     'openssl/aes_unittest.cc',
     'openssl/dsa_unittest.cc',
     'openssl/ecdsa_unittest.cc',
     'openssl/hmac_unittest.cc',
     'openssl/message_digest_unittest.cc',
     'openssl/rsa_unittest.cc',
-    'rsa_key_unittest.cc',
-    'run_all_unittests.cc',
-]
+    ]
 
-unittests_env.ComponentTestProgram('keyczar_unittests', input_files_unittests)
+unittests_env.ComponentTestProgram('base_unittests', base_unittests)
+unittests_env.ComponentTestProgram('keyczar_unittests', keyczar_unittests)
+unittests_env.ComponentTestProgram('openssl_unittests', openssl_unittests)

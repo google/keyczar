@@ -13,17 +13,17 @@
 // limitations under the License.
 #include <string>
 
-#include "base/base64w.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include <testing/gtest/include/gtest/gtest.h>
 
-#include "keyczar/openssl/message_digest.h"
+#include <keyczar/base/base64w.h>
+#include <keyczar/openssl/message_digest.h>
 
 namespace keyczar {
 
 namespace openssl {
 
 TEST(MessageDigestOpenSSL, SimpleHash) {
-  std::string message("test");
+  std::string message("hello world!");
   MessageDigestOpenSSL message_digest(MessageDigestImpl::SHA1);
 
   EXPECT_EQ(message_digest.Size(), 20);
@@ -41,7 +41,11 @@ TEST(MessageDigestOpenSSL, SimpleHash) {
 
   std::string md_value_1_encoded;
   Base64WEncode(md_value_1, &md_value_1_encoded);
-  std::string reference("qUqP5cyxm6YcTAhz05Hph5gvu9M");
+  // >>> import sha
+  // >>> import base64
+  // >>> base64.urlsafe_b64encode(sha.new("hello world!").digest())
+  //     'QwzjTQIHJO11oZbfwq1nx3dy0Wk='
+  std::string reference("QwzjTQIHJO11oZbfwq1nx3dy0Wk");
   EXPECT_EQ(md_value_1_encoded, reference);
 }
 

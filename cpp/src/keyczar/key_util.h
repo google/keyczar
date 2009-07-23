@@ -16,8 +16,8 @@
 
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/values.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/values.h>
 
 namespace keyczar {
 

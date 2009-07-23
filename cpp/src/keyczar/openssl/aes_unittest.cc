@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <openssl/rand.h>
+
 #include <string>
 
-#include "base/file_path.h"
-#include "base/file_util.h"
-#include "base/scoped_ptr.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include <testing/gtest/include/gtest/gtest.h>
 
-#include "keyczar/cipher_mode.h"
-#include "keyczar/keyczar_test.h"
-#include "keyczar/openssl/aes.h"
+#include <keyczar/base/file_path.h>
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/cipher_mode.h>
+#include <keyczar/keyczar_test.h>
+#include <keyczar/openssl/aes.h>
 
 namespace keyczar {
 

@@ -13,10 +13,10 @@
 // limitations under the License.
 #include <string>
 
-#include "base/base64w.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include <testing/gtest/include/gtest/gtest.h>
 
-#include "keyczar/openssl/hmac.h"
+#include <keyczar/base/base64w.h>
+#include <keyczar/openssl/hmac.h>
 
 namespace keyczar {
 

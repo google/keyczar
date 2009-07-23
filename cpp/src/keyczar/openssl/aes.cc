@@ -11,13 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/openssl/aes.h"
+#include <keyczar/openssl/aes.h>
 
-#include "base/logging.h"
-
-#include "keyczar/cipher_mode.h"
-#include "keyczar/crypto_factory.h"
-#include "keyczar/rand_impl.h"
+#include <keyczar/base/stl_util-inl.h>
+#include <keyczar/cipher_mode.h>
+#include <keyczar/crypto_factory.h>
+#include <keyczar/rand_impl.h>
 
 namespace keyczar {
 
@@ -64,7 +63,7 @@ AESOpenSSL* AESOpenSSL::GenerateKey(const CipherMode& cipher_mode, int size) {
   std::string key;
   if (!rand_impl->RandBytes(size / 8, &key))
     return NULL;
-  DCHECK(static_cast<int>(key.length()) == size / 8);
+  CHECK_EQ(static_cast<int>(key.length()), size / 8);
 
   return AESOpenSSL::Create(cipher_mode, key);
 }
@@ -186,22 +185,22 @@ bool AESOpenSSL::CipherUpdate(const std::string& in_data, std::string* out_data,
   if (out_data == NULL || context == NULL || evp_cipher_ == NULL)
     return false;
 
-  scoped_ptr_malloc<unsigned char> out_buffer;
-  out_buffer.reset(reinterpret_cast<unsigned char*>(
-                       malloc(in_data.length() + evp_cipher_()->block_size)));
-  if (out_buffer.get() == NULL)
-    return false;
+  int current_size = out_data->size();
+  base::STLStringResizeUninitialized(out_data, current_size + in_data.length() +
+                                     evp_cipher_()->block_size);
 
-  int out_buffer_length = 0;
-  if (EVP_CipherUpdate(context, out_buffer.get(), &out_buffer_length,
+  int out_data_len = 0;
+  if (EVP_CipherUpdate(context,
+                       reinterpret_cast<unsigned char*>(
+                           base::string_as_array(out_data) + current_size),
+                       &out_data_len,
                        reinterpret_cast<unsigned char*>(
                            const_cast<char*>(in_data.data())),
                        in_data.length()) != 1)
     return false;
 
-  out_data->append(reinterpret_cast<char*>(out_buffer.get()),
-                   out_buffer_length);
-
+  CHECK_LT(out_data_len, in_data.length() + evp_cipher_()->block_size);
+  out_data->resize(current_size + out_data_len);
   return true;
 }
 
@@ -210,25 +209,25 @@ bool AESOpenSSL::CipherFinal(std::string* out_data,
   if (out_data == NULL || context == NULL || evp_cipher_ == NULL)
     return false;
 
-  scoped_ptr_malloc<unsigned char> out_buffer;
-  out_buffer.reset(reinterpret_cast<unsigned char*>(
-                       malloc(evp_cipher_()->block_size)));
-  if (out_buffer.get() == NULL)
+  int current_size = out_data->size();
+  base::STLStringResizeUninitialized(out_data,
+                                     current_size + evp_cipher_()->block_size);
+
+  int out_data_len = 0;
+  if (EVP_CipherFinal_ex(context,
+                         reinterpret_cast<unsigned char*>(
+                             base::string_as_array(out_data) + current_size),
+                         &out_data_len) != 1)
     return false;
 
-  int out_buffer_length = 0;
-  if (EVP_CipherFinal_ex(context, out_buffer.get(), &out_buffer_length) != 1)
-    return false;
-
-  out_data->append(reinterpret_cast<char*>(out_buffer.get()),
-                   out_buffer_length);
-
+  CHECK_LE(out_data_len, evp_cipher_()->block_size);
+  out_data->resize(current_size + out_data_len);
   return true;
 }
 
 int AESOpenSSL::GetKeySize() const {
   int key_length = static_cast<int>(key_.length());
-  DCHECK(evp_cipher_ && key_length >= EVP_CIPHER_iv_length(evp_cipher_()));
+  CHECK_GE(evp_cipher_ && key_length, EVP_CIPHER_iv_length(evp_cipher_()));
   return key_length;
 }
 

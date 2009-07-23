@@ -1,4 +1,4 @@
-= Supported Cryptographic Algorithms (current version) =
+= Supported Cryptographic Algorithms (current version non compat mode) =
 
 * KeyHash: SHA1
 

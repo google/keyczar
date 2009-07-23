@@ -11,18 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/openssl/rand.h"
+#include <keyczar/openssl/rand.h>
 
-#include "keyczar/openssl/util.h"
+#include <keyczar/base/build_config.h>
+#include <keyczar/base/logging.h>
+#include <keyczar/openssl/util.h>
 
 namespace keyczar {
 
 namespace openssl {
 
 bool RandOpenSSL::Init() {
-#ifdef OS_LINUX
-  // It seems that on Linux where /dev/urandom exists the seeding is made
-  // transparently, see:
+#if defined(OS_LINUX) || defined(OS_BSD) || defined(OS_MACOSX)
+  // It seems that on Linux and *BSD seeding is made transparently, see:
   // http://www.openssl.org/docs/crypto/RAND_add.html#DESCRIPTION
 #else
   // Appropriate seeding might be needed on others architectures.

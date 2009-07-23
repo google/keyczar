@@ -16,7 +16,7 @@
 
 #include <string>
 
-#include "base/basictypes.h"
+#include <keyczar/base/basictypes.h>
 
 namespace keyczar {
 
@@ -33,7 +33,7 @@ class MessageDigestImpl {
     SHA512,
   };
 
-  MessageDigestImpl(const DigestAlgorithm digest_algorithm)
+  explicit MessageDigestImpl(const DigestAlgorithm digest_algorithm)
       : digest_algorithm_(digest_algorithm) {}
 
   virtual ~MessageDigestImpl() {}

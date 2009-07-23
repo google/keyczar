@@ -16,15 +16,13 @@
 
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/scoped_ptr.h"
-#include "base/values.h"
-#include "testing/gtest/include/gtest/gtest_prod.h"
-
-#include "keyczar/cipher_mode.h"
-#include "keyczar/secret_key.h"
-#include "keyczar/aes_impl.h"
-#include "keyczar/hmac_key.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/base/values.h>
+#include <keyczar/cipher_mode.h>
+#include <keyczar/secret_key.h>
+#include <keyczar/aes_impl.h>
+#include <keyczar/hmac_key.h>
 
 namespace keyczar {
 

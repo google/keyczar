@@ -15,16 +15,19 @@
 #define KEYCZAR_KEYCZAR_TEST_H_
 #include <string>
 
-#include "base/file_path.h"
-#include "base/file_util.h"
-#include "base/path_service.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include <testing/gtest/include/gtest/gtest.h>
+#include <testing/platform_test.h>
+
+#include <keyczar/base/file_path.h>
+#include <keyczar/base/file_util.h>
+#include <keyczar/base/path_service.h>
 
 namespace keyczar {
 
-class KeyczarTest : public testing::Test {
+class KeyczarTest : public PlatformTest {
  protected:
   virtual void SetUp() {
+    PlatformTest::SetUp();
     PathService::Get(base::DIR_TEMP, &temp_path_);
     temp_path_ = temp_path_.Append("keyczar");
     file_util::CreateDirectory(temp_path_);
@@ -41,6 +44,7 @@ class KeyczarTest : public testing::Test {
   }
 
   virtual void TearDown() {
+    PlatformTest::TearDown();
     file_util::Delete(temp_path_, true);
   }
 

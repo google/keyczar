@@ -11,17 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/key_type.h"
+#include <keyczar/key_type.h>
 
 #include <algorithm>
 
-#include "base/logging.h"
+#include <keyczar/base/logging.h>
+#include <keyczar/base/scoped_ptr.h>
 
 namespace keyczar {
 
 KeyType::KeyType(Type type, const std::vector<int>& sizes, int default_size)
     : type_(type), sizes_(sizes), default_size_(default_size) {
-  DCHECK(IsValidSize(default_size_));
+  CHECK(IsValidSize(default_size_));
 }
 
 // static

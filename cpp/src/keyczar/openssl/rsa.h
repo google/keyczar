@@ -15,14 +15,13 @@
 #define KEYCZAR_OPENSSL_RSA_H_
 
 #include <openssl/rsa.h>
+
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/scoped_ptr.h"
-#include "testing/gtest/include/gtest/gtest_prod.h"
-
-#include "keyczar/openssl/util.h"
-#include "keyczar/rsa_impl.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/openssl/util.h>
+#include <keyczar/rsa_impl.h>
 
 namespace keyczar {
 

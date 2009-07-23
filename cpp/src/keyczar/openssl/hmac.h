@@ -15,12 +15,12 @@
 #define KEYCZAR_OPENSSL_HMAC_H_
 
 #include <openssl/hmac.h>
+
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/scoped_ptr.h"
-
-#include "keyczar/hmac_impl.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/hmac_impl.h>
 
 namespace keyczar {
 

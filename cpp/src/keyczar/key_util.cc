@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/key_util.h"
+#include <keyczar/key_util.h>
 
-#include "base/base64w.h"
+#include <keyczar/base/base64w.h>
 
 namespace keyczar {
 

@@ -11,10 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/keyset_metadata.h"
+#include <keyczar/keyset_metadata.h>
 
-#include "base/logging.h"
-#include "base/values.h"
+#include <keyczar/base/logging.h>
+#include <keyczar/base/values.h>
 
 namespace keyczar {
 
@@ -23,7 +23,7 @@ KeysetMetadata::KeyVersion::KeyVersion(int version_number,
                                        bool exportable)
     : version_number_(version_number), key_status_(key_status),
       exportable_(exportable) {
-  DCHECK(version_number >= 0);
+  CHECK_GE(version_number, 0);
 }
 
 // static
@@ -85,7 +85,7 @@ KeysetMetadata::KeyVersion* KeysetMetadata::KeyVersion::Copy() const {
 }
 
 void KeysetMetadata::KeyVersion::set_version_number(int version_number) {
-  DCHECK(version_number > 0);
+  CHECK_GT(version_number, 0);
   version_number_ = version_number;
 }
 
@@ -98,7 +98,7 @@ KeysetMetadata::KeysetMetadata(const std::string& name, const KeyType* key_type,
                                int next_key_version_number)
     : name_(name), key_type_(key_type), key_purpose_(key_purpose),
       encrypted_(encrypted), next_key_version_number_(next_key_version_number) {
-  DCHECK_GT(next_key_version_number_, 0);
+  CHECK_GT(next_key_version_number_, 0);
 }
 
 // static

@@ -16,10 +16,9 @@
 
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/ref_counted.h"
-
-#include "keyczar/key.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/ref_counted.h>
+#include <keyczar/key.h>
 
 namespace keyczar {
 

@@ -11,15 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/hmac_key.h"
+#include <keyczar/hmac_key.h>
 
-#include "base/base64w.h"
-#include "base/logging.h"
-
-#include "keyczar/crypto_factory.h"
-#include "keyczar/key_util.h"
-#include "keyczar/message_digest_impl.h"
-#include "keyczar/util.h"
+#include <keyczar/base/base64w.h>
+#include <keyczar/base/logging.h>
+#include <keyczar/crypto_factory.h>
+#include <keyczar/key_util.h>
+#include <keyczar/message_digest_impl.h>
+#include <keyczar/util.h>
 
 namespace {
 
@@ -69,7 +68,7 @@ HMACKey* HMACKey::CreateFromValue(const Value& root_key) {
     return NULL;
 
 #ifdef COMPAT_KEYCZAR_06B
-  CHECK(size == 256);
+  CHECK_EQ(size, 256);
   size = 160;
 
   if (!IsValidSize("HMAC_SHA1", size))
@@ -104,7 +103,7 @@ HMACKey* HMACKey::CreateFromValue(const Value& root_key) {
 // static
 HMACKey* HMACKey::GenerateKey(int size) {
 #ifdef COMPAT_KEYCZAR_06B
-  CHECK(size == 160);
+  CHECK_EQ(size, 160);
   if (!IsValidSize("HMAC_SHA1", size))
 #else
   if (!IsValidSize("HMAC", size))
@@ -131,7 +130,7 @@ Value* HMACKey::GetValue() const {
     return NULL;
 
 #ifdef COMPAT_KEYCZAR_06B
-  CHECK(size() == 160);
+  CHECK_EQ(size(), 160);
   if (!hmac_key->SetInteger(L"size", 256))
 #else
   std::string digest_name;
@@ -158,7 +157,7 @@ bool HMACKey::Hash(std::string* hash) const {
   // Builds a message digest based on the secret key
   std::string full_hash;
   digest_impl->Digest(hmac_impl_->GetKey(), &full_hash);
-  DCHECK(Key::GetHashSize() <= static_cast<int>(full_hash.length()));
+  CHECK_LE(Key::GetHashSize(), static_cast<int>(full_hash.length()));
 
   Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
   return true;
@@ -180,7 +179,7 @@ bool HMACKey::Verify(const std::string& data,
   if (!hmac_impl_->Digest(data, &digest))
     return false;
 
-  return SafeStringEquals(digest, signature);
+  return util::SafeStringEquals(digest, signature);
 }
 
 }  // namespace keyczar

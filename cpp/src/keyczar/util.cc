@@ -11,9 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/util.h"
+#include <keyczar/util.h>
 
 namespace keyczar {
+
+namespace util {
 
 bool SafeStringEquals(const std::string& s1, const std::string& s2) {
   if (s1.length() != s2.length())
@@ -24,5 +26,7 @@ bool SafeStringEquals(const std::string& s1, const std::string& s2) {
     result |= s1[i] ^ s2[i];
   return result == 0;
 }
+
+}  // namespace util
 
 }  // namespace keyczar

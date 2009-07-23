@@ -15,12 +15,12 @@
 #define KEYCZAR_OPENSSL_RAND_H_
 
 #include <openssl/rand.h>
+
 #include <string>
 
-#include "base/basictypes.h"
-
-#include "keyczar/openssl/util.h"
-#include "keyczar/rand_impl.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/openssl/util.h>
+#include <keyczar/rand_impl.h>
 
 namespace keyczar {
 

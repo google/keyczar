@@ -11,20 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/keyczar_tool.h"
+#include <keyczar/keyczar_tool.h>
 
 #include <stdio.h>
 
-#include "base/logging.h"
-#include "base/string_util.h"
-#include "base/sys_string_conversions.h"
-#include "base/values.h"
-
-#include "keyczar/key_type.h"
-#include "keyczar/keyczar.h"
-#include "keyczar/keyset.h"
-#include "keyczar/keyset_encrypted_file_reader.h"
-#include "keyczar/keyset_encrypted_file_writer.h"
+#include <keyczar/base/logging.h>
+#include <keyczar/base/string_util.h>
+#include <keyczar/base/sys_string_conversions.h>
+#include <keyczar/base/values.h>
+#include <keyczar/key_type.h>
+#include <keyczar/keyczar.h>
+#include <keyczar/keyset.h>
+#include <keyczar/keyset_encrypted_file_reader.h>
+#include <keyczar/keyset_encrypted_file_writer.h>
 
 namespace {
 
@@ -183,11 +182,14 @@ bool KeyczarTool::ProcessCommandLine() {
     // size
     std::string size_string;
     GetSwitchValue(*command_line_, L"size", &size_string, true);
-    int size = 0;
-    if (!size_string.empty() && !StringToInt(size_string, &size)) {
-      LOG(ERROR) << "Invalid size '" << size_string << "'.";
+
+    if (!size_string.empty()) {
+      LOG(ERROR) << "Invalid null size ";
       return false;
     }
+
+    char* enptr = NULL;
+    int size = strto32(size_string.c_str(), &enptr, 10);
 
     // crypter
     std::string crypter;
@@ -244,11 +246,9 @@ bool KeyczarTool::ProcessCommandLine() {
   std::string version_string;
   if (!GetSwitchValue(*command_line_, L"version", &version_string, false))
     return false;
-  int version = 0;
-  if (!StringToInt(version_string, &version)) {
-    LOG(ERROR) << "Invalid version '" << version_string << "'.";
-    return false;
-  }
+
+  char* enptr = NULL;
+  int version = strto32(version_string.c_str(), &enptr, 10);
 
   // Command promote
   if (loose_values[0] == L"promote")

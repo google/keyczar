@@ -14,9 +14,8 @@
 #ifndef KEYCZAR_PUBLIC_KEY_H_
 #define KEYCZAR_PUBLIC_KEY_H_
 
-#include "base/basictypes.h"
-
-#include "keyczar/key.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/key.h>
 
 namespace keyczar {
 

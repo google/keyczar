@@ -11,20 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/key.h"
+#include <keyczar/key.h>
 
-#include "base/base64w.h"
-#include "base/logging.h"
 
-#include "keyczar/aes_key.h"
-#include "keyczar/dsa_private_key.h"
-#include "keyczar/dsa_public_key.h"
-#include "keyczar/ecdsa_private_key.h"
-#include "keyczar/ecdsa_public_key.h"
-#include "keyczar/hmac_key.h"
-#include "keyczar/message_digest_impl.h"
-#include "keyczar/rsa_private_key.h"
-#include "keyczar/rsa_public_key.h"
+#include <keyczar/aes_key.h>
+#include <keyczar/base/base64w.h>
+#include <keyczar/base/logging.h>
+#include <keyczar/dsa_private_key.h>
+#include <keyczar/dsa_public_key.h>
+#include <keyczar/ecdsa_private_key.h>
+#include <keyczar/ecdsa_public_key.h>
+#include <keyczar/hmac_key.h>
+#include <keyczar/message_digest_impl.h>
+#include <keyczar/rsa_private_key.h>
+#include <keyczar/rsa_public_key.h>
 
 namespace {
 

@@ -1,6 +1,9 @@
 CC=g++
-CFLAGS=-Wall -O2 -Wno-deprecated
-LDFLAGS=-lkeyczar_base -lkeyczar -lcrypto -licuuc -lrt -lpthread
+CFLAGS=-Wall -O2
+# Append to the line below:
+# On BSD: -L/usr/local/lib -I/usr/local/include
+# On MacOSX you might need: -L/opt/local/lib (for icu)
+LDFLAGS=-lkeyczar -lcrypto -licuuc
 PROG= testdata_gen basic_encrypt basic_sign
 
 all: $(PROG)

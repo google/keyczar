@@ -17,13 +17,12 @@
 #include <map>
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/observer_list.h"
-#include "base/ref_counted.h"
-#include "base/scoped_ptr.h"
-
-#include "keyczar/key.h"
-#include "keyczar/keyset_metadata.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/observer_list.h>
+#include <keyczar/base/ref_counted.h>
+#include <keyczar/base/scoped_ptr.h>
+#include <keyczar/key.h>
+#include <keyczar/keyset_metadata.h>
 
 namespace keyczar {
 

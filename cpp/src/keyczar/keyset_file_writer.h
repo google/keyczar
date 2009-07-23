@@ -16,11 +16,10 @@
 
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/file_path.h"
-#include "base/values.h"
-
-#include "keyczar/keyset_writer.h"
+#include <keyczar/base/basictypes.h>
+#include <keyczar/base/file_path.h>
+#include <keyczar/base/values.h>
+#include <keyczar/keyset_writer.h>
 
 namespace keyczar {
 

@@ -11,11 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "keyczar/openssl/util.h"
+#include <keyczar/openssl/util.h>
 
 #include <openssl/pem.h>
 
-#include "base/file_util.h"
+#include <keyczar/base/file_util.h>
 
 namespace keyczar {
 
