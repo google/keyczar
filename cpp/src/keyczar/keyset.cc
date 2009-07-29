@@ -414,13 +414,17 @@ bool Keyset::PublicKeyExport(const KeysetWriter& writer) const {
 
     scoped_ptr<Value> public_key_value(
         key_iterator->second->GetPublicKeyValue());
-    if (public_key_value.get() == NULL)
-      return false;
-    if (!writer.WriteKey(public_key_value.get(), version_number))
+    if (public_key_value.get() == NULL ||
+        !writer.WriteKey(*public_key_value, version_number))
       return false;
   }
 
-  if (!writer.WriteMetadata(meta->GetValue(true)))
+  // It is important to write the metadata only after the keys because
+  // key versions are agglomerated during the previous step.
+  scoped_ptr<Value> metadata_value(meta->GetValue(true));
+  if (metadata_value.get() == NULL)
+    return false;
+  if (!writer.WriteMetadata(*metadata_value))
     return false;
 
   return true;

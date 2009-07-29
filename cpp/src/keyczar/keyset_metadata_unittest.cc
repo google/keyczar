@@ -30,7 +30,7 @@ TEST_F(KeysetMetadataTest, CreateFromValue) {
   FilePath aes_path = data_path_.Append("aes");
 
   // Deserialize
-  KeysetFileReader reader(aes_path.value());
+  KeysetJSONFileReader reader(aes_path.value());
   scoped_ptr<Value> root_metadata(reader.ReadMetadata());
   EXPECT_NE(static_cast<Value*>(NULL), root_metadata.get());
 
@@ -43,12 +43,12 @@ TEST_F(KeysetMetadataTest, CreateFromValue) {
 
   // Serialize
   FilePath written_meta = temp_path_.AppendASCII("meta");
-  KeysetFileWriter writer(temp_path_.value());
-  EXPECT_TRUE(writer.WriteMetadata(root_copy.get()));
+  KeysetJSONFileWriter writer(temp_path_.value());
+  EXPECT_TRUE(writer.WriteMetadata(*root_copy));
   ASSERT_TRUE(file_util::PathExists(written_meta));
 
   // Compare
-  KeysetFileReader reader_copy(temp_path_.value());
+  KeysetJSONFileReader reader_copy(temp_path_.value());
   scoped_ptr<Value> root_metadata_copy(reader_copy.ReadMetadata());
   EXPECT_NE(static_cast<Value*>(NULL), root_metadata_copy.get());
 #ifndef COMPAT_KEYCZAR_06B
@@ -59,7 +59,7 @@ TEST_F(KeysetMetadataTest, CreateFromValue) {
 TEST_F(KeysetMetadataTest, WithoutNextKeyVersionNumber) {
   FilePath aes_path = data_path_.Append("aes-crypted");
 
-  KeysetFileReader reader(aes_path.value());
+  KeysetJSONFileReader reader(aes_path.value());
   scoped_ptr<Value> root_metadata(reader.ReadMetadata());
   EXPECT_NE(static_cast<Value*>(NULL), root_metadata.get());
 

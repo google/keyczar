@@ -492,8 +492,8 @@ KeysetReader* KeyczarTool::GetReader(
     const std::string& location,
     const std::string& crypter_location) const {
   switch (location_type_) {
-    case DISK:
-      return GetFileReader(location, crypter_location);
+    case JSON_FILE:
+      return GetJSONFileReader(location, crypter_location);
     default:
       NOTREACHED();
   }
@@ -505,8 +505,8 @@ KeysetWriter* KeyczarTool::GetWriter(
     const std::string& location,
     const std::string& crypter_location) const {
   switch (location_type_) {
-    case DISK:
-      return GetFileWriter(location, crypter_location);
+    case JSON_FILE:
+      return GetJSONFileWriter(location, crypter_location);
     default:
       NOTREACHED();
   }
@@ -514,35 +514,37 @@ KeysetWriter* KeyczarTool::GetWriter(
   return NULL;
 }
 
-KeysetFileReader* KeyczarTool::GetFileReader(
+KeysetJSONFileReader* KeyczarTool::GetJSONFileReader(
     const std::string& location, const std::string& crypter_location) const {
-  scoped_ptr<KeysetFileReader> reader;
+  scoped_ptr<KeysetJSONFileReader> reader;
   scoped_ptr<Crypter> crypter;
 
   if (crypter_location.empty()) {
-    reader.reset(new KeysetFileReader(location));
+    reader.reset(new KeysetJSONFileReader(location));
   } else {
     crypter.reset(Crypter::Read(crypter_location));
     if (crypter.get() == NULL)
       return NULL;
-    reader.reset(new KeysetEncryptedFileReader(location, crypter.release()));
+    reader.reset(new KeysetEncryptedJSONFileReader(location,
+                                                   crypter.release()));
   }
   return reader.release();
 }
 
-KeysetFileWriter* KeyczarTool::GetFileWriter(
+KeysetJSONFileWriter* KeyczarTool::GetJSONFileWriter(
     const std::string& location, const std::string& crypter_location) const {
-  scoped_ptr<KeysetFileWriter> writer;
+  scoped_ptr<KeysetJSONFileWriter> writer;
   scoped_ptr<Encrypter> encrypter;
 
   if (crypter_location.empty()) {
-    writer.reset(new KeysetFileWriter(location));
+    writer.reset(new KeysetJSONFileWriter(location));
   } else {
     encrypter.reset(Encrypter::Read(crypter_location));
     if (encrypter.get() == NULL)
       return false;
 
-    writer.reset(new KeysetEncryptedFileWriter(location, encrypter.release()));
+    writer.reset(new KeysetEncryptedJSONFileWriter(location,
+                                                   encrypter.release()));
   }
   return writer.release();
 }

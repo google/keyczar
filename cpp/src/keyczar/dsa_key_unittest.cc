@@ -35,7 +35,7 @@ class DSATest : public KeyczarTest {
   // Loads public key from JSON file.
   scoped_refptr<DSAPublicKey> LoadDSAPublicKey(const FilePath& path,
                                                int key_version) {
-    KeysetFileReader reader(path);
+    KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
     scoped_refptr<DSAPublicKey> public_key(DSAPublicKey::CreateFromValue(

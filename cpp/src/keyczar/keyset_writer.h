@@ -31,10 +31,10 @@ class KeysetWriter : public Keyset::Observer {
   virtual ~KeysetWriter() {}
 
   // Abstract method for writing |metadata|.
-  virtual bool WriteMetadata(const Value* metadata) const = 0;
+  virtual bool WriteMetadata(const Value& metadata) const = 0;
 
   // Abstract method for writing |key| of number |version|.
-  virtual bool WriteKey(const Value* key, int version) const = 0;
+  virtual bool WriteKey(const Value& key, int version) const = 0;
 
   // This method is called each time the metadata is updated and should be
   // written back.

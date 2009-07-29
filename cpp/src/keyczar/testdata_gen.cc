@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Copied from src/keyczar/testdata_gen.cc
+//
 // Program used to generate src/keyczar/data/.
 #include <string>
 
@@ -42,7 +44,7 @@ int main(int argc, char** argv) {
   const std::string empty_path("");
   const std::string input = "This is some test data";
   const keyczar::keyczar_tool::KeyczarTool tool(
-      keyczar::keyczar_tool::KeyczarTool::DISK);
+      keyczar::keyczar_tool::KeyczarTool::JSON_FILE);
   scoped_ptr<keyczar::KeyPurpose> encrypt_purpose(
       keyczar::KeyPurpose::Create("DECRYPT_AND_ENCRYPT"));
   scoped_ptr<keyczar::KeyPurpose> sign_purpose(
@@ -71,7 +73,7 @@ int main(int argc, char** argv) {
     file_util::CreateDirectory(cur_location);
     tool.CmdCreate(cur_location.value(), *encrypt_purpose, "Test", "");
     const FilePath aes_encrypter_path(location.Append("aes"));
-     keyczar::KeysetEncryptedFileReader encrypted_reader(
+     keyczar::KeysetEncryptedJSONFileReader encrypted_reader(
         cur_location, keyczar::Crypter::Read(aes_encrypter_path.value()));
     scoped_ptr<keyczar::Encrypter> encrypter;
     for (int i = 1; i < 3; ++i) {

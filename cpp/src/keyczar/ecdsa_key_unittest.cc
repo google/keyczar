@@ -35,7 +35,7 @@ class ECDSATest : public KeyczarTest {
   // Loads public key from JSON file.
   scoped_refptr<ECDSAPublicKey> LoadECDSAPublicKey(const FilePath& path,
                                                int key_version) {
-    KeysetFileReader reader(path);
+    KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
     scoped_refptr<ECDSAPublicKey> public_key(ECDSAPublicKey::CreateFromValue(

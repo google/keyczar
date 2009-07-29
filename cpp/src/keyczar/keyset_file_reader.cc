@@ -34,24 +34,24 @@ Value* ReadJSONFile(const FilePath& file) {
 
 namespace keyczar {
 
-KeysetFileReader::KeysetFileReader(const std::string& dirname)
+KeysetJSONFileReader::KeysetJSONFileReader(const std::string& dirname)
     : dirname_(dirname), metadata_basename_("meta") {
   CHECK(file_util::PathExists(dirname_));
 }
 
-KeysetFileReader::KeysetFileReader(const FilePath& dirname)
+KeysetJSONFileReader::KeysetJSONFileReader(const FilePath& dirname)
     : dirname_(dirname), metadata_basename_("meta") {
   CHECK(file_util::PathExists(dirname_));
 }
 
-Value* KeysetFileReader::ReadMetadata() const {
+Value* KeysetJSONFileReader::ReadMetadata() const {
   FilePath metadata_file = dirname_.Append(metadata_basename_);
   if (!file_util::PathExists(metadata_file))
     return NULL;
   return ReadJSONFile(metadata_file);
 }
 
-Value* KeysetFileReader::ReadKey(int version) const {
+Value* KeysetJSONFileReader::ReadKey(int version) const {
   FilePath key_file = dirname_.Append(FilePath(IntToString(version)));
   if (!file_util::PathExists(key_file))
     return NULL;

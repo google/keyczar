@@ -36,7 +36,7 @@ class HMACTest : public KeyczarTest {
   // Loads HMAC key from JSON file.
   scoped_refptr<HMACKey> LoadHMACKey(const FilePath& path,
                                      int key_version) {
-    KeysetFileReader reader(path);
+    KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
     scoped_refptr<HMACKey> hmac_key(HMACKey::CreateFromValue(*value));

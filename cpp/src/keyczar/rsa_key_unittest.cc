@@ -61,7 +61,7 @@ class RSATest : public KeyczarTest {
   // Loads private key from JSON file.
   scoped_refptr<RSAPrivateKey> LoadRSAPrivateKey(const FilePath& path,
                                                  int key_version) {
-    KeysetFileReader reader(path);
+    KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
     scoped_refptr<RSAPrivateKey> private_key(
@@ -73,7 +73,7 @@ class RSATest : public KeyczarTest {
   // Loads public key from JSON file.
   scoped_refptr<RSAPublicKey> LoadRSAPublicKey(const FilePath& path,
                                                int key_version) {
-    KeysetFileReader reader(path);
+    KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
     scoped_refptr<RSAPublicKey> public_key(RSAPublicKey::CreateFromValue(
@@ -168,8 +168,8 @@ TEST_F(RSATest, LoadPrivateKeyDumpAndExport) {
     scoped_refptr<RSAPrivateKey> private_key = LoadRSAPrivateKey(rsa_path, 1);
 
     // Dumps private key into temporary path
-    KeysetFileWriter writer(temp_path_);
-    EXPECT_TRUE(writer.WriteKey(private_key->GetValue(), 1));
+    KeysetJSONFileWriter writer(temp_path_);
+    EXPECT_TRUE(writer.WriteKey(*private_key->GetValue(), 1));
     ASSERT_TRUE(file_util::PathExists(temp_path_.Append("1")));
   }
 
@@ -184,10 +184,10 @@ TEST_F(RSATest, LoadPrivateKeyDumpAndExport) {
     EXPECT_TRUE(private_key->Sign(input_data_, &signature));
 
     // Exports public key
-    KeysetFileWriter writer(temp_path_);
+    KeysetJSONFileWriter writer(temp_path_);
     scoped_ptr<Value> private_key_value(private_key->GetPublicKeyValue());
     ASSERT_TRUE(private_key_value.get());
-    EXPECT_TRUE(writer.WriteKey(private_key_value.get(), 2));
+    EXPECT_TRUE(writer.WriteKey(*private_key_value, 2));
     ASSERT_TRUE(file_util::PathExists(temp_path_.Append("2")));
   }
 
@@ -262,8 +262,8 @@ TEST_F(RSATest, CompareOriginalAndDumpedPrivateKey) {
   scoped_refptr<RSAPrivateKey> original_key = LoadRSAPrivateKey(rsa_path, 1);
 
   // Dumps private key into temporary path
-  KeysetFileWriter writer(temp_path_);
-  EXPECT_TRUE(writer.WriteKey(original_key->GetValue(), 1));
+  KeysetJSONFileWriter writer(temp_path_);
+  EXPECT_TRUE(writer.WriteKey(*original_key->GetValue(), 1));
   ASSERT_TRUE(file_util::PathExists(temp_path_.Append("1")));
 
   // Loads the dumped key
@@ -279,10 +279,10 @@ TEST_F(RSATest, CompareOriginalAndExportedPublicKey) {
   scoped_refptr<RSAPrivateKey> private_key = LoadRSAPrivateKey(rsa_path, 1);
 
   // Exports public key into temporary path
-  KeysetFileWriter writer(temp_path_);
+  KeysetJSONFileWriter writer(temp_path_);
   scoped_ptr<Value> private_key_value(private_key->GetPublicKeyValue());
   ASSERT_TRUE(private_key_value.get());
-  EXPECT_TRUE(writer.WriteKey(private_key_value.get(), 1));
+  EXPECT_TRUE(writer.WriteKey(*private_key_value, 1));
   ASSERT_TRUE(file_util::PathExists(temp_path_.Append("1")));
 
   // Loads orginal public key

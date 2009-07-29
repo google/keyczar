@@ -33,7 +33,7 @@ class KeysetTest : public KeyczarTest {
 
 TEST_F(KeysetTest, KeyOperations) {
   FilePath rsa_path = data_path_.AppendASCII("rsa");
-  KeysetFileReader reader(rsa_path);
+  KeysetJSONFileReader reader(rsa_path);
 
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   ASSERT_TRUE(keyset.get());
@@ -74,7 +74,7 @@ TEST_F(KeysetTest, KeyOperations) {
 
 TEST_F(KeysetTest, AddKeys) {
   FilePath rsa_path = data_path_.AppendASCII("rsa");
-  KeysetFileReader reader(rsa_path);
+  KeysetJSONFileReader reader(rsa_path);
 
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   ASSERT_TRUE(keyset.get());
@@ -98,7 +98,7 @@ TEST_F(KeysetTest, AddKeys) {
 
 TEST_F(KeysetTest, RevokeKeys) {
   FilePath rsa_path = data_path_.AppendASCII("rsa");
-  KeysetFileReader reader(rsa_path);
+  KeysetJSONFileReader reader(rsa_path);
 
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   ASSERT_TRUE(keyset.get());
@@ -132,7 +132,7 @@ TEST_F(KeysetTest, RevokeKeys) {
 
 TEST_F(KeysetTest, KeyAccess) {
   FilePath rsa_path = data_path_.AppendASCII("rsa");
-  KeysetFileReader reader(rsa_path);
+  KeysetJSONFileReader reader(rsa_path);
 
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   ASSERT_TRUE(keyset.get());
@@ -161,17 +161,17 @@ TEST_F(KeysetTest, KeyAccess) {
 TEST_F(KeysetTest, PublicKeyExport) {
   {
     FilePath rsa_path = data_path_.AppendASCII("rsa-sign");
-    KeysetFileReader reader(rsa_path);
+    KeysetJSONFileReader reader(rsa_path);
 
     scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
     ASSERT_TRUE(keyset.get());
 
-    KeysetFileWriter writer(temp_path_);
+    KeysetJSONFileWriter writer(temp_path_);
     EXPECT_TRUE(keyset->PublicKeyExport(writer));
   }
 
   {
-    KeysetFileReader reader(temp_path_);
+    KeysetJSONFileReader reader(temp_path_);
     scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
     ASSERT_TRUE(keyset.get());
 
@@ -204,12 +204,12 @@ TEST_F(KeysetTest, Obervers) {
   file_util::CreateDirectory(temp_path_.Append("observer2"));
 
   scoped_ptr<KeysetWriter> file_writer1(
-      new KeysetFileWriter(temp_path_.Append("observer1")));
+      new KeysetJSONFileWriter(temp_path_.Append("observer1")));
   ASSERT_TRUE(file_writer1.get());
   keyset->AddObserver(file_writer1.get());
 
   scoped_ptr<KeysetWriter> file_writer2(
-      new KeysetFileWriter(temp_path_.Append("observer2")));
+      new KeysetJSONFileWriter(temp_path_.Append("observer2")));
   ASSERT_TRUE(file_writer2.get());
   keyset->AddObserver(file_writer2.get());
 

@@ -21,17 +21,17 @@
 
 namespace keyczar {
 
-KeysetEncryptedFileReader::KeysetEncryptedFileReader(const std::string& dirname,
-                                                     Crypter* crypter)
-    : KeysetFileReader(dirname), crypter_(crypter) {
+KeysetEncryptedJSONFileReader::KeysetEncryptedJSONFileReader(
+    const std::string& dirname, Crypter* crypter)
+    : KeysetJSONFileReader(dirname), crypter_(crypter) {
 }
 
-KeysetEncryptedFileReader::KeysetEncryptedFileReader(const FilePath& dirname,
-                                                     Crypter* crypter)
-    : KeysetFileReader(dirname), crypter_(crypter) {
+KeysetEncryptedJSONFileReader::KeysetEncryptedJSONFileReader(
+    const FilePath& dirname, Crypter* crypter)
+    : KeysetJSONFileReader(dirname), crypter_(crypter) {
 }
 
-Value* KeysetEncryptedFileReader::ReadKey(int version) const {
+Value* KeysetEncryptedJSONFileReader::ReadKey(int version) const {
   if (crypter_.get() == NULL)
     return NULL;
 

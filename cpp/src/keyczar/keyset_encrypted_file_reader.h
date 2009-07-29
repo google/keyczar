@@ -26,25 +26,26 @@ namespace keyczar {
 
 class Crypter;
 
-// An encrypted file reader is used for reading keys of encrypted keysets.
-// In these keysets all the keys are encrypted and require an appropriate
-// Crypter instance for decrypting them.
-class KeysetEncryptedFileReader : public KeysetFileReader {
+// A JSON reader for reading encrypted keys from 'encrypted' keysets.
+// In these keysets only the metadata is not encrypted.
+// It requires an appropriate Crypter instance for decrypting them.
+class KeysetEncryptedJSONFileReader : public KeysetJSONFileReader {
  public:
-  // |dirname| is the path of the encrypted keyset and |crypter| is the Crypter
-  // instance used for decrypting keys. This class takes ownership of |crypter|.
-  KeysetEncryptedFileReader(const std::string& dirname, Crypter* crypter);
+  // |dirname| is the path of the encrypted JSON keyset and |crypter| is
+  // the Crypter instance used for decrypting ecnrypted keys. This class
+  // takes ownership of |crypter|.
+  KeysetEncryptedJSONFileReader(const std::string& dirname, Crypter* crypter);
 
-  KeysetEncryptedFileReader(const FilePath& dirname, Crypter* crypter);
+  KeysetEncryptedJSONFileReader(const FilePath& dirname, Crypter* crypter);
 
-  // This function transparently decrypts the key |version| and returns the
+  // This function transparently decrypts the key |version| and returns its
   // unencrypted value.
   virtual Value* ReadKey(int version) const;
 
  private:
   scoped_ptr<Crypter> crypter_;
 
-  DISALLOW_COPY_AND_ASSIGN(KeysetEncryptedFileReader);
+  DISALLOW_COPY_AND_ASSIGN(KeysetEncryptedJSONFileReader);
 };
 
 }  // namespace keyczar

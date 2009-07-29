@@ -14,18 +14,17 @@
 
 // Copied from src/keyczar/testdata_gen.cc
 //
-// Program used to generate src/keyczar/data/ directory.
+// Program used to generate src/keyczar/data/.
 #include <string>
 
 #include <keyczar/base/file_util.h>
 #include <keyczar/base/scoped_ptr.h>
 #include <keyczar/base/string_util.h>
-
 #include <keyczar/key_purpose.h>
 #include <keyczar/key_status.h>
 #include <keyczar/keyczar.h>
 #include <keyczar/keyczar_tool.h>
-#include "keyczar/keyset_encrypted_file_reader.h"
+#include <keyczar/keyset_encrypted_file_reader.h>
 
 namespace {
 
@@ -45,7 +44,7 @@ int main(int argc, char** argv) {
   const std::string empty_path("");
   const std::string input = "This is some test data";
   const keyczar::keyczar_tool::KeyczarTool tool(
-      keyczar::keyczar_tool::KeyczarTool::DISK);
+      keyczar::keyczar_tool::KeyczarTool::JSON_FILE);
   scoped_ptr<keyczar::KeyPurpose> encrypt_purpose(
       keyczar::KeyPurpose::Create("DECRYPT_AND_ENCRYPT"));
   scoped_ptr<keyczar::KeyPurpose> sign_purpose(
@@ -74,7 +73,7 @@ int main(int argc, char** argv) {
     file_util::CreateDirectory(cur_location);
     tool.CmdCreate(cur_location.value(), *encrypt_purpose, "Test", "");
     const FilePath aes_encrypter_path(location.Append("aes"));
-     keyczar::KeysetEncryptedFileReader encrypted_reader(
+     keyczar::KeysetEncryptedJSONFileReader encrypted_reader(
         cur_location, keyczar::Crypter::Read(aes_encrypter_path.value()));
     scoped_ptr<keyczar::Encrypter> encrypter;
     for (int i = 1; i < 3; ++i) {
@@ -87,7 +86,7 @@ int main(int argc, char** argv) {
   }
 
   {
-    // HMAC_SHA1
+    // HMAC
     const FilePath cur_location = location.Append("hmac");
     file_util::CreateDirectory(cur_location);
     tool.CmdCreate(cur_location.value(), *sign_purpose, "Test", "");

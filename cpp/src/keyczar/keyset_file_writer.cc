@@ -20,35 +20,33 @@
 
 namespace {
 
-bool WriteJSONFile(const FilePath& file, const Value* root) {
-  if (!root)
-    return false;
+bool WriteJSONFile(const FilePath& file, const Value& root) {
   JSONFileValueSerializer json_serializer(file);
-  return json_serializer.Serialize(*root);
+  return json_serializer.Serialize(root);
 }
 
 }  // namespace
 
 namespace keyczar {
 
-KeysetFileWriter::KeysetFileWriter(const std::string& dirname)
+KeysetJSONFileWriter::KeysetJSONFileWriter(const std::string& dirname)
     : dirname_(dirname), metadata_basename_("meta") {
   CHECK(file_util::PathExists(dirname_));
 }
 
-KeysetFileWriter::KeysetFileWriter(const FilePath& dirname)
+KeysetJSONFileWriter::KeysetJSONFileWriter(const FilePath& dirname)
     : dirname_(dirname), metadata_basename_("meta") {
   CHECK(file_util::PathExists(dirname_));
 }
 
-bool KeysetFileWriter::WriteMetadata(const Value* metadata) const {
+bool KeysetJSONFileWriter::WriteMetadata(const Value& metadata) const {
   if (!file_util::PathExists(dirname_))
     return false;
   FilePath metadata_file = dirname_.Append(metadata_basename_);
   return WriteJSONFile(metadata_file, metadata);
 }
 
-bool KeysetFileWriter::WriteKey(const Value* key, int version) const {
+bool KeysetJSONFileWriter::WriteKey(const Value& key, int version) const {
   if (!file_util::PathExists(dirname_))
     return false;
   FilePath key_file = dirname_.Append(FilePath(IntToString(version)));

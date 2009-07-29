@@ -20,18 +20,19 @@
 
 namespace keyczar {
 
-KeysetEncryptedFileWriter::KeysetEncryptedFileWriter(const std::string& dirname,
-                                                     Encrypter* encrypter)
-    : KeysetFileWriter(dirname), encrypter_(encrypter) {
+KeysetEncryptedJSONFileWriter::KeysetEncryptedJSONFileWriter(
+    const std::string& dirname, Encrypter* encrypter)
+    : KeysetJSONFileWriter(dirname), encrypter_(encrypter) {
 }
 
-KeysetEncryptedFileWriter::KeysetEncryptedFileWriter(const FilePath& dirname,
-                                                     Encrypter* encrypter)
-    : KeysetFileWriter(dirname), encrypter_(encrypter) {
+KeysetEncryptedJSONFileWriter::KeysetEncryptedJSONFileWriter(
+    const FilePath& dirname, Encrypter* encrypter)
+    : KeysetJSONFileWriter(dirname), encrypter_(encrypter) {
 }
 
-bool KeysetEncryptedFileWriter::WriteKey(const Value* key, int version) const {
-  if (encrypter_.get() == NULL || key == NULL)
+bool KeysetEncryptedJSONFileWriter::WriteKey(const Value& key,
+                                             int version) const {
+  if (encrypter_.get() == NULL)
     return false;
 
   if (!file_util::PathExists(dirname()))
@@ -42,7 +43,7 @@ bool KeysetEncryptedFileWriter::WriteKey(const Value* key, int version) const {
   std::string json_string;
   JSONStringValueSerializer serializer(&json_string);
   serializer.set_pretty_print(true);
-  if (!serializer.Serialize(*key))
+  if (!serializer.Serialize(key))
     return false;
 
   std::string encrypted_json;

@@ -34,9 +34,9 @@ namespace keyczar_tool {
 class KeyczarTool {
  public:
   enum LocationType {
-    // Locations represent directories containing metadata and
-    // keys files.
-    DISK
+    // Locations represent directories/files/others medias containing metadata
+    // and keys files.
+    JSON_FILE
   };
 
   explicit KeyczarTool(LocationType location_type)
@@ -79,11 +79,11 @@ class KeyczarTool {
   KeysetWriter* GetWriter(const std::string& location,
                           const std::string& crypter_location) const;
 
-  KeysetFileReader* GetFileReader(const std::string& location,
-                                  const std::string& crypter_location) const;
+  KeysetJSONFileReader* GetJSONFileReader(
+      const std::string& location, const std::string& crypter_location) const;
 
-  KeysetFileWriter* GetFileWriter(const std::string& location,
-                                  const std::string& crypter_location) const;
+  KeysetJSONFileWriter* GetJSONFileWriter(
+      const std::string& location, const std::string& crypter_location) const;
 
   // Will be used to decide which reader and writer to instanciate.
   LocationType location_type_;

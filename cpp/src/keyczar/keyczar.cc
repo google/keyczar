@@ -161,13 +161,13 @@ bool Keyczar::Decompress(const std::string& input,
 
 // static
 Encrypter* Encrypter::Read(const std::string& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return Encrypter::Read(reader);
 }
 
 // static
 Encrypter* Encrypter::Read(const FilePath& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return Encrypter::Read(reader);
 }
 
@@ -229,13 +229,13 @@ bool Encrypter::IsAcceptablePurpose() const {
 
 // static
 Crypter* Crypter::Read(const std::string& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return Crypter::Read(reader);
 }
 
 // static
 Crypter* Crypter::Read(const FilePath& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return Crypter::Read(reader);
 }
 
@@ -297,13 +297,13 @@ bool Crypter::IsAcceptablePurpose() const {
 
 // static
 Verifier* Verifier::Read(const std::string& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return Verifier::Read(reader);
 }
 
 // static
 Verifier* Verifier::Read(const FilePath& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return Verifier::Read(reader);
 }
 
@@ -359,13 +359,13 @@ bool Verifier::IsAcceptablePurpose() const {
 
 // static
 UnversionedVerifier* UnversionedVerifier::Read(const std::string& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return UnversionedVerifier::Read(reader);
 }
 
 // static
 UnversionedVerifier* UnversionedVerifier::Read(const FilePath& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return UnversionedVerifier::Read(reader);
 }
 
@@ -419,13 +419,13 @@ bool UnversionedVerifier::IsAcceptablePurpose() const {
 
 // static
 Signer* Signer::Read(const std::string& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return Signer::Read(reader);
 }
 
 // static
 Signer* Signer::Read(const FilePath& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return Signer::Read(reader);
 }
 
@@ -491,13 +491,13 @@ bool Signer::IsAcceptablePurpose() const {
 
 // static
 UnversionedSigner* UnversionedSigner::Read(const std::string& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return UnversionedSigner::Read(reader);
 }
 
 // static
 UnversionedSigner* UnversionedSigner::Read(const FilePath& location) {
-  const KeysetFileReader reader(location);
+  const KeysetJSONFileReader reader(location);
   return UnversionedSigner::Read(reader);
 }
 

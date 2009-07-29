@@ -23,20 +23,20 @@
 
 namespace keyczar {
 
-// Concrete class for writing metadata and keys to files.
-class KeysetFileWriter : public KeysetWriter {
+// Concrete class writing metadata and keys to JSON structured files.
+class KeysetJSONFileWriter : public KeysetWriter {
  public:
   // |dirname| is the string path of the keyset to read.
-  explicit KeysetFileWriter(const std::string& dirname);
+  explicit KeysetJSONFileWriter(const std::string& dirname);
 
   // |dirname| is the FilePath of the keyset to read.
-  explicit KeysetFileWriter(const FilePath& dirname);
+  explicit KeysetJSONFileWriter(const FilePath& dirname);
 
   // Writes |metadata| to file 'meta' inside the keyset directory.
-  virtual bool WriteMetadata(const Value* metadata) const;
+  virtual bool WriteMetadata(const Value& metadata) const;
 
   // Writes |key| to file |version| inside the keyset directory.
-  virtual bool WriteKey(const Value* key, int version) const;
+  virtual bool WriteKey(const Value& key, int version) const;
 
   FilePath dirname() const { return dirname_; }
 
@@ -44,7 +44,7 @@ class KeysetFileWriter : public KeysetWriter {
   const FilePath dirname_;
   const FilePath metadata_basename_;
 
-  DISALLOW_COPY_AND_ASSIGN(KeysetFileWriter);
+  DISALLOW_COPY_AND_ASSIGN(KeysetJSONFileWriter);
 };
 
 }  // namespace keyczar

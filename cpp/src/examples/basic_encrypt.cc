@@ -44,6 +44,26 @@ void EncryptAndDecryptBytes(const std::string& location) {
   delete crypter;
 }
 
+void EncryptAndDecryptCompressed(const std::string& location) {
+  keyczar::Keyczar* crypter = keyczar::Crypter::Read(location);
+  if (!crypter)
+    return;
+
+  crypter->set_compression(keyczar::Keyczar::ZLIB);
+  assert(crypter->compression() == keyczar::Keyczar::ZLIB);
+
+  std::string input = "Secret message";
+  std::string ciphertext;
+  bool result = crypter->Encrypt(input, &ciphertext);
+  if (result) {
+    std::string decrypted_input;
+    bool result = crypter->Decrypt(ciphertext, &decrypted_input);
+    if (result)
+      assert(input == decrypted_input);
+  }
+  delete crypter;
+}
+
 int main(int argc, char** argv) {
   if (argc != 2) {
     std::cout << "An absolute key set location must be provided as argument"
@@ -56,6 +76,7 @@ int main(int argc, char** argv) {
 
   EncryptAndDecrypt(location);
   EncryptAndDecryptBytes(location);
+  EncryptAndDecryptCompressed(location);
 
   return 0;
 }

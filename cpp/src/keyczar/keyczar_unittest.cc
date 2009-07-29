@@ -289,8 +289,8 @@ TEST_F(KeyczarTest, AESCryptedEncryptAndDecrypt) {
   ASSERT_TRUE(decrypter.get());
 
   const FilePath aes_crypted_path = data_path_.Append("aes-crypted");
-  KeysetEncryptedFileReader encrypted_reader(aes_crypted_path.value(),
-                                             decrypter.release());
+  KeysetEncryptedJSONFileReader encrypted_reader(
+      aes_crypted_path.value(), decrypter.release());
   scoped_ptr<Crypter> crypter(Crypter::Read(encrypted_reader));
   ASSERT_TRUE(crypter.get());
 
@@ -308,7 +308,7 @@ TEST_F(KeyczarTest, AESCryptedDecrypt1) {
   ASSERT_TRUE(decrypter.get());
 
   const FilePath aes_crypted_path = data_path_.Append("aes-crypted");
-  KeysetEncryptedFileReader encrypted_reader(aes_crypted_path.value(),
+  KeysetEncryptedJSONFileReader encrypted_reader(aes_crypted_path.value(),
                                              decrypter.release());
   scoped_ptr<Crypter> crypter(Crypter::Read(encrypted_reader));
   ASSERT_TRUE(crypter.get());
@@ -327,7 +327,7 @@ TEST_F(KeyczarTest, AESCryptedDecrypt2) {
   ASSERT_TRUE(decrypter.get());
 
   const FilePath aes_crypted_path = data_path_.Append("aes-crypted");
-  KeysetEncryptedFileReader encrypted_reader(aes_crypted_path.value(),
+  KeysetEncryptedJSONFileReader encrypted_reader(aes_crypted_path.value(),
                                              decrypter.release());
   scoped_ptr<Crypter> crypter(Crypter::Read(encrypted_reader));
   ASSERT_TRUE(crypter.get());

@@ -2,10 +2,10 @@
 
 == Dependancies ==
 
-- C++ compiler
+- C++ compiler g++
 - Python for running the build system
 - OpenSSL (>= 0.9.8b)
-- Unicode ICU
+- Unicode ICU Library
 - [Optional dependancy]: Zlib (for compression)
 - [Optional dependancy]: Swig (Python binding)
 
@@ -15,7 +15,7 @@ Packages g++ make libssl-dev libicu-dev zlib1-dev python python-dev swig
 
 === MacOSX Leopard ===
 
-XCode > 3.1 and MacPorts with the following packages: zlib openssl icu swig
+XCode >= 3.1 and MacPorts with the following packages: zlib openssl icu swig
 
 
 == Supported architectures and systems ==
@@ -45,12 +45,12 @@ You need to log as root and execute these commands:
 
 /!\ Note: it is actually highly recommanded to use the compatibility (--compat)
 mode. This mode provides full compatibility with previous versions and others
-Keyczar implementations (Java, pure Python). Without this option different
+Keyczar implementations (i.e. Java and Python). Without this option different
 crypto choices are used (see algorithms.txt for details) breaking the
 compatibility. Moreover these choices could be modified again in the future.
 
 - By default the prefix used is /usr/local/ and /usr/lib/python2.x/site-packages
-  for Python stuffs. See src/options.conf for overriding these choices.
+  for Python stuffs. See src/options.conf for overriding defaults settings.
 - Learn how to use this library by reading the tutorial (on the wiki), the
   examples located under src/examples/ and the main header src/keyczar/keyczar.h
 

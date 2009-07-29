@@ -19,16 +19,20 @@ namespace keyczar {
 
 void KeysetWriter::OnUpdatedKeysetMetadata(const KeysetMetadata& key_metadata) {
   scoped_ptr<Value> metadata_value(key_metadata.GetValue(false));
-  WriteMetadata(metadata_value.get());
+  if (metadata_value.get() != NULL)
+    WriteMetadata(*metadata_value);
 }
 
 void KeysetWriter::OnNewKey(const Key& key, int version_number) {
   scoped_ptr<Value> key_value(key.GetValue());
-  WriteKey(key_value.get(), version_number);
+  if (key_value.get() != NULL)
+    WriteKey(*key_value, version_number);
 }
 
 void KeysetWriter::OnRevokedKey(int version_number) {
   // By default, does nothing.
+  // Alternatively, one might choose to delete the key from disk
+  // here (or from a subclass).
 }
 
 }  // namespace keyczar

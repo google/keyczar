@@ -17,14 +17,15 @@ class KeysetReader {
   virtual ~KeysetReader() = 0;
 };
 
-class KeysetFileReader : public KeysetReader {
+class KeysetJSONFileReader : public KeysetReader {
  public:
-  virtual ~KeysetFileReader() = 0;
+  KeysetJSONFileReader(const std::string& location);
 };
 
-class KeysetEncryptedFileReader : public KeysetFileReader {
+class KeysetEncryptedJSONFileReader : public KeysetJSONFileReader {
  public:
-  KeysetEncryptedFileReader(const std::string& dirname, Crypter* crypter);
+  KeysetEncryptedJSONFileReader(const std::string& location,
+                                Crypter* crypter);
 };
 
 class Keyczar {

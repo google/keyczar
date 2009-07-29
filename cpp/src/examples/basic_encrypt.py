@@ -25,6 +25,12 @@ def EncryptAndDecryptBytes(keyset_path):
     ciphertext_bytes = crypter.Encrypt(input)
     assert crypter.Decrypt(ciphertext_bytes) == input
 
+def EncryptAndDecryptCompressed(keyset_path):
+    input = 'Secret message'
+    crypter = keyczar.Crypter.Read(keyset_path)
+    crypter.set_compression(crypter.ZLIB)
+    ciphertext_bytes = crypter.Encrypt(input)
+    assert crypter.Decrypt(ciphertext_bytes) == input
 
 if __name__ == '__main__':
     if (len(sys.argv) != 2 or not os.path.isdir(sys.argv[1])):
@@ -32,3 +38,5 @@ if __name__ == '__main__':
         sys.exit(1)
     EncryptAndDecrypt(sys.argv[1])
     EncryptAndDecryptBytes(sys.argv[1])
+    EncryptAndDecryptCompressed(sys.argv[1])
+

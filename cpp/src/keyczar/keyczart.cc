@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
   keyczar::CryptoFactory::Rand();
 
   keyczar::keyczar_tool::KeyczarTool tool(
-      keyczar::keyczar_tool::KeyczarTool::DISK);
+      keyczar::keyczar_tool::KeyczarTool::JSON_FILE);
   if (!tool.Init(argc, argv))
     return 1;
   if (!tool.ProcessCommandLine())

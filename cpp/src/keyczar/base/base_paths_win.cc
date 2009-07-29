@@ -100,9 +100,10 @@ bool PathProviderWin(int key, FilePath* result) {
       cur = FilePath(system_buffer);
       break;
     case base::DIR_SOURCE_ROOT:
-      // On Windows, unit tests execute two levels deep from the source root.
-      // For example:  chrome/{Debug|Release}/ui_tests.exe
+      // On Windows, unit tests execute three levels deep from the source root.
+      // For example:  scons-out/<target>/tests/base_unittests
       PathService::Get(base::DIR_EXE, &wstring_path);
+      file_util::UpOneDirectory(&wstring_path);
       file_util::UpOneDirectory(&wstring_path);
       file_util::UpOneDirectory(&wstring_path);
       cur = FilePath(wstring_path);

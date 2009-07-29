@@ -34,7 +34,7 @@ class AESTest : public KeyczarTest {
   // Loads AES key from JSON file.
   scoped_refptr<AESKey> LoadAESKey(const FilePath& path,
                                           int key_version) {
-    KeysetFileReader reader(path);
+    KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
     scoped_refptr<AESKey> aes_key(AESKey::CreateFromValue(*value));
@@ -90,8 +90,8 @@ TEST_F(AESTest, GenerateKeyDumpAndCompare) {
   ASSERT_TRUE(aes_key.get());
 
   // Dumps this secret key into temporary path
-  KeysetFileWriter writer(temp_path_);
-  EXPECT_TRUE(writer.WriteKey(aes_key->GetValue(), 1));
+  KeysetJSONFileWriter writer(temp_path_);
+  EXPECT_TRUE(writer.WriteKey(*aes_key->GetValue(), 1));
   ASSERT_TRUE(file_util::PathExists(temp_path_.Append("1")));
 
   // Loads this key

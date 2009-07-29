@@ -24,18 +24,26 @@ namespace keyczar {
 class KeysetReaderTest : public KeyczarTest {
 };
 
-TEST_F(KeysetReaderTest, ValidRead) {
+TEST_F(KeysetReaderTest, ReadValidJSON) {
   FilePath path = data_path_.Append("aes");
 
-  KeysetFileReader reader(path.value());
+  KeysetJSONFileReader reader(path.value());
+
   ASSERT_TRUE(file_util::PathExists(path.AppendASCII("meta")));
-  EXPECT_NE(static_cast<Value*>(NULL), reader.ReadMetadata());
+  scoped_ptr<Value> metadata_value(reader.ReadMetadata());
+  ASSERT_TRUE(metadata_value.get());
+
   ASSERT_TRUE(file_util::PathExists(path.AppendASCII("1")));
-  EXPECT_NE(static_cast<Value*>(NULL), reader.ReadKey(1));
+  scoped_ptr<Value> key1_value(reader.ReadKey(1));
+  ASSERT_TRUE(key1_value.get());
+
   ASSERT_TRUE(file_util::PathExists(path.AppendASCII("2")));
-  EXPECT_NE(static_cast<Value*>(NULL), reader.ReadKey(2));
+  scoped_ptr<Value> key2_value(reader.ReadKey(2));
+  ASSERT_TRUE(key2_value.get());
+
   ASSERT_FALSE(file_util::PathExists(path.AppendASCII("3")));
-  EXPECT_EQ(static_cast<Value*>(NULL), reader.ReadKey(3));
+  scoped_ptr<Value> key3_value(reader.ReadKey(3));
+  ASSERT_FALSE(key3_value.get());
 }
 
 }  // namespace keyczar

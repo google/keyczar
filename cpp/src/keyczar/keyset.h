@@ -42,7 +42,7 @@ class KeysetWriter;
 // Example:
 //
 //  Keyset keyset;
-//  KeysetFileWriter file_writer(path);
+//  KeysetJSONFileWriter file_writer(path);
 //  keyset.AddObserver(&file_writer);
 //
 //  KeysetMetadata* meta = NULL;

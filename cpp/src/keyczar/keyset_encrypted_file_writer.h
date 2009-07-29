@@ -26,25 +26,25 @@ namespace keyczar {
 
 class Encrypter;
 
-// An encrypted file writer is used for writing encrypted keys. A encrypter
-// is used for encrypting the keys before writing them to destination files.
-class KeysetEncryptedFileWriter : public KeysetFileWriter {
+// A JSON writer for writing encrypted keys.
+class KeysetEncryptedJSONFileWriter : public KeysetJSONFileWriter {
  public:
-  // |dirname| is the path of the encrypted keyset and |encrypter| is the
+  // |dirname| is the path of the encrypted JSON keyset and |encrypter| is the
   // Encrypter instance used for encrypting keys. This class takes ownership
   // of |encrypter|.
-  KeysetEncryptedFileWriter(const std::string& dirname, Encrypter* encrypter);
+  KeysetEncryptedJSONFileWriter(const std::string& dirname,
+                                Encrypter* encrypter);
 
-  KeysetEncryptedFileWriter(const FilePath& dirname, Encrypter* encrypter);
+  KeysetEncryptedJSONFileWriter(const FilePath& dirname, Encrypter* encrypter);
 
   // Transparently encrypts |key| and writes it to |version| inside the keyset
   // path. Returns true on success.
-  virtual bool WriteKey(const Value* key, int version) const;
+  virtual bool WriteKey(const Value& key, int version) const;
 
  private:
   scoped_ptr<Encrypter> encrypter_;
 
-  DISALLOW_COPY_AND_ASSIGN(KeysetEncryptedFileWriter);
+  DISALLOW_COPY_AND_ASSIGN(KeysetEncryptedJSONFileWriter);
 };
 
 }  // namespace keyczar

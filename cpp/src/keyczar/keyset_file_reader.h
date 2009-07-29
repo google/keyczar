@@ -23,15 +23,14 @@
 
 namespace keyczar {
 
-// Class used for reading the content of a keyset (keys and metadata) from
-// files.
-class KeysetFileReader : public KeysetReader {
+// A class for reading JSON key sets from files.
+class KeysetJSONFileReader : public KeysetReader {
  public:
   // |dirname| is the string path of the keyset to read.
-  explicit KeysetFileReader(const std::string& dirname);
+  explicit KeysetJSONFileReader(const std::string& dirname);
 
   // |dirname| is the FilePath of the keyset to read.
-  explicit KeysetFileReader(const FilePath& dirname);
+  explicit KeysetJSONFileReader(const FilePath& dirname);
 
   // Read the metadata. The caller takes ownership of the returned value.
   virtual Value* ReadMetadata() const;
@@ -45,7 +44,7 @@ class KeysetFileReader : public KeysetReader {
   const FilePath dirname_;
   const FilePath metadata_basename_;
 
-  DISALLOW_COPY_AND_ASSIGN(KeysetFileReader);
+  DISALLOW_COPY_AND_ASSIGN(KeysetJSONFileReader);
 };
 
 }  // namespace keyczar
