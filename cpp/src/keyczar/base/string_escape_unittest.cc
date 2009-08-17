@@ -7,6 +7,9 @@
 #include <keyczar/base/string_escape.h>
 #include <keyczar/base/string_util.h>
 
+namespace keyczar {
+namespace base {
+
 TEST(StringEscapeTest, JavascriptDoubleQuote) {
   static const char* kToEscape          = "\b\001aZ\"\\wee";
   static const char* kEscaped           = "\\b\\x01aZ\\\"\\\\wee";
@@ -16,26 +19,6 @@ TEST(StringEscapeTest, JavascriptDoubleQuote) {
   static const char* kUEscapedQuoted    = "\"\\b\\x01a\\u123FZ\\\"\\\\wee\"";
 
   std::string out;
-
-  // Test wide unicode escaping
-  out = "testy: ";
-  string_escape::JavascriptDoubleQuote(WideToUTF16(kUToEscape), false, &out);
-  ASSERT_EQ(std::string("testy: ") + kUEscaped, out);
-
-  out = "testy: ";
-  string_escape::JavascriptDoubleQuote(WideToUTF16(kUToEscape), true, &out);
-  ASSERT_EQ(std::string("testy: ") + kUEscapedQuoted, out);
-
-  // Test null and high bit / negative unicode values
-  string16 str16 = UTF8ToUTF16("TeSt");
-  str16.push_back(0);
-  str16.push_back(0xffb1);
-  str16.push_back(0x00ff);
-
-  out = "testy: ";
-  string_escape::JavascriptDoubleQuote(str16, false, &out);
-  ASSERT_EQ("testy: TeSt\\x00\\uFFB1\\xFF", out);
-
   // Test escaping of 7bit ascii
   out = "testy: ";
   string_escape::JavascriptDoubleQuote(std::string(kToEscape), false, &out);
@@ -63,3 +46,6 @@ TEST(StringEscapeTest, JavascriptDoubleQuote) {
   string_escape::JavascriptDoubleQuote("a\b\f\n\r\t\v\1\\.\"z", false, &out);
   ASSERT_EQ("testy: a\\b\\f\\n\\r\\t\\v\\x01\\\\.\\\"z", out);
 }
+
+}  // namespace base
+}  // namespace keyczar

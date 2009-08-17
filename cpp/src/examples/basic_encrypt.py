@@ -1,4 +1,5 @@
-# Encrypts and decrypts a short message.
+# Encrypts and decrypts a short message. Uses raw encoding, base64w
+# encoding and zlib compression.
 #
 # Example: python basic_encrypt.py ~/my-aes
 #
@@ -33,10 +34,9 @@ def EncryptAndDecryptCompressed(keyset_path):
     assert crypter.Decrypt(ciphertext_bytes) == input
 
 if __name__ == '__main__':
-    if (len(sys.argv) != 2 or not os.path.isdir(sys.argv[1])):
+    if (len(sys.argv) != 2 or not os.path.exists(sys.argv[1])):
         print >> sys.stderr, "Provide a key set path as argument."
         sys.exit(1)
     EncryptAndDecrypt(sys.argv[1])
     EncryptAndDecryptBytes(sys.argv[1])
     EncryptAndDecryptCompressed(sys.argv[1])
-

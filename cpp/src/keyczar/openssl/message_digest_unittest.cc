@@ -40,7 +40,7 @@ TEST(MessageDigestOpenSSL, SimpleHash) {
   EXPECT_EQ(md_value_1, md_value_2);
 
   std::string md_value_1_encoded;
-  Base64WEncode(md_value_1, &md_value_1_encoded);
+  base::Base64WEncode(md_value_1, &md_value_1_encoded);
   // >>> import sha
   // >>> import base64
   // >>> base64.urlsafe_b64encode(sha.new("hello world!").digest())

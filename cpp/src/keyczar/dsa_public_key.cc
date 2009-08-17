@@ -33,17 +33,17 @@ DSAPublicKey* DSAPublicKey::CreateFromValue(const Value& root_key) {
 
   DSAImpl::DSAIntermediateKey intermediate_key;
 
-  if (!util::DeserializeString(*public_key, L"p", &intermediate_key.p))
+  if (!util::DeserializeString(*public_key, "p", &intermediate_key.p))
     return NULL;
-  if (!util::DeserializeString(*public_key, L"q", &intermediate_key.q))
+  if (!util::DeserializeString(*public_key, "q", &intermediate_key.q))
     return NULL;
-  if (!util::DeserializeString(*public_key, L"g", &intermediate_key.g))
+  if (!util::DeserializeString(*public_key, "g", &intermediate_key.g))
     return NULL;
-  if (!util::DeserializeString(*public_key, L"y", &intermediate_key.y))
+  if (!util::DeserializeString(*public_key, "y", &intermediate_key.y))
     return NULL;
 
   int size;
-  if (!public_key->GetInteger(L"size", &size))
+  if (!public_key->GetInteger("size", &size))
     return NULL;
 
   scoped_ptr<DSAImpl> dsa_public_key_impl(
@@ -52,7 +52,8 @@ DSAPublicKey* DSAPublicKey::CreateFromValue(const Value& root_key) {
     return NULL;
 
   // Check the provided size is valid.
-  if (size != dsa_public_key_impl->Size() || !IsValidSize("DSA_PUB", size))
+  if (size != dsa_public_key_impl->Size() ||
+      !KeyType::IsValidCipherSize(KeyType::DSA_PUB, size))
     return NULL;
 
   return new DSAPublicKey(dsa_public_key_impl.release(), size);
@@ -67,16 +68,16 @@ Value* DSAPublicKey::GetValue() const {
   if (!dsa_impl()->GetPublicAttributes(&intermediate_key))
     return NULL;
 
-  if (!util::SerializeString(intermediate_key.p, L"p", public_key.get()))
+  if (!util::SerializeString(intermediate_key.p, "p", public_key.get()))
     return NULL;
-  if (!util::SerializeString(intermediate_key.q, L"q", public_key.get()))
+  if (!util::SerializeString(intermediate_key.q, "q", public_key.get()))
     return NULL;
-  if (!util::SerializeString(intermediate_key.g, L"g", public_key.get()))
+  if (!util::SerializeString(intermediate_key.g, "g", public_key.get()))
     return NULL;
-  if (!util::SerializeString(intermediate_key.y, L"y", public_key.get()))
+  if (!util::SerializeString(intermediate_key.y, "y", public_key.get()))
     return NULL;
 
-  if (!public_key->SetInteger(L"size", size()))
+  if (!public_key->SetInteger("size", size()))
     return NULL;
 
   return public_key.release();
@@ -104,7 +105,7 @@ bool DSAPublicKey::Hash(std::string* hash) const {
   digest_impl->Final(&full_hash);
   CHECK_LE(Key::GetHashSize(), static_cast<int>(full_hash.length()));
 
-  Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
+  base::Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
   return true;
 }
 
@@ -127,7 +128,7 @@ bool DSAPublicKey::Verify(const std::string& data,
   DSAImpl::DSAIntermediateKey dsa_public_key;
   if (!dsa_impl()->GetPublicAttributes(&dsa_public_key))
     return false;
-  int q_length = dsa_public_key.q.length();
+  const uint32 q_length = dsa_public_key.q.length();
   if (message_digest.length() > q_length)
     message_digest = message_digest.substr(0, q_length);
 

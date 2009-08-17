@@ -15,7 +15,10 @@ class ConDecLogger {
   explicit ConDecLogger(int* ptr) { set_ptr(ptr); }
   ~ConDecLogger() { --*ptr_; }
 
-  void set_ptr(int* ptr) { ptr_ = ptr; ++*ptr_; }
+  void set_ptr(int* ptr) {
+    ptr_ = ptr;
+    ++*ptr_;
+  }
 
   int SomeMeth(int x) { return x; }
 
@@ -166,5 +169,3 @@ TEST(ScopedPtrTest, ScopedArray) {
   }
   EXPECT_EQ(0, constructed);
 }
-
-// TODO scoped_ptr_malloc

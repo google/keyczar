@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This source code was copied from Chromium and has been modified to fit
-// with Keyczar, any encountered errors are probably due to these
-// modifications.
+// This source code was copied from Chromium and was modified, any
+// encountered errors are probably due to these modifications.
 
 #ifndef KEYCZAR_BASE_JSON_WRITER_H_
 #define KEYCZAR_BASE_JSON_WRITER_H_
@@ -14,6 +13,9 @@
 #include <keyczar/base/basictypes.h>
 
 class Value;
+
+namespace keyczar {
+namespace base {
 
 class JSONWriter {
  public:
@@ -35,7 +37,7 @@ class JSONWriter {
   void BuildJSONString(const Value* const node, int depth);
 
   // Appends a quoted, escaped, version of str to json_string_.
-  void AppendQuotedString(const std::wstring& str);
+  void AppendQuotedString(const std::string& str);
 
   // Adds space to json_string_ for the indent level.
   void IndentLine(int depth);
@@ -47,6 +49,9 @@ class JSONWriter {
 
   DISALLOW_COPY_AND_ASSIGN(JSONWriter);
 };
+
+}  // namespace base
+}  // namespace keyczar
 
 #endif  // KEYCZAR_BASE_JSON_WRITER_H_
 

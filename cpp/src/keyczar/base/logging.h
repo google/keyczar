@@ -28,9 +28,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// This source code was copied from Protobuf and has been modified to fit
-// with Keyczar, any encountered errors are probably due to these
-// modifications.
+// This source code was copied from Protobuf and was modified, any
+// encountered errors are probably due to these modifications.
 
 #ifndef KEYCZAR_BASE_LOGGING_H_
 #define KEYCZAR_BASE_LOGGING_H_
@@ -74,14 +73,10 @@ class LogMessage {
   ~LogMessage();
 
   LogMessage& operator<<(const std::string& value);
-  LogMessage& operator<<(const std::wstring& value);
   LogMessage& operator<<(const char* value);
   LogMessage& operator<<(char value);
   LogMessage& operator<<(int value);
   LogMessage& operator<<(uint32 value);
-  LogMessage& operator<<(long value);
-  LogMessage& operator<<(unsigned long value);
-  LogMessage& operator<<(double value);
 
  private:
   friend class LogFinisher;

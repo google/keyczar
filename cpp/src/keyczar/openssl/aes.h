@@ -21,33 +21,28 @@
 #include <keyczar/aes_impl.h>
 #include <keyczar/base/basictypes.h>
 #include <keyczar/base/scoped_ptr.h>
+#include <keyczar/base/stl_util-inl.h>
+#include <keyczar/cipher_mode.h>
 #include <keyczar/openssl/util.h>
 
 namespace keyczar {
-
-class CipherMode;
 
 namespace openssl {
 
 // OpenSSL concrete implementation.
 class AESOpenSSL : public AESImpl {
  public:
-  // No need to explicitly call EVP_CIPHER_CTX_init because this function is
-  // already called inside the factory function EVP_CIPHER_CTX_new used for
-  // initializing the context.
-  AESOpenSSL(const EVP_CIPHER* (*evp_cipher)(), const std::string& key);
-
-  virtual ~AESOpenSSL() {}
+  virtual ~AESOpenSSL();
 
   // Instantiates a concrete AES implementation object from its |cipher_mode|
   // and its length of key deduced from the length of |key|. Currently only
   // the operating mode CBC is supported. The caller takes  ownership over the
   // returned object.
-  static AESOpenSSL* Create(const CipherMode& cipher_mode,
+  static AESOpenSSL* Create(CipherMode::Type cipher_mode,
                             const std::string& key);
 
   // The value of |size| is expressed in bits.
-  static AESOpenSSL* GenerateKey(const CipherMode& cipher_mode, int size);
+  static AESOpenSSL* GenerateKey(CipherMode::Type cipher_mode, int size);
 
   // Atomically encrypts |plaintext| and put the cipher text and the
   // corresponding IV respectively into |ciphertext| and |iv|. Internally
@@ -104,7 +99,7 @@ class AESOpenSSL : public AESImpl {
   // method should be called after DecryptUpdate.
   virtual bool DecryptFinal(std::string* plaintext) const;
 
-  virtual std::string GetKey() const { return key_; }
+  virtual const std::string& GetKey() const { return *key_; }
 
   // Returns the size of the secret key this number can be used as length
   // of the initialization vector. The return value is expressed in bytes.
@@ -116,6 +111,11 @@ class AESOpenSSL : public AESImpl {
   typedef scoped_ptr_malloc<
       EVP_CIPHER_CTX, openssl::OSSLDestroyer<EVP_CIPHER_CTX,
       EVP_CIPHER_CTX_free> > ScopedCipherCtx;
+
+  // No need to explicitly call EVP_CIPHER_CTX_init because this function is
+  // already called inside the factory function EVP_CIPHER_CTX_new used for
+  // initializing the context.
+  AESOpenSSL(const EVP_CIPHER* (*evp_cipher)(), const std::string& key);
 
   // This method securely erase the current encryption context. It should be
   // called after each completed encryption (that the encryption succeeded or
@@ -141,7 +141,7 @@ class AESOpenSSL : public AESImpl {
   const EVP_CIPHER* (*evp_cipher_)();
 
   // This is the secret key.
-  std::string key_;
+  const base::ScopedSafeString key_;
 
   // Encryption context used by encryption methods.
   ScopedCipherCtx encryption_context_;

@@ -2,11 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Copied from src/chrome/common/json_value_serializer.h
-
-// This source code was copied from Chromium and has been modified to fit
-// with Keyczar, any encountered errors are probably due to these
-// modifications.
+// This source code was copied from Chromium and was modified, any
+// encountered errors are probably due to these modifications.
 
 #ifndef KEYCZAR_BASE_JSON_VALUE_SERIALIZER_H__
 #define KEYCZAR_BASE_JSON_VALUE_SERIALIZER_H__
@@ -17,12 +14,15 @@
 #include <keyczar/base/file_path.h>
 #include <keyczar/base/values.h>
 
+namespace keyczar {
+namespace base {
+
 class JSONStringValueSerializer : public ValueSerializer {
  public:
   // json_string is the string that will be source of the deserialization
   // or the destination of the serialization.  The caller of the constructor
   // retains ownership of the string.
-  JSONStringValueSerializer(std::string* json_string)
+  explicit JSONStringValueSerializer(std::string* json_string)
       : json_string_(json_string),
         initialized_with_const_string_(false),
         pretty_print_(false),
@@ -31,7 +31,7 @@ class JSONStringValueSerializer : public ValueSerializer {
 
   // This version allows initialization with a const string reference for
   // deserialization only.
-  JSONStringValueSerializer(const std::string& json_string)
+  explicit JSONStringValueSerializer(const std::string& json_string)
       : json_string_(&const_cast<std::string&>(json_string)),
         initialized_with_const_string_(true),
         allow_trailing_comma_(false) {
@@ -73,12 +73,12 @@ class JSONFileValueSerializer : public ValueSerializer {
   // deserialization or the destination of the serialization.
   // When deserializing, the file should exist, but when serializing, the
   // serializer will attempt to create the file at the specified location.
-  JSONFileValueSerializer(const FilePath& json_file_path)
+  explicit JSONFileValueSerializer(const FilePath& json_file_path)
     : json_file_path_(json_file_path) {}
   // DEPRECATED - DO NOT USE
   // TODO(port): remove references to this
-  JSONFileValueSerializer(const std::wstring& json_file_path)
-    : json_file_path_(FilePath::FromWStringHack(json_file_path)) {}
+  explicit JSONFileValueSerializer(const std::string& json_file_path)
+    : json_file_path_(FilePath(json_file_path)) {}
 
   ~JSONFileValueSerializer() {}
 
@@ -105,5 +105,7 @@ class JSONFileValueSerializer : public ValueSerializer {
   DISALLOW_EVIL_CONSTRUCTORS(JSONFileValueSerializer);
 };
 
-#endif  // KEYCZAR_BASE_JSON_VALUE_SERIALIZER_H__
+}  // namespace base
+}  // namespace keyczar
 
+#endif  // KEYCZAR_BASE_JSON_VALUE_SERIALIZER_H__

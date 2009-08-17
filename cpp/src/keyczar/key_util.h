@@ -27,15 +27,27 @@ namespace util {
 // |node| and assign the result to |destination|. This function returns
 // false if it fails.
 bool DeserializeString(const DictionaryValue& node,
-                       const std::wstring& key,
+                       const std::string& key,
                        std::string* destination);
+
+// Same than DeserializeString but the internal temp string is
+// erased before delete.
+bool SafeDeserializeString(const DictionaryValue& node,
+                           const std::string& key,
+                           std::string* destination);
 
 // Seserialize |value| into a base64w encoded string and insert it into
 // dictionary |node| at index |destination_key|. This function returns
 // false if it fails.
 bool SerializeString(const std::string& value,
-                     const std::wstring& destination_key,
+                     const std::string& destination_key,
                      DictionaryValue* node);
+
+// Same than SerializeString but the internal temp string is
+// erased before delete.
+bool SafeSerializeString(const std::string& value,
+                         const std::string& destination_key,
+                         DictionaryValue* node);
 
 }  // namespace util
 

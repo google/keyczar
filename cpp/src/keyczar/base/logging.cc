@@ -38,7 +38,6 @@
 #include <errno.h>
 
 #include <keyczar/base/string_util.h>
-#include <keyczar/base/sys_string_conversions.h>
 
 namespace internal {
 
@@ -70,14 +69,10 @@ static std::string SimpleCtoa(char c) { return std::string(1, c); }
   }
 
 DECLARE_STREAM_OPERATOR(const std::string&, )
-DECLARE_STREAM_OPERATOR(const std::wstring&, base::SysWideToUTF8)
 DECLARE_STREAM_OPERATOR(const char*  , )
 DECLARE_STREAM_OPERATOR(char         , SimpleCtoa)
 DECLARE_STREAM_OPERATOR(int          , IntToString)
 DECLARE_STREAM_OPERATOR(uint32         , UintToString)
-//DECLARE_STREAM_OPERATOR(long         , )
-//DECLARE_STREAM_OPERATOR(unsigned long, SimpleItoa)
-//DECLARE_STREAM_OPERATOR(double       , DoubleToString)
 #undef DECLARE_STREAM_OPERATOR
 
 LogMessage::LogMessage(LogLevel level, const char* filename, int line)

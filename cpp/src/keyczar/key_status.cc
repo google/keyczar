@@ -18,35 +18,31 @@
 namespace keyczar {
 
 // static
-KeyStatus* KeyStatus::Create(const std::string& name) {
-  if (name.compare("PRIMARY") == 0)
-    return new KeyStatus(PRIMARY);
-  if (name.compare("ACTIVE") == 0)
-    return new KeyStatus(ACTIVE);
-  if (name.compare("INACTIVE") == 0)
-    return new KeyStatus(INACTIVE);
+KeyStatus::Type KeyStatus::GetTypeFromName(const std::string& name) {
+  if (name == "PRIMARY")
+    return PRIMARY;
+  if (name == "ACTIVE")
+    return ACTIVE;
+  if (name == "INACTIVE")
+    return INACTIVE;
+
   NOTREACHED();
-  return NULL;
+  return UNDEF;
 }
 
-bool KeyStatus::GetName(std::string* name) const {
-  if (name == NULL)
-    return false;
-
-  switch (type_) {
+// static
+std::string KeyStatus::GetNameFromType(Type type) {
+  switch (type) {
     case PRIMARY:
-      name->assign("PRIMARY");
-      return true;
+      return "PRIMARY";
     case ACTIVE:
-      name->assign("ACTIVE");
-      return true;
+      return "ACTIVE";
     case INACTIVE:
-      name->assign("INACTIVE");
-      return true;
+      return "INACTIVE";
     default:
       NOTREACHED();
   }
-  return false;
+  return "";
 }
 
 }  // namespace keyczar

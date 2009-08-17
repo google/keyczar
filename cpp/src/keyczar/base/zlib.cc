@@ -18,10 +18,14 @@
 #include <keyczar/base/logging.h>
 #include <keyczar/base/stl_util-inl.h>
 
-namespace keyczar {
-namespace base {
+namespace {
 
 static const int kBufferSize = 65536;
+
+}  // namespace
+
+namespace keyczar {
+namespace base {
 
 // static
 bool Zlib::Compress(Format format, const std::string& input,
@@ -59,7 +63,8 @@ bool Zlib::Compress(Format format, const std::string& input,
   int output_pos = output->size();
   do {
     base::STLStringResizeUninitialized(output, output_pos + kBufferSize);
-    zcontext.next_out = reinterpret_cast<Bytef*>(base::string_as_array(output) + output_pos);
+    zcontext.next_out = reinterpret_cast<Bytef*>(
+        base::string_as_array(output) + output_pos);
     zcontext.avail_out = kBufferSize;
 
     zerror = deflate(&zcontext, Z_FINISH);
@@ -117,7 +122,8 @@ bool Zlib::Decompress(Format format, const std::string& input,
   int output_pos = output->size();
   do {
     base::STLStringResizeUninitialized(output, output_pos + kBufferSize);
-    zcontext.next_out = reinterpret_cast<Bytef*>(base::string_as_array(output) + output_pos);
+    zcontext.next_out = reinterpret_cast<Bytef*>(
+        base::string_as_array(output) + output_pos);
     zcontext.avail_out = kBufferSize;
 
     zerror = inflate(&zcontext, Z_FINISH);

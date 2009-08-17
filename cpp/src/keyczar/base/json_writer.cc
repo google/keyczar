@@ -2,18 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This source code was copied from Chromium and has been modified to fit
-// with Keyczar, any encountered errors are probably due to these
-// modifications.
-
 #include <keyczar/base/json_writer.h>
 
 #include <keyczar/base/logging.h>
+#include <keyczar/base/stl_util-inl.h>
+#include <keyczar/base/string_escape.h>
 #include <keyczar/base/string_util.h>
 #include <keyczar/base/values.h>
-#include <keyczar/base/string_escape.h>
 
-const char kPrettyPrintLineEnding[] = "\r\n";
+namespace {
+
+static const char kPrettyPrintLineEnding[] = "\r\n";
+
+}  // namespace
+
+namespace keyczar {
+namespace base {
 
 /* static */
 void JSONWriter::Write(const Value* const node, bool pretty_print,
@@ -34,7 +38,7 @@ JSONWriter::JSONWriter(bool pretty_print, std::string* json)
 }
 
 void JSONWriter::BuildJSONString(const Value* const node, int depth) {
-  switch(node->GetType()) {
+  switch (node->GetType()) {
     case Value::TYPE_NULL:
       json_string_->append("null");
       break;
@@ -53,7 +57,7 @@ void JSONWriter::BuildJSONString(const Value* const node, int depth) {
         int value;
         bool result = node->GetAsInteger(&value);
         DCHECK(result);
-        StringAppendF(json_string_, "%d", value);
+        json_string_->append(IntToString(value));
         break;
       }
 
@@ -66,10 +70,10 @@ void JSONWriter::BuildJSONString(const Value* const node, int depth) {
 
     case Value::TYPE_STRING:
       {
-        std::wstring value;
-        bool result = node->GetAsString(&value);
+        ScopedSafeString value(new std::string());
+        bool result = node->GetAsString(value.get());
         DCHECK(result);
-        AppendQuotedString(value);
+        AppendQuotedString(*value);
         break;
       }
 
@@ -110,7 +114,6 @@ void JSONWriter::BuildJSONString(const Value* const node, int depth) {
         for (DictionaryValue::key_iterator key_itr = dict->begin_keys();
              key_itr != dict->end_keys();
              ++key_itr) {
-
           if (key_itr != dict->begin_keys()) {
             json_string_->append(",");
             if (pretty_print_)
@@ -143,14 +146,12 @@ void JSONWriter::BuildJSONString(const Value* const node, int depth) {
       }
 
     default:
-      // TODO(jhughes): handle TYPE_BINARY
       NOTREACHED() << "unknown json type";
   }
 }
 
-void JSONWriter::AppendQuotedString(const std::wstring& str) {
-  string_escape::JavascriptDoubleQuote(WideToUTF16Hack(str), true,
-                                       json_string_);
+void JSONWriter::AppendQuotedString(const std::string& str) {
+  string_escape::JavascriptDoubleQuote(str, true, json_string_);
 }
 
 void JSONWriter::IndentLine(int depth) {
@@ -158,3 +159,6 @@ void JSONWriter::IndentLine(int depth) {
   // reallocating.
   json_string_->append(std::string(depth * 3, ' '));
 }
+
+}  // namespace base
+}  // namespace keyczar

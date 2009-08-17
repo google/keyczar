@@ -20,6 +20,7 @@
 #include <keyczar/openssl/ecdsa.h>
 #include <keyczar/openssl/hmac.h>
 #include <keyczar/openssl/message_digest.h>
+#include <keyczar/openssl/pbe.h>
 #include <keyczar/openssl/rand.h>
 #include <keyczar/openssl/rsa.h>
 
@@ -121,13 +122,13 @@ MessageDigestImpl* CryptoFactory::SHAFromECCSize(int size) {
 }
 
 // static
-AESImpl* CryptoFactory::GenerateAES(const CipherMode& cipher_mode,
+AESImpl* CryptoFactory::GenerateAES(CipherMode::Type cipher_mode,
                                     int size) {
   return openssl::AESOpenSSL::GenerateKey(cipher_mode, size);
 }
 
 // static
-AESImpl* CryptoFactory::CreateAES(const CipherMode& cipher_mode,
+AESImpl* CryptoFactory::CreateAES(CipherMode::Type cipher_mode,
                                   const std::string& key) {
   return openssl::AESOpenSSL::Create(cipher_mode, key);
 }
@@ -200,6 +201,30 @@ HMACImpl* CryptoFactory::CreateHMAC(const std::string& key) {
 }
 
 // static
+PBEImpl* CryptoFactory::CreateNewPBE(const std::string& password) {
+  const int iteration_count = 4096;
+  const PBEImpl::CipherAlgorithm cipher_algorithm = PBEImpl::AES128;
+
+  // Try to instanciate with use of hmac-sha256 but may not be supported
+  // so in this case fall back on hmac-sha1.
+  if (!openssl::PBEOpenSSL::HasPRFHMACSHA256())
+    return openssl::PBEOpenSSL::Create(cipher_algorithm, PBEImpl::HMAC_SHA1,
+                                       iteration_count, password);
+  return openssl::PBEOpenSSL::Create(cipher_algorithm,
+                                     PBEImpl::HMAC_SHA256,
+                                     iteration_count, password);
+}
+
+// static
+PBEImpl* CryptoFactory::CreatePBE(PBEImpl::CipherAlgorithm cipher_algorithm,
+                                  PBEImpl::HMACAlgorithm hmac_algorithm,
+                                  int iteration_count,
+                                  const std::string& password) {
+  return openssl::PBEOpenSSL::Create(cipher_algorithm, hmac_algorithm,
+                                     iteration_count, password);
+}
+
+// static
 RSAImpl* CryptoFactory::GeneratePrivateRSA(int size) {
   return openssl::RSAOpenSSL::GenerateKey(size);
 }
@@ -211,9 +236,9 @@ RSAImpl* CryptoFactory::CreatePrivateRSA(
 }
 
 // static
-RSAImpl* CryptoFactory::CreatePrivateRSAFromPEMKey(
+RSAImpl* CryptoFactory::CreatePrivateRSAFromPEMPrivateKey(
     const std::string& filename, const std::string* passphrase) {
-  return openssl::RSAOpenSSL::CreateFromPEMKey(filename, passphrase);
+  return openssl::RSAOpenSSL::CreateFromPEMPrivateKey(filename, passphrase);
 }
 
 // static
@@ -234,9 +259,9 @@ DSAImpl* CryptoFactory::CreatePrivateDSA(
 }
 
 // static
-DSAImpl* CryptoFactory::CreatePrivateDSAFromPEMKey(
+DSAImpl* CryptoFactory::CreatePrivateDSAFromPEMPrivateKey(
     const std::string& filename, const std::string* passphrase) {
-  return openssl::DSAOpenSSL::CreateFromPEMKey(filename, passphrase);
+  return openssl::DSAOpenSSL::CreateFromPEMPrivateKey(filename, passphrase);
 }
 
 // static
@@ -257,9 +282,9 @@ ECDSAImpl* CryptoFactory::CreatePrivateECDSA(
 }
 
 // static
-ECDSAImpl* CryptoFactory::CreatePrivateECDSAFromPEMKey(
+ECDSAImpl* CryptoFactory::CreatePrivateECDSAFromPEMPrivateKey(
     const std::string& filename, const std::string* passphrase) {
-  return openssl::ECDSAOpenSSL::CreateFromPEMKey(filename, passphrase);
+  return openssl::ECDSAOpenSSL::CreateFromPEMPrivateKey(filename, passphrase);
 }
 
 // static

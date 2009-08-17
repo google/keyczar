@@ -17,6 +17,7 @@
 #include <string>
 
 #include <keyczar/base/basictypes.h>
+#include <keyczar/base/stl_util-inl.h>
 #include <keyczar/message_digest_impl.h>
 
 namespace keyczar {
@@ -35,10 +36,22 @@ class RSAImpl {
     std::string dmp1;  // d mod (p-1
     std::string dmq1;  // d mod (q-1)
     std::string iqmp;  // q^-1 mod p
+
+    ~RSAIntermediateKey() {
+      base::STLStringMemErase(&d);
+      base::STLStringMemErase(&p);
+      base::STLStringMemErase(&q);
+      base::STLStringMemErase(&dmp1);
+      base::STLStringMemErase(&dmq1);
+      base::STLStringMemErase(&iqmp);
+    }
   };
 
   RSAImpl() {}
   virtual ~RSAImpl() {}
+
+  virtual bool ExportPrivateKey(const std::string& filename,
+                                const std::string* passphrase) const = 0;
 
   // Through this method the concrete implementation copies all its internal
   // private and public fields into |key|. This function returns true on

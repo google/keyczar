@@ -13,10 +13,10 @@
 // limitations under the License.
 #include <keyczar/key.h>
 
-
 #include <keyczar/aes_key.h>
 #include <keyczar/base/base64w.h>
 #include <keyczar/base/logging.h>
+#include <keyczar/base/stl_util-inl.h>
 #include <keyczar/dsa_private_key.h>
 #include <keyczar/dsa_public_key.h>
 #include <keyczar/ecdsa_private_key.h>
@@ -48,8 +48,8 @@ void Int32ToByteArray(int32 num, unsigned char* array) {
 namespace keyczar {
 
 // static
-Key* Key::CreateFromValue(const KeyType& key_type, const Value& root) {
-  switch (key_type.type()) {
+Key* Key::CreateFromValue(KeyType::Type key_type, const Value& root) {
+  switch (key_type) {
     case KeyType::AES:
       return AESKey::CreateFromValue(root);
 #ifdef COMPAT_KEYCZAR_06B
@@ -77,8 +77,8 @@ Key* Key::CreateFromValue(const KeyType& key_type, const Value& root) {
 }
 
 // static
-Key* Key::GenerateKey(const KeyType& key_type, int size) {
-  switch (key_type.type()) {
+Key* Key::GenerateKey(KeyType::Type key_type, int size) {
+  switch (key_type) {
     case KeyType::AES:
       return AESKey::GenerateKey(size);
 #ifdef COMPAT_KEYCZAR_06B
@@ -105,16 +105,16 @@ Key* Key::GenerateKey(const KeyType& key_type, int size) {
 }
 
 // static
-Key* Key::CreateFromPEMKey(const KeyType& key_type,
-                           const std::string& filename,
-                           const std::string* passphrase) {
-  switch (key_type.type()) {
+Key* Key::CreateFromPEMPrivateKey(KeyType::Type key_type,
+                                  const std::string& filename,
+                                  const std::string* passphrase) {
+  switch (key_type) {
     case KeyType::DSA_PRIV:
-      return DSAPrivateKey::CreateFromPEMKey(filename, passphrase);
+      return DSAPrivateKey::CreateFromPEMPrivateKey(filename, passphrase);
     case KeyType::ECDSA_PRIV:
-      return ECDSAPrivateKey::CreateFromPEMKey(filename, passphrase);
+      return ECDSAPrivateKey::CreateFromPEMPrivateKey(filename, passphrase);
     case KeyType::RSA_PRIV:
-      return RSAPrivateKey::CreateFromPEMKey(filename, passphrase);
+      return RSAPrivateKey::CreateFromPEMPrivateKey(filename, passphrase);
 #ifdef COMPAT_KEYCZAR_06B
     case KeyType::HMAC_SHA1:
 #else
@@ -132,6 +132,11 @@ Key* Key::CreateFromPEMKey(const KeyType& key_type,
   return NULL;
 }
 
+bool Key::ExportPrivateKey(const std::string& filename,
+                           const std::string* passphrase) const {
+  return false;
+}
+
 Value* Key::GetPublicKeyValue() const {
   return NULL;
 }
@@ -145,13 +150,13 @@ bool Key::Verify(const std::string& data,
   return false;
 }
 
-bool Key::Encrypt(const std::string& data,
-                  std::string* encrypted) const {
+bool Key::Encrypt(const std::string& plaintext,
+                  std::string* ciphertext) const {
   return false;
 }
 
-bool Key::Decrypt(const std::string& encrypted,
-                         std::string* data) const {
+bool Key::Decrypt(const std::string& ciphertext,
+                  std::string* plaintext) const {
   return false;
 }
 
@@ -179,7 +184,7 @@ bool Key::Header(std::string* header) const {
     return false;
 
   std::string decoded;
-  if (!Base64WDecode(hash, &decoded))
+  if (!base::Base64WDecode(hash, &decoded))
     return false;
 
   header->clear();
@@ -191,10 +196,11 @@ bool Key::Header(std::string* header) const {
 void Key::AddToHash(const std::string& field,
                     MessageDigestImpl& digest_impl) const {
   // Removes nul leading characters
-  std::string trimmed_field = field.substr(field.find_first_not_of('\0'));
+  base::ScopedSafeString trimmed_field(new std::string());
+  trimmed_field->assign(field.substr(field.find_first_not_of('\0')));
 
   // Converts int field's length to bytes (big endian oriented)
-  int32 field_length = trimmed_field.length();
+  int32 field_length = trimmed_field->size();
   unsigned char bytes_array[sizeof(field_length)];
   Int32ToByteArray(field_length, bytes_array);
   std::string bytes(reinterpret_cast<char*>(bytes_array),
@@ -202,7 +208,7 @@ void Key::AddToHash(const std::string& field,
 
   // Update the message digest value
   digest_impl.Update(bytes);
-  digest_impl.Update(trimmed_field);
+  digest_impl.Update(*trimmed_field);
 }
 
 }  // namespace keyczar

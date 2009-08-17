@@ -13,6 +13,9 @@
 // limitations under the License.
 #include <keyczar/base/modp/modp_b64w.h>
 
+namespace keyczar {
+namespace base {
+
 bool Base64WEncode(const std::string& input, std::string* output) {
   if (output == NULL)
     return false;
@@ -36,3 +39,6 @@ bool Base64WDecode(const std::string& input, std::string* output) {
 
   return true;
 }
+
+}  // namespace base
+}  // namespace keyczar

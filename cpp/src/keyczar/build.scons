@@ -4,54 +4,41 @@ Import('env')
 installer = env['INSTALLER']
 
 lib_name = 'keyczar'
+unittest_lib_name = 'keyczar_test'
 
 #### Optionnaly add dependancy on zlib
 if env.get('ZLIB_OPTION'):
     env.Append(
         LIBS = [
             'z'
-        ],
-    )
+            ],
+        )
 
 
 #### Keyczar Library
 
 keyczar_lib_env = env.Clone()
 
-if env.Bit('mac'):
-    keyczar_lib_env.Append(
-        FRAMEWORKS = [
-            'Foundation',
-            'Cocoa',
-            ],
-        )
-
 keyczar_lib_env.Append(
     LIBS = [
-        'icuuc',
         'crypto',
         ],
     )
 
 base_sources = [
     'base/base64w.cc',
-    'base/base_paths.cc',
     'base/command_line.cc',
-    'base/file_path.cc',
     'base/file_util.cc',
+    'base/file_path.cc',
     'base/json_reader.cc',
     'base/json_value_serializer.cc',
     'base/json_writer.cc',
     'base/logging.cc',
     'base/modp/modp_b64w.cc',
-    'base/path_service.cc',
     'base/ref_counted.cc',
     'base/stl_util-inl.cc',
-    'base/string16.cc',
     'base/string_escape.cc',
-    'base/string_piece.cc',
     'base/string_util.cc',
-    'base/string_util_icu.cc',
     'base/values.cc',
     'base/zlib.cc',
     ]
@@ -61,29 +48,16 @@ base_posix_sources = [
     ]
 
 base_linux_sources = [
-    'base/base_paths_linux.cc',
-    'base/file_util_linux.cc',
-    'base/sys_string_conversions_linux.cc',
     ]
 
 base_mac_sources = [
-    'base/base_paths_mac.mm',
-    'base/file_util_mac.mm',
-    'base/sys_string_conversions_mac.mm',
     ]
 
 base_bsd_sources = [
-    'base/base_paths_bsd.cc',
-    'base/file_util_linux.cc',
-    'base/sys_string_conversions_linux.cc',
     ]
 
 base_win_sources = [
-    'base/base_paths_win.cc',
     'base/file_util_win.cc',
-    'base/registry.cc',
-    'base/sys_string_conversions_win.cc',
-    'base/win_util.cc',
     ]
 
 keyczar_sources = [
@@ -100,18 +74,13 @@ keyczar_sources = [
     'key.cc',
     'key_purpose.cc',
     'keyczar.cc',
-    'keyczar_tool.cc',
     'keyset.cc',
-    'keyset_encrypted_file_reader.cc',
-    'keyset_encrypted_file_writer.cc',
-    'keyset_file_reader.cc',
-    'keyset_file_writer.cc',
     'keyset_metadata.cc',
-    'keyset_writer.cc',
     'key_status.cc',
     'key_type.cc',
     'key_util.cc',
     'message_digest_impl.cc',
+    'pbe_impl.cc',
     'private_key.cc',
     'public_key.cc',
     'rsa_private_key.cc',
@@ -120,16 +89,30 @@ keyczar_sources = [
     'util.cc',
     ]
 
+keyczar_tool_sources = [
+    'keyczar_tool/keyczar_tool.cc',
+]
+
 openssl_sources = [
     'openssl/aes.cc',
     'openssl/dsa.cc',
     'openssl/ecdsa.cc',
     'openssl/hmac.cc',
     'openssl/message_digest.cc',
+    'openssl/pbe.cc',
     'openssl/rand.cc',
     'openssl/rsa.cc',
     'openssl/util.cc',
     ]
+
+rw_sources = [
+    'rw/keyset_encrypted_file_reader.cc',
+    'rw/keyset_encrypted_file_writer.cc',
+    'rw/keyset_file_reader.cc',
+    'rw/keyset_file_writer.cc',
+    'rw/keyset_reader.cc',
+    'rw/keyset_writer.cc',
+]
 
 if env.Bit('linux'):
     base_sources.extend(base_posix_sources)
@@ -146,9 +129,13 @@ if env.Bit('bsd'):
 #if env.Bit('win'):
 #    base_sources.extend(base_win_sources)
 
-lib_sources = base_sources + keyczar_sources + openssl_sources
+# Build the library
+lib_sources = base_sources + keyczar_sources + openssl_sources + \
+              rw_sources + keyczar_tool_sources
 out_lib = keyczar_lib_env.ComponentLibrary(lib_name, lib_sources,
                                            COMPONENT_STATIC=False)
+
+# Install the library components
 installer.AddLibrary(out_lib[0])
 installer.AddHeaders(keyczar_lib_env.get('KEYCZAR_SRC_DIR'), "*.h",
                      lib_name, True)
@@ -161,33 +148,31 @@ keyczart_env = env.Clone()
 keyczart_env.Append(
     LIBS = [
         lib_name,
-        'icuuc',
 	'crypto',
         ],
     )
 
 keyzart_sources = [
-    'keyczart.cc',
+    'keyczar_tool/keyczart.cc',
     ]
 
 out_program = keyczart_env.ComponentProgram('keyczart', keyzart_sources)
 installer.AddProgram(out_program)
 
 
-#### testdata_gen
+#### testdata_gen*
 
 testdata_gen_env = env.Clone()
 
 testdata_gen_env.Append(
     LIBS = [
         lib_name,
-        'icuuc',
 	'crypto',
         ],
     )
 
 testdata_gen_sources = [
-    'testdata_gen.cc',
+    'keyczar_tool/testdata_gen.cc',
     ]
 
 testdata_gen_env.ComponentProgram('testdata_gen', testdata_gen_sources)
@@ -209,7 +194,6 @@ if env.Bit('mac'):
 keyczar_swig_env.Append(
     LIBS = [
         lib_name,
-        'icuuc',
 	'crypto',
         ],
     SWIGFLAGS = ['-c++', '-python'],
@@ -237,7 +221,71 @@ if env.get('SWIG_OPTION'):
     installer.AddPythonModule(out[0], lib_name)
 
 
-## Unittests
+
+## Lib Unittests
+
+lib_unittests_env = env.Clone()
+
+if env.Bit('mac'):
+    lib_unittests_env.Append(
+        FRAMEWORKS = [
+            'Foundation',
+            ],
+        )
+
+lib_unittests_env.Append(
+    CPPPATH = [
+        ],
+    LIBS = [
+        lib_name,
+        ],
+    )
+
+unittests_sources = [
+    'base_test/base_paths.cc',
+    'base_test/path_service.cc',
+    ]
+
+unittests_posix_sources = [
+    ]
+
+unittests_linux_sources = [
+    'base_test/base_paths_linux.cc',
+    ]
+
+unittests_bsd_sources = [
+    'base_test/base_paths_bsd.cc',
+    ]
+
+unittests_mac_sources = [
+    'base_test/base_paths_mac.mm',
+    ]
+
+unittests_win_sources = [
+    'base_test/base_paths_win.cc',
+    ]
+
+if env.Bit('linux'):
+    unittests_sources.extend(unittests_posix_sources)
+    unittests_sources.extend(unittests_linux_sources)
+
+if env.Bit('mac'):
+    unittests_sources.extend(unittests_posix_sources)
+    unittests_sources.extend(unittests_mac_sources)
+
+if env.Bit('bsd'):
+    unittests_sources.extend(unittests_posix_sources)
+    unittests_sources.extend(unittests_bsd_sources)
+
+#if env.Bit('win'):
+#    unittests_sources.extend(unittests_win_sources)
+
+lib_unittests_out = lib_unittests_env.ComponentLibrary(unittest_lib_name,
+                                                       unittests_sources,
+                                                       COMPONENT_STATIC=False)
+
+
+## Unittests Programs
 
 unittests_env = env.Clone()
 
@@ -248,8 +296,8 @@ unittests_env.Append(
         ],
     LIBS = [
         lib_name,
+        unittest_lib_name,
         'gtest',
-        'icuuc',
         'crypto',
         ],
     )
@@ -262,13 +310,10 @@ base_unittests = [
     'base/json_reader_unittest.cc',
     'base/json_value_serializer_unittest.cc',
     'base/json_writer_unittest.cc',
-    'base/path_service_unittest.cc',
     'base/ref_counted_unittest.cc',
     'base/run_all_unittests.cc',
     'base/scoped_ptr_unittest.cc',
-    'base/string_piece_unittest.cc',
     'base/string_escape_unittest.cc',
-    'base/sys_string_conversions_unittest.cc',
     'base/values_unittest.cc',
     'base/zlib_unittest.cc',
     ]
@@ -286,7 +331,6 @@ base_bsd_unittests = [
     ]
 
 base_win_unittests = [
-    'base/win_util_unittest.cc',
     ]
 
 if env.Bit('linux'):
@@ -298,8 +342,8 @@ if env.Bit('mac'):
     base_unittests.extend(base_mac_unittests)
 
 if env.Bit('bsd'):
-    base_sources.extend(base_posix_unittests)
-    base_sources.extend(base_bsd_unittests)
+    base_unittests.extend(base_posix_unittests)
+    base_unittests.extend(base_bsd_unittests)
 
 #if env.Bit('win'):
 #    base_unittests.extend(base_win_unittests)
@@ -310,7 +354,6 @@ keyczar_unittests = [
     'ecdsa_key_unittest.cc',
     'hmac_key_unittest.cc',
     'keyczar_unittest.cc',
-    'keyset_reader_unittest.cc',
     'keyset_metadata_unittest.cc',
     'keyset_unittest.cc',
     'rsa_key_unittest.cc',
@@ -323,9 +366,15 @@ openssl_unittests = [
     'openssl/ecdsa_unittest.cc',
     'openssl/hmac_unittest.cc',
     'openssl/message_digest_unittest.cc',
+    'openssl/pbe_unittest.cc',
     'openssl/rsa_unittest.cc',
+    ]
+
+rw_unittests = [
+    'rw/keyset_reader_unittest.cc',
     ]
 
 unittests_env.ComponentTestProgram('base_unittests', base_unittests)
 unittests_env.ComponentTestProgram('keyczar_unittests', keyczar_unittests)
 unittests_env.ComponentTestProgram('openssl_unittests', openssl_unittests)
+unittests_env.ComponentTestProgram('rw_unittests', rw_unittests)

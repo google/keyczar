@@ -1,29 +1,32 @@
 #!/bin/sh
+#
+# This script compiles and runs most of the examples contained
+# in this directory.
+#
+ROOT_KEYSETS_JSON=/tmp/kz_json_keysets
 
-ROOT_KEYSETS=/tmp/kz_keysets
-
-if [ ! -d "$ROOT_KEYSETS" ]; then
-   mkdir -p $ROOT_KEYSETS
+## JSON
+if [ ! -d "$ROOT_KEYSETS_JSON" ]; then
+    mkdir -p $ROOT_KEYSETS_JSON
 fi
 
 # C++
 make
-./testdata_gen $ROOT_KEYSETS
-./basic_encrypt $ROOT_KEYSETS/aes
-./basic_encrypt $ROOT_KEYSETS/rsa
-./basic_sign $ROOT_KEYSETS/hmac
-./basic_sign $ROOT_KEYSETS/dsa
-./basic_sign $ROOT_KEYSETS/ecdsa
-./basic_sign $ROOT_KEYSETS/rsa-sign
+./testdata_gen $ROOT_KEYSETS_JSON
+./basic_encrypt $ROOT_KEYSETS_JSON/aes
+./basic_encrypt $ROOT_KEYSETS_JSON/rsa
+./basic_sign $ROOT_KEYSETS_JSON/hmac
+./basic_sign $ROOT_KEYSETS_JSON/dsa
+./basic_sign $ROOT_KEYSETS_JSON/ecdsa
+./basic_sign $ROOT_KEYSETS_JSON/rsa-sign
 make clean
 
 # Python
-python basic_encrypt.py $ROOT_KEYSETS/aes
-python basic_encrypt.py $ROOT_KEYSETS/rsa
-python basic_sign.py $ROOT_KEYSETS/hmac
-python basic_sign.py $ROOT_KEYSETS/dsa
-python basic_sign.py $ROOT_KEYSETS/ecdsa
-python basic_sign.py $ROOT_KEYSETS/rsa-sign
+python basic_encrypt.py $ROOT_KEYSETS_JSON/aes
+python basic_encrypt.py $ROOT_KEYSETS_JSON/rsa
+python basic_sign.py $ROOT_KEYSETS_JSON/hmac
+python basic_sign.py $ROOT_KEYSETS_JSON/dsa
+python basic_sign.py $ROOT_KEYSETS_JSON/ecdsa
+python basic_sign.py $ROOT_KEYSETS_JSON/rsa-sign
 
-rm -rf $ROOT_KEYSETS
-
+rm -rf $ROOT_KEYSETS_JSON

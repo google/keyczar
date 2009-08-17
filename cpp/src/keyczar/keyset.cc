@@ -15,13 +15,13 @@
 
 #include <keyczar/base/logging.h>
 #include <keyczar/key.h>
-#include <keyczar/keyset_reader.h>
-#include <keyczar/keyset_writer.h>
+#include <keyczar/rw/keyset_reader.h>
+#include <keyczar/rw/keyset_writer.h>
 
 namespace keyczar {
 
 // static
-Keyset* Keyset::Read(const KeysetReader& reader, bool load_keys) {
+Keyset* Keyset::Read(const rw::KeysetReader& reader, bool load_keys) {
   // Instantiates empty key set
   scoped_ptr<Keyset> keyset(new Keyset());
   if (keyset.get() == NULL)
@@ -38,8 +38,8 @@ Keyset* Keyset::Read(const KeysetReader& reader, bool load_keys) {
     return NULL;
   keyset->set_metadata(metadata);
 
-  const KeyType* key_type = metadata->key_type();
-  if (key_type == NULL)
+  const KeyType::Type key_type = metadata->key_type();
+  if (key_type == KeyType::UNDEF)
     return NULL;
 
   // Iterates over metadata, read keys and insert them into keyset.
@@ -52,7 +52,7 @@ Keyset* Keyset::Read(const KeysetReader& reader, bool load_keys) {
       if (root_key.get() == NULL)
         return NULL;
 
-      scoped_refptr<Key> key = Key::CreateFromValue(*key_type, *root_key);
+      scoped_refptr<Key> key = Key::CreateFromValue(key_type, *root_key);
       if (key == NULL)
         return NULL;
 
@@ -60,11 +60,10 @@ Keyset* Keyset::Read(const KeysetReader& reader, bool load_keys) {
         return NULL;
     }
 
-    if (version_iterator->second == NULL ||
-        version_iterator->second->key_status() == NULL)
+    if (version_iterator->second == NULL)
       return NULL;
 
-    if (version_iterator->second->key_status()->type() == KeyStatus::PRIMARY) {
+    if (version_iterator->second->key_status() == KeyStatus::PRIMARY) {
       if (keyset->primary_key_version_number() > 0) {
         LOG(WARNING) << "Keyset cannot have more than one primary key";
         return NULL;
@@ -77,7 +76,7 @@ Keyset* Keyset::Read(const KeysetReader& reader, bool load_keys) {
 }
 
 // static
-Keyset* Keyset::ReadMetadataOnly(const KeysetReader& reader) {
+Keyset* Keyset::ReadMetadataOnly(const rw::KeysetReader& reader) {
   return Keyset::Read(reader, false);
 }
 
@@ -152,14 +151,14 @@ int Keyset::GenerateKey(KeyStatus::Type status, int size) {
   if (metadata_.get() == NULL)
     return 0;
 
-  const KeyType* key_type = metadata_->key_type();
-  if (key_type == NULL)
+  const KeyType::Type key_type = metadata_->key_type();
+  if (key_type == KeyType::UNDEF)
     return 0;
 
   scoped_refptr<Key> key;
   std::string hash;
   do {
-    key = Key::GenerateKey(*key_type, size);
+    key = Key::GenerateKey(key_type, size);
     if (key == NULL)
       return 0;
 
@@ -171,12 +170,8 @@ int Keyset::GenerateKey(KeyStatus::Type status, int size) {
       !DemoteKey(primary_key_version_number()))
     return 0;
 
-  const KeyStatus* key_status = new KeyStatus(status);
-  if (key_status == NULL)
-    return 0;
-
   scoped_refptr<KeysetMetadata::KeyVersion> key_version;
-  key_version =  new KeysetMetadata::KeyVersion(0, key_status, false);
+  key_version =  new KeysetMetadata::KeyVersion(0, status, false);
   if (key_version == NULL)
     return 0;
 
@@ -196,24 +191,25 @@ int Keyset::GenerateDefaultKeySize(KeyStatus::Type status) {
   if (metadata_.get() == NULL)
     return 0;
 
-  const KeyType* key_type = metadata_->key_type();
-  if (key_type == NULL)
+  const KeyType::Type key_type = metadata_->key_type();
+  if (key_type == KeyType::UNDEF)
     return 0;
 
-  return GenerateKey(status, key_type->default_size());
+  return GenerateKey(status, KeyType::DefaultCipherSize(key_type));
 }
 
-int Keyset::ImportPEMKey(KeyStatus::Type status, const std::string& filename,
-                         const std::string* passphrase) {
+int Keyset::ImportPrivateKey(KeyStatus::Type status,
+                             const std::string& filename,
+                             const std::string* passphrase) {
   if (metadata_.get() == NULL)
     return 0;
 
-  const KeyType* key_type = metadata_->key_type();
-  if (key_type == NULL)
+  const KeyType::Type key_type = metadata_->key_type();
+  if (key_type == KeyType::UNDEF)
     return 0;
 
-  scoped_refptr<Key> key = Key::CreateFromPEMKey(*key_type, filename,
-                                                 passphrase);
+  scoped_refptr<Key> key = Key::CreateFromPEMPrivateKey(key_type, filename,
+                                                        passphrase);
   if (key == NULL)
     return 0;
 
@@ -222,7 +218,7 @@ int Keyset::ImportPEMKey(KeyStatus::Type status, const std::string& filename,
     return 0;
 
   if (hash_map_.find(hash) != hash_map_.end()) {
-    LOG(ERROR) << "This key is already part of the key set.";
+    LOG(ERROR) << "This key is already in the key set.";
     return 0;
   }
 
@@ -230,12 +226,8 @@ int Keyset::ImportPEMKey(KeyStatus::Type status, const std::string& filename,
       !DemoteKey(primary_key_version_number()))
     return 0;
 
-  const KeyStatus* key_status = new KeyStatus(status);
-  if (key_status == NULL)
-    return 0;
-
   scoped_refptr<KeysetMetadata::KeyVersion> key_version;
-  key_version =  new KeysetMetadata::KeyVersion(0, key_status, false);
+  key_version =  new KeysetMetadata::KeyVersion(0, status, false);
   if (key_version == NULL)
     return 0;
 
@@ -251,6 +243,14 @@ int Keyset::ImportPEMKey(KeyStatus::Type status, const std::string& filename,
   return version_number;
 }
 
+bool Keyset::ExportPrivateKey(const std::string& filename,
+                              const std::string* passphrase) {
+  const Key* key = primary_key();
+  if (key == NULL)
+    return false;
+  return key->ExportPrivateKey(filename, passphrase);
+}
+
 bool Keyset::PromoteKey(int version_number) {
   if (version_number <= 0 || metadata_.get() == NULL ||
       metadata_->GetVersion(version_number) == NULL)
@@ -258,11 +258,10 @@ bool Keyset::PromoteKey(int version_number) {
 
   KeysetMetadata::KeyVersion* key_version = metadata_->GetVersion(
       version_number);
-  if (!key_version || key_version->key_status() == NULL)
+  if (!key_version)
     return false;
 
-  KeyStatus::Type current_key_status = key_version->key_status()->type();
-  switch (current_key_status) {
+  switch (key_version->key_status()) {
     case KeyStatus::PRIMARY:
       LOG(WARNING) << "Cannot promote a primary key.";
       return false;
@@ -283,11 +282,10 @@ bool Keyset::DemoteKey(int version_number) {
 
   KeysetMetadata::KeyVersion* key_version = metadata_->GetVersion(
       version_number);
-  if (!key_version || key_version->key_status() == NULL)
+  if (!key_version)
     return false;
 
-  KeyStatus::Type current_key_status = key_version->key_status()->type();
-  switch (current_key_status) {
+  switch (key_version->key_status()) {
     case KeyStatus::PRIMARY:
       if (UpdateKeyStatus(KeyStatus::ACTIVE, key_version))
         set_primary_key_version_number(0);  // no more PRIMARY keys in the set
@@ -310,10 +308,10 @@ bool Keyset::RevokeKey(int version_number) {
 
   KeysetMetadata::KeyVersion* key_version = metadata_->GetVersion(
       version_number);
-  if (!key_version || key_version->key_status() == NULL)
+  if (!key_version)
     return false;
 
-  if (key_version->key_status()->type() != KeyStatus::INACTIVE) {
+  if (key_version->key_status() != KeyStatus::INACTIVE) {
     LOG(WARNING) << "Cannot revoke an active key.";
     return false;
   }
@@ -329,22 +327,22 @@ bool Keyset::RevokeKey(int version_number) {
   return true;
 }
 
-bool Keyset::PublicKeyExport(const KeysetWriter& writer) const {
+bool Keyset::PublicKeyExport(const rw::KeysetWriter& writer) const {
   if (metadata() == NULL)
     return false;
 
-  const KeyType* key_type = metadata()->key_type();
-  const KeyPurpose* key_purpose = metadata()->key_purpose();
-  if (key_type == NULL || key_purpose == NULL)
+  const KeyType::Type key_type = metadata()->key_type();
+  const KeyPurpose::Type key_purpose = metadata()->key_purpose();
+  if (key_type == KeyType::UNDEF || key_purpose == KeyPurpose::UNDEF)
     return false;
 
   scoped_ptr<KeysetMetadata> meta;
-  switch (key_type->type()) {
+  switch (key_type) {
     case KeyType::DSA_PRIV:
-      if (key_purpose->type() == KeyPurpose::SIGN_AND_VERIFY) {
+      if (key_purpose == KeyPurpose::SIGN_AND_VERIFY) {
         meta.reset(new KeysetMetadata(metadata()->name(),
-                                      KeyType::Create("DSA_PUB"),
-                                      new KeyPurpose(KeyPurpose::VERIFY),
+                                      KeyType::DSA_PUB,
+                                      KeyPurpose::VERIFY,
                                       false,
                                       metadata()->next_key_version_number()));
       } else {
@@ -353,10 +351,10 @@ bool Keyset::PublicKeyExport(const KeysetWriter& writer) const {
       }
       break;
     case KeyType::ECDSA_PRIV:
-      if (key_purpose->type() == KeyPurpose::SIGN_AND_VERIFY) {
+      if (key_purpose == KeyPurpose::SIGN_AND_VERIFY) {
         meta.reset(new KeysetMetadata(metadata()->name(),
-                                      KeyType::Create("ECDSA_PUB"),
-                                      new KeyPurpose(KeyPurpose::VERIFY),
+                                      KeyType::ECDSA_PUB,
+                                      KeyPurpose::VERIFY,
                                       false,
                                       metadata()->next_key_version_number()));
       } else {
@@ -365,17 +363,17 @@ bool Keyset::PublicKeyExport(const KeysetWriter& writer) const {
       }
       break;
     case KeyType::RSA_PRIV:
-      if (key_purpose->type() == KeyPurpose::DECRYPT_AND_ENCRYPT) {
+      if (key_purpose == KeyPurpose::DECRYPT_AND_ENCRYPT) {
         meta.reset(new KeysetMetadata(metadata()->name(),
-                                      KeyType::Create("RSA_PUB"),
-                                      new KeyPurpose(KeyPurpose::ENCRYPT),
+                                      KeyType::RSA_PUB,
+                                      KeyPurpose::ENCRYPT,
                                       false,
                                       metadata()->next_key_version_number()));
       } else {
-        if (key_purpose->type() == KeyPurpose::SIGN_AND_VERIFY) {
+        if (key_purpose == KeyPurpose::SIGN_AND_VERIFY) {
           meta.reset(new KeysetMetadata(metadata()->name(),
-                                        KeyType::Create("RSA_PUB"),
-                                        new KeyPurpose(KeyPurpose::VERIFY),
+                                        KeyType::RSA_PUB,
+                                        KeyPurpose::VERIFY,
                                         false,
                                         metadata()->next_key_version_number()));
         } else {
@@ -385,9 +383,9 @@ bool Keyset::PublicKeyExport(const KeysetWriter& writer) const {
       }
       break;
     default:
-      std::string type_name;
-      key_type->GetName(&type_name);
-      LOG(ERROR) << "Key type " << type_name << " cannot be exported.";
+      LOG(ERROR) << "Key type "
+                 << KeyType::GetNameFromType(key_type)
+                 << " cannot be exported.";
       NOTREACHED();
       return false;
   }
@@ -451,7 +449,7 @@ bool Keyset::UpdateKeyStatus(KeyStatus::Type new_status,
       set_primary_key_version_number(key_version->version_number());
     case KeyStatus::ACTIVE:
     case KeyStatus::INACTIVE:
-      key_version->set_key_status(new keyczar::KeyStatus(new_status));
+      key_version->set_key_status(new_status);
       NotifyOnUpdatedKeysetMetadata(*metadata_.get());
       return true;
     default:
@@ -487,7 +485,7 @@ int Keyset::AddKeyVersion(KeysetMetadata::KeyVersion* key_version) {
   if (!metadata_->AddVersion(key_version))
     return 0;
 
-  if (key_version->key_status()->type() == KeyStatus::PRIMARY)
+  if (key_version->key_status() == KeyStatus::PRIMARY)
     CHECK(UpdateKeyStatus(KeyStatus::PRIMARY, key_version));
 
   NotifyOnUpdatedKeysetMetadata(*metadata_.get());

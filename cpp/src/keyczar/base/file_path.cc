@@ -5,12 +5,6 @@
 #include <keyczar/base/file_path.h>
 #include <keyczar/base/logging.h>
 
-// These includes are just for the *Hack functions, and should be removed
-// when those functions are removed.
-#include <keyczar/base/string_piece.h>
-#include <keyczar/base/string_util.h>
-#include <keyczar/base/sys_string_conversions.h>
-
 #if defined(FILE_PATH_USES_WIN_SEPARATORS)
 const FilePath::CharType FilePath::kSeparators[] = FILE_PATH_LITERAL("\\/");
 #else  // FILE_PATH_USES_WIN_SEPARATORS
@@ -232,11 +226,9 @@ FilePath FilePath::Append(const StringType& component) const {
   // directory) or if the path component is empty (indicating nothing to
   // append).
   if (component.length() > 0 && new_path.path_.length() > 0) {
-
     // Don't append a separator if the path still ends with a trailing
     // separator after stripping (indicating the root directory).
     if (!IsSeparator(new_path.path_[new_path.path_.length() - 1])) {
-
       // Don't append a separator if the path is just a drive letter.
       if (FindDriveLetter(new_path.path_) + 1 != new_path.path_.length()) {
         new_path.path_.append(1, kSeparators[0]);
@@ -252,41 +244,9 @@ FilePath FilePath::Append(const FilePath& component) const {
   return Append(component.value());
 }
 
-FilePath FilePath::AppendASCII(const std::string& component) const {
-  DCHECK(IsStringASCII(component));
-#if defined(OS_WIN)
-  return Append(ASCIIToWide(component));
-#elif defined(OS_POSIX)
-  return Append(component);
-#endif
-}
-
 bool FilePath::IsAbsolute() const {
   return IsPathAbsolute(path_);
 }
-
-#if defined(OS_POSIX)
-// See file_path.h for a discussion of the encoding of paths on POSIX
-// platforms.  These *Hack() functions are not quite correct, but they're
-// only temporary while we fix the remainder of the code.
-// Remember to remove the #includes at the top when you remove these.
-
-// static
-FilePath FilePath::FromWStringHack(const std::wstring& wstring) {
-  return FilePath(base::SysWideToNativeMB(wstring));
-}
-std::wstring FilePath::ToWStringHack() const {
-  return base::SysNativeMBToWide(path_);
-}
-#elif defined(OS_WIN)
-// static
-FilePath FilePath::FromWStringHack(const std::wstring& wstring) {
-  return FilePath(wstring);
-}
-std::wstring FilePath::ToWStringHack() const {
-  return path_;
-}
-#endif
 
 FilePath FilePath::StripTrailingSeparators() const {
   FilePath new_path(path_);

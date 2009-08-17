@@ -20,6 +20,7 @@
 
 #include <keyczar/base/basictypes.h>
 #include <keyczar/base/scoped_ptr.h>
+#include <keyczar/base/stl_util-inl.h>
 #include <keyczar/hmac_impl.h>
 
 namespace keyczar {
@@ -28,8 +29,6 @@ namespace openssl {
 
 class HMACOpenSSL : public HMACImpl {
  public:
-  // The caller must insures that the length of |key| is acceptable.
-  HMACOpenSSL(const EVP_MD* (*evp_md)(), const std::string& key);
   virtual ~HMACOpenSSL();
 
   static HMACOpenSSL* Create(DigestAlgorithm digest_algorithm,
@@ -44,15 +43,16 @@ class HMACOpenSSL : public HMACImpl {
 
   virtual bool Final(std::string* digest);
 
-  virtual std::string GetKey() const { return key_; }
+  virtual const std::string& GetKey() const { return *key_; }
 
  private:
-  // Hash function factory. Currently only SHA1 corresponding function is
-  // supported.
+  // The caller must insures that the length of |key| is acceptable.
+  HMACOpenSSL(const EVP_MD* (*evp_md)(), const std::string& key);
+
   const EVP_MD* (*evp_md_)();
 
   // The secret key.
-  const std::string key_;
+  const base::ScopedSafeString key_;
 
   // The caller keeps ownership over the engine. Note: the use of a true engine
   // is currently not supported.

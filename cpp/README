@@ -2,20 +2,19 @@
 
 == Dependancies ==
 
-- C++ compiler g++
+- C++ compiler
 - Python for running the build system
 - OpenSSL (>= 0.9.8b)
-- Unicode ICU Library
-- [Optional dependancy]: Zlib (for compression)
-- [Optional dependancy]: Swig (Python binding)
+- [Optional]: Zlib (for compression)
+- [Optional]: Swig (Python binding)
 
 === Ubuntu/Debian ===
 
-Packages g++ make libssl-dev libicu-dev zlib1-dev python python-dev swig
+Packages g++ make libssl-dev zlib1-dev python python-dev swig
 
 === MacOSX Leopard ===
 
-XCode >= 3.1 and MacPorts with the following packages: zlib openssl icu swig
+XCode > 3.1 and MacPorts with the following packages: zlib openssl swig
 
 
 == Supported architectures and systems ==
@@ -32,7 +31,7 @@ For a local build of Keyczar C++ on Linux run these commands:
 
  $ cd cpp/src && sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat
 
-- Replace opt-linux by opt-bsd or op-mac depending on your system
+- Replace opt-linux by opt-bsd or opt-mac depending on your system
 - The Python binding is built automatically if swig is detected
 - Libraries and executables are assembled under scons-out/opt-linux/
 
@@ -45,14 +44,14 @@ You need to log as root and execute these commands:
 
 /!\ Note: it is actually highly recommanded to use the compatibility (--compat)
 mode. This mode provides full compatibility with previous versions and others
-Keyczar implementations (i.e. Java and Python). Without this option different
-crypto choices are used (see algorithms.txt for details) breaking the
-compatibility. Moreover these choices could be modified again in the future.
+Keyczar implementations (Java, pure Python).
 
-- By default the prefix used is /usr/local/ and /usr/lib/python2.x/site-packages
-  for Python stuffs. See src/options.conf for overriding defaults settings.
-- Learn how to use this library by reading the tutorial (on the wiki), the
-  examples located under src/examples/ and the main header src/keyczar/keyczar.h
+- Default prefix paths used are /usr/local/ and /usr/lib/python2.x/site-packages
+  for Python stuffs. Use src/options.conf and read src/tools/installer.py for
+  overriding these choices.
+- Learn how to use this library by reading the tutorial (on the wiki page), the
+  examples located under src/examples/ and the main headers
+  src/keyczar/keyczar.h and src/keyczar/keyczar_tool/keyczar_tool.h
 
 
 == Options ==
@@ -61,14 +60,14 @@ compatibility. Moreover these choices could be modified again in the future.
               dbg-bsd. 'opt' stands for optimized mode and 'dbg' for debug mode.
 --compat   -> ensure compatibility with Keyczar 0.6b specifications (see below)
 install    -> install the C++ library and optionally its Python binding
--jX        -> compile on X threads
+-jX        -> use X threads for compiling it
 -c         -> clean up the build and/or remove installed files
 
 
 == Current Limitations ==
 
-- Does not work on Windows (should be relatively easy to make a port using
-  OpenSSL however it would require much more work to use MS CAPI instead).
+- Does not work on Windows (should be relatively easy to port it using OpenSSL
+  however it would require much more work to use MS CAPI instead).
 - Build system needs to be improved.
 
 
@@ -77,10 +76,9 @@ install    -> install the C++ library and optionally its Python binding
 - When compiled with option --compat this implementation is expected to be
   fully compatible with Keyczar 0.6b (see detailed specifications at
   http://code.google.com/p/keyczar/w/).
-- When compiled without this option this implementation use cryptographic
-  algorithms defined in algorithms.txt and use a new attribute
-  'nextKeyVersionNumber' in order to keep the next key version number to assign
-  to new keys.
+- When compiled without this option this implementation uses differents
+  cryptographic algorithms as defined into algorithms.txt. And further
+  modifications could happen in the future.
 
 
 == This implementation relies on these projects ==

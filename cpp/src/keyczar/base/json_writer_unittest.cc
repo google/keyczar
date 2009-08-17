@@ -11,6 +11,9 @@
 #include <keyczar/base/json_writer.h>
 #include <keyczar/base/values.h>
 
+namespace keyczar {
+namespace base {
+
 TEST(JSONWriterTest, Writing) {
   // Test null
   Value* root = Value::CreateNullValue();
@@ -35,10 +38,10 @@ TEST(JSONWriterTest, Writing) {
   // list list nesting, etc.
   DictionaryValue root_dict;
   ListValue* list = new ListValue;
-  root_dict.Set(L"list", list);
+  root_dict.Set("list", list);
   DictionaryValue* inner_dict = new DictionaryValue;
   list->Append(inner_dict);
-  inner_dict->SetInteger(L"inner int", 10);
+  inner_dict->SetInteger("inner int", 10);
   ListValue* inner_list = new ListValue;
   list->Append(inner_list);
   list->Append(Value::CreateBooleanValue(true));
@@ -54,4 +57,5 @@ TEST(JSONWriterTest, Writing) {
             output_js);
 }
 
-
+}  // namespace base
+}  // namespace keyczar

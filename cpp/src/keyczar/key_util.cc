@@ -14,32 +14,62 @@
 #include <keyczar/key_util.h>
 
 #include <keyczar/base/base64w.h>
+#include <keyczar/base/stl_util-inl.h>
 
 namespace keyczar {
 
 namespace util {
 
 bool DeserializeString(const DictionaryValue& node,
-                       const std::wstring& key,
+                       const std::string& key,
                        std::string* destination) {
   std::string temp;
   if (!node.GetString(key, &temp))
     return false;
-  if (!Base64WDecode(temp, destination))
+
+  if (!base::Base64WDecode(temp, destination))
+    return false;
+  return true;
+}
+
+bool SafeDeserializeString(const DictionaryValue& node,
+                           const std::string& key,
+                           std::string* destination) {
+  base::ScopedSafeString temp(new std::string());
+  if (!node.GetString(key, temp.get()))
+    return false;
+
+  if (!base::Base64WDecode(*temp, destination))
     return false;
   return true;
 }
 
 bool SerializeString(const std::string& value,
-                     const std::wstring& destination_key,
+                     const std::string& destination_key,
                      DictionaryValue* node) {
   if (node == NULL)
     return false;
-  std::string temp;
 
-  if (!Base64WEncode(value, &temp))
+  std::string temp;
+  if (!base::Base64WEncode(value, &temp))
     return false;
+
   if (!node->SetString(destination_key, temp))
+    return false;
+  return true;
+}
+
+bool SafeSerializeString(const std::string& value,
+                         const std::string& destination_key,
+                         DictionaryValue* node) {
+  if (node == NULL)
+    return false;
+
+  base::ScopedSafeString temp(new std::string());
+  if (!base::Base64WEncode(value, temp.get()))
+    return false;
+
+  if (!node->SetString(destination_key, *temp))
     return false;
   return true;
 }

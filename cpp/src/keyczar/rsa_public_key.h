@@ -44,7 +44,8 @@ class RSAPublicKey : public PublicKey {
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
 
-  virtual bool Encrypt(const std::string& data, std::string* encrypted) const;
+  virtual bool Encrypt(const std::string& plaintext,
+                       std::string* ciphertext) const;
 
  private:
   friend class RSATest;

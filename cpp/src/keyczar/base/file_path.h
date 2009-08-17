@@ -192,15 +192,6 @@ class FilePath {
   FilePath Append(const StringType& component) const WARN_UNUSED_RESULT;
   FilePath Append(const FilePath& component) const WARN_UNUSED_RESULT;
 
-  // Although Windows StringType is std::wstring, since the encoding it uses for
-  // paths is well defined, it can handle ASCII path components as well.
-  // Mac uses UTF8, and since ASCII is a subset of that, it works there as well.
-  // On Linux, although it can use any 8-bit encoding for paths, we assume that
-  // ASCII is a valid subset, regardless of the encoding, since many operating
-  // system paths will always be ASCII.
-  FilePath AppendASCII(
-      const std::string& component) const WARN_UNUSED_RESULT;
-
   // Returns true if this FilePath contains an absolute path.  On Windows, an
   // absolute path begins with either a drive letter specification followed by
   // a separator character, or with two separator characters.  On POSIX
@@ -210,20 +201,6 @@ class FilePath {
   // Returns a copy of this FilePath that does not end with a trailing
   // separator.
   FilePath StripTrailingSeparators() const;
-
-  // Older Chromium code assumes that paths are always wstrings.
-  // This function converts a wstring to a FilePath, and is useful to smooth
-  // porting that old code to the FilePath API.
-  // It has "Hack" in its name so people feel bad about using it.
-  // TODO(port): remove these functions.
-  static FilePath FromWStringHack(const std::wstring& wstring);
-
-  // Older Chromium code assumes that paths are always wstrings.
-  // This function produces a wstring from a FilePath, and is useful to smooth
-  // porting that old code to the FilePath API.
-  // It has "Hack" in its name so people feel bad about using it.
-  // TODO(port): remove these functions.
-  std::wstring ToWStringHack() const;
 
  private:
   // Remove trailing separators from this object.  If the path is absolute, it

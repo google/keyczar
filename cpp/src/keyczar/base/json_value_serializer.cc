@@ -13,7 +13,10 @@
 #include <keyczar/base/file_util.h>
 #include <keyczar/base/json_reader.h>
 #include <keyczar/base/json_writer.h>
-#include <keyczar/base/string_util.h>
+#include <keyczar/base/stl_util-inl.h>
+
+namespace keyczar {
+namespace base {
 
 JSONStringValueSerializer::~JSONStringValueSerializer() {}
 
@@ -37,28 +40,21 @@ Value* JSONStringValueSerializer::Deserialize(std::string* error_message) {
 /******* File Serializer *******/
 
 bool JSONFileValueSerializer::Serialize(const Value& root) {
-  std::string json_string;
-  JSONStringValueSerializer serializer(&json_string);
+  ScopedSafeString json_string(new std::string());
+  JSONStringValueSerializer serializer(json_string.get());
   serializer.set_pretty_print(true);
-  bool result = serializer.Serialize(root);
-  if (!result)
+  if (!serializer.Serialize(root))
     return false;
-
-  int data_size = static_cast<int>(json_string.size());
-  if (file_util::WriteFile(json_file_path_,
-                           json_string.data(),
-                           data_size) != data_size)
-    return false;
-
-  return true;
+  return WriteStringToFile(json_file_path_, *json_string);
 }
 
 Value* JSONFileValueSerializer::Deserialize(std::string* error_message) {
-  std::string json_string;
-  if (!file_util::ReadFileToString(json_file_path_, &json_string)) {
+  ScopedSafeString json_string(new std::string());
+  if (!ReadFileToString(json_file_path_, json_string.get()))
     return NULL;
-  }
-  JSONStringValueSerializer serializer(json_string);
+  JSONStringValueSerializer serializer(json_string.get());
   return serializer.Deserialize(error_message);
 }
 
+}  // namespace base
+}  // namespace keyczar

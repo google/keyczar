@@ -41,12 +41,12 @@ bool PrivateKey::Verify(const std::string& data,
   return public_key()->Verify(data, signature);
 }
 
-bool PrivateKey::Encrypt(const std::string& data,
-                         std::string* encrypted) const {
+bool PrivateKey::Encrypt(const std::string& plaintext,
+                         std::string* ciphertext) const {
   if (public_key() == NULL)
     return false;
 
-  return public_key()->Encrypt(data, encrypted);
+  return public_key()->Encrypt(plaintext, ciphertext);
 }
 
 }  // namespace keyczar

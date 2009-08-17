@@ -26,8 +26,10 @@
 
 namespace keyczar {
 
+namespace rw {
 class KeysetReader;
 class KeysetWriter;
+}  // namespace rw
 
 // A key set manages a set of metadata and keys. At its creation a Keyset is
 // empty. Before any action, an Observer must be added in the case where this
@@ -41,19 +43,23 @@ class KeysetWriter;
 //
 // Example:
 //
+//  namespace keyczar {
+//
 //  Keyset keyset;
-//  KeysetJSONFileWriter file_writer(path);
+//  rw::KeysetJSONFileWriter file_writer(path);
 //  keyset.AddObserver(&file_writer);
 //
 //  KeysetMetadata* meta = NULL;
 //  meta = new KeysetMetadata("Test",  // name
-//                            KeyType::Create("RSA_PRIV"),
-//                            KeyPurpose::Create("DECRYPT_AND_ENCRYPT"),
-//                            false,   // encrypted
-//                            1);      // next version number
+//                            KeyType::RSA_PRIV,  // type
+//                            KeyPurpose::DECRYPT_AND_ENCRYPT,  // purpose
+//                            false,  // encrypted
+//                            1);  // next version number
 //
 //  keyset.set_metadata(meta);
 //  keyset.GenerateKey(KeyStatus::PRIMARY, 2048);
+//
+//  }  // namespace keyczar
 class Keyset {
  public:
   class Observer {
@@ -92,7 +98,7 @@ class Keyset {
   // the initial state set up will be missed. The observers will only be
   // notified of the subsequent modifications once the keyset will be returned
   // and the observers added.
-  static Keyset* Read(const KeysetReader& reader, bool load_keys);
+  static Keyset* Read(const rw::KeysetReader& reader, bool load_keys);
 
   // Instanciates a new Keyset object without loading its associated keys. The
   // only operations authorized in this mode are the operations modifying the
@@ -100,7 +106,7 @@ class Keyset {
   // to bypass key decryption by not loading them. For instance it is convenient
   // for calls to promotekey, Demotekey. Note that RevokeKey still calls
   // OnRevokedKey() for each one of its observers.
-  static Keyset* ReadMetadataOnly(const KeysetReader& reader);
+  static Keyset* ReadMetadataOnly(const rw::KeysetReader& reader);
 
   // The caller keeps ownership over |obs|.
   void AddObserver(Observer* obs) {
@@ -170,19 +176,27 @@ class Keyset {
   // generated its size is |size| and its type depends on the informations
   // provided by the corresponding metadata. Once the key is generated |AddKey|
   // is called to store this new key. This function returns the newly assigned
-  // version number. This method returns 0 in case of failure.
+  // key version number. This method returns 0 in case of failure.
   int GenerateKey(KeyStatus::Type status, int size);
 
   // Generates a key with a default size specified by its type and with |status|
-  // as status. This method returns 0 if an error happened.
+  // as status. This method returns 0 if an error happened or its assigned key
+  // version number otherwise.
   int GenerateDefaultKeySize(KeyStatus::Type status);
 
-  // Imports a PEM key with |status| as status at location |filename| on disk
-  // and with asscociated passphrase |passphrase|. A NULL value for |passphrase|
-  // means no passphrase. If a passphrase is required anyway to read this key,
-  // it will be prompted interactively.
-  int ImportPEMKey(KeyStatus::Type status, const std::string& filename,
-                   const std::string* passphrase);
+  // Imports a PEM/PKCS8 key with |status| as status at location |filename| on
+  // disk and with asscociated passphrase |passphrase|. A NULL value for
+  // |passphrase| means no passphrase. If a passphrase is required anyway to
+  // read this key, it will be prompted interactively. This method returns 0
+  // if an error happened or its assigned key version number otherwise.
+  int ImportPrivateKey(KeyStatus::Type status, const std::string& filename,
+                       const std::string* passphrase);
+
+  // Exports current primary private key to |filename|. |passphrase| is used to
+  // encrypt the key with PBE algorithm. Its format is PKCS8 and it returns
+  // false if there is no primary key, if this is a public key or if it fails.
+  bool ExportPrivateKey(const std::string& filename,
+                        const std::string* passphrase);
 
   // Operations on keys.
 
@@ -206,7 +220,7 @@ class Keyset {
   // If relevant, that is if the keyset instance manages private keys and has a
   // compatible puporse then the public parts of these keys are exported with
   // |writer|.
-  bool PublicKeyExport(const KeysetWriter& writer) const;
+  bool PublicKeyExport(const rw::KeysetWriter& writer) const;
 
   // Allow iteration over the map of version numbers and keys using STL
   // iterators. The iterator's member |first| points on the version number, and

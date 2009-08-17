@@ -13,17 +13,14 @@
 // limitations under the License.
 #include <testing/gtest/include/gtest/gtest.h>
 
-#include <keyczar/base/command_line.h>
 #include <keyczar/crypto_factory.h>
 
 int main(int argc, char** argv) {
-  CommandLine::Init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
 
   // Before any cryptographic operation initializes the random engine
   // (seeding...). However this step is useless under Linux with OpenSSL.
   keyczar::CryptoFactory::Rand();
 
-  int result = RUN_ALL_TESTS();
-  return result;
+  return RUN_ALL_TESTS();
 }

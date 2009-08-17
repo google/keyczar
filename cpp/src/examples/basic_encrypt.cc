@@ -1,3 +1,8 @@
+// Encrypts and decrypts a short message. Uses raw encoding, base64w
+// encoding and zlib compression.
+//
+// Example: ./basic_encrypt ~/my-aes
+//
 #include <cassert>
 #include <iostream>
 #include <string>

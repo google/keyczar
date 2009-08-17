@@ -1,6 +1,6 @@
-# Encrypts and decrypts a short message from an encrypted key set.
+# Encrypts and decrypts a short message from an encrypted JSON key set.
 #
-# Example: python basic_encrypt.py ~/my-aes-crypted ~/my-aes
+# Example: python crypted_keyset.py ~/my-aes-encrypted ~/my-aes
 #
 import os
 import sys
@@ -8,13 +8,13 @@ import sys
 import keyczar
 
 def Encrypt(crypted_path, crypter_path):
-    if not os.path.isdir(crypted_path) or not os.path.isdir(crypter_path):
+    if not os.path.exists(crypted_path) or not os.path.exists(crypter_path):
         return
 
     input = 'Secret message'
 
     key_crypter = keyczar.Crypter.Read(crypter_path)
-    reader = keyczar.KeysetEncryptedFileReader(crypted_path, key_crypter)
+    reader = keyczar.KeysetEncryptedJSONFileReader(crypted_path, key_crypter)
 
     crypter = keyczar.Crypter.Read(reader)
     ciphertext = crypter.Encrypt(input)
@@ -27,7 +27,7 @@ def Encrypt(crypted_path, crypter_path):
 
 if __name__ == '__main__':
     if (len(sys.argv) != 3):
-        print >> sys.stderr, "Provide two key sets paths as argument:"
-        print >> sys.stderr, sys.argv[0], "encrypted_keyset_path crypter_path"
+        print >> sys.stderr, "Provide two valids key sets paths as arguments:"
+        print >> sys.stderr, sys.argv[0], "encrypted_json_keyset_path crypter_keyset_path"
         sys.exit(1)
     Encrypt(sys.argv[1], sys.argv[2])

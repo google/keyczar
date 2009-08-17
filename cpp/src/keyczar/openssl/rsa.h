@@ -30,32 +30,35 @@ namespace openssl {
 // OpenSSL concrete implementation.
 class RSAOpenSSL : public RSAImpl {
  public:
-  RSAOpenSSL(RSA* key, bool private_key)
-      : key_(key), private_key_(private_key) {}
-
   virtual ~RSAOpenSSL() {}
 
-  // Builds and returns a concrete RSA implementation object from |key|. The
-  // caller takes ownership over the returned object.
+  // Builds a RSAOpenSSL object from |key|. |key| must be correctly formed
+  // and initialized. The caller takes ownership over the returned object.
   static RSAOpenSSL* Create(const RSAIntermediateKey& key, bool private_key);
 
-  // Builds and returns a concrete RSA implementation object from a new
-  // generated key of length |size|. The caller takes ownership over the
-  // returned instance. The value of |size| is expressed in bits.
+  // Builds a RSAOpenSSL object from a new generated key of size |size|. The
+  // value of |size| is expressed in bits. The caller takes ownership over
+  // the returned instance.
   static RSAOpenSSL* GenerateKey(int size);
 
-  // Builds a concrete RSA implementation object from the PEM private key stored
-  // at |filename|. |passphrase| is the optional passphrase. Pass NULL if there
-  // is no passphrase of if it will be asked interactively. The caller takes
-  // ownership over the returned object.
-  static RSAOpenSSL* CreateFromPEMKey(const std::string& filename,
-                                      const std::string* passphrase);
+  // Builds an RSAOpenSSL object from a PEM private key stored at |filename|.
+  // |passphrase| is an optional passphrase. Its value is NULL if no
+  // passphrase is expected or if it should be prompted interactively at
+  // execution. The caller takes ownership over the returned object.
+  // It can handle PEM format keys as well as PKCS8 format keys.
+  static RSAOpenSSL* CreateFromPEMPrivateKey(const std::string& filename,
+                                             const std::string* passphrase);
+
+  // Exports this key encrypted with |passphrase| to |filename|. The format
+  // used is PKCS8 and the key is encrypted with PBE algorithm as defined in
+  // PKCS5 v2.0, the associated cipher used is AES. If |passphrase| is NULL
+  // a callback function will be called to prompt a passphrase at execution.
+  virtual bool ExportPrivateKey(const std::string& filename,
+                                const std::string* passphrase) const;
 
   virtual bool GetAttributes(RSAIntermediateKey* key);
 
   virtual bool GetPublicAttributes(RSAIntermediateKey* key);
-
-  bool WriteKeyToPEMFile(const std::string& filename);
 
   virtual bool Sign(const MessageDigestImpl::DigestAlgorithm digest_algorithm,
                     const std::string& message_digest,
@@ -80,10 +83,15 @@ class RSAOpenSSL : public RSAImpl {
  private:
   FRIEND_TEST(RSAOpenSSL, CreateKeyAndCompare);
 
+  // RSA_free internally calls BN_clear_free() to clear the RSA fields
+  // with OPENSSL_cleanse() before freeing the memory.
   typedef scoped_ptr_malloc<
       RSA, openssl::OSSLDestroyer<RSA, RSA_free> > ScopedRSAKey;
 
-  ScopedRSAKey key_;
+  RSAOpenSSL(RSA* key, bool private_key)
+      : key_(key), private_key_(private_key) {}
+
+  const ScopedRSAKey key_;
 
   bool private_key_;
 

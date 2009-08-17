@@ -31,13 +31,13 @@ ECDSAPrivateKey* ECDSAPrivateKey::CreateFromValue(const Value& root_key) {
   ECDSAImpl::ECDSAIntermediateKey intermediate_key;
 
   // private_key
-  if (!util::DeserializeString(*private_key, L"privateKey",
-                               &intermediate_key.private_key))
+  if (!util::SafeDeserializeString(*private_key, "privateKey",
+                                   &intermediate_key.private_key))
     return NULL;
 
   // named_curve
   std::string named_curve;
-  if (!private_key->GetString(L"namedCurve", &named_curve))
+  if (!private_key->GetString("namedCurve", &named_curve))
     return NULL;
   intermediate_key.curve = ECDSAImpl::GetCurve(named_curve);
   if (intermediate_key.curve == ECDSAImpl::UNDEF) {
@@ -46,13 +46,13 @@ ECDSAPrivateKey* ECDSAPrivateKey::CreateFromValue(const Value& root_key) {
   }
 
   DictionaryValue* public_key = NULL;
-  if (!private_key->GetDictionary(L"publicKey", &public_key))
+  if (!private_key->GetDictionary("publicKey", &public_key))
     return NULL;
 
   if (public_key == NULL)
     return NULL;
 
-  if (!util::DeserializeString(*public_key, L"publicBytes",
+  if (!util::DeserializeString(*public_key, "publicBytes",
                                &intermediate_key.public_key))
     return NULL;
 
@@ -63,7 +63,7 @@ ECDSAPrivateKey* ECDSAPrivateKey::CreateFromValue(const Value& root_key) {
 
   // Check the size is valid.
   int size = ECDSAImpl::GetSizeFromCurve(intermediate_key.curve);
-  if (!IsValidSize("ECDSA_PRIV", size))
+  if (!KeyType::IsValidCipherSize(KeyType::ECDSA_PRIV, size))
     return NULL;
 
   scoped_ptr<ECDSAImpl> ecdsa_public_key_impl(
@@ -83,7 +83,7 @@ ECDSAPrivateKey* ECDSAPrivateKey::CreateFromValue(const Value& root_key) {
 
 // static
 ECDSAPrivateKey* ECDSAPrivateKey::GenerateKey(int size) {
-  if (!IsValidSize("ECDSA_PRIV", size))
+  if (!KeyType::IsValidCipherSize(KeyType::ECDSA_PRIV, size))
     return NULL;
 
   ECDSAImpl::Curve curve = ECDSAImpl::GetCurveFromSize(size);
@@ -98,7 +98,8 @@ ECDSAPrivateKey* ECDSAPrivateKey::GenerateKey(int size) {
     return NULL;
 
   ECDSAImpl::ECDSAIntermediateKey intermediate_public_key;
-  ecdsa_private_key_impl->GetPublicAttributes(&intermediate_public_key);
+  if (!ecdsa_private_key_impl->GetPublicAttributes(&intermediate_public_key))
+    return NULL;
 
   scoped_ptr<ECDSAImpl> ecdsa_public_key_impl(
       CryptoFactory::CreatePublicECDSA(intermediate_public_key));
@@ -116,18 +117,19 @@ ECDSAPrivateKey* ECDSAPrivateKey::GenerateKey(int size) {
 }
 
 // static
-ECDSAPrivateKey* ECDSAPrivateKey::CreateFromPEMKey(
+ECDSAPrivateKey* ECDSAPrivateKey::CreateFromPEMPrivateKey(
     const std::string& filename, const std::string* passphrase) {
   scoped_ptr<ECDSAImpl> ecdsa_private_key_impl(
-      CryptoFactory::CreatePrivateECDSAFromPEMKey(filename, passphrase));
+      CryptoFactory::CreatePrivateECDSAFromPEMPrivateKey(filename, passphrase));
   if (ecdsa_private_key_impl.get() == NULL)
     return NULL;
 
   ECDSAImpl::ECDSAIntermediateKey intermediate_public_key;
-  ecdsa_private_key_impl->GetPublicAttributes(&intermediate_public_key);
+  if (!ecdsa_private_key_impl->GetPublicAttributes(&intermediate_public_key))
+    return NULL;
 
   int size = ECDSAImpl::GetSizeFromCurve(intermediate_public_key.curve);
-  if (!IsValidSize("ECDSA_PRIV", size))
+  if (!KeyType::IsValidCipherSize(KeyType::ECDSA_PRIV, size))
     return NULL;
 
   scoped_ptr<ECDSAImpl> ecdsa_public_key_impl(
@@ -154,11 +156,11 @@ Value* ECDSAPrivateKey::GetValue() const {
   if (!ecdsa_impl()->GetAttributes(&intermediate_key))
     return NULL;
 
-  if (!util::SerializeString(intermediate_key.private_key, L"privateKey",
-                             private_key.get()))
+  if (!util::SafeSerializeString(intermediate_key.private_key, "privateKey",
+                                 private_key.get()))
     return NULL;
 
-  if (!private_key->SetString(L"namedCurve",
+  if (!private_key->SetString("namedCurve",
                               ECDSAImpl::GetCurveName(intermediate_key.curve)))
     return NULL;
 
@@ -166,10 +168,17 @@ Value* ECDSAPrivateKey::GetValue() const {
   if (public_key_value == NULL)
     return NULL;
 
-  if (!private_key->Set(L"publicKey", public_key_value))
+  if (!private_key->Set("publicKey", public_key_value))
     return NULL;
 
   return private_key.release();
+}
+
+bool ECDSAPrivateKey::ExportPrivateKey(const std::string& filename,
+                                       const std::string* passphrase) const {
+  if (ecdsa_impl() == NULL)
+    return false;
+  return ecdsa_impl()->ExportPrivateKey(filename, passphrase);
 }
 
 bool ECDSAPrivateKey::Sign(const std::string& data,
@@ -186,8 +195,9 @@ bool ECDSAPrivateKey::Sign(const std::string& data,
     return false;
 
   // The hash is truncated to the key size.
-  if (message_digest.length() > size() / 8)
-    message_digest = message_digest.substr(0, size() / 8);
+  const uint32 byte_size = size() / 8;
+  if (message_digest.length() > byte_size)
+    message_digest = message_digest.substr(0, byte_size);
 
   return ecdsa_impl()->Sign(message_digest, signature);
 }

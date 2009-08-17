@@ -17,6 +17,7 @@
 #include <string>
 
 #include <keyczar/base/basictypes.h>
+#include <keyczar/base/stl_util-inl.h>
 
 namespace keyczar {
 
@@ -31,10 +32,17 @@ class DSAImpl {
     std::string g;     // generator of subgroup (public)
     std::string y;     // public key exponent
     std::string x;     // private key
+
+    ~DSAIntermediateKey() {
+      base::STLStringMemErase(&x);
+    }
   };
 
   DSAImpl() {}
   virtual ~DSAImpl() {}
+
+  virtual bool ExportPrivateKey(const std::string& filename,
+                                const std::string* passphrase) const = 0;
 
   // Through this method the concrete implementation copies all its internal
   // private and public fields into |key|. This function returns true on

@@ -11,8 +11,8 @@
 
 #include <keyczar/base/basictypes.h>
 
+namespace keyczar {
 namespace base {
-
 namespace subtle {
 
 class RefCountedBase {
@@ -73,12 +73,13 @@ template<typename T>
 class RefCountedData : public base::RefCounted< base::RefCountedData<T> > {
  public:
   RefCountedData() : data() {}
-  RefCountedData(const T& in_value) : data(in_value) {}
+  explicit RefCountedData(const T& in_value) : data(in_value) {}
 
   T data;
 };
 
 }  // namespace base
+}  // namespace keyczar
 
 //
 // A smart pointer class for reference counted objects.  Use this class instead

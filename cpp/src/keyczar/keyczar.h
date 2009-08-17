@@ -19,11 +19,12 @@
 #include <keyczar/base/basictypes.h>
 #include <keyczar/base/scoped_ptr.h>
 #include <keyczar/base/file_path.h>
+#include <keyczar/key_purpose.h>
+#include <keyczar/key_type.h>
 #include <keyczar/keyset.h>
 
 namespace keyczar {
 
-class KeyPurpose;
 class KeysetReader;
 
 // High-level class for loading a key set and using it for encrypting /
@@ -70,16 +71,16 @@ class KeysetReader;
 class Keyczar {
  public:
   // Update the corresponding enum structure inside keyczar.i if this one
-  // is modified.
+  // was modified.
   enum Encoding {
     NO_ENCODING,  // No encoding
     BASE64W       // Web-safe base64 encoding (used by default)
   };
 
   // Update the corresponding enum structure inside keyczar.i if this one
-  // is modified.
+  // was modified.
   enum Compression {
-    NO_COMPRESSION,  // No compression
+    NO_COMPRESSION,  // No compression (used by default)
     GZIP,            // GZIP compression generally used when compressing files
     ZLIB             // Simple zlib compression
   };
@@ -93,7 +94,7 @@ class Keyczar {
   virtual ~Keyczar() {}
 
   // All the following methods must be implemented by the relevant subclasses.
-  // Returning false if not implemented or if it failed.
+  // Returning false if not implemented or in case of failure.
 
   // Signs the given input string |data| and put the result as a web-safe
   // Base64 encoded string into |signature|. This method uses the current
@@ -102,19 +103,20 @@ class Keyczar {
   virtual bool Sign(const std::string& data, std::string* signature) const;
 
   // Signs |data| and returns the signature as string value. This method
-  // overloads the previous Encrypt method and internally calls it. It returns
+  // overloads the previous Sign method and internally calls it. It returns
   // an empty string if it fails.
   virtual std::string Sign(const std::string& data) const;
 
-  // Verifies the |signature| of the corresponding |data|.
+  // Verifies the |signature| of the corresponding |data|. |signature| is
+  // decoded accordingly to the current encoding algorithm set.
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
 
   // Encrypts the given input string |plaintext| and put the result as a
   // web-safe Base64 encoded string into |ciphertext|. This method uses the
-  // current format compression to compress the |plaintext| before encryption
-  // and uses the current encoding format to encode the resulting |ciphertext|.
-  // This method returns false if it fails.
+  // current compression algorithm set to compress |plaintext| before encryption
+  // and uses the current encoding algorithm set to encode the resulting
+  // |ciphertext| (BASE64W by default). This method returns false if it fails.
   virtual bool Encrypt(const std::string& plaintext,
                        std::string* ciphertext) const;
 
@@ -140,21 +142,24 @@ class Keyczar {
   // the current keyset.
   virtual bool IsAcceptablePurpose() const = 0;
 
+  // Returns the current encoding algorithm set.
   Encoding encoding() const { return encoding_; }
 
-  // Modifies encoding format.
+  // Replaces the current encoding algorithm by |encoding|.
   void set_encoding(Encoding encoding) { encoding_ = encoding; }
 
+  // Returns the current compression algorithm set.
   Compression compression() const { return compression_; }
 
-  // Modifies compression format.
+  // Replaces the current compression algorithm by |compression|.
   void set_compression(Compression compression) { compression_ = compression; }
 
   // Returns the Keyset instance.
   const Keyset* keyset() const { return keyset_.get(); }
 
  protected:
-  const KeyPurpose* GetKeyPurpose() const;
+  KeyPurpose::Type GetKeyPurpose() const;
+  KeyType::Type GetKeyType() const;
 
   bool GetHash(const std::string& bytes, std::string* hash) const;
 
@@ -208,11 +213,12 @@ class Encrypter : public Keyczar {
 
   // This factory returns a new Encrypter directly from a reader. This permit to
   // read key set from unconventionnal readers e.g. from an encrypted reader.
-  static Encrypter* Read(const KeysetReader& reader);
+  static Encrypter* Read(const rw::KeysetReader& reader);
 
-  virtual bool Encrypt(const std::string& data, std::string* ciphertext) const;
+  virtual bool Encrypt(const std::string& plaintext,
+                       std::string* ciphertext) const;
 
-  virtual std::string Encrypt(const std::string& data) const;
+  virtual std::string Encrypt(const std::string& plaintext) const;
 
   virtual bool IsAcceptablePurpose() const;
 
@@ -236,9 +242,10 @@ class Crypter : public Encrypter {
 
   // This factory returns a new Crypter directly from a reader. This permit to
   // read key set from unconventionnal readers e.g. from an encrypted reader.
-  static Crypter* Read(const KeysetReader& reader);
+  static Crypter* Read(const rw::KeysetReader& reader);
 
-  virtual bool Decrypt(const std::string& ciphertext, std::string* data) const;
+  virtual bool Decrypt(const std::string& ciphertext,
+                       std::string* plaintext) const;
 
   virtual std::string Decrypt(const std::string& ciphertext) const;
 
@@ -264,7 +271,7 @@ class Verifier : public Keyczar {
 
   // This factory returns a new Verifier directly from a reader. This permit to
   // read key set from unconventionnal readers.
-  static Verifier* Read(const KeysetReader& reader);
+  static Verifier* Read(const rw::KeysetReader& reader);
 
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
@@ -298,7 +305,7 @@ class UnversionedVerifier : public Keyczar {
 
   // This factory returns a new UnversionedVerifier directly from a reader. This
   // permit to read key set from unconventionnal readers.
-  static UnversionedVerifier* Read(const KeysetReader& reader);
+  static UnversionedVerifier* Read(const rw::KeysetReader& reader);
 
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
@@ -327,7 +334,7 @@ class Signer : public Verifier {
 
   // This factory returns a new Signer directly from a reader. This permit to
   // read key set from unconventionnal readers.
-  static Signer* Read(const KeysetReader& reader);
+  static Signer* Read(const rw::KeysetReader& reader);
 
   virtual bool Sign(const std::string& data, std::string* signature) const;
 
@@ -360,7 +367,7 @@ class UnversionedSigner : public UnversionedVerifier {
 
   // This factory returns a new UnversionedSigner directly from a reader. This
   // permit to read key set from unconventionnal readers.
-  static UnversionedSigner* Read(const KeysetReader& reader);
+  static UnversionedSigner* Read(const rw::KeysetReader& reader);
 
   virtual bool Sign(const std::string& data, std::string* signature) const;
 

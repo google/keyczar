@@ -17,8 +17,6 @@
 
 #include <testing/gtest/include/gtest/gtest.h>
 
-#include <keyczar/base/file_path.h>
-#include <keyczar/base/file_util.h>
 #include <keyczar/base/scoped_ptr.h>
 #include <keyczar/cipher_mode.h>
 #include <keyczar/keyczar_test.h>
@@ -42,8 +40,7 @@ TEST_F(AESOpenSSLTest, EncryptAndDecrypt) {
     EXPECT_TRUE(RAND_bytes(key_buffer, s));
     std::string key(reinterpret_cast<char*>(key_buffer), s);
 
-    scoped_ptr<AESOpenSSL> aes(AESOpenSSL::Create(*CipherMode::Create("CBC"),
-                                                  key));
+    scoped_ptr<AESOpenSSL> aes(AESOpenSSL::Create(CipherMode::CBC, key));
     ASSERT_TRUE(aes.get());
 
     EXPECT_TRUE(aes->Encrypt(input_data_, &encrypted, &iv));

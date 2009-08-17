@@ -7,23 +7,14 @@
 // modifications.
 
 #include <keyczar/base/string_util.h>
-#include <keyczar/base/build_config.h>
 
-#include <ctype.h>
 #include <errno.h>
-#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <wchar.h>
-#include <wctype.h>
 
-#include <algorithm>
 #include <vector>
 
-#include <keyczar/base/basictypes.h>
 #include <keyczar/base/logging.h>
 
 namespace {
@@ -45,477 +36,37 @@ struct ToUnsigned<signed char> {
   typedef unsigned char Unsigned;
 };
 template<>
-struct ToUnsigned<wchar_t> {
-#if defined(WCHAR_T_IS_UTF16)
-  typedef unsigned short Unsigned;
-#elif defined(WCHAR_T_IS_UTF32)
-  typedef uint32 Unsigned;
-#endif
-};
-template<>
 struct ToUnsigned<short> {
   typedef unsigned short Unsigned;
 };
 
-// Used by ReplaceStringPlaceholders to track the position in the string of
-// replaced parameters.
-struct ReplacementOffset {
-  ReplacementOffset(int parameter, size_t offset)
-      : parameter(parameter),
-        offset(offset) {}
+template <typename CHAR>
+size_t lcpyT(CHAR* dst, const CHAR* src, size_t dst_size) {
+  for (size_t i = 0; i < dst_size; ++i) {
+    if ((dst[i] = src[i]) == 0)  // We hit and copied the terminating NULL.
+      return i;
+  }
 
-  // Index of the parameter.
-  int parameter;
+  // We were left off at dst_size.  We over copied 1 byte.  Null terminate.
+  if (dst_size != 0)
+    dst[dst_size - 1] = 0;
 
-  // Starting position in the string.
-  size_t offset;
-};
-
-static bool CompareParameter(const ReplacementOffset& elem1,
-                             const ReplacementOffset& elem2) {
-  return elem1.parameter < elem2.parameter;
+  // Count the rest of the |src|, and return it's length in characters.
+  while (src[dst_size]) ++dst_size;
+  return dst_size;
 }
-
-// Generalized string-to-number conversion.
-//
-// StringToNumberTraits should provide:
-//  - a typedef for string_type, the STL string type used as input.
-//  - a typedef for value_type, the target numeric type.
-//  - a static function, convert_func, which dispatches to an appropriate
-//    strtol-like function and returns type value_type.
-//  - a static function, valid_func, which validates |input| and returns a bool
-//    indicating whether it is in proper form.  This is used to check for
-//    conditions that convert_func tolerates but should result in
-//    StringToNumber returning false.  For strtol-like funtions, valid_func
-//    should check for leading whitespace.
-template<typename StringToNumberTraits>
-bool StringToNumber(const typename StringToNumberTraits::string_type& input,
-                    typename StringToNumberTraits::value_type* output) {
-  typedef StringToNumberTraits traits;
-
-  errno = 0;  // Thread-safe?  It is on at least Mac, Linux, and Windows.
-  typename traits::string_type::value_type* endptr = NULL;
-  typename traits::value_type value = traits::convert_func(input.c_str(),
-                                                           &endptr);
-  *output = value;
-
-  // Cases to return false:
-  //  - If errno is ERANGE, there was an overflow or underflow.
-  //  - If the input string is empty, there was nothing to parse.
-  //  - If endptr does not point to the end of the string, there are either
-  //    characters remaining in the string after a parsed number, or the string
-  //    does not begin with a parseable number.  endptr is compared to the
-  //    expected end given the string's stated length to correctly catch cases
-  //    where the string contains embedded NUL characters.
-  //  - valid_func determines that the input is not in preferred form.
-  return errno == 0 &&
-         !input.empty() &&
-         input.c_str() + input.length() == endptr &&
-         traits::valid_func(input);
-}
-
-class StringToLongTraits {
- public:
-  typedef std::string string_type;
-  typedef long value_type;
-  static const int kBase = 10;
-  static inline value_type convert_func(const string_type::value_type* str,
-                                        string_type::value_type** endptr) {
-    return strtol(str, endptr, kBase);
-  }
-  static inline bool valid_func(const string_type& str) {
-    return !str.empty() && !isspace(str[0]);
-  }
-};
-
-class String16ToLongTraits {
- public:
-  typedef string16 string_type;
-  typedef long value_type;
-  static const int kBase = 10;
-  static inline value_type convert_func(const string_type::value_type* str,
-                                        string_type::value_type** endptr) {
-#if defined(WCHAR_T_IS_UTF16)
-    return wcstol(str, endptr, kBase);
-#elif defined(WCHAR_T_IS_UTF32)
-    std::string ascii_string = UTF16ToASCII(string16(str));
-    char* ascii_end = NULL;
-    value_type ret = strtol(ascii_string.c_str(), &ascii_end, kBase);
-    if (ascii_string.c_str() + ascii_string.length() == ascii_end) {
-      *endptr =
-          const_cast<string_type::value_type*>(str) + ascii_string.length();
-    }
-    return ret;
-#endif
-  }
-  static inline bool valid_func(const string_type& str) {
-    return !str.empty() && !iswspace(str[0]);
-  }
-};
-
-class StringToInt64Traits {
- public:
-  typedef std::string string_type;
-  typedef int64 value_type;
-  static const int kBase = 10;
-  static inline value_type convert_func(const string_type::value_type* str,
-                                        string_type::value_type** endptr) {
-#ifdef OS_WIN
-    return _strtoi64(str, endptr, kBase);
-#else  // assume OS_POSIX
-    return strtoll(str, endptr, kBase);
-#endif
-  }
-  static inline bool valid_func(const string_type& str) {
-    return !str.empty() && !isspace(str[0]);
-  }
-};
-
-class String16ToInt64Traits {
- public:
-  typedef string16 string_type;
-  typedef int64 value_type;
-  static const int kBase = 10;
-  static inline value_type convert_func(const string_type::value_type* str,
-                                        string_type::value_type** endptr) {
-#ifdef OS_WIN
-    return _wcstoi64(str, endptr, kBase);
-#else  // assume OS_POSIX
-    std::string ascii_string = UTF16ToASCII(string16(str));
-    char* ascii_end = NULL;
-    value_type ret = strtoll(ascii_string.c_str(), &ascii_end, kBase);
-    if (ascii_string.c_str() + ascii_string.length() == ascii_end) {
-      *endptr =
-          const_cast<string_type::value_type*>(str) + ascii_string.length();
-    }
-    return ret;
-#endif
-  }
-  static inline bool valid_func(const string_type& str) {
-    return !str.empty() && !iswspace(str[0]);
-  }
-};
-
-// For the HexString variants, use the unsigned variants like strtoul for
-// convert_func so that input like "0x80000000" doesn't result in an overflow.
-
-class HexStringToLongTraits {
- public:
-  typedef std::string string_type;
-  typedef long value_type;
-  static const int kBase = 16;
-  static inline value_type convert_func(const string_type::value_type* str,
-                                        string_type::value_type** endptr) {
-    return strtoul(str, endptr, kBase);
-  }
-  static inline bool valid_func(const string_type& str) {
-    return !str.empty() && !isspace(str[0]);
-  }
-};
-
-class HexString16ToLongTraits {
- public:
-  typedef string16 string_type;
-  typedef long value_type;
-  static const int kBase = 16;
-  static inline value_type convert_func(const string_type::value_type* str,
-                                        string_type::value_type** endptr) {
-#if defined(WCHAR_T_IS_UTF16)
-    return wcstoul(str, endptr, kBase);
-#elif defined(WCHAR_T_IS_UTF32)
-    std::string ascii_string = UTF16ToASCII(string16(str));
-    char* ascii_end = NULL;
-    value_type ret = strtoul(ascii_string.c_str(), &ascii_end, kBase);
-    if (ascii_string.c_str() + ascii_string.length() == ascii_end) {
-      *endptr =
-          const_cast<string_type::value_type*>(str) + ascii_string.length();
-    }
-    return ret;
-#endif
-  }
-  static inline bool valid_func(const string_type& str) {
-    return !str.empty() && !iswspace(str[0]);
-  }
-};
 
 }  // namespace
 
-
+namespace keyczar {
 namespace base {
 
-bool IsWprintfFormatPortable(const wchar_t* format) {
-  for (const wchar_t* position = format; *position != '\0'; ++position) {
-
-    if (*position == '%') {
-      bool in_specification = true;
-      bool modifier_l = false;
-      while (in_specification) {
-        // Eat up characters until reaching a known specifier.
-        if (*++position == '\0') {
-          // The format string ended in the middle of a specification.  Call
-          // it portable because no unportable specifications were found.  The
-          // string is equally broken on all platforms.
-          return true;
-        }
-
-        if (*position == 'l') {
-          // 'l' is the only thing that can save the 's' and 'c' specifiers.
-          modifier_l = true;
-        } else if (((*position == 's' || *position == 'c') && !modifier_l) ||
-                   *position == 'S' || *position == 'C' || *position == 'F' ||
-                   *position == 'D' || *position == 'O' || *position == 'U') {
-          // Not portable.
-          return false;
-        }
-
-        if (wcschr(L"diouxXeEfgGaAcspn%", *position)) {
-          // Portable, keep scanning the rest of the format string.
-          in_specification = false;
-        }
-      }
-    }
-
-  }
-
-  return true;
+size_t strlcpy(char* dst, const char* src, size_t dst_size) {
+  return lcpyT<char>(dst, src, dst_size);
 }
-
 
 }  // namespace base
-
-std::string EmptyString() {
-  std::string s;
-  return s;
-}
-
-std::wstring EmptyWString() {
-  std::wstring ws;
-  return ws;
-}
-
-string16 EmptyString16() {
-  string16 s16;
-  return s16;
-}
-
-const wchar_t kWhitespaceWide[] = {
-  0x0009,  // <control-0009> to <control-000D>
-  0x000A,
-  0x000B,
-  0x000C,
-  0x000D,
-  0x0020,  // Space
-  0x0085,  // <control-0085>
-  0x00A0,  // No-Break Space
-  0x1680,  // Ogham Space Mark
-  0x180E,  // Mongolian Vowel Separator
-  0x2000,  // En Quad to Hair Space
-  0x2001,
-  0x2002,
-  0x2003,
-  0x2004,
-  0x2005,
-  0x2006,
-  0x2007,
-  0x2008,
-  0x2009,
-  0x200A,
-  0x200C,  // Zero Width Non-Joiner
-  0x2028,  // Line Separator
-  0x2029,  // Paragraph Separator
-  0x202F,  // Narrow No-Break Space
-  0x205F,  // Medium Mathematical Space
-  0x3000,  // Ideographic Space
-  0
-};
-const char kWhitespaceASCII[] = {
-  0x09,    // <control-0009> to <control-000D>
-  0x0A,
-  0x0B,
-  0x0C,
-  0x0D,
-  0x20,    // Space
-  0
-};
-const char* const kCodepageUTF8 = "UTF-8";
-
-template<typename STR>
-TrimPositions TrimStringT(const STR& input,
-                          const typename STR::value_type trim_chars[],
-                          TrimPositions positions,
-                          STR* output) {
-  // Find the edges of leading/trailing whitespace as desired.
-  const typename STR::size_type last_char = input.length() - 1;
-  const typename STR::size_type first_good_char = (positions & TRIM_LEADING) ?
-      input.find_first_not_of(trim_chars) : 0;
-  const typename STR::size_type last_good_char = (positions & TRIM_TRAILING) ?
-      input.find_last_not_of(trim_chars) : last_char;
-
-  // When the string was all whitespace, report that we stripped off whitespace
-  // from whichever position the caller was interested in.  For empty input, we
-  // stripped no whitespace, but we still need to clear |output|.
-  if (input.empty() ||
-      (first_good_char == STR::npos) || (last_good_char == STR::npos)) {
-    bool input_was_empty = input.empty();  // in case output == &input
-    output->clear();
-    return input_was_empty ? TRIM_NONE : positions;
-  }
-
-  // Trim the whitespace.
-  *output =
-      input.substr(first_good_char, last_good_char - first_good_char + 1);
-
-  // Return where we trimmed from.
-  return static_cast<TrimPositions>(
-      ((first_good_char == 0) ? TRIM_NONE : TRIM_LEADING) |
-      ((last_good_char == last_char) ? TRIM_NONE : TRIM_TRAILING));
-}
-
-bool TrimString(const std::wstring& input,
-                const wchar_t trim_chars[],
-                std::wstring* output) {
-  return TrimStringT(input, trim_chars, TRIM_ALL, output) != TRIM_NONE;
-}
-
-bool TrimString(const std::string& input,
-                const char trim_chars[],
-                std::string* output) {
-  return TrimStringT(input, trim_chars, TRIM_ALL, output) != TRIM_NONE;
-}
-
-TrimPositions TrimPositionsString(const std::string& input,
-                                  TrimPositions positions,
-                                  const char trim_chars[],
-                                  std::string* output) {
-  return TrimStringT(input, trim_chars, positions, output);
-}
-
-TrimPositions TrimWhitespace(const std::wstring& input,
-                             TrimPositions positions,
-                             std::wstring* output) {
-  return TrimStringT(input, kWhitespaceWide, positions, output);
-}
-
-TrimPositions TrimWhitespaceASCII(const std::string& input,
-                                  TrimPositions positions,
-                                  std::string* output) {
-  return TrimStringT(input, kWhitespaceASCII, positions, output);
-}
-
-// This function is only for backward-compatibility.
-// To be removed when all callers are updated.
-TrimPositions TrimWhitespace(const std::string& input,
-                             TrimPositions positions,
-                             std::string* output) {
-  return TrimWhitespaceASCII(input, positions, output);
-}
-
-std::wstring CollapseWhitespace(const std::wstring& text,
-                                bool trim_sequences_with_line_breaks) {
-  std::wstring result;
-  result.resize(text.size());
-
-  // Set flags to pretend we're already in a trimmed whitespace sequence, so we
-  // will trim any leading whitespace.
-  bool in_whitespace = true;
-  bool already_trimmed = true;
-
-  int chars_written = 0;
-  for (std::wstring::const_iterator i(text.begin()); i != text.end(); ++i) {
-    if (IsWhitespace(*i)) {
-      if (!in_whitespace) {
-        // Reduce all whitespace sequences to a single space.
-        in_whitespace = true;
-        result[chars_written++] = L' ';
-      }
-      if (trim_sequences_with_line_breaks && !already_trimmed &&
-          ((*i == '\n') || (*i == '\r'))) {
-        // Whitespace sequences containing CR or LF are eliminated entirely.
-        already_trimmed = true;
-        --chars_written;
-      }
-    } else {
-      // Non-whitespace chracters are copied straight across.
-      in_whitespace = false;
-      already_trimmed = false;
-      result[chars_written++] = *i;
-    }
-  }
-
-  if (in_whitespace && !already_trimmed) {
-    // Any trailing whitespace is eliminated.
-    --chars_written;
-  }
-
-  result.resize(chars_written);
-  return result;
-}
-
-std::string WideToASCII(const std::wstring& wide) {
-  DCHECK(IsStringASCII(wide));
-  return std::string(wide.begin(), wide.end());
-}
-
-std::wstring ASCIIToWide(const std::string& ascii) {
-  DCHECK(IsStringASCII(ascii));
-  return std::wstring(ascii.begin(), ascii.end());
-}
-
-std::string UTF16ToASCII(const string16& utf16) {
-  DCHECK(IsStringASCII(utf16));
-  return std::string(utf16.begin(), utf16.end());
-}
-
-string16 ASCIIToUTF16(const std::string& ascii) {
-  DCHECK(IsStringASCII(ascii));
-  return string16(ascii.begin(), ascii.end());
-}
-
-// Latin1 is just the low range of Unicode, so we can copy directly to convert.
-bool WideToLatin1(const std::wstring& wide, std::string* latin1) {
-  std::string output;
-  output.resize(wide.size());
-  latin1->clear();
-  for (size_t i = 0; i < wide.size(); i++) {
-    if (wide[i] > 255)
-      return false;
-    output[i] = static_cast<char>(wide[i]);
-  }
-  latin1->swap(output);
-  return true;
-}
-
-bool IsString8Bit(const std::wstring& str) {
-  for (size_t i = 0; i < str.length(); i++) {
-    if (str[i] > 255)
-      return false;
-  }
-  return true;
-}
-
-template<class STR>
-static bool DoIsStringASCII(const STR& str) {
-  for (size_t i = 0; i < str.length(); i++) {
-    typename ToUnsigned<typename STR::value_type>::Unsigned c = str[i];
-    if (c > 0x7F)
-      return false;
-  }
-  return true;
-}
-
-bool IsStringASCII(const std::wstring& str) {
-  return DoIsStringASCII(str);
-}
-
-#if !defined(WCHAR_T_IS_UTF16)
-bool IsStringASCII(const string16& str) {
-  return DoIsStringASCII(str);
-}
-#endif
-
-bool IsStringASCII(const std::string& str) {
-  return DoIsStringASCII(str);
-}
+}  // namespace keyczar
 
 // Helper functions that determine whether the given character begins a
 // UTF-8 sequence of bytes with the given length. A character satisfies
@@ -649,213 +200,6 @@ bool IsStringUTF8(const std::string& str) {
   return IsStringUTF8T(str.data(), str.length());
 }
 
-bool IsStringWideUTF8(const std::wstring& str) {
-  return IsStringUTF8T(str.data(), str.length());
-}
-
-template<typename Iter>
-static inline bool DoLowerCaseEqualsASCII(Iter a_begin,
-                                          Iter a_end,
-                                          const char* b) {
-  for (Iter it = a_begin; it != a_end; ++it, ++b) {
-    if (!*b || ToLowerASCII(*it) != *b)
-      return false;
-  }
-  return *b == 0;
-}
-
-// Front-ends for LowerCaseEqualsASCII.
-bool LowerCaseEqualsASCII(const std::string& a, const char* b) {
-  return DoLowerCaseEqualsASCII(a.begin(), a.end(), b);
-}
-
-bool LowerCaseEqualsASCII(const std::wstring& a, const char* b) {
-  return DoLowerCaseEqualsASCII(a.begin(), a.end(), b);
-}
-
-bool LowerCaseEqualsASCII(std::string::const_iterator a_begin,
-                          std::string::const_iterator a_end,
-                          const char* b) {
-  return DoLowerCaseEqualsASCII(a_begin, a_end, b);
-}
-
-bool LowerCaseEqualsASCII(std::wstring::const_iterator a_begin,
-                          std::wstring::const_iterator a_end,
-                          const char* b) {
-  return DoLowerCaseEqualsASCII(a_begin, a_end, b);
-}
-bool LowerCaseEqualsASCII(const char* a_begin,
-                          const char* a_end,
-                          const char* b) {
-  return DoLowerCaseEqualsASCII(a_begin, a_end, b);
-}
-bool LowerCaseEqualsASCII(const wchar_t* a_begin,
-                          const wchar_t* a_end,
-                          const char* b) {
-  return DoLowerCaseEqualsASCII(a_begin, a_end, b);
-}
-
-bool StartsWithASCII(const std::string& str,
-                     const std::string& search,
-                     bool case_sensitive) {
-  if (case_sensitive)
-    return str.compare(0, search.length(), search) == 0;
-  else
-    return base::strncasecmp(str.c_str(), search.c_str(), search.length()) == 0;
-}
-
-bool StartsWith(const std::wstring& str,
-                const std::wstring& search,
-                bool case_sensitive) {
-  if (case_sensitive)
-    return str.compare(0, search.length(), search) == 0;
-  else {
-    if (search.size() > str.size())
-      return false;
-    return std::equal(search.begin(), search.end(), str.begin(),
-                      CaseInsensitiveCompare<wchar_t>());
-  }
-}
-
-DataUnits GetByteDisplayUnits(int64 bytes) {
-  // The byte thresholds at which we display amounts.  A byte count is displayed
-  // in unit U when kUnitThresholds[U] <= bytes < kUnitThresholds[U+1].
-  // This must match the DataUnits enum.
-  static const int64 kUnitThresholds[] = {
-    0,              // DATA_UNITS_BYTE,
-    3*1024,         // DATA_UNITS_KILOBYTE,
-    2*1024*1024,    // DATA_UNITS_MEGABYTE,
-    1024*1024*1024  // DATA_UNITS_GIGABYTE,
-  };
-
-  if (bytes < 0) {
-    NOTREACHED() << "Negative bytes value";
-    return DATA_UNITS_BYTE;
-  }
-
-  int unit_index = arraysize(kUnitThresholds);
-  while (--unit_index > 0) {
-    if (bytes >= kUnitThresholds[unit_index])
-      break;
-  }
-
-  DCHECK(unit_index >= DATA_UNITS_BYTE && unit_index <= DATA_UNITS_GIGABYTE);
-  return DataUnits(unit_index);
-}
-
-// TODO(mpcomplete): deal with locale
-// Byte suffixes.  This must match the DataUnits enum.
-static const wchar_t* const kByteStrings[] = {
-  L"B",
-  L"kB",
-  L"MB",
-  L"GB"
-};
-
-static const wchar_t* const kSpeedStrings[] = {
-  L"B/s",
-  L"kB/s",
-  L"MB/s",
-  L"GB/s"
-};
-
-std::wstring FormatBytesInternal(int64 bytes,
-                                 DataUnits units,
-                                 bool show_units,
-                                 const wchar_t* const* suffix) {
-  if (bytes < 0) {
-    NOTREACHED() << "Negative bytes value";
-    return std::wstring();
-  }
-
-  DCHECK(units >= DATA_UNITS_BYTE && units <= DATA_UNITS_GIGABYTE);
-
-  // Put the quantity in the right units.
-  double unit_amount = static_cast<double>(bytes);
-  for (int i = 0; i < units; ++i)
-    unit_amount /= 1024.0;
-
-  wchar_t tmp[64];
-  // If the first decimal digit is 0, don't show it.
-  double int_part;
-  double fractional_part = modf(unit_amount, &int_part);
-  modf(fractional_part * 10, &int_part);
-  if (int_part == 0) {
-    base::swprintf(tmp, arraysize(tmp),
-                   L"%lld", static_cast<int64>(unit_amount));
-  } else {
-    base::swprintf(tmp, arraysize(tmp), L"%.1lf", unit_amount);
-  }
-
-  std::wstring ret(tmp);
-  if (show_units) {
-    ret += L" ";
-    ret += suffix[units];
-  }
-
-  return ret;
-}
-
-std::wstring FormatBytes(int64 bytes, DataUnits units, bool show_units) {
-  return FormatBytesInternal(bytes, units, show_units, kByteStrings);
-}
-
-std::wstring FormatSpeed(int64 bytes, DataUnits units, bool show_units) {
-  return FormatBytesInternal(bytes, units, show_units, kSpeedStrings);
-}
-
-template<class StringType>
-void DoReplaceSubstringsAfterOffset(StringType* str,
-                                    typename StringType::size_type start_offset,
-                                    const StringType& find_this,
-                                    const StringType& replace_with,
-                                    bool replace_all) {
-  if ((start_offset == StringType::npos) || (start_offset >= str->length()))
-    return;
-
-  DCHECK(!find_this.empty());
-  for (typename StringType::size_type offs(str->find(find_this, start_offset));
-      offs != StringType::npos; offs = str->find(find_this, offs)) {
-    str->replace(offs, find_this.length(), replace_with);
-    offs += replace_with.length();
-
-    if (!replace_all)
-      break;
-  }
-}
-
-void ReplaceFirstSubstringAfterOffset(string16* str,
-                                      string16::size_type start_offset,
-                                      const string16& find_this,
-                                      const string16& replace_with) {
-  DoReplaceSubstringsAfterOffset(str, start_offset, find_this, replace_with,
-                                 false);  // replace first instance
-}
-
-void ReplaceFirstSubstringAfterOffset(std::string* str,
-                                      std::string::size_type start_offset,
-                                      const std::string& find_this,
-                                      const std::string& replace_with) {
-  DoReplaceSubstringsAfterOffset(str, start_offset, find_this, replace_with,
-                                 false);  // replace first instance
-}
-
-void ReplaceSubstringsAfterOffset(string16* str,
-                                  string16::size_type start_offset,
-                                  const string16& find_this,
-                                  const string16& replace_with) {
-  DoReplaceSubstringsAfterOffset(str, start_offset, find_this, replace_with,
-                                 true);  // replace all instances
-}
-
-void ReplaceSubstringsAfterOffset(std::string* str,
-                                  std::string::size_type start_offset,
-                                  const std::string& find_this,
-                                  const std::string& replace_with) {
-  DoReplaceSubstringsAfterOffset(str, start_offset, find_this, replace_with,
-                                 true);  // replace all instances
-}
-
 // Overloaded wrappers around vsnprintf and vswprintf. The buf_size parameter
 // is the size of the buffer. These return the number of characters in the
 // formatted string excluding the NUL terminator. If the buffer is not
@@ -867,13 +211,6 @@ inline int vsnprintfT(char* buffer,
                       const char* format,
                       va_list argptr) {
   return base::vsnprintf(buffer, buf_size, format, argptr);
-}
-
-inline int vsnprintfT(wchar_t* buffer,
-                      size_t buf_size,
-                      const wchar_t* format,
-                      va_list argptr) {
-  return base::vswprintf(buffer, buf_size, format, argptr);
 }
 
 // Templatized backend for StringPrintF/StringAppendF. This does not finalize
@@ -954,7 +291,6 @@ namespace {
 
 template <typename STR, typename INT, typename UINT, bool NEG>
 struct IntToStringT {
-
   // This is to avoid a compiler warning about unary minus on unsigned type.
   // For example, say you had the following code:
   //   template <typename INT>
@@ -1014,38 +350,22 @@ struct IntToStringT {
   }
 };
 
-}
+}  // namespace
 
 std::string IntToString(int value) {
   return IntToStringT<std::string, int, unsigned int, true>::
-      IntToString(value);
-}
-std::wstring IntToWString(int value) {
-  return IntToStringT<std::wstring, int, unsigned int, true>::
       IntToString(value);
 }
 std::string UintToString(unsigned int value) {
   return IntToStringT<std::string, unsigned int, unsigned int, false>::
       IntToString(value);
 }
-std::wstring UintToWString(unsigned int value) {
-  return IntToStringT<std::wstring, unsigned int, unsigned int, false>::
-      IntToString(value);
-}
 std::string Int64ToString(int64 value) {
   return IntToStringT<std::string, int64, uint64, true>::
       IntToString(value);
 }
-std::wstring Int64ToWString(int64 value) {
-  return IntToStringT<std::wstring, int64, uint64, true>::
-      IntToString(value);
-}
 std::string Uint64ToString(uint64 value) {
   return IntToStringT<std::string, uint64, uint64, false>::
-      IntToString(value);
-}
-std::wstring Uint64ToWString(uint64 value) {
-  return IntToStringT<std::wstring, uint64, uint64, false>::
       IntToString(value);
 }
 
@@ -1053,25 +373,10 @@ void StringAppendV(std::string* dst, const char* format, va_list ap) {
   StringAppendVT<char>(dst, format, ap);
 }
 
-void StringAppendV(std::wstring* dst,
-                   const wchar_t* format,
-                   va_list ap) {
-  StringAppendVT<wchar_t>(dst, format, ap);
-}
-
 std::string StringPrintf(const char* format, ...) {
   va_list ap;
   va_start(ap, format);
   std::string result;
-  StringAppendV(&result, format, ap);
-  va_end(ap);
-  return result;
-}
-
-std::wstring StringPrintf(const wchar_t* format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  std::wstring result;
   StringAppendV(&result, format, ap);
   va_end(ap);
   return result;
@@ -1086,213 +391,11 @@ const std::string& SStringPrintf(std::string* dst, const char* format, ...) {
   return *dst;
 }
 
-const std::wstring& SStringPrintf(std::wstring* dst,
-                                  const wchar_t* format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  dst->clear();
-  StringAppendV(dst, format, ap);
-  va_end(ap);
-  return *dst;
-}
-
 void StringAppendF(std::string* dst, const char* format, ...) {
   va_list ap;
   va_start(ap, format);
   StringAppendV(dst, format, ap);
   va_end(ap);
-}
-
-void StringAppendF(std::wstring* dst, const wchar_t* format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  StringAppendV(dst, format, ap);
-  va_end(ap);
-}
-
-template<typename STR>
-static void SplitStringT(const STR& str,
-                         const typename STR::value_type s,
-                         bool trim_whitespace,
-                         std::vector<STR>* r) {
-  size_t last = 0;
-  size_t i;
-  size_t c = str.size();
-  for (i = 0; i <= c; ++i) {
-    if (i == c || str[i] == s) {
-      size_t len = i - last;
-      STR tmp = str.substr(last, len);
-      if (trim_whitespace) {
-        STR t_tmp;
-        TrimWhitespace(tmp, TRIM_ALL, &t_tmp);
-        r->push_back(t_tmp);
-      } else {
-        r->push_back(tmp);
-      }
-      last = i + 1;
-    }
-  }
-}
-
-void SplitString(const std::wstring& str,
-                 wchar_t s,
-                 std::vector<std::wstring>* r) {
-  SplitStringT(str, s, true, r);
-}
-
-void SplitString(const std::string& str,
-                 char s,
-                 std::vector<std::string>* r) {
-  SplitStringT(str, s, true, r);
-}
-
-void SplitStringDontTrim(const std::wstring& str,
-                         wchar_t s,
-                         std::vector<std::wstring>* r) {
-  SplitStringT(str, s, false, r);
-}
-
-void SplitStringDontTrim(const std::string& str,
-                         char s,
-                         std::vector<std::string>* r) {
-  SplitStringT(str, s, false, r);
-}
-
-void SplitStringAlongWhitespace(const std::wstring& str,
-                                std::vector<std::wstring>* result) {
-  const size_t length = str.length();
-  if (!length)
-    return;
-
-  bool last_was_ws = false;
-  size_t last_non_ws_start = 0;
-  for (size_t i = 0; i < length; ++i) {
-    switch(str[i]) {
-      // HTML 5 defines whitespace as: space, tab, LF, line tab, FF, or CR.
-      case L' ':
-      case L'\t':
-      case L'\xA':
-      case L'\xB':
-      case L'\xC':
-      case L'\xD':
-        if (!last_was_ws) {
-          if (i > 0) {
-            result->push_back(
-                str.substr(last_non_ws_start, i - last_non_ws_start));
-          }
-          last_was_ws = true;
-        }
-        break;
-
-      default:  // Not a space character.
-        if (last_was_ws) {
-          last_was_ws = false;
-          last_non_ws_start = i;
-        }
-        break;
-    }
-  }
-  if (!last_was_ws) {
-    result->push_back(
-              str.substr(last_non_ws_start, length - last_non_ws_start));
-  }
-}
-
-template <class CHAR>
-static bool IsWildcard(CHAR character) {
-  return character == '*' || character == '?';
-}
-
-// Move the strings pointers to the point where they start to differ.
-template <class CHAR>
-static void EatSameChars(const CHAR** pattern, const CHAR** string) {
-  bool escaped = false;
-  while (**pattern && **string) {
-    if (!escaped && IsWildcard(**pattern)) {
-      // We don't want to match wildcard here, except if it's escaped.
-      return;
-    }
-
-    // Check if the escapement char is found. If so, skip it and move to the
-    // next character.
-    if (!escaped && **pattern == L'\\') {
-      escaped = true;
-      (*pattern)++;
-      continue;
-    }
-
-    // Check if the chars match, if so, increment the ptrs.
-    if (**pattern == **string) {
-      (*pattern)++;
-      (*string)++;
-    } else {
-      // Uh ho, it did not match, we are done. If the last char was an
-      // escapement, that means that it was an error to advance the ptr here,
-      // let's put it back where it was. This also mean that the MatchPattern
-      // function will return false because if we can't match an escape char
-      // here, then no one will.
-      if (escaped) {
-        (*pattern)--;
-      }
-      return;
-    }
-
-    escaped = false;
-  }
-}
-
-template <class CHAR>
-static void EatWildcard(const CHAR** pattern) {
-  while(**pattern) {
-    if (!IsWildcard(**pattern))
-      return;
-    (*pattern)++;
-  }
-}
-
-// The following code is compatible with the OpenBSD lcpy interface.  See:
-//   http://www.gratisoft.us/todd/papers/strlcpy.html
-//   ftp://ftp.openbsd.org/pub/OpenBSD/src/lib/libc/string/{wcs,str}lcpy.c
-
-namespace {
-
-template <typename CHAR>
-size_t lcpyT(CHAR* dst, const CHAR* src, size_t dst_size) {
-  for (size_t i = 0; i < dst_size; ++i) {
-    if ((dst[i] = src[i]) == 0)  // We hit and copied the terminating NULL.
-      return i;
-  }
-
-  // We were left off at dst_size.  We over copied 1 byte.  Null terminate.
-  if (dst_size != 0)
-    dst[dst_size - 1] = 0;
-
-  // Count the rest of the |src|, and return it's length in characters.
-  while (src[dst_size]) ++dst_size;
-  return dst_size;
-}
-
-}  // namespace
-
-size_t base::strlcpy(char* dst, const char* src, size_t dst_size) {
-  return lcpyT<char>(dst, src, dst_size);
-}
-size_t base::wcslcpy(wchar_t* dst, const wchar_t* src, size_t dst_size) {
-  return lcpyT<wchar_t>(dst, src, dst_size);
-}
-
-std::string HexEncode(const void* bytes, size_t size) {
-  static const char kHexChars[] = "0123456789ABCDEF";
-
-  // Each input byte creates two output hex characters.
-  std::string ret(size * 2, '\0');
-
-  for (size_t i = 0; i < size; ++i) {
-    char b = reinterpret_cast<const char*>(bytes)[i];
-    ret[(i * 2)] = kHexChars[(b >> 4) & 0xf];
-    ret[(i * 2) + 1] = kHexChars[b & 0xf];
-  }
-  return ret;
 }
 
 // Protocol Buffers - Google's data interchange format

@@ -14,6 +14,7 @@
 #ifndef KEYCZAR_OPENSSL_UTIL_H_
 #define KEYCZAR_OPENSSL_UTIL_H_
 
+#include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
@@ -45,14 +46,25 @@ typedef scoped_ptr_malloc<BIGNUM, OSSLDestroyer<BIGNUM,
 typedef scoped_ptr_malloc<
     EVP_PKEY, OSSLDestroyer<EVP_PKEY, EVP_PKEY_free> > ScopedEVPPKey;
 
+typedef scoped_ptr_malloc<
+    BIO, OSSLDestroyer<BIO, BIO_free_all> > ScopedBIO;
+
 void PrintOSSLErrors();
 
 // Reads a private key |filename| with the associated |passphrase|. |passphrase|
-// is optionnal, if the value NULL is provided instead but that a passprhase is
-// required an interactive prompt will be issued. The caller takes ownership of
-// the returned key object.
-EVP_PKEY* ReadPEMKeyFromFile(const std::string& filename,
-                             const std::string* passphrase);
+// is optional, if its value is NULL but that a passprhase is required an
+// interactive prompt will be echoed. The caller takes ownership of the returned
+// key object.
+EVP_PKEY* ReadPEMPrivateKeyFromFile(const std::string& filename,
+                                    const std::string* passphrase);
+
+// Writes |passphrase| encrypted privated key |key| to file |filename|. If
+// |passphrase| is NULL a passphrase will be prompted interactively. This
+// fucntion returns false if it fails. Cipher used for encrypting |key| is
+// AES 128 bits applied under PKCS#5 v2.0 specifications. The caller keeps
+// ownership of |key|.
+bool WritePEMPrivateKeyToFile(EVP_PKEY* key, const std::string& filename,
+                              const std::string* passphrase);
 
 }  // namespace openssl
 

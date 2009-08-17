@@ -26,7 +26,7 @@
 #include <keyczar/dsa_public_key.h>
 #include <keyczar/key_type.h>
 #include <keyczar/keyczar_test.h>
-#include <keyczar/keyset_file_reader.h>
+#include <keyczar/rw/keyset_file_reader.h>
 
 namespace keyczar {
 
@@ -35,7 +35,7 @@ class DSATest : public KeyczarTest {
   // Loads public key from JSON file.
   scoped_refptr<DSAPublicKey> LoadDSAPublicKey(const FilePath& path,
                                                int key_version) {
-    KeysetJSONFileReader reader(path);
+    rw::KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
     scoped_refptr<DSAPublicKey> public_key(DSAPublicKey::CreateFromValue(
@@ -46,11 +46,9 @@ class DSATest : public KeyczarTest {
 };
 
 TEST_F(DSATest, GenerateSignAndVerify) {
-  scoped_ptr<KeyType> dsa_type(KeyType::Create("DSA_PRIV"));
-  ASSERT_TRUE(dsa_type.get());
-  const std::vector<int> sizes = dsa_type->sizes();
-
+  const std::vector<int> sizes = KeyType::CipherSizes(KeyType::DSA_PRIV);
   scoped_refptr<DSAPrivateKey> private_key;
+
   for (std::vector<int>::const_iterator iter = sizes.begin();
        iter != sizes.end(); ++iter) {
     // Generates a new private key.
@@ -71,11 +69,11 @@ TEST_F(DSATest, VerifyDumpedSignature) {
   // Try to verify the signature file
   std::string b64w_signature;
   FilePath signature_file = data_path_.Append("dsa");
-  signature_file = signature_file.AppendASCII("2.out");
-  EXPECT_TRUE(file_util::ReadFileToString(signature_file,
-                                          &b64w_signature));
+  signature_file = signature_file.Append("2.out");
+  EXPECT_TRUE(base::ReadFileToString(signature_file,
+                                     &b64w_signature));
   std::string signature;
-  EXPECT_TRUE(Base64WDecode(b64w_signature, &signature));
+  EXPECT_TRUE(base::Base64WDecode(b64w_signature, &signature));
 
   // Checks signature
   input_data_.push_back(Key::GetVersionByte());
@@ -84,22 +82,44 @@ TEST_F(DSATest, VerifyDumpedSignature) {
                                      Key::GetHeaderSize())));
 }
 
-TEST_F(DSATest, LoadPEMKey) {
-  const FilePath dsa_pem_path = data_path_.AppendASCII("dsa_pem");
+TEST_F(DSATest, LoadPEMPrivateKey) {
+  const FilePath dsa_pem_path = data_path_.Append("dsa_pem");
   scoped_refptr<DSAPrivateKey> private_key;
 
-  const FilePath simple_key = dsa_pem_path.AppendASCII("dsa_priv.pem");
-  private_key = DSAPrivateKey::CreateFromPEMKey(simple_key.value(), NULL);
+  const FilePath simple_key = dsa_pem_path.Append("dsa_priv.pem");
+  private_key = DSAPrivateKey::CreateFromPEMPrivateKey(simple_key.value(),
+                                                       NULL);
   EXPECT_TRUE(private_key);
 
   const std::string passphrase("cartman");
-  const FilePath protected_key = dsa_pem_path.AppendASCII(
+  const FilePath protected_key = dsa_pem_path.Append(
       "dsa_priv_encrypted.pem");
-  private_key = DSAPrivateKey::CreateFromPEMKey(protected_key.value(),
-                                                &passphrase);
+  private_key = DSAPrivateKey::CreateFromPEMPrivateKey(protected_key.value(),
+                                                       &passphrase);
   EXPECT_TRUE(private_key);
 
   // Attempts to sign and verify input data.
+  std::string signature;
+  EXPECT_TRUE(private_key->Sign(input_data_, &signature));
+  EXPECT_TRUE(private_key->Verify(input_data_, signature));
+}
+
+TEST_F(DSATest, ExportAndImportPrivateKey) {
+  const FilePath pem = temp_path_.Append("dsa.pem");
+  const std::string password("cartman");
+
+  scoped_refptr<DSAPrivateKey> private_key = DSAPrivateKey::GenerateKey(2048);
+  ASSERT_TRUE(private_key.get());
+
+  // Exports private key
+  EXPECT_TRUE(private_key->ExportPrivateKey(pem.value(), &password));
+
+  // Reloads private key
+  scoped_refptr<DSAPrivateKey> imported_key =
+      DSAPrivateKey::CreateFromPEMPrivateKey(pem.value(), &password);
+  ASSERT_TRUE(imported_key.get());
+
+  // Sign data and verify
   std::string signature;
   EXPECT_TRUE(private_key->Sign(input_data_, &signature));
   EXPECT_TRUE(private_key->Verify(input_data_, signature));

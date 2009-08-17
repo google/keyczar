@@ -30,31 +30,31 @@ DSAPrivateKey* DSAPrivateKey::CreateFromValue(const Value& root_key) {
 
   DSAImpl::DSAIntermediateKey intermediate_key;
 
-  if (!util::DeserializeString(*private_key, L"x", &intermediate_key.x))
+  if (!util::SafeDeserializeString(*private_key, "x", &intermediate_key.x))
     return NULL;
 
   int size;
-  if (!private_key->GetInteger(L"size", &size))
+  if (!private_key->GetInteger("size", &size))
     return NULL;
 
   DictionaryValue* public_key = NULL;
-  if (!private_key->GetDictionary(L"publicKey", &public_key))
+  if (!private_key->GetDictionary("publicKey", &public_key))
     return NULL;
 
   if (public_key == NULL)
     return NULL;
 
-  if (!util::DeserializeString(*public_key, L"p", &intermediate_key.p))
+  if (!util::DeserializeString(*public_key, "p", &intermediate_key.p))
     return NULL;
-  if (!util::DeserializeString(*public_key, L"q", &intermediate_key.q))
+  if (!util::DeserializeString(*public_key, "q", &intermediate_key.q))
     return NULL;
-  if (!util::DeserializeString(*public_key, L"g", &intermediate_key.g))
+  if (!util::DeserializeString(*public_key, "g", &intermediate_key.g))
     return NULL;
-  if (!util::DeserializeString(*public_key, L"y", &intermediate_key.y))
+  if (!util::DeserializeString(*public_key, "y", &intermediate_key.y))
     return NULL;
 
   int size_public;
-  if (!public_key->GetInteger(L"size", &size_public))
+  if (!public_key->GetInteger("size", &size_public))
     return NULL;
 
   scoped_ptr<DSAImpl> dsa_private_key_impl(
@@ -64,7 +64,7 @@ DSAPrivateKey* DSAPrivateKey::CreateFromValue(const Value& root_key) {
 
   // Check the provided size is valid.
   if (size != size_public || size != dsa_private_key_impl->Size() ||
-      !IsValidSize("DSA_PRIV", size))
+      !KeyType::IsValidCipherSize(KeyType::DSA_PRIV, size))
     return NULL;
 
   scoped_ptr<DSAImpl> dsa_public_key_impl(
@@ -84,7 +84,7 @@ DSAPrivateKey* DSAPrivateKey::CreateFromValue(const Value& root_key) {
 
 // static
 DSAPrivateKey* DSAPrivateKey::GenerateKey(int size) {
-  if (!IsValidSize("DSA_PRIV", size))
+  if (!KeyType::IsValidCipherSize(KeyType::DSA_PRIV, size))
     return NULL;
 
   scoped_ptr<DSAImpl> dsa_private_key_impl(
@@ -98,7 +98,8 @@ DSAPrivateKey* DSAPrivateKey::GenerateKey(int size) {
     return NULL;
 
   DSAImpl::DSAIntermediateKey intermediate_public_key;
-  dsa_private_key_impl->GetPublicAttributes(&intermediate_public_key);
+  if (!dsa_private_key_impl->GetPublicAttributes(&intermediate_public_key))
+     return NULL;
 
   scoped_ptr<DSAImpl> dsa_public_key_impl(
       CryptoFactory::CreatePublicDSA(intermediate_public_key));
@@ -116,10 +117,10 @@ DSAPrivateKey* DSAPrivateKey::GenerateKey(int size) {
 }
 
 // static
-DSAPrivateKey* DSAPrivateKey::CreateFromPEMKey(const std::string& filename,
-                                               const std::string* passphrase) {
+DSAPrivateKey* DSAPrivateKey::CreateFromPEMPrivateKey(
+    const std::string& filename, const std::string* passphrase) {
   scoped_ptr<DSAImpl> dsa_private_key_impl(
-      CryptoFactory::CreatePrivateDSAFromPEMKey(filename, passphrase));
+      CryptoFactory::CreatePrivateDSAFromPEMPrivateKey(filename, passphrase));
   if (dsa_private_key_impl.get() == NULL)
     return NULL;
 
@@ -130,11 +131,12 @@ DSAPrivateKey* DSAPrivateKey::CreateFromPEMKey(const std::string& filename,
   // bit. This key would be valid but for the consistency of our key set it
   // is rejected.
   const int size = dsa_private_key_impl->Size();
-  if (!IsValidSize("DSA_PRIV", size))
+  if (!KeyType::IsValidCipherSize(KeyType::DSA_PRIV, size))
     return NULL;
 
   DSAImpl::DSAIntermediateKey intermediate_public_key;
-  dsa_private_key_impl->GetPublicAttributes(&intermediate_public_key);
+  if (!dsa_private_key_impl->GetPublicAttributes(&intermediate_public_key))
+     return NULL;
 
   scoped_ptr<DSAImpl> dsa_public_key_impl(
       CryptoFactory::CreatePublicDSA(intermediate_public_key));
@@ -160,20 +162,27 @@ Value* DSAPrivateKey::GetValue() const {
   if (!dsa_impl()->GetAttributes(&intermediate_key))
     return NULL;
 
-  if (!util::SerializeString(intermediate_key.x, L"x", private_key.get()))
+  if (!util::SafeSerializeString(intermediate_key.x, "x", private_key.get()))
     return NULL;
 
-  if (!private_key->SetInteger(L"size", size()))
+  if (!private_key->SetInteger("size", size()))
     return NULL;
 
   Value* public_key_value = public_key()->GetValue();
   if (public_key_value == NULL)
     return NULL;
 
-  if (!private_key->Set(L"publicKey", public_key_value))
+  if (!private_key->Set("publicKey", public_key_value))
     return NULL;
 
   return private_key.release();
+}
+
+bool DSAPrivateKey::ExportPrivateKey(const std::string& filename,
+                                     const std::string* passphrase) const {
+  if (dsa_impl() == NULL)
+    return false;
+  return dsa_impl()->ExportPrivateKey(filename, passphrase);
 }
 
 bool DSAPrivateKey::Sign(const std::string& data,
@@ -195,7 +204,7 @@ bool DSAPrivateKey::Sign(const std::string& data,
   DSAImpl::DSAIntermediateKey dsa_public_key;
   if (!dsa_impl()->GetPublicAttributes(&dsa_public_key))
     return false;
-  int q_length = dsa_public_key.q.length();
+  const uint32 q_length = dsa_public_key.q.length();
   if (message_digest.length() > q_length)
     message_digest = message_digest.substr(0, q_length);
 

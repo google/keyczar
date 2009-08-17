@@ -18,8 +18,8 @@
 #include <keyczar/base/values.h>
 #include <keyczar/keyczar_test.h>
 #include <keyczar/keyset_metadata.h>
-#include <keyczar/keyset_file_reader.h>
-#include <keyczar/keyset_file_writer.h>
+#include <keyczar/rw/keyset_file_reader.h>
+#include <keyczar/rw/keyset_file_writer.h>
 
 namespace keyczar {
 
@@ -30,7 +30,7 @@ TEST_F(KeysetMetadataTest, CreateFromValue) {
   FilePath aes_path = data_path_.Append("aes");
 
   // Deserialize
-  KeysetJSONFileReader reader(aes_path.value());
+  rw::KeysetJSONFileReader reader(aes_path.value());
   scoped_ptr<Value> root_metadata(reader.ReadMetadata());
   EXPECT_NE(static_cast<Value*>(NULL), root_metadata.get());
 
@@ -42,13 +42,13 @@ TEST_F(KeysetMetadataTest, CreateFromValue) {
   EXPECT_NE(static_cast<Value*>(NULL), root_copy.get());
 
   // Serialize
-  FilePath written_meta = temp_path_.AppendASCII("meta");
-  KeysetJSONFileWriter writer(temp_path_.value());
+  FilePath written_meta = temp_path_.Append("meta");
+  rw::KeysetJSONFileWriter writer(temp_path_.value());
   EXPECT_TRUE(writer.WriteMetadata(*root_copy));
-  ASSERT_TRUE(file_util::PathExists(written_meta));
+  ASSERT_TRUE(base::PathExists(written_meta));
 
   // Compare
-  KeysetJSONFileReader reader_copy(temp_path_.value());
+  rw::KeysetJSONFileReader reader_copy(temp_path_.value());
   scoped_ptr<Value> root_metadata_copy(reader_copy.ReadMetadata());
   EXPECT_NE(static_cast<Value*>(NULL), root_metadata_copy.get());
 #ifndef COMPAT_KEYCZAR_06B
@@ -59,7 +59,7 @@ TEST_F(KeysetMetadataTest, CreateFromValue) {
 TEST_F(KeysetMetadataTest, WithoutNextKeyVersionNumber) {
   FilePath aes_path = data_path_.Append("aes-crypted");
 
-  KeysetJSONFileReader reader(aes_path.value());
+  rw::KeysetJSONFileReader reader(aes_path.value());
   scoped_ptr<Value> root_metadata(reader.ReadMetadata());
   EXPECT_NE(static_cast<Value*>(NULL), root_metadata.get());
 

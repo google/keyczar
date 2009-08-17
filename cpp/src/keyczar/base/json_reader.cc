@@ -2,25 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This source code was copied from Chromium and has been modified to fit
-// with Keyczar, any encountered errors are probably due to these
-// modifications.
-
 #include <keyczar/base/json_reader.h>
 
 #include <keyczar/base/logging.h>
 #include <keyczar/base/scoped_ptr.h>
+#include <keyczar/base/stl_util-inl.h>
 #include <keyczar/base/string_util.h>
-#include <keyczar/base/sys_string_conversions.h>
 #include <keyczar/base/values.h>
+
+namespace keyczar {
+namespace base {
 
 static const JSONReader::Token kInvalidToken(JSONReader::Token::INVALID_TOKEN,
                                              0, 0);
-static const int kStackLimit = 100;
+}  // namespace base
+}  // namespace keyczar
 
 namespace {
 
-inline int HexToInt(wchar_t c) {
+static const int kStackLimit = 100;
+
+inline int HexToInt(char c) {
   if ('0' <= c && c <= '9') {
     return c - '0';
   } else if ('A' <= c && c <= 'F') {
@@ -35,12 +37,13 @@ inline int HexToInt(wchar_t c) {
 // A helper method for ParseNumberToken.  It reads an int from the end of
 // token.  The method returns false if there is no valid integer at the end of
 // the token.
-bool ReadInt(JSONReader::Token& token, bool can_have_leading_zeros) {
-  wchar_t first = token.NextChar();
+bool ReadInt(keyczar::base::JSONReader::Token& token,
+             bool can_have_leading_zeros) {
+  char first = token.NextChar();
   int len = 0;
 
   // Read in more digits
-  wchar_t c = first;
+  char c = first;
   while ('\0' != c && '0' <= c && c <= '9') {
     ++token.length;
     ++len;
@@ -59,9 +62,10 @@ bool ReadInt(JSONReader::Token& token, bool can_have_leading_zeros) {
 // A helper method for ParseStringToken.  It reads |digits| hex digits from the
 // token. If the sequence if digits is not valid (contains other characters),
 // the method returns false.
-bool ReadHexDigits(JSONReader::Token& token, int digits) {
+bool ReadHexDigits(keyczar::base::JSONReader::Token& token,
+                   int digits) {
   for (int i = 1; i <= digits; ++i) {
-    wchar_t c = *(token.begin + token.length + i);
+    char c = *(token.begin + token.length + i);
     if ('\0' == c)
       return false;
     if (!(('0' <= c && c <= '9') || ('a' <= c && c <= 'f') ||
@@ -75,6 +79,9 @@ bool ReadHexDigits(JSONReader::Token& token, int digits) {
 }
 
 }  // anonymous namespace
+
+namespace keyczar {
+namespace base {
 
 const char* JSONReader::kBadRootElementType =
     "Root value must be an array or object.";
@@ -114,13 +121,6 @@ Value* JSONReader::ReadAndReturnError(const std::string& json,
   return NULL;
 }
 
-/* static */
-std::string JSONReader::FormatErrorMessage(int line, int column,
-                                           const char* description) {
-  return StringPrintf("Line: %i, column: %i, %s",
-                      line, column, description);
-}
-
 JSONReader::JSONReader()
   : start_pos_(NULL), json_pos_(NULL), stack_depth_(0),
     allow_trailing_comma_(false) {}
@@ -133,20 +133,7 @@ Value* JSONReader::JsonToValue(const std::string& json, bool check_root,
     return NULL;
   }
 
-  // The conversion from UTF8 to wstring removes null bytes for us
-  // (a good thing).
-  std::wstring json_wide(UTF8ToWide(json));
-  start_pos_ = json_wide.c_str();
-
-  // When the input JSON string starts with a UTF-8 Byte-Order-Mark
-  // (0xEF, 0xBB, 0xBF), the UTF8ToWide() function converts it to a Unicode
-  // BOM (U+FEFF). To avoid the JSONReader::BuildValue() function from
-  // mis-treating a Unicode BOM as an invalid character and returning NULL,
-  // skip a converted Unicode BOM if it exists.
-  if (!json_wide.empty() && start_pos_[0] == 0xFEFF) {
-    ++start_pos_;
-  }
-
+  start_pos_ = json.c_str();
   json_pos_ = start_pos_;
   allow_trailing_comma_ = allow_trailing_comma;
   stack_depth_ = 0;
@@ -267,8 +254,7 @@ Value* JSONReader::BuildValue(bool is_root) {
           if (!dict_key_value.get())
             return NULL;
 
-          // Convert the key into a wstring.
-          std::wstring dict_key;
+          std::string dict_key;
           bool success = dict_key_value->GetAsString(&dict_key);
           DCHECK(success);
 
@@ -325,7 +311,7 @@ JSONReader::Token JSONReader::ParseNumberToken() {
   // We just grab the number here.  We validate the size in DecodeNumber.
   // According   to RFC4627, a valid number is: [minus] int [frac] [exp]
   Token token(Token::NUMBER, json_pos_, 0);
-  wchar_t c = *json_pos_;
+  char c = *json_pos_;
   if ('-' == c) {
     ++token.length;
     c = token.NextChar();
@@ -359,15 +345,15 @@ JSONReader::Token JSONReader::ParseNumberToken() {
 }
 
 Value* JSONReader::DecodeNumber(const Token& token) {
-  const std::wstring num_string(token.begin, token.length);
+  const std::string num_string(token.begin, token.length);
   char* enptr = NULL;
-  int num_int = strto32(base::SysWideToUTF8(num_string).c_str(), &enptr, 10);
+  int num_int = strto32(num_string.c_str(), &enptr, 10);
   return Value::CreateIntegerValue(num_int);
 }
 
 JSONReader::Token JSONReader::ParseStringToken() {
   Token token(Token::STRING, json_pos_, 1);
-  wchar_t c = token.NextChar();
+  char c = token.NextChar();
   while ('\0' != c) {
     if ('\\' == c) {
       ++token.length;
@@ -411,11 +397,11 @@ JSONReader::Token JSONReader::ParseStringToken() {
 }
 
 Value* JSONReader::DecodeString(const Token& token) {
-  std::wstring decoded_str;
-  decoded_str.reserve(token.length - 2);
+  ScopedSafeString decoded_str(new std::string());
+  decoded_str->reserve(token.length - 2);
 
   for (int i = 1; i < token.length - 1; ++i) {
-    wchar_t c = *(token.begin + i);
+    char c = *(token.begin + i);
     if ('\\' == c) {
       ++i;
       c = *(token.begin + i);
@@ -423,37 +409,37 @@ Value* JSONReader::DecodeString(const Token& token) {
         case '"':
         case '/':
         case '\\':
-          decoded_str.push_back(c);
+          decoded_str->push_back(c);
           break;
         case 'b':
-          decoded_str.push_back('\b');
+          decoded_str->push_back('\b');
           break;
         case 'f':
-          decoded_str.push_back('\f');
+          decoded_str->push_back('\f');
           break;
         case 'n':
-          decoded_str.push_back('\n');
+          decoded_str->push_back('\n');
           break;
         case 'r':
-          decoded_str.push_back('\r');
+          decoded_str->push_back('\r');
           break;
         case 't':
-          decoded_str.push_back('\t');
+          decoded_str->push_back('\t');
           break;
         case 'v':
-          decoded_str.push_back('\v');
+          decoded_str->push_back('\v');
           break;
 
         case 'x':
-          decoded_str.push_back((HexToInt(*(token.begin + i + 1)) << 4) +
-                                HexToInt(*(token.begin + i + 2)));
+          decoded_str->push_back((HexToInt(*(token.begin + i + 1)) << 4) +
+                                 HexToInt(*(token.begin + i + 2)));
           i += 2;
           break;
         case 'u':
-          decoded_str.push_back((HexToInt(*(token.begin + i + 1)) << 12 ) +
-                                (HexToInt(*(token.begin + i + 2)) << 8) +
-                                (HexToInt(*(token.begin + i + 3)) << 4) +
-                                HexToInt(*(token.begin + i + 4)));
+          decoded_str->push_back((HexToInt(*(token.begin + i + 1)) << 12) +
+                                 (HexToInt(*(token.begin + i + 2)) << 8) +
+                                 (HexToInt(*(token.begin + i + 3)) << 4) +
+                                 HexToInt(*(token.begin + i + 4)));
           i += 4;
           break;
 
@@ -465,16 +451,17 @@ Value* JSONReader::DecodeString(const Token& token) {
       }
     } else {
       // Not escaped
-      decoded_str.push_back(c);
+      decoded_str->push_back(c);
     }
   }
-  return Value::CreateStringValue(decoded_str);
+
+  return  Value::CreateStringValue(*decoded_str);
 }
 
 JSONReader::Token JSONReader::ParseToken() {
-  static const std::wstring kNullString(L"null");
-  static const std::wstring kTrueString(L"true");
-  static const std::wstring kFalseString(L"false");
+  static const std::string kNullString("null");
+  static const std::string kTrueString("true");
+  static const std::string kFalseString("false");
 
   EatWhitespaceAndComments();
 
@@ -544,7 +531,7 @@ JSONReader::Token JSONReader::ParseToken() {
   return token;
 }
 
-bool JSONReader::NextStringMatch(const std::wstring& str) {
+bool JSONReader::NextStringMatch(const std::string& str) {
   for (size_t i = 0; i < str.length(); ++i) {
     if ('\0' == *json_pos_)
       return false;
@@ -579,7 +566,7 @@ bool JSONReader::EatComment() {
   if ('/' != *json_pos_)
     return false;
 
-  wchar_t next_char = *(json_pos_ + 1);
+  char next_char = *(json_pos_ + 1);
   if ('/' == next_char) {
     // Line comment, read until \n or \r
     json_pos_ += 2;
@@ -614,12 +601,12 @@ bool JSONReader::EatComment() {
 }
 
 void JSONReader::SetErrorMessage(const char* description,
-                                 const wchar_t* error_pos) {
+                                 const char* error_pos) {
   int line_number = 1;
   int column_number = 1;
 
   // Figure out the line and column the error occured at.
-  for (const wchar_t* pos = start_pos_; pos != error_pos; ++pos) {
+  for (const char* pos = start_pos_; pos != error_pos; ++pos) {
     if (*pos == '\0') {
       NOTREACHED();
       return;
@@ -633,5 +620,13 @@ void JSONReader::SetErrorMessage(const char* description,
     }
   }
 
-  error_message_ = FormatErrorMessage(line_number, column_number, description);
+  error_message_.append("Line: ");
+  error_message_.append(IntToString(line_number));
+  error_message_.append(", column: ");
+  error_message_.append(IntToString(column_number));
+  error_message_.append(description);
+  error_message_.append("\n");
 }
+
+}  // namespace base
+}  // namespace keyczar

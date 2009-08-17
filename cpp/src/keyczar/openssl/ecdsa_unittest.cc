@@ -64,33 +64,40 @@ TEST_F(ECDSAOpenSSLTest, GenerateKeyAndSign) {
   EXPECT_TRUE(ecdsa->Verify(message_digest, signed_message_digest));
 }
 
-TEST_F(ECDSAOpenSSLTest, ExportToPEMFile) {
+TEST_F(ECDSAOpenSSLTest, ExportPrivateKey) {
   scoped_ptr<ECDSAOpenSSL> ecdsa(
       ECDSAOpenSSL::GenerateKey(ECDSAImpl::PRIME192V1));
   ASSERT_TRUE(ecdsa.get());
 
-  FilePath pem_file = temp_path_.Append("1_pub.pem");
-  ecdsa->WriteKeyToPEMFile(pem_file.value());
-  EXPECT_TRUE(file_util::PathExists(pem_file));
+  const FilePath pem_file = temp_path_.Append("ecdsa_priv.pem");
+  const std::string passphrase("cartman");
+
+  EXPECT_TRUE(ecdsa->ExportPrivateKey(pem_file.value(), &passphrase));
+  EXPECT_TRUE(base::PathExists(pem_file));
+
+  scoped_ptr<ECDSAOpenSSL> ecdsa_imported(ECDSAOpenSSL::CreateFromPEMPrivateKey(
+                                              pem_file.value(), &passphrase));
+  ASSERT_TRUE(ecdsa_imported.get());
+  EXPECT_TRUE(ecdsa->Equals(*ecdsa_imported));
 }
 
 // Keys were created with these commands:
 //
 // openssl ecparam -out ec_param.pem -name prime256v1
 // openssl ecparam -in ec_param.pem -genkey -out ec_priv.pem
-// openssl ecparam -in ec_param.pem -genkey | openssl ec -aes256 -out \
+// openssl ecparam -in ec_param.pem -genkey | openssl ec -aes256 -out
 //    ec_priv_encrypted.pem
 //    with 'cartman' as passphrase
-TEST_F(ECDSAOpenSSLTest, CreateFromPEMKey) {
+TEST_F(ECDSAOpenSSLTest, CreateFromPEMPrivateKey) {
   const FilePath ec_pem = data_path_.Append("ec_pem");
 
-  scoped_ptr<ECDSAOpenSSL> ecdsa(ECDSAOpenSSL::CreateFromPEMKey(
-                                 ec_pem.Append("ec_priv.pem").value(),
-                                 NULL));
+  scoped_ptr<ECDSAOpenSSL> ecdsa(ECDSAOpenSSL::CreateFromPEMPrivateKey(
+                                     ec_pem.Append("ec_priv.pem").value(),
+                                     NULL));
   EXPECT_TRUE(ecdsa.get());
 
   const std::string passphrase("cartman");
-  ecdsa.reset(ECDSAOpenSSL::CreateFromPEMKey(
+  ecdsa.reset(ECDSAOpenSSL::CreateFromPEMPrivateKey(
                   ec_pem.Append("ec_priv_encrypted.pem").value(),
                   &passphrase));
   EXPECT_TRUE(ecdsa.get());

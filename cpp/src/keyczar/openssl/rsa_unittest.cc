@@ -82,15 +82,22 @@ TEST_F(RSAOpenSSLTest, GenerateKeyAndSign) {
                           message_digest, signed_message_digest));
 }
 
-TEST_F(RSAOpenSSLTest, WriteToPEMFile) {
-  int size = 1024;
+TEST_F(RSAOpenSSLTest, ExportPrivateKey) {
+  int size = 2048;
   scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::GenerateKey(size));
   ASSERT_TRUE(rsa.get());
   EXPECT_EQ(rsa->Size(), size);
 
-  FilePath pem_file = temp_path_.Append("1_pub.pem");
-  rsa->WriteKeyToPEMFile(pem_file.value());
-  EXPECT_TRUE(file_util::PathExists(pem_file));
+  const FilePath pem_file = temp_path_.Append("rsa_priv.pem");
+  const std::string passphrase("cartman");
+
+  EXPECT_TRUE(rsa->ExportPrivateKey(pem_file.value(), &passphrase));
+  EXPECT_TRUE(base::PathExists(pem_file));
+
+  scoped_ptr<RSAOpenSSL> rsa_imported(RSAOpenSSL::CreateFromPEMPrivateKey(
+                                          pem_file.value(), &passphrase));
+  ASSERT_TRUE(rsa_imported.get());
+  EXPECT_TRUE(rsa->Equals(*rsa_imported));
 }
 
 // Keys were created with these commands:
@@ -99,16 +106,16 @@ TEST_F(RSAOpenSSLTest, WriteToPEMFile) {
 //  openssl genrsa -f4 -out rsa_priv_wrong_size.pem 128
 //  openssl genrsa -aes256 -f4 -out rsa_priv_encrypted.pem 2048
 //    with 'cartman' as passphrase
-TEST_F(RSAOpenSSLTest, CreateFromPEMKey) {
+TEST_F(RSAOpenSSLTest, CreateFromPEMPrivateKey) {
   const FilePath rsa_pem = data_path_.Append("rsa_pem");
 
-  scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::CreateFromPEMKey(
+  scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::CreateFromPEMPrivateKey(
                                  rsa_pem.Append("rsa_priv.pem").value(),
                                  NULL));
   EXPECT_TRUE(rsa.get());
 
   const std::string passphrase("cartman");
-  rsa.reset(RSAOpenSSL::CreateFromPEMKey(
+  rsa.reset(RSAOpenSSL::CreateFromPEMPrivateKey(
                 rsa_pem.Append("rsa_priv_encrypted.pem").value(),
                 &passphrase));
   EXPECT_TRUE(rsa.get());

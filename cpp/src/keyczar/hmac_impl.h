@@ -53,7 +53,7 @@ class HMACImpl {
   // computed from |data|. It returns true on success.
   bool Digest(const std::string& data, std::string* digest);
 
-  virtual std::string GetKey() const = 0;
+  virtual const std::string& GetKey() const = 0;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(HMACImpl);

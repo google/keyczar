@@ -19,7 +19,7 @@
 namespace keyczar {
 
 KeysetMetadata::KeyVersion::KeyVersion(int version_number,
-                                       const KeyStatus* key_status,
+                                       KeyStatus::Type key_status,
                                        bool exportable)
     : version_number_(version_number), key_status_(key_status),
       exportable_(exportable) {
@@ -32,22 +32,23 @@ KeysetMetadata::KeyVersion* KeysetMetadata::KeyVersion::CreateFromValue(
   if (root_version == NULL || !root_version->IsType(Value::TYPE_DICTIONARY))
     return NULL;
 
-  const DictionaryValue* version = NULL;
-  version = static_cast<const DictionaryValue*>(root_version);
+  const DictionaryValue* version =
+      static_cast<const DictionaryValue*>(root_version);
 
   int version_number;
-  if (!version->GetInteger(L"versionNumber", &version_number))
+  if (!version->GetInteger("versionNumber", &version_number))
     return NULL;
 
   std::string key_status_string;
-  if (!version->GetString(L"status", &key_status_string))
+  if (!version->GetString("status", &key_status_string))
     return NULL;
-  const KeyStatus* key_status = KeyStatus::Create(key_status_string);
-  if (key_status == NULL)
+  const KeyStatus::Type key_status =
+      KeyStatus::GetTypeFromName(key_status_string);
+  if (key_status == KeyStatus::UNDEF)
     return NULL;
 
   bool exportable;
-  if (!version->GetBoolean(L"exportable", &exportable))
+  if (!version->GetBoolean("exportable", &exportable))
     return NULL;
 
   return new KeysetMetadata::KeyVersion(version_number, key_status, exportable);
@@ -58,29 +59,23 @@ Value* KeysetMetadata::KeyVersion::GetValue() const {
   if (version.get() == NULL)
     return NULL;
 
-  if (!version->SetInteger(L"versionNumber", version_number()))
+  if (!version->SetInteger("versionNumber", version_number()))
     return NULL;
 
-  std::string key_status_name;
-  if (key_status() == NULL ||
-      !key_status()->GetName(&key_status_name) ||
-      !version->SetString(L"status", key_status_name))
+  std::string key_status_name = KeyStatus::GetNameFromType(key_status());
+  if (key_status_name.empty() ||
+      !version->SetString("status", key_status_name))
     return NULL;
 
-  if (!version->SetBoolean(L"exportable", exportable()))
+  if (!version->SetBoolean("exportable", exportable()))
     return NULL;
 
   return version.release();
 }
 
 KeysetMetadata::KeyVersion* KeysetMetadata::KeyVersion::Copy() const {
-  KeyStatus::Type key_status_type = key_status()->type();
-  KeyStatus* key_status_copy = new KeyStatus(key_status_type);
-  if (key_status_copy == NULL)
-    return NULL;
-
   return new KeysetMetadata::KeyVersion(version_number(),
-                                        key_status_copy,
+                                        key_status(),
                                         exportable());
 }
 
@@ -89,12 +84,12 @@ void KeysetMetadata::KeyVersion::set_version_number(int version_number) {
   version_number_ = version_number;
 }
 
-void KeysetMetadata::KeyVersion::set_key_status(const KeyStatus* key_status) {
-  key_status_.reset(key_status);
+void KeysetMetadata::KeyVersion::set_key_status(KeyStatus::Type key_status) {
+  key_status_ = key_status;
 }
 
-KeysetMetadata::KeysetMetadata(const std::string& name, const KeyType* key_type,
-                               const KeyPurpose* key_purpose, bool encrypted,
+KeysetMetadata::KeysetMetadata(const std::string& name, KeyType::Type key_type,
+                               KeyPurpose::Type key_purpose, bool encrypted,
                                int next_key_version_number)
     : name_(name), key_type_(key_type), key_purpose_(key_purpose),
       encrypted_(encrypted), next_key_version_number_(next_key_version_number) {
@@ -105,38 +100,40 @@ KeysetMetadata::KeysetMetadata(const std::string& name, const KeyType* key_type,
 KeysetMetadata* KeysetMetadata::CreateFromValue(const Value* root_metadata) {
   if (root_metadata == NULL || !root_metadata->IsType(Value::TYPE_DICTIONARY))
     return NULL;
-  const DictionaryValue* metadata = NULL;
-  metadata = static_cast<const DictionaryValue*>(root_metadata);
+  const DictionaryValue* metadata =
+      static_cast<const DictionaryValue*>(root_metadata);
 
   std::string name;
-  if (!metadata->GetString(L"name", &name))
+  if (!metadata->GetString("name", &name))
     return NULL;
 
   std::string key_type_string;
-  if (!metadata->GetString(L"type", &key_type_string))
+  if (!metadata->GetString("type", &key_type_string))
     return NULL;
-  const KeyType* key_type = KeyType::Create(key_type_string);
-  if (key_type == NULL)
+  const KeyType::Type key_type =
+      KeyType::GetTypeFromName(key_type_string);
+  if (key_type == KeyType::UNDEF)
     return NULL;
 
   std::string key_purpose_string;
-  if (!metadata->GetString(L"purpose", &key_purpose_string))
+  if (!metadata->GetString("purpose", &key_purpose_string))
     return NULL;
-  const KeyPurpose* key_purpose = KeyPurpose::Create(key_purpose_string);
-  if (key_purpose == NULL)
+  const KeyPurpose::Type key_purpose =
+      KeyPurpose::GetTypeFromName(key_purpose_string);
+  if (key_purpose == KeyPurpose::UNDEF)
     return NULL;
 
   bool encrypted;
-  if (!metadata->GetBoolean(L"encrypted", &encrypted))
+  if (!metadata->GetBoolean("encrypted", &encrypted))
     return NULL;
 
   // In case where the medatada file doesn't have a 'nextKeyVersionNumber'
   // field (which happens when key set was created with previous releases;
   // it is necessary to determinate a valid next_key_version_number value.
-  bool has_next_key_version_number = metadata->HasKey(L"nextKeyVersionNumber");
+  bool has_next_key_version_number = metadata->HasKey("nextKeyVersionNumber");
   int next_key_version_number = 1;
   if (has_next_key_version_number &&
-      !metadata->GetInteger(L"nextKeyVersionNumber", &next_key_version_number))
+      !metadata->GetInteger("nextKeyVersionNumber", &next_key_version_number))
     return NULL;
 
   // Instatiates keyset metadata and key versions and adds key versions to
@@ -149,7 +146,7 @@ KeysetMetadata* KeysetMetadata::CreateFromValue(const Value* root_metadata) {
     return NULL;
 
   ListValue* key_versions = NULL;
-  if (!metadata->GetList(L"versions", &key_versions))
+  if (!metadata->GetList("versions", &key_versions))
     return NULL;
 
   for (ListValue::iterator version_iterator = key_versions->begin();
@@ -182,27 +179,25 @@ Value* KeysetMetadata::GetValue(bool public_export) const {
   if (metadata.get() == NULL)
     return NULL;
 
-  if (!metadata->SetString(L"name", name()))
+  if (!metadata->SetString("name", name()))
     return NULL;
 
-  std::string key_type_name;
-  if (key_type() == NULL ||
-      !key_type()->GetName(&key_type_name) ||
-      !metadata->SetString(L"type", key_type_name))
+  std::string key_type_name = KeyType::GetNameFromType(key_type());
+  if (key_type_name.empty() ||
+      !metadata->SetString("type", key_type_name))
     return NULL;
 
-  std::string key_purpose_name;
-  if (key_purpose() == NULL ||
-      !key_purpose()->GetName(&key_purpose_name) ||
-      !metadata->SetString(L"purpose", key_purpose_name))
+  std::string key_purpose_name = KeyPurpose::GetNameFromType(key_purpose());
+  if (key_purpose_name.empty() ||
+      !metadata->SetString("purpose", key_purpose_name))
     return NULL;
 
-  if (!metadata->SetBoolean(L"encrypted", encrypted()))
+  if (!metadata->SetBoolean("encrypted", encrypted()))
     return NULL;
 
 #ifndef COMPAT_KEYCZAR_06B
   if (!public_export)
-    if (!metadata->SetInteger(L"nextKeyVersionNumber",
+    if (!metadata->SetInteger("nextKeyVersionNumber",
                               next_key_version_number()))
       return NULL;
 #endif
@@ -210,7 +205,7 @@ Value* KeysetMetadata::GetValue(bool public_export) const {
   ListValue* versions = new ListValue;
   if (versions == NULL)
     return NULL;
-  if (!metadata->Set(L"versions", versions))
+  if (!metadata->Set("versions", versions))
     return NULL;
 
   for (KeyVersionMap::const_iterator iter = key_versions_map_.begin();

@@ -32,15 +32,12 @@ class KeysetMetadata {
  public:
   class KeyVersion : public base::RefCounted<KeysetMetadata::KeyVersion> {
    public:
-    // Takes ownership of |key_status|, this status cannot be modified but it
-    // could be replaced if the status of the related key had to change. If this
-    // object is not instanciated from CreateFromValue you likely should pass 0
-    // as |version_number|. In this case a correct version number will be
+    // If this object is not instanciated from CreateFromValue you likely should
+    // pass 0 as |version_number|. In this case a correct version number will be
     // assigned later automatically when this object will be inserted into a
     // metadata's map of key versions. If you decide to pass a non-zero value
     // this version number will be left unchanged.
-    KeyVersion(int version_number, const KeyStatus* key_status,
-               bool exportable);
+    KeyVersion(int version_number, KeyStatus::Type key_status, bool exportable);
 
     // Creates a KeyVersion from a Value tree |root_version|. Usually
     // |root_version| is built from a JSON representation. The caller takes
@@ -59,12 +56,10 @@ class KeysetMetadata {
     // Sets a new strictly positive |version_number|.
     void set_version_number(int version_number);
 
-    // Takes ownership of |key_status| and replaces the previous key status.
-    // The previous key status is deleted.
-    void set_key_status(const KeyStatus* key_status);
+    // Replaces the previous key status.
+    void set_key_status(KeyStatus::Type key_status);
 
-    // The caller doesn't take ownership of the returned KeyStatus object.
-    const KeyStatus* key_status() const { return key_status_.get(); }
+    KeyStatus::Type key_status() const { return key_status_; }
 
     bool exportable() const { return exportable_; }
 
@@ -73,7 +68,7 @@ class KeysetMetadata {
     int version_number_;
 
     // Current status of the key.
-    scoped_ptr<const KeyStatus> key_status_;
+    KeyStatus::Type key_status_;
 
     // Set to true if the key is exportable.
     bool exportable_;
@@ -87,11 +82,9 @@ class KeysetMetadata {
   typedef KeyVersionMap::iterator iterator;
   typedef KeyVersionMap::const_iterator const_iterator;
 
-  // It takes ownership of |key_type| and |key_purpose|, these objects won't
-  // be modified until their destructions. Usually a good
-  // |next_key_version_number| for a new empty metada is 1.
-  KeysetMetadata(const std::string& name, const KeyType* key_type,
-                 const KeyPurpose* key_purpose, bool encrypted,
+  // Usually a good |next_key_version_number| for a new empty metadata is 1.
+  KeysetMetadata(const std::string& name, KeyType::Type key_type,
+                 KeyPurpose::Type key_purpose, bool encrypted,
                  int next_key_version_number);
 
   // Creates a KeysetMetadata from a Value tree |root_version|. Usually
@@ -130,11 +123,9 @@ class KeysetMetadata {
 
   std::string name() const { return name_; }
 
-  // The caller doesn't take ownership of the returned KeyVersion object.
-  const KeyType* key_type() const { return key_type_.get(); }
+  KeyType::Type key_type() const { return key_type_; }
 
-  // The caller doesn't take ownership of the returned KeyVersion object.
-  const KeyPurpose* key_purpose() const { return key_purpose_.get(); }
+  KeyPurpose::Type key_purpose() const { return key_purpose_; }
 
   bool encrypted() const { return encrypted_; }
 
@@ -156,6 +147,9 @@ class KeysetMetadata {
   const_iterator End() const { return key_versions_map_.end(); }
   iterator End() { return key_versions_map_.end(); }
 
+  // Returns true if the metadata has no key versions.
+  bool Empty() const { return key_versions_map_.empty(); }
+
  private:
   // Increments key version number.
   void inc_next_key_version_number() { ++next_key_version_number_; }
@@ -163,13 +157,11 @@ class KeysetMetadata {
   // Key set's name.
   std::string name_;
 
-  // Type of the keys stored into the underlying key set. This class will
-  // manage this member and release it when necessary.
-  scoped_ptr<const KeyType> key_type_;
+  // Type of the keys stored into this key set.
+  KeyType::Type key_type_;
 
-  // Purpose of the keys stored into the underlying key set. This class will
-  // manage this member and release it when necessary.
-  scoped_ptr<const KeyPurpose> key_purpose_;
+  // Purpose of the keys stored into this key set.
+  KeyPurpose::Type key_purpose_;
 
   // Set to true if keys of this set must be encrypted.
   bool encrypted_;

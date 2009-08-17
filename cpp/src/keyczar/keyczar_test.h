@@ -20,7 +20,8 @@
 
 #include <keyczar/base/file_path.h>
 #include <keyczar/base/file_util.h>
-#include <keyczar/base/path_service.h>
+#include <keyczar/base/logging.h>
+#include <keyczar/base_test/path_service.h>
 
 namespace keyczar {
 
@@ -28,11 +29,11 @@ class KeyczarTest : public PlatformTest {
  protected:
   virtual void SetUp() {
     PlatformTest::SetUp();
-    PathService::Get(base::DIR_TEMP, &temp_path_);
+    base_test::PathService::Get(base_test::DIR_TEMP, &temp_path_);
     temp_path_ = temp_path_.Append("keyczar");
-    file_util::CreateDirectory(temp_path_);
+    base::CreateDirectory(temp_path_);
 
-    PathService::Get(base::DIR_SOURCE_ROOT, &data_path_);
+    base_test::PathService::Get(base_test::DIR_SOURCE_ROOT, &data_path_);
     data_path_ = data_path_.Append("keyczar");
     data_path_ = data_path_.Append("data");
 
@@ -45,7 +46,7 @@ class KeyczarTest : public PlatformTest {
 
   virtual void TearDown() {
     PlatformTest::TearDown();
-    file_util::Delete(temp_path_, true);
+    base::Delete(temp_path_, true);
   }
 
   // Paths used in testing.

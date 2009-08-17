@@ -2,7 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// A JSON parser.  Converts strings of JSON into a Value object (see
+
+// This source code was copied from Chromium and was modified, any
+// encountered errors are probably due to these modifications.
+
+// A JSON parser. Converts strings of JSON into a Value object (see
 // base/values.h).
 // http://www.ietf.org/rfc/rfc4627.txt?number=4627
 //
@@ -41,6 +45,9 @@
 
 class Value;
 
+namespace keyczar {
+namespace base {
+
 class JSONReader {
  public:
   // A struct to hold a JS token.
@@ -61,19 +68,19 @@ class JSONReader {
      END_OF_INPUT,
      INVALID_TOKEN,
     };
-    Token(Type t, const wchar_t* b, int len)
+    Token(Type t, const char* b, int len)
       : type(t), begin(b), length(len) {}
 
     Type type;
 
     // A pointer into JSONReader::json_pos_ that's the beginning of this token.
-    const wchar_t* begin;
+    const char* begin;
 
     // End should be one char past the end of the token.
     int length;
 
     // Get the character that's one past the end of this token.
-    wchar_t NextChar() {
+    char NextChar() {
       return *(begin + length);
     }
   };
@@ -103,11 +110,7 @@ class JSONReader {
                                    std::string* error_message_out);
 
  private:
-  static std::string FormatErrorMessage(int line, int column,
-                                        const char* description);
-
   JSONReader();
-  DISALLOW_EVIL_CONSTRUCTORS(JSONReader);
 
   FRIEND_TEST(JSONReaderTest, Reading);
   FRIEND_TEST(JSONReaderTest, ErrorMessages);
@@ -139,7 +142,7 @@ class JSONReader {
   // Parses a sequence of characters into a Token::STRING. If the sequence of
   // characters is not a valid string, returns a Token::INVALID_TOKEN. Note
   // that DecodeString is used to actually decode the escaped string into an
-  // actual wstring.
+  // actual string.
   Token ParseStringToken();
 
   // Convert the substring into a value string.  This should always succeed
@@ -158,17 +161,17 @@ class JSONReader {
   bool EatComment();
 
   // Checks if |json_pos_| matches str.
-  bool NextStringMatch(const std::wstring& str);
+  bool NextStringMatch(const std::string& str);
 
   // Creates the error message that will be returned to the caller. The current
   // line and column are determined and added into the final message.
-  void SetErrorMessage(const char* description, const wchar_t* error_pos);
+  void SetErrorMessage(const char* description, const char* error_pos);
 
   // Pointer to the starting position in the input string.
-  const wchar_t* start_pos_;
+  const char* start_pos_;
 
   // Pointer to the current position in the input string.
-  const wchar_t* json_pos_;
+  const char* json_pos_;
 
   // Used to keep track of how many nested lists/dicts there are.
   int stack_depth_;
@@ -178,6 +181,11 @@ class JSONReader {
 
   // Contains the error message for the last call to JsonToValue(), if any.
   std::string error_message_;
+
+  DISALLOW_EVIL_CONSTRUCTORS(JSONReader);
 };
+
+}  // namespace base
+}  // namespace keyczar
 
 #endif  // KEYCZAR_BASE_JSON_READER_H_

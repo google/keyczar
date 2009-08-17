@@ -22,9 +22,9 @@
 #include <keyczar/key.h>
 #include <keyczar/keyczar_test.h>
 #include <keyczar/keyset.h>
-#include <keyczar/keyset_file_reader.h>
-#include <keyczar/keyset_file_writer.h>
-#include <keyczar/keyset_writer.h>
+#include <keyczar/rw/keyset_file_reader.h>
+#include <keyczar/rw/keyset_file_writer.h>
+#include <keyczar/rw/keyset_writer.h>
 
 namespace keyczar {
 
@@ -32,8 +32,8 @@ class KeysetTest : public KeyczarTest {
 };
 
 TEST_F(KeysetTest, KeyOperations) {
-  FilePath rsa_path = data_path_.AppendASCII("rsa");
-  KeysetJSONFileReader reader(rsa_path);
+  FilePath rsa_path = data_path_.Append("rsa");
+  rw::KeysetJSONFileReader reader(rsa_path);
 
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   ASSERT_TRUE(keyset.get());
@@ -41,40 +41,40 @@ TEST_F(KeysetTest, KeyOperations) {
   const KeysetMetadata* metadata = keyset->metadata();
   ASSERT_TRUE(metadata);
 
-  EXPECT_EQ(metadata->GetVersion(1)->key_status()->type(), KeyStatus::ACTIVE);
-  EXPECT_EQ(metadata->GetVersion(2)->key_status()->type(), KeyStatus::PRIMARY);
+  EXPECT_EQ(metadata->GetVersion(1)->key_status(), KeyStatus::ACTIVE);
+  EXPECT_EQ(metadata->GetVersion(2)->key_status(), KeyStatus::PRIMARY);
   EXPECT_EQ(keyset->primary_key_version_number(), 2);
   EXPECT_FALSE(keyset->PromoteKey(2));
-  EXPECT_EQ(metadata->GetVersion(2)->key_status()->type(), KeyStatus::PRIMARY);
+  EXPECT_EQ(metadata->GetVersion(2)->key_status(), KeyStatus::PRIMARY);
   EXPECT_TRUE(keyset->DemoteKey(2));
   EXPECT_EQ(keyset->primary_key_version_number(), 0);
-  EXPECT_EQ(metadata->GetVersion(1)->key_status()->type(), KeyStatus::ACTIVE);
-  EXPECT_EQ(metadata->GetVersion(2)->key_status()->type(), KeyStatus::ACTIVE);
+  EXPECT_EQ(metadata->GetVersion(1)->key_status(), KeyStatus::ACTIVE);
+  EXPECT_EQ(metadata->GetVersion(2)->key_status(), KeyStatus::ACTIVE);
   EXPECT_TRUE(keyset->PromoteKey(1));
   EXPECT_EQ(keyset->primary_key_version_number(), 1);
-  EXPECT_EQ(metadata->GetVersion(1)->key_status()->type(), KeyStatus::PRIMARY);
+  EXPECT_EQ(metadata->GetVersion(1)->key_status(), KeyStatus::PRIMARY);
   EXPECT_TRUE(keyset->primary_key());
-  EXPECT_EQ(metadata->GetVersion(2)->key_status()->type(), KeyStatus::ACTIVE);
+  EXPECT_EQ(metadata->GetVersion(2)->key_status(), KeyStatus::ACTIVE);
   EXPECT_TRUE(keyset->PromoteKey(2));
-  EXPECT_EQ(metadata->GetVersion(1)->key_status()->type(), KeyStatus::ACTIVE);
-  EXPECT_EQ(metadata->GetVersion(2)->key_status()->type(), KeyStatus::PRIMARY);
+  EXPECT_EQ(metadata->GetVersion(1)->key_status(), KeyStatus::ACTIVE);
+  EXPECT_EQ(metadata->GetVersion(2)->key_status(), KeyStatus::PRIMARY);
   EXPECT_TRUE(keyset->DemoteKey(1));
-  EXPECT_EQ(metadata->GetVersion(1)->key_status()->type(), KeyStatus::INACTIVE);
-  EXPECT_EQ(metadata->GetVersion(2)->key_status()->type(), KeyStatus::PRIMARY);
+  EXPECT_EQ(metadata->GetVersion(1)->key_status(), KeyStatus::INACTIVE);
+  EXPECT_EQ(metadata->GetVersion(2)->key_status(), KeyStatus::PRIMARY);
   EXPECT_FALSE(keyset->DemoteKey(1));
-  EXPECT_EQ(metadata->GetVersion(1)->key_status()->type(), KeyStatus::INACTIVE);
-  EXPECT_EQ(metadata->GetVersion(2)->key_status()->type(), KeyStatus::PRIMARY);
+  EXPECT_EQ(metadata->GetVersion(1)->key_status(), KeyStatus::INACTIVE);
+  EXPECT_EQ(metadata->GetVersion(2)->key_status(), KeyStatus::PRIMARY);
   EXPECT_TRUE(keyset->PromoteKey(1));
-  EXPECT_EQ(metadata->GetVersion(1)->key_status()->type(), KeyStatus::ACTIVE);
-  EXPECT_EQ(metadata->GetVersion(2)->key_status()->type(), KeyStatus::PRIMARY);
+  EXPECT_EQ(metadata->GetVersion(1)->key_status(), KeyStatus::ACTIVE);
+  EXPECT_EQ(metadata->GetVersion(2)->key_status(), KeyStatus::PRIMARY);
   EXPECT_TRUE(keyset->PromoteKey(1));
-  EXPECT_EQ(metadata->GetVersion(1)->key_status()->type(), KeyStatus::PRIMARY);
-  EXPECT_EQ(metadata->GetVersion(2)->key_status()->type(), KeyStatus::ACTIVE);
+  EXPECT_EQ(metadata->GetVersion(1)->key_status(), KeyStatus::PRIMARY);
+  EXPECT_EQ(metadata->GetVersion(2)->key_status(), KeyStatus::ACTIVE);
 }
 
 TEST_F(KeysetTest, AddKeys) {
-  FilePath rsa_path = data_path_.AppendASCII("rsa");
-  KeysetJSONFileReader reader(rsa_path);
+  FilePath rsa_path = data_path_.Append("rsa");
+  rw::KeysetJSONFileReader reader(rsa_path);
 
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   ASSERT_TRUE(keyset.get());
@@ -97,8 +97,8 @@ TEST_F(KeysetTest, AddKeys) {
 }
 
 TEST_F(KeysetTest, RevokeKeys) {
-  FilePath rsa_path = data_path_.AppendASCII("rsa");
-  KeysetJSONFileReader reader(rsa_path);
+  FilePath rsa_path = data_path_.Append("rsa");
+  rw::KeysetJSONFileReader reader(rsa_path);
 
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   ASSERT_TRUE(keyset.get());
@@ -131,8 +131,8 @@ TEST_F(KeysetTest, RevokeKeys) {
 }
 
 TEST_F(KeysetTest, KeyAccess) {
-  FilePath rsa_path = data_path_.AppendASCII("rsa");
-  KeysetJSONFileReader reader(rsa_path);
+  FilePath rsa_path = data_path_.Append("rsa");
+  rw::KeysetJSONFileReader reader(rsa_path);
 
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   ASSERT_TRUE(keyset.get());
@@ -160,18 +160,18 @@ TEST_F(KeysetTest, KeyAccess) {
 
 TEST_F(KeysetTest, PublicKeyExport) {
   {
-    FilePath rsa_path = data_path_.AppendASCII("rsa-sign");
-    KeysetJSONFileReader reader(rsa_path);
+    FilePath rsa_path = data_path_.Append("rsa-sign");
+    rw::KeysetJSONFileReader reader(rsa_path);
 
     scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
     ASSERT_TRUE(keyset.get());
 
-    KeysetJSONFileWriter writer(temp_path_);
+    rw::KeysetJSONFileWriter writer(temp_path_);
     EXPECT_TRUE(keyset->PublicKeyExport(writer));
   }
 
   {
-    KeysetJSONFileReader reader(temp_path_);
+    rw::KeysetJSONFileReader reader(temp_path_);
     scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
     ASSERT_TRUE(keyset.get());
 
@@ -180,12 +180,12 @@ TEST_F(KeysetTest, PublicKeyExport) {
 
     // Read encoded signature
     std::string b64w_signature;
-    FilePath signature_file = data_path_.AppendASCII("rsa-sign");
-    signature_file = signature_file.AppendASCII("2.out");
-    EXPECT_TRUE(file_util::ReadFileToString(signature_file,
-                                            &b64w_signature));
+    FilePath signature_file = data_path_.Append("rsa-sign");
+    signature_file = signature_file.Append("2.out");
+    EXPECT_TRUE(base::ReadFileToString(signature_file,
+                                       &b64w_signature));
     std::string signature;
-    EXPECT_TRUE(Base64WDecode(b64w_signature, &signature));
+    EXPECT_TRUE(base::Base64WDecode(b64w_signature, &signature));
 
     // Verify signature
     std::string data("This is some test data");
@@ -196,27 +196,26 @@ TEST_F(KeysetTest, PublicKeyExport) {
   }
 }
 
-TEST_F(KeysetTest, Obervers) {
+TEST_F(KeysetTest, Observers) {
   scoped_ptr<Keyset> keyset(new Keyset());
   ASSERT_TRUE(keyset.get());
 
-  file_util::CreateDirectory(temp_path_.Append("observer1"));
-  file_util::CreateDirectory(temp_path_.Append("observer2"));
+  base::CreateDirectory(temp_path_.Append("observer1"));
+  base::CreateDirectory(temp_path_.Append("observer2"));
 
-  scoped_ptr<KeysetWriter> file_writer1(
-      new KeysetJSONFileWriter(temp_path_.Append("observer1")));
+  scoped_ptr<rw::KeysetWriter> file_writer1(
+      new rw::KeysetJSONFileWriter(temp_path_.Append("observer1")));
   ASSERT_TRUE(file_writer1.get());
   keyset->AddObserver(file_writer1.get());
 
-  scoped_ptr<KeysetWriter> file_writer2(
-      new KeysetJSONFileWriter(temp_path_.Append("observer2")));
+  scoped_ptr<rw::KeysetWriter> file_writer2(
+      new rw::KeysetJSONFileWriter(temp_path_.Append("observer2")));
   ASSERT_TRUE(file_writer2.get());
   keyset->AddObserver(file_writer2.get());
 
   KeysetMetadata* metadata = NULL;
-  metadata = new KeysetMetadata("Test",
-                                KeyType::Create("RSA_PRIV"),
-                                new KeyPurpose(KeyPurpose::DECRYPT_AND_ENCRYPT),
+  metadata = new KeysetMetadata("Test", KeyType::RSA_PRIV,
+                                KeyPurpose::DECRYPT_AND_ENCRYPT,
                                 false,
                                 1);
   ASSERT_TRUE(metadata);
@@ -234,3 +233,4 @@ TEST_F(KeysetTest, Obervers) {
 }
 
 }  // namespace keyczar
+

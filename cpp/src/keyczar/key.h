@@ -46,7 +46,6 @@ class MessageDigestImpl;
 //   AESKey     |            |          |          |        |           |
 //         DSAPrivateKey     |    RSAPrivateKey    |    ECDSAPublicKey  |
 //                   ECDSAPrivateKey           DSAPublicKey        RSAPublicKey
-
 //
 //
 // Each key aggregates a concrete implementation through an abstract interface
@@ -69,20 +68,30 @@ Key(int size) : size_(size) {}
 
   // Factory to create a key of type |key_type| with value |root|. The
   // caller takes ownership of the returned Key.
-  static Key* CreateFromValue(const KeyType& key_type, const Value& root);
+  static Key* CreateFromValue(KeyType::Type key_type, const Value& root);
 
   // Factory to generate a key of type |key_type| and of length |size|. The
   // caller takes ownership of the returned Key. Returns NULL if |size| is
   // not valid or if it fails.
-  static Key* GenerateKey(const KeyType& key_type, int size);
+  static Key* GenerateKey(KeyType::Type key_type, int size);
 
-  // Factory to create a key of type |key_type| from a PEM key with location
-  // |filename| and optional passphrase |passphrase|. If |passphrase| value
-  // is NULL, it means no passphrase. This function returns NULL if it fails.
-  // The caller takes ownership of the returned Key.
-  static Key* CreateFromPEMKey(const KeyType& key_type,
-                               const std::string& filename,
-                               const std::string* passphrase);
+  // Factory to create a key of type |key_type| from a PEM/PKCS8 key located
+  // at |filename|. |passphrase| is an optional passphrase, its value is NULL
+  // if no passphrase is expected or if it should be prompted interactively at
+  // execution. The caller takes ownership over the returned object. This
+  // method can handle PEM format keys as well as PKCS8 format keys. It returns
+  // NULL if it fails.
+  static Key* CreateFromPEMPrivateKey(KeyType::Type key_type,
+                                      const std::string& filename,
+                                      const std::string* passphrase);
+
+  // Exports this key encrypted with |passphrase| to |filename|. The format
+  // used is PKCS8 and the key is encrypted with PBE algorithm as defined in
+  // PKCS5 v2.0, the associated cipher used is AES. If |passphrase| is NULL
+  // a callback function will be called to prompt a passphrase at execution.
+  // It returns false if it fails.
+  virtual bool ExportPrivateKey(const std::string& filename,
+                                const std::string* passphrase) const;
 
   // Build a Value object from the key attributes and returns the result.
   // The caller takes ownership of the returned instance. It returns NULL
@@ -108,12 +117,14 @@ Key(int size) : size_(size) {}
   // This method must be implemented by secret key subclasses and by some of
   // private key subclasses. This method returns false if it is not implemented
   // or if it fails.
-  virtual bool Encrypt(const std::string& data, std::string* encrypted) const;
+  virtual bool Encrypt(const std::string& plaintext,
+                       std::string* ciphertext) const;
 
   // This method must be implemented by secret key subclasses and by some of
   // private key subclasses. This method returns false if it is not implemented
   // or if it fails.
-  virtual bool Decrypt(const std::string& encrypted, std::string* data) const;
+  virtual bool Decrypt(const std::string& ciphertext,
+                       std::string* plaintext) const;
 
   // Returns the hash assembled from the values of various fields of this
   // instance. This hash will be used as unique identifier of this key.

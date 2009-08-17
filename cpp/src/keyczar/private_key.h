@@ -39,7 +39,8 @@ class PrivateKey : public Key {
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
 
-  virtual bool Encrypt(const std::string& data, std::string* encrypted) const;
+  virtual bool Encrypt(const std::string& plaintext,
+                       std::string* ciphertext) const;
 
   // The caller doesn't take ownership over the returned PublicKey object.
   const PublicKey* public_key() const { return public_key_.get(); }

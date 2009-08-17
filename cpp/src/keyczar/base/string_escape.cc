@@ -4,10 +4,10 @@
 
 #include <keyczar/base/string_escape.h>
 
-#include <string>
-
 #include <keyczar/base/string_util.h>
 
+namespace keyczar {
+namespace base {
 namespace string_escape {
 
 // Try to escape |c| as a "SingleEscapeCharacter" (\n, etc).  If successful,
@@ -46,33 +46,6 @@ static bool JavascriptSingleEscapeChar(const CHAR c, std::string* dst) {
   return true;
 }
 
-void JavascriptDoubleQuote(const string16& str,
-                           bool put_in_quotes,
-                           std::string* dst) {
-  if (put_in_quotes)
-    dst->push_back('"');
-
-  for (string16::const_iterator it = str.begin(); it != str.end(); ++it) {
-    char16 c = *it;
-    if (!JavascriptSingleEscapeChar(c, dst)) {
-      if (c > 255) {
-        // Non-ascii values need to be unicode dst->
-        // TODO(tc): Some unicode values are handled specially. See
-        // spidermonkey code.
-        StringAppendF(dst, "\\u%04X", c);
-      } else if (c < 32 || c > 126) {
-        // Spidermonkey hex escapes these values.
-        StringAppendF(dst, "\\x%02X", c);
-      } else {
-        dst->push_back(static_cast<char>(c));
-      }
-    }
-  }
-
-  if (put_in_quotes)
-    dst->push_back('"');
-}
-
 void JavascriptDoubleQuote(const std::string& str,
                            bool put_in_quotes,
                            std::string* dst) {
@@ -96,3 +69,5 @@ void JavascriptDoubleQuote(const std::string& str,
 }
 
 }  // namespace string_escape
+}  // namespace base
+}  // namespace keyczar

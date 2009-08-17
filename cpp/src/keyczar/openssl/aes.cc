@@ -13,8 +13,7 @@
 // limitations under the License.
 #include <keyczar/openssl/aes.h>
 
-#include <keyczar/base/stl_util-inl.h>
-#include <keyczar/cipher_mode.h>
+#include <keyczar/base/logging.h>
 #include <keyczar/crypto_factory.h>
 #include <keyczar/rand_impl.h>
 
@@ -22,20 +21,14 @@ namespace keyczar {
 
 namespace openssl {
 
-AESOpenSSL::AESOpenSSL(const EVP_CIPHER* (*evp_cipher)(),
-                       const std::string& key)
-    : evp_cipher_(evp_cipher), key_(key),
-      encryption_context_(EVP_CIPHER_CTX_new()),
-      decryption_context_(EVP_CIPHER_CTX_new()),
-      engine_(NULL) {
-  CHECK(EVP_CIPHER_key_length(evp_cipher()) == static_cast<int>(key.length()));
+AESOpenSSL::~AESOpenSSL() {
 }
 
 // static
-AESOpenSSL* AESOpenSSL::Create(const CipherMode& cipher_mode,
+AESOpenSSL* AESOpenSSL::Create(CipherMode::Type cipher_mode,
                                const std::string& key) {
   // Only CBC mode is currently supported
-  if (cipher_mode.type() != CipherMode::CBC) {
+  if (cipher_mode != CipherMode::CBC) {
     NOTREACHED();
     return NULL;
   }
@@ -55,17 +48,17 @@ AESOpenSSL* AESOpenSSL::Create(const CipherMode& cipher_mode,
 }
 
 // static
-AESOpenSSL* AESOpenSSL::GenerateKey(const CipherMode& cipher_mode, int size) {
+AESOpenSSL* AESOpenSSL::GenerateKey(CipherMode::Type cipher_mode, int size) {
   RandImpl* rand_impl = CryptoFactory::Rand();
   if (rand_impl == NULL)
     return NULL;
 
-  std::string key;
-  if (!rand_impl->RandBytes(size / 8, &key))
+  base::ScopedSafeString key(new std::string());
+  if (!rand_impl->RandBytes(size / 8, key.get()))
     return NULL;
-  CHECK_EQ(static_cast<int>(key.length()), size / 8);
+  CHECK_EQ(static_cast<int>(key->size()), size / 8);
 
-  return AESOpenSSL::Create(cipher_mode, key);
+  return AESOpenSSL::Create(cipher_mode, *key);
 }
 
 bool AESOpenSSL::Encrypt(const std::string& plaintext, std::string* ciphertext,
@@ -94,7 +87,7 @@ bool AESOpenSSL::EncryptInit(std::string* iv) const {
   // Note: OpenSSL only takes the 16 first bytes of the iv string for the
   // AES ciphers (128, 192, 256).
   if (!rand_impl->RandBytes(EVP_CIPHER_iv_length(evp_cipher_()), iv))
-     return false;
+    return false;
 
   bool init = CipherInit(*iv, true, encryption_context_.get());
   if (!init)
@@ -151,6 +144,15 @@ bool AESOpenSSL::DecryptFinal(std::string* plaintext) const {
   return final;
 }
 
+AESOpenSSL::AESOpenSSL(const EVP_CIPHER* (*evp_cipher)(),
+                       const std::string& key)
+    : evp_cipher_(evp_cipher), key_(new std::string(key)),
+      encryption_context_(EVP_CIPHER_CTX_new()),
+      decryption_context_(EVP_CIPHER_CTX_new()),
+      engine_(NULL) {
+  CHECK(EVP_CIPHER_key_length(evp_cipher()) == static_cast<int>(key_->size()));
+}
+
 void AESOpenSSL::EncryptContextCleanup() const {
   EVP_CIPHER_CTX_cleanup(encryption_context_.get());
 }
@@ -172,7 +174,7 @@ bool AESOpenSSL::CipherInit(const std::string& iv, bool encrypt,
                         evp_cipher_(),
                         engine_,
                         reinterpret_cast<unsigned char*>(
-                            const_cast<char*>(key_.data())),
+                            const_cast<char*>(key_->data())),
                         reinterpret_cast<unsigned char*>(
                             const_cast<char*>(iv.data())),
                         do_encrypt) != 1)
@@ -199,7 +201,8 @@ bool AESOpenSSL::CipherUpdate(const std::string& in_data, std::string* out_data,
                        in_data.length()) != 1)
     return false;
 
-  CHECK_LT(out_data_len, in_data.length() + evp_cipher_()->block_size);
+  CHECK_LT(static_cast<uint32>(out_data_len),
+           in_data.length() + evp_cipher_()->block_size);
   out_data->resize(current_size + out_data_len);
   return true;
 }
@@ -226,7 +229,7 @@ bool AESOpenSSL::CipherFinal(std::string* out_data,
 }
 
 int AESOpenSSL::GetKeySize() const {
-  int key_length = static_cast<int>(key_.length());
+  int key_length = static_cast<int>(key_->size());
   CHECK_GE(evp_cipher_ && key_length, EVP_CIPHER_iv_length(evp_cipher_()));
   return key_length;
 }

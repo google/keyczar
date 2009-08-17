@@ -32,14 +32,14 @@ RSAPublicKey* RSAPublicKey::CreateFromValue(const Value& root_key) {
 
   RSAImpl::RSAIntermediateKey intermediate_key;
 
-  if (!util::DeserializeString(*public_key, L"modulus", &intermediate_key.n))
+  if (!util::DeserializeString(*public_key, "modulus", &intermediate_key.n))
     return NULL;
-  if (!util::DeserializeString(*public_key, L"publicExponent",
+  if (!util::DeserializeString(*public_key, "publicExponent",
                                &intermediate_key.e))
     return NULL;
 
   int size;
-  if (!public_key->GetInteger(L"size", &size))
+  if (!public_key->GetInteger("size", &size))
     return NULL;
 
   scoped_ptr<RSAImpl> rsa_public_key_impl(
@@ -48,7 +48,8 @@ RSAPublicKey* RSAPublicKey::CreateFromValue(const Value& root_key) {
     return NULL;
 
   // Check the provided size is valid.
-  if (size != rsa_public_key_impl->Size() || !IsValidSize("RSA_PUB", size))
+  if (size != rsa_public_key_impl->Size() ||
+      !KeyType::IsValidCipherSize(KeyType::RSA_PUB, size))
     return NULL;
 
   return new RSAPublicKey(rsa_public_key_impl.release(), size);
@@ -63,13 +64,13 @@ Value* RSAPublicKey::GetValue() const {
   if (!rsa_impl()->GetPublicAttributes(&intermediate_key))
     return NULL;
 
-  if (!util::SerializeString(intermediate_key.n, L"modulus", public_key.get()))
+  if (!util::SerializeString(intermediate_key.n, "modulus", public_key.get()))
     return NULL;
-  if (!util::SerializeString(intermediate_key.e, L"publicExponent",
+  if (!util::SerializeString(intermediate_key.e, "publicExponent",
                              public_key.get()))
     return NULL;
 
-  if (!public_key->SetInteger(L"size", size()))
+  if (!public_key->SetInteger("size", size()))
     return NULL;
 
   return public_key.release();
@@ -95,7 +96,7 @@ bool RSAPublicKey::Hash(std::string* hash) const {
   digest_impl->Final(&full_hash);
   CHECK_LE(Key::GetHashSize(), static_cast<int>(full_hash.length()));
 
-  Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
+  base::Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
   return true;
 }
 
@@ -116,20 +117,20 @@ bool RSAPublicKey::Verify(const std::string& data,
                             message_digest, signature);
 }
 
-bool RSAPublicKey::Encrypt(const std::string& data,
-                           std::string* encrypted) const {
-  if (rsa_impl() == NULL || encrypted == NULL)
+bool RSAPublicKey::Encrypt(const std::string& plaintext,
+                           std::string* ciphertext) const {
+  if (rsa_impl() == NULL || ciphertext == NULL)
     return false;
 
   std::string header;
   if (!Header(&header))
     return false;
 
-  std::string encrypted_data;
-  if (!rsa_impl()->Encrypt(data, &encrypted_data))
+  std::string encrypted;
+  if (!rsa_impl()->Encrypt(plaintext, &encrypted))
     return false;
 
-  encrypted->assign(header + encrypted_data);
+  ciphertext->assign(header + encrypted);
   return true;
 }
 

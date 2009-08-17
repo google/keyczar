@@ -23,29 +23,23 @@ namespace keyczar {
 class CipherMode {
  public:
   enum Type {
-    CBC = 0,
+    UNDEF,
+    CBC,
     CTR,
     ECB,
     DET_CBC
   };
 
-  CipherMode(Type type, bool use_iv) : type_(type), use_iv_(use_iv) {}
+  static Type GetTypeFromName(const std::string& name);
 
-  // Creates KeyPurpose instance from string |name|. The caller takes
-  // ownership of the result.
-  static CipherMode* Create(const std::string& name);
+  static std::string GetNameFromType(Type type);
 
-  Type type() const { return type_; }
+  static bool HasIV(Type type);
 
-  bool GetName(std::string* name) const;
-
-  bool use_iv() const { return use_iv_; }
-
-  int GetOutputSize(int block_size, int input_length) const;
+  static int GetOutputSize(Type type, int block_size, int input_length);
 
  private:
-  Type type_;
-  bool use_iv_;
+  CipherMode();
 
   DISALLOW_COPY_AND_ASSIGN(CipherMode);
 };

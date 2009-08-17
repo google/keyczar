@@ -16,6 +16,7 @@
 #include <openssl/bn.h>
 #include <openssl/objects.h>
 #include <openssl/pem.h>
+#include <string.h>
 
 #include <keyczar/base/file_util.h>
 #include <keyczar/base/logging.h>
@@ -99,10 +100,10 @@ DSAOpenSSL* DSAOpenSSL::GenerateKey(int size) {
 }
 
 // static
-DSAOpenSSL* DSAOpenSSL::CreateFromPEMKey(const std::string& filename,
-                                         const std::string* passphrase) {
+DSAOpenSSL* DSAOpenSSL::CreateFromPEMPrivateKey(const std::string& filename,
+                                                const std::string* passphrase) {
   // Load the disk based private key.
-  ScopedEVPPKey evp_pkey(ReadPEMKeyFromFile(filename, passphrase));
+  ScopedEVPPKey evp_pkey(ReadPEMPrivateKeyFromFile(filename, passphrase));
   if (evp_pkey.get() == NULL) {
     PrintOSSLErrors();
     return NULL;
@@ -124,24 +125,19 @@ DSAOpenSSL* DSAOpenSSL::CreateFromPEMKey(const std::string& filename,
                         true /* private_key */);
 }
 
-bool DSAOpenSSL::WriteKeyToPEMFile(const std::string& filename) {
-  if (key_.get() == NULL)
+bool DSAOpenSSL::ExportPrivateKey(const std::string& filename,
+                                  const std::string* passphrase) const {
+  if (key_.get() == NULL || !private_key_)
     return false;
 
-  FILE* dest_file = file_util::OpenFile(filename, "w+");
-  if (dest_file == NULL)
+  ScopedEVPPKey evp_key(EVP_PKEY_new());
+  if (evp_key.get() == NULL)
     return false;
 
-  int return_value = 0;
-  if (private_key_)
-    return_value = PEM_write_DSAPrivateKey(dest_file, key_.get(), NULL,
-                                           NULL, 0, NULL, NULL);
-  else
-    return_value = PEM_write_DSA_PUBKEY(dest_file, key_.get());
-
-  if (!return_value)
+  if (!EVP_PKEY_set1_DSA(evp_key.get(), key_.get()))
     return false;
-  return true;
+
+  return WritePEMPrivateKeyToFile(evp_key.get(), filename, passphrase);
 }
 
 bool DSAOpenSSL::GetAttributes(DSAIntermediateKey* key) {
@@ -162,6 +158,7 @@ bool DSAOpenSSL::GetAttributes(DSAIntermediateKey* key) {
     return false;
   }
   key->x.assign(reinterpret_cast<char*>(priv_key), num_priv_key);
+  memset(priv_key, 0, num_priv_key);
 
   return true;
 }
@@ -217,7 +214,7 @@ bool DSAOpenSSL::Sign(const std::string& message_digest,
   if (key_.get() == NULL || signature == NULL || !private_key_)
     return false;
 
-  int dsa_size = DSA_size(key_.get());
+  uint32 dsa_size = DSA_size(key_.get());
   base::STLStringResizeUninitialized(signature, dsa_size);
 
   uint32 signature_length = 0;

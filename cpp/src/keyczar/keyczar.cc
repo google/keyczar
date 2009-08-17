@@ -15,12 +15,13 @@
 
 #include <keyczar/base/base64w.h>
 #include <keyczar/base/file_path.h>
+#include <keyczar/base/ref_counted.h>
 #include <keyczar/base/stl_util-inl.h>
+#include <keyczar/base/values.h>
 #include <keyczar/base/zlib.h>
 #include <keyczar/key.h>
-#include <keyczar/key_purpose.h>
-#include <keyczar/keyset_file_reader.h>
 #include <keyczar/keyset_metadata.h>
+#include <keyczar/rw/keyset_file_reader.h>
 
 namespace keyczar {
 
@@ -55,15 +56,26 @@ std::string Keyczar::Decrypt(const std::string& ciphertext) const {
   return "";
 }
 
-const KeyPurpose* Keyczar::GetKeyPurpose() const {
+KeyPurpose::Type Keyczar::GetKeyPurpose() const {
   if (keyset() == NULL)
-    return NULL;
+    return KeyPurpose::UNDEF;
 
   const KeysetMetadata* meta = keyset()->metadata();
   if (meta == NULL)
-    return NULL;
+    return KeyPurpose::UNDEF;
 
   return meta->key_purpose();
+}
+
+KeyType::Type Keyczar::GetKeyType() const {
+  if (keyset() == NULL)
+    return KeyType::UNDEF;
+
+  const KeysetMetadata* meta = keyset()->metadata();
+  if (meta == NULL)
+    return KeyType::UNDEF;
+
+  return meta->key_type();
 }
 
 bool Keyczar::GetHash(const std::string& bytes, std::string* hash) const {
@@ -73,7 +85,7 @@ bool Keyczar::GetHash(const std::string& bytes, std::string* hash) const {
   if (static_cast<int>(bytes.length()) < Key::GetHeaderSize())
     return false;
 
-  if (!Base64WEncode(bytes.substr(1, Key::GetHashSize()), hash))
+  if (!base::Base64WEncode(bytes.substr(1, Key::GetHashSize()), hash))
     return false;
 
   return true;
@@ -90,7 +102,7 @@ bool Keyczar::Encode(const std::string& input_value,
       encoded_value->assign(input_value);
       return true;
     case BASE64W:
-      return Base64WEncode(input_value, encoded_value);
+      return base::Base64WEncode(input_value, encoded_value);
     default:
       NOTREACHED();
   }
@@ -108,7 +120,7 @@ bool Keyczar::Decode(const std::string& encoded_value,
       decoded_value->assign(encoded_value);
       return true;
     case BASE64W:
-      return Base64WDecode(encoded_value, decoded_value);
+      return base::Base64WDecode(encoded_value, decoded_value);
     default:
       NOTREACHED();
   }
@@ -161,18 +173,20 @@ bool Keyczar::Decompress(const std::string& input,
 
 // static
 Encrypter* Encrypter::Read(const std::string& location) {
-  const KeysetJSONFileReader reader(location);
-  return Encrypter::Read(reader);
+  return Read(FilePath(location));
 }
 
 // static
 Encrypter* Encrypter::Read(const FilePath& location) {
-  const KeysetJSONFileReader reader(location);
-  return Encrypter::Read(reader);
+  const scoped_ptr<rw::KeysetReader> reader(
+      rw::KeysetReader::CreateReader(location));
+  if (reader.get() == NULL)
+    return NULL;
+  return Encrypter::Read(*reader);
 }
 
 // static
-Encrypter* Encrypter::Read(const KeysetReader& reader) {
+Encrypter* Encrypter::Read(const rw::KeysetReader& reader) {
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   if (keyset.get() == NULL)
     return NULL;
@@ -212,35 +226,33 @@ bool Encrypter::Encrypt(const std::string& plaintext,
 
 std::string Encrypter::Encrypt(const std::string& plaintext) const {
   std::string ciphertext;
-  bool result = Encrypt(plaintext, &ciphertext);
-  if (!result)
+  if (!Encrypt(plaintext, &ciphertext))
     return "";
   return ciphertext;
 }
 
 bool Encrypter::IsAcceptablePurpose() const {
-  const KeyPurpose* purpose = GetKeyPurpose();
-  if (purpose == NULL)
-    return false;
-
-  return purpose->type() == KeyPurpose::ENCRYPT ||
-      purpose->type() == KeyPurpose::DECRYPT_AND_ENCRYPT;
+  const KeyPurpose::Type purpose = GetKeyPurpose();
+  return purpose == KeyPurpose::ENCRYPT ||
+      purpose == KeyPurpose::DECRYPT_AND_ENCRYPT;
 }
 
 // static
 Crypter* Crypter::Read(const std::string& location) {
-  const KeysetJSONFileReader reader(location);
-  return Crypter::Read(reader);
+  return Read(FilePath(location));
 }
 
 // static
 Crypter* Crypter::Read(const FilePath& location) {
-  const KeysetJSONFileReader reader(location);
-  return Crypter::Read(reader);
+  const scoped_ptr<rw::KeysetReader> reader(
+      rw::KeysetReader::CreateReader(location));
+  if (reader.get() == NULL)
+    return NULL;
+  return Crypter::Read(*reader);
 }
 
 // static
-Crypter* Crypter::Read(const KeysetReader& reader) {
+Crypter* Crypter::Read(const rw::KeysetReader& reader) {
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   if (keyset.get() == NULL)
     return NULL;
@@ -281,34 +293,31 @@ bool Crypter::Decrypt(const std::string& ciphertext,
 
 std::string Crypter::Decrypt(const std::string& ciphertext) const {
   std::string plaintext;
-  bool result = Decrypt(ciphertext, &plaintext);
-  if (!result)
+  if (!Decrypt(ciphertext, &plaintext))
     return "";
   return plaintext;
 }
 
 bool Crypter::IsAcceptablePurpose() const {
-  const KeyPurpose* purpose = GetKeyPurpose();
-  if (purpose == NULL)
-    return false;
-
-  return purpose->type() == KeyPurpose::DECRYPT_AND_ENCRYPT;
+  return GetKeyPurpose() == KeyPurpose::DECRYPT_AND_ENCRYPT;
 }
 
 // static
 Verifier* Verifier::Read(const std::string& location) {
-  const KeysetJSONFileReader reader(location);
-  return Verifier::Read(reader);
+  return Read(FilePath(location));
 }
 
 // static
 Verifier* Verifier::Read(const FilePath& location) {
-  const KeysetJSONFileReader reader(location);
-  return Verifier::Read(reader);
+  const scoped_ptr<rw::KeysetReader> reader(
+      rw::KeysetReader::CreateReader(location));
+  if (reader.get() == NULL)
+    return NULL;
+  return Verifier::Read(*reader);
 }
 
 // static
-Verifier* Verifier::Read(const KeysetReader& reader) {
+Verifier* Verifier::Read(const rw::KeysetReader& reader) {
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   if (keyset.get() == NULL)
     return NULL;
@@ -349,28 +358,27 @@ bool Verifier::Verify(const std::string& data,
 }
 
 bool Verifier::IsAcceptablePurpose() const {
-  const KeyPurpose* purpose = GetKeyPurpose();
-  if (purpose == NULL)
-    return false;
-
-  return purpose->type() == KeyPurpose::VERIFY ||
-      purpose->type() == KeyPurpose::SIGN_AND_VERIFY;
+  const KeyPurpose::Type purpose = GetKeyPurpose();
+  return purpose == KeyPurpose::VERIFY ||
+      purpose == KeyPurpose::SIGN_AND_VERIFY;
 }
 
 // static
 UnversionedVerifier* UnversionedVerifier::Read(const std::string& location) {
-  const KeysetJSONFileReader reader(location);
-  return UnversionedVerifier::Read(reader);
+  return Read(FilePath(location));
 }
 
 // static
 UnversionedVerifier* UnversionedVerifier::Read(const FilePath& location) {
-  const KeysetJSONFileReader reader(location);
-  return UnversionedVerifier::Read(reader);
+  const scoped_ptr<rw::KeysetReader> reader(
+      rw::KeysetReader::CreateReader(location));
+  if (reader.get() == NULL)
+    return NULL;
+  return UnversionedVerifier::Read(*reader);
 }
 
 // static
-UnversionedVerifier* UnversionedVerifier::Read(const KeysetReader& reader) {
+UnversionedVerifier* UnversionedVerifier::Read(const rw::KeysetReader& reader) {
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   if (keyset.get() == NULL)
     return NULL;
@@ -409,28 +417,27 @@ bool UnversionedVerifier::Verify(const std::string& data,
 }
 
 bool UnversionedVerifier::IsAcceptablePurpose() const {
-  const KeyPurpose* purpose = GetKeyPurpose();
-  if (purpose == NULL)
-    return false;
-
-  return purpose->type() == KeyPurpose::VERIFY ||
-      purpose->type() == KeyPurpose::SIGN_AND_VERIFY;
+  const KeyPurpose::Type purpose = GetKeyPurpose();
+  return purpose == KeyPurpose::VERIFY ||
+      purpose == KeyPurpose::SIGN_AND_VERIFY;
 }
 
 // static
 Signer* Signer::Read(const std::string& location) {
-  const KeysetJSONFileReader reader(location);
-  return Signer::Read(reader);
+  return Read(FilePath(location));
 }
 
 // static
 Signer* Signer::Read(const FilePath& location) {
-  const KeysetJSONFileReader reader(location);
-  return Signer::Read(reader);
+  const scoped_ptr<rw::KeysetReader> reader(
+      rw::KeysetReader::CreateReader(location));
+  if (reader.get() == NULL)
+    return NULL;
+  return Signer::Read(*reader);
 }
 
 // static
-Signer* Signer::Read(const KeysetReader& reader) {
+Signer* Signer::Read(const rw::KeysetReader& reader) {
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   if (keyset.get() == NULL)
     return NULL;
@@ -475,34 +482,32 @@ bool Signer::Sign(const std::string& data, std::string* signature) const {
 
 std::string Signer::Sign(const std::string& data) const {
   std::string signature;
-  bool result = Sign(data, &signature);
-  if (!result)
+  if (!Sign(data, &signature))
     return "";
   return signature;
 }
 
 bool Signer::IsAcceptablePurpose() const {
-  const KeyPurpose* purpose = GetKeyPurpose();
-  if (purpose == NULL)
-    return false;
-
-  return purpose->type() == KeyPurpose::SIGN_AND_VERIFY;
+  const KeyPurpose::Type purpose = GetKeyPurpose();
+  return purpose == KeyPurpose::SIGN_AND_VERIFY;
 }
 
 // static
 UnversionedSigner* UnversionedSigner::Read(const std::string& location) {
-  const KeysetJSONFileReader reader(location);
-  return UnversionedSigner::Read(reader);
+  return Read(FilePath(location));
 }
 
 // static
 UnversionedSigner* UnversionedSigner::Read(const FilePath& location) {
-  const KeysetJSONFileReader reader(location);
-  return UnversionedSigner::Read(reader);
+  const scoped_ptr<rw::KeysetReader> reader(
+      rw::KeysetReader::CreateReader(location));
+  if (reader.get() == NULL)
+    return NULL;
+  return UnversionedSigner::Read(*reader);
 }
 
 // static
-UnversionedSigner* UnversionedSigner::Read(const KeysetReader& reader) {
+UnversionedSigner* UnversionedSigner::Read(const rw::KeysetReader& reader) {
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   if (keyset.get() == NULL)
     return NULL;
@@ -538,18 +543,13 @@ bool UnversionedSigner::Sign(const std::string& data,
 
 std::string UnversionedSigner::Sign(const std::string& data) const {
   std::string signature;
-  bool result = Sign(data, &signature);
-  if (!result)
+  if (!Sign(data, &signature))
     return "";
   return signature;
 }
 
 bool UnversionedSigner::IsAcceptablePurpose() const {
-  const KeyPurpose* purpose = GetKeyPurpose();
-  if (purpose == NULL)
-    return false;
-
-  return purpose->type() == KeyPurpose::SIGN_AND_VERIFY;
+  return GetKeyPurpose() == KeyPurpose::SIGN_AND_VERIFY;
 }
 
 }  // namespace keyczar

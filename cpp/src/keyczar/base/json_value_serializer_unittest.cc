@@ -9,16 +9,22 @@
 // modifications.
 
 #include <keyczar/base/basictypes.h>
+#include <keyczar/base/file_path.h>
 #include <keyczar/base/file_util.h>
 #include <keyczar/base/json_reader.h>
 #include <keyczar/base/json_value_serializer.h>
 #include <keyczar/base/json_writer.h>
 #include <keyczar/base/logging.h>
-#include <keyczar/base/path_service.h>
+#include <keyczar/base/scoped_ptr.h>
 #include <keyczar/base/string_util.h>
 #include <keyczar/base/values.h>
+#include <keyczar/base_test/path_service.h>
 
 #include <testing/gtest/include/gtest/gtest.h>
+#include <testing/platform_test.h>
+
+namespace keyczar {
+namespace base {
 
 TEST(JSONValueSerializerTest, Roundtrip) {
   const std::string original_serialization =
@@ -31,16 +37,16 @@ TEST(JSONValueSerializerTest, Roundtrip) {
   DictionaryValue* root_dict = static_cast<DictionaryValue*>(root.get());
 
   Value* null_value = NULL;
-  ASSERT_TRUE(root_dict->Get(L"null", &null_value));
+  ASSERT_TRUE(root_dict->Get("null", &null_value));
   ASSERT_TRUE(null_value);
   ASSERT_TRUE(null_value->IsType(Value::TYPE_NULL));
 
   bool bool_value = false;
-  ASSERT_TRUE(root_dict->GetBoolean(L"bool", &bool_value));
+  ASSERT_TRUE(root_dict->GetBoolean("bool", &bool_value));
   ASSERT_TRUE(bool_value);
 
   int int_value = 0;
-  ASSERT_TRUE(root_dict->GetInteger(L"int", &int_value));
+  ASSERT_TRUE(root_dict->GetInteger("int", &int_value));
   ASSERT_EQ(42, int_value);
 
   // We shouldn't be able to write using this serializer, since it was
@@ -62,103 +68,6 @@ TEST(JSONValueSerializerTest, Roundtrip) {
     "   \"null\": null\r\n"
     "}\r\n";
   ASSERT_EQ(pretty_serialization, test_serialization);
-}
-
-TEST(JSONValueSerializerTest, StringEscape) {
-  std::wstring all_chars;
-  for (int i = 1; i < 256; ++i) {
-    all_chars += static_cast<wchar_t>(i);
-  }
-  // Generated in in Firefox using the following js (with an extra backslash for
-  // double quote):
-  // var s = '';
-  // for (var i = 1; i < 256; ++i) { s += String.fromCharCode(i); }
-  // uneval(s).replace(/\\/g, "\\\\");
-  std::string all_chars_expected =
-      "\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\b\\t\\n\\v\\f\\r\\x0E\\x0F\\x10"
-      "\\x11\\x12\\x13\\x14\\x15\\x16\\x17\\x18\\x19\\x1A\\x1B\\x1C\\x1D\\x1E"
-      "\\x1F !\\\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\"
-      "\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x7F\\x80\\x81\\x82\\x83\\x84\\x85"
-      "\\x86\\x87\\x88\\x89\\x8A\\x8B\\x8C\\x8D\\x8E\\x8F\\x90\\x91\\x92\\x93"
-      "\\x94\\x95\\x96\\x97\\x98\\x99\\x9A\\x9B\\x9C\\x9D\\x9E\\x9F\\xA0\\xA1"
-      "\\xA2\\xA3\\xA4\\xA5\\xA6\\xA7\\xA8\\xA9\\xAA\\xAB\\xAC\\xAD\\xAE\\xAF"
-      "\\xB0\\xB1\\xB2\\xB3\\xB4\\xB5\\xB6\\xB7\\xB8\\xB9\\xBA\\xBB\\xBC\\xBD"
-      "\\xBE\\xBF\\xC0\\xC1\\xC2\\xC3\\xC4\\xC5\\xC6\\xC7\\xC8\\xC9\\xCA\\xCB"
-      "\\xCC\\xCD\\xCE\\xCF\\xD0\\xD1\\xD2\\xD3\\xD4\\xD5\\xD6\\xD7\\xD8\\xD9"
-      "\\xDA\\xDB\\xDC\\xDD\\xDE\\xDF\\xE0\\xE1\\xE2\\xE3\\xE4\\xE5\\xE6\\xE7"
-      "\\xE8\\xE9\\xEA\\xEB\\xEC\\xED\\xEE\\xEF\\xF0\\xF1\\xF2\\xF3\\xF4\\xF5"
-      "\\xF6\\xF7\\xF8\\xF9\\xFA\\xFB\\xFC\\xFD\\xFE\\xFF";
-
-  std::string expected_output = "{\"all_chars\":\"" + all_chars_expected +
-                                 "\"}";
-  // Test JSONWriter interface
-  std::string output_js;
-  DictionaryValue valueRoot;
-  valueRoot.SetString(L"all_chars", all_chars);
-  JSONWriter::Write(&valueRoot, false, &output_js);
-  ASSERT_EQ(expected_output, output_js);
-
-  // Test JSONValueSerializer interface (uses JSONWriter).
-  JSONStringValueSerializer serializer(&output_js);
-  ASSERT_TRUE(serializer.Serialize(valueRoot));
-  ASSERT_EQ(expected_output, output_js);
-}
-
-TEST(JSONValueSerializerTest, UnicodeStrings) {
-  // unicode string json -> escaped ascii text
-  DictionaryValue root;
-  std::wstring test(L"\x7F51\x9875");
-  root.SetString(L"web", test);
-
-  std::string expected = "{\"web\":\"\\u7F51\\u9875\"}";
-
-  std::string actual;
-  JSONStringValueSerializer serializer(&actual);
-  ASSERT_TRUE(serializer.Serialize(root));
-  ASSERT_EQ(expected, actual);
-
-  // escaped ascii text -> json
-  JSONStringValueSerializer deserializer(expected);
-  scoped_ptr<Value> deserial_root(deserializer.Deserialize(NULL));
-  ASSERT_TRUE(deserial_root.get());
-  DictionaryValue* dict_root =
-      static_cast<DictionaryValue*>(deserial_root.get());
-  std::wstring web_value;
-  ASSERT_TRUE(dict_root->GetString(L"web", &web_value));
-  ASSERT_EQ(test, web_value);
-}
-
-TEST(JSONValueSerializerTest, HexStrings) {
-  // hex string json -> escaped ascii text
-  DictionaryValue root;
-  std::wstring test(L"\x01\x02");
-  root.SetString(L"test", test);
-
-  std::string expected = "{\"test\":\"\\x01\\x02\"}";
-
-  std::string actual;
-  JSONStringValueSerializer serializer(&actual);
-  ASSERT_TRUE(serializer.Serialize(root));
-  ASSERT_EQ(expected, actual);
-
-  // escaped ascii text -> json
-  JSONStringValueSerializer deserializer(expected);
-  scoped_ptr<Value> deserial_root(deserializer.Deserialize(NULL));
-  ASSERT_TRUE(deserial_root.get());
-  DictionaryValue* dict_root =
-      static_cast<DictionaryValue*>(deserial_root.get());
-  std::wstring test_value;
-  ASSERT_TRUE(dict_root->GetString(L"test", &test_value));
-  ASSERT_EQ(test, test_value);
-
-  // Test converting escaped regular chars
-  std::string escaped_chars = "{\"test\":\"\\x67\\x6f\"}";
-  JSONStringValueSerializer deserializer2(escaped_chars);
-  deserial_root.reset(deserializer2.Deserialize(NULL));
-  ASSERT_TRUE(deserial_root.get());
-  dict_root = static_cast<DictionaryValue*>(deserial_root.get());
-  ASSERT_TRUE(dict_root->GetString(L"test", &test_value));
-  ASSERT_EQ(std::wstring(L"go"), test_value);
 }
 
 TEST(JSONValueSerializerTest, AllowTrailingComma) {
@@ -210,9 +119,6 @@ TEST(JSONValueSerializerTest, JSONReaderComments) {
   ASSERT_EQ(1U, list->GetSize());
   Value* elt = NULL;
   ASSERT_TRUE(list->Get(0, &elt));
-  std::wstring value;
-  ASSERT_TRUE(elt && elt->GetAsString(&value));
-  ASSERT_EQ(L"// ok\n /* foo */ ", value);
 
   // You can't nest comments.
   root.reset(JSONReader::Read("/* /* inner */ outer */ [ 1 ]", false));
@@ -223,39 +129,43 @@ TEST(JSONValueSerializerTest, JSONReaderComments) {
   ASSERT_FALSE(root.get());
 }
 
-class JSONFileValueSerializerTest : public testing::Test {
-protected:
+class JSONFileValueSerializerTest : public PlatformTest {
+ protected:
   virtual void SetUp() {
+    PlatformTest::SetUp();
     // Name a subdirectory of the temp directory.
-    ASSERT_TRUE(PathService::Get(base::DIR_TEMP, &test_dir_));
-    file_util::AppendToPath(&test_dir_, L"JSONFileValueSerializerTest");
+    ASSERT_TRUE(base_test::PathService::Get(base_test::DIR_TEMP,
+                                            &test_dir_));
+    test_dir_ = test_dir_.Append("JSONFileValueSerializerTest");
 
     // Create a fresh, empty copy of this directory.
-    file_util::Delete(test_dir_, true);
-    file_util::CreateDirectory(test_dir_);
+    Delete(test_dir_, true);
+    CreateDirectory(test_dir_);
   }
   virtual void TearDown() {
+    PlatformTest::TearDown();
     // Clean up test directory
-    ASSERT_TRUE(file_util::Delete(test_dir_, false));
-    ASSERT_FALSE(file_util::PathExists(test_dir_));
+    ASSERT_TRUE(Delete(test_dir_, false));
+    ASSERT_FALSE(PathExists(test_dir_));
   }
 
   // the path to temporary directory used to contain the test operations
-  std::wstring test_dir_;
+  FilePath test_dir_;
 };
 
 TEST_F(JSONFileValueSerializerTest, Roundtrip) {
-  std::wstring original_file_path;
+  FilePath original_file_path;
   ASSERT_TRUE(
-    PathService::Get(base::DIR_SOURCE_ROOT, &original_file_path));
-  file_util::AppendToPath(&original_file_path, L"keyczar");
-  file_util::AppendToPath(&original_file_path, L"base");
-  file_util::AppendToPath(&original_file_path, L"data");
-  file_util::AppendToPath(&original_file_path,
-                          L"json_value_serializer_unittest");
-  file_util::AppendToPath(&original_file_path, L"serializer_test.js");
+    base_test::PathService::Get(base_test::DIR_SOURCE_ROOT,
+                                &original_file_path));
+  original_file_path = original_file_path.Append("keyczar");
+  original_file_path = original_file_path.Append("base");
+  original_file_path = original_file_path.Append("data");
+  original_file_path =
+      original_file_path.Append("json_value_serializer_unittest");
+  original_file_path = original_file_path.Append("serializer_test.js");
 
-  ASSERT_TRUE(file_util::PathExists(original_file_path));
+  ASSERT_TRUE(PathExists(original_file_path));
 
   JSONFileValueSerializer deserializer(original_file_path);
   scoped_ptr<Value> root;
@@ -267,48 +177,47 @@ TEST_F(JSONFileValueSerializerTest, Roundtrip) {
   DictionaryValue* root_dict = static_cast<DictionaryValue*>(root.get());
 
   Value* null_value = NULL;
-  ASSERT_TRUE(root_dict->Get(L"null", &null_value));
+  ASSERT_TRUE(root_dict->Get("null", &null_value));
   ASSERT_TRUE(null_value);
   ASSERT_TRUE(null_value->IsType(Value::TYPE_NULL));
 
   bool bool_value = false;
-  ASSERT_TRUE(root_dict->GetBoolean(L"bool", &bool_value));
+  ASSERT_TRUE(root_dict->GetBoolean("bool", &bool_value));
   ASSERT_TRUE(bool_value);
 
   int int_value = 0;
-  ASSERT_TRUE(root_dict->GetInteger(L"int", &int_value));
+  ASSERT_TRUE(root_dict->GetInteger("int", &int_value));
   ASSERT_EQ(42, int_value);
 
-  std::wstring string_value;
-  ASSERT_TRUE(root_dict->GetString(L"string", &string_value));
-  ASSERT_EQ(L"hello", string_value);
-
   // Now try writing.
-  std::wstring written_file_path = test_dir_;
-  file_util::AppendToPath(&written_file_path, L"test_output.js");
+  FilePath written_file_path = test_dir_;
+  written_file_path = written_file_path.Append("test_output.js");
 
-  ASSERT_FALSE(file_util::PathExists(written_file_path));
+  ASSERT_FALSE(PathExists(written_file_path));
   JSONFileValueSerializer serializer(written_file_path);
   ASSERT_TRUE(serializer.Serialize(*root));
-  ASSERT_TRUE(file_util::PathExists(written_file_path));
+  ASSERT_TRUE(PathExists(written_file_path));
 
   // Now compare file contents.
-  EXPECT_TRUE(file_util::ContentsEqual(original_file_path, written_file_path));
-  EXPECT_TRUE(file_util::Delete(written_file_path, false));
+  std::string fa, fb;
+  ASSERT_TRUE(ReadFileToString(original_file_path, &fa));
+  ASSERT_TRUE(ReadFileToString(written_file_path, &fb));
+  EXPECT_EQ(fa, fb);
+  EXPECT_TRUE(Delete(written_file_path, false));
 }
 
 TEST_F(JSONFileValueSerializerTest, RoundtripNested) {
-  std::wstring original_file_path;
+  FilePath original_file_path;
   ASSERT_TRUE(
-    PathService::Get(base::DIR_SOURCE_ROOT, &original_file_path));
-  file_util::AppendToPath(&original_file_path, L"keyczar");
-  file_util::AppendToPath(&original_file_path, L"base");
-  file_util::AppendToPath(&original_file_path, L"data");
-  file_util::AppendToPath(&original_file_path,
-                          L"json_value_serializer_unittest");
-  file_util::AppendToPath(&original_file_path, L"serializer_nested_test.js");
-
-  ASSERT_TRUE(file_util::PathExists(original_file_path));
+    base_test::PathService::Get(base_test::DIR_SOURCE_ROOT,
+                                &original_file_path));
+  original_file_path = original_file_path.Append("keyczar");
+  original_file_path = original_file_path.Append("base");
+  original_file_path = original_file_path.Append("data");
+  original_file_path =
+      original_file_path.Append("json_value_serializer_unittest");
+  original_file_path = original_file_path.Append("serializer_nested_test.js");
+  ASSERT_TRUE(PathExists(original_file_path));
 
   JSONFileValueSerializer deserializer(original_file_path);
   scoped_ptr<Value> root;
@@ -316,32 +225,38 @@ TEST_F(JSONFileValueSerializerTest, RoundtripNested) {
   ASSERT_TRUE(root.get());
 
   // Now try writing.
-  std::wstring written_file_path = test_dir_;
-  file_util::AppendToPath(&written_file_path, L"test_output.js");
+  FilePath written_file_path = test_dir_;
+  written_file_path = written_file_path.Append("test_output.js");
 
-  ASSERT_FALSE(file_util::PathExists(written_file_path));
+  ASSERT_FALSE(PathExists(written_file_path));
   JSONFileValueSerializer serializer(written_file_path);
   ASSERT_TRUE(serializer.Serialize(*root));
-  ASSERT_TRUE(file_util::PathExists(written_file_path));
+  ASSERT_TRUE(PathExists(written_file_path));
 
   // Now compare file contents.
-  EXPECT_TRUE(file_util::ContentsEqual(original_file_path, written_file_path));
-  EXPECT_TRUE(file_util::Delete(written_file_path, false));
+  std::string fa, fb;
+  ASSERT_TRUE(ReadFileToString(original_file_path, &fa));
+  ASSERT_TRUE(ReadFileToString(written_file_path, &fb));
+  EXPECT_EQ(fa, fb);
+  EXPECT_TRUE(Delete(written_file_path, false));
 }
 
 TEST_F(JSONFileValueSerializerTest, NoWhitespace) {
-  std::wstring source_file_path;
-  ASSERT_TRUE(PathService::Get(base::DIR_SOURCE_ROOT, &source_file_path));
-  file_util::AppendToPath(&source_file_path, L"keyczar");
-  file_util::AppendToPath(&source_file_path, L"base");
-  file_util::AppendToPath(&source_file_path, L"data");
-  file_util::AppendToPath(&source_file_path,
-                          L"json_value_serializer_unittest");
-  file_util::AppendToPath(&source_file_path,
-                          L"serializer_test_nowhitespace.js");
-  ASSERT_TRUE(file_util::PathExists(source_file_path));
+  FilePath source_file_path;
+  ASSERT_TRUE(base_test::PathService::Get(base_test::DIR_SOURCE_ROOT,
+                                          &source_file_path));
+  source_file_path = source_file_path.Append("keyczar");
+  source_file_path = source_file_path.Append("base");
+  source_file_path = source_file_path.Append("data");
+  source_file_path = source_file_path.Append("json_value_serializer_unittest");
+  source_file_path = source_file_path.Append("serializer_test_nowhitespace.js");
+  ASSERT_TRUE(PathExists(source_file_path));
+
   JSONFileValueSerializer serializer(source_file_path);
   scoped_ptr<Value> root;
   root.reset(serializer.Deserialize(NULL));
   ASSERT_TRUE(root.get());
 }
+
+}  // namespace base
+}  // namespace keyczar

@@ -15,6 +15,7 @@
 
 #include <keyczar/base/base64w.h>
 #include <keyczar/base/logging.h>
+#include <keyczar/base/stl_util-inl.h>
 #include <keyczar/crypto_factory.h>
 #include <keyczar/key_util.h>
 #include <keyczar/message_digest_impl.h>
@@ -59,38 +60,39 @@ AESKey* AESKey::CreateFromValue(const Value& root_key) {
       &root_key);
 
   std::string mode;
-  if (!aes_key->GetString(L"mode", &mode))
+  if (!aes_key->GetString("mode", &mode))
     return NULL;
 
-  scoped_ptr<CipherMode> cipher_mode(CipherMode::Create(mode));
-  if (cipher_mode.get() == NULL)
+  CipherMode::Type cipher_mode = CipherMode::GetTypeFromName(mode);
+  if (cipher_mode == CipherMode::UNDEF)
     return NULL;
 
-  std::string aes_key_string;
-  if (!util::DeserializeString(*aes_key, L"aesKeyString", &aes_key_string))
+  base::ScopedSafeString aes_key_string(new std::string());
+  if (!util::SafeDeserializeString(*aes_key, "aesKeyString",
+                                   aes_key_string.get()))
     return NULL;
 
   int size;
-  if (!aes_key->GetInteger(L"size", &size))
+  if (!aes_key->GetInteger("size", &size))
     return NULL;
 
-  if (size / 8 != static_cast<int>(aes_key_string.length())) {
+  if (size / 8 != static_cast<int>(aes_key_string->size())) {
     LOG(ERROR) << "Mismatch between key string length and declared size";
     return NULL;
   }
 
-  if (!IsValidSize("AES", size))
+  if (!KeyType::IsValidCipherSize(KeyType::AES, size))
     return NULL;
 
   DictionaryValue* hmac_key_value = NULL;
-  if (!aes_key->GetDictionary(L"hmacKey", &hmac_key_value))
+  if (!aes_key->GetDictionary("hmacKey", &hmac_key_value))
     return NULL;
 
   if (hmac_key_value == NULL)
     return NULL;
 
   scoped_ptr<AESImpl> aes_key_impl(
-      CryptoFactory::CreateAES(*cipher_mode, aes_key_string));
+      CryptoFactory::CreateAES(cipher_mode, *aes_key_string));
   if (aes_key_impl.get() == NULL)
     return NULL;
 
@@ -103,22 +105,19 @@ AESKey* AESKey::CreateFromValue(const Value& root_key) {
     return NULL;
   }
 
-  return new AESKey(aes_key_impl.release(), cipher_mode.release(), size,
-                    hmac_key);
+  return new AESKey(aes_key_impl.release(), cipher_mode, size, hmac_key);
 }
 
 // static
 AESKey* AESKey::GenerateKey(int size) {
-  if (!IsValidSize("AES", size))
+  if (!KeyType::IsValidCipherSize(KeyType::AES, size))
     return NULL;
 
   // Currently only CBC mode is supported, so only CBC keys are generated.
-  scoped_ptr<CipherMode> cipher_mode(CipherMode::Create("CBC"));
-  if (cipher_mode.get() == NULL)
-    return NULL;
+  CipherMode::Type cipher_mode = CipherMode::CBC;
 
-  scoped_ptr<AESImpl> aes_key_impl(
-      CryptoFactory::GenerateAES(*cipher_mode, size));
+  scoped_ptr<AESImpl> aes_key_impl(CryptoFactory::GenerateAES(cipher_mode,
+                                                              size));
   if (aes_key_impl.get() == NULL)
     return NULL;
 
@@ -130,37 +129,35 @@ AESKey* AESKey::GenerateKey(int size) {
   if (hmac_key == NULL)
     return NULL;
 
-  return new AESKey(aes_key_impl.release(), cipher_mode.release(), size,
-                    hmac_key);
+  return new AESKey(aes_key_impl.release(), cipher_mode, size, hmac_key);
 }
 
 Value* AESKey::GetValue() const {
-  if (aes_impl_.get() == NULL || hmac_key() == NULL ||
-      cipher_mode_.get() == NULL)
-    return false;
+  if (aes_impl_.get() == NULL || hmac_key() == NULL)
+    return NULL;
 
   scoped_ptr<DictionaryValue> aes_key(new DictionaryValue);
   if (aes_key.get() == NULL)
     return NULL;
 
-  std::string mode;
-  if (!cipher_mode_->GetName(&mode))
+  std::string mode = CipherMode::GetNameFromType(cipher_mode_);
+  if (mode.empty())
     return NULL;
-  if (!aes_key->SetString(L"mode", mode))
-    return NULL;
-
-  if (!util::SerializeString(aes_impl_->GetKey(), L"aesKeyString",
-                             aes_key.get()))
+  if (!aes_key->SetString("mode", mode))
     return NULL;
 
-  if (!aes_key->SetInteger(L"size", size()))
+  if (!util::SafeSerializeString(aes_impl_->GetKey(), "aesKeyString",
+                                 aes_key.get()))
+    return NULL;
+
+  if (!aes_key->SetInteger("size", size()))
     return NULL;
 
   Value* hmac_key_value = hmac_key()->GetValue();
   if (hmac_key_value == NULL)
     return NULL;
 
-  if (!aes_key->Set(L"hmacKey", hmac_key_value))
+  if (!aes_key->Set("hmacKey", hmac_key_value))
     return NULL;
 
   return aes_key.release();
@@ -182,17 +179,18 @@ bool AESKey::Hash(std::string* hash) const {
   digest_impl->Final(&full_hash);
   CHECK_LE(Key::GetHashSize(), static_cast<int>(full_hash.length()));
 
-  Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
+  base::Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
   return true;
 }
 
-bool AESKey::Encrypt(const std::string& data, std::string* encrypted) const {
-  if (encrypted == NULL || aes_impl_.get() == NULL || hmac_key() == NULL)
+bool AESKey::Encrypt(const std::string& plaintext,
+                     std::string* ciphertext) const {
+  if (ciphertext == NULL || aes_impl_.get() == NULL || hmac_key() == NULL)
     return false;
 
-  std::string ciphertext;
+  std::string encrypted_plaintext;
   std::string iv;
-  if (!aes_impl_->Encrypt(data, &ciphertext, &iv))
+  if (!aes_impl_->Encrypt(plaintext, &encrypted_plaintext, &iv))
     return false;
 
   // Fixme: trick to provide same data format than Java implementation.
@@ -210,24 +208,25 @@ bool AESKey::Encrypt(const std::string& data, std::string* encrypted) const {
   if (!Header(&header))
     return false;
 
-  std::string all_bytes = header + iv + ciphertext;
+  std::string all_bytes = header + iv + encrypted_plaintext;
 
   std::string signature;
   if (!hmac_key()->Sign(all_bytes, &signature))
     return false;
 
-  encrypted->assign(all_bytes + signature);
+  ciphertext->assign(all_bytes + signature);
   return true;
 }
 
-bool AESKey::Decrypt(const std::string& encrypted, std::string* data) const {
-  if (data == NULL || aes_impl_.get() == NULL || hmac_key() == NULL)
+bool AESKey::Decrypt(const std::string& ciphertext,
+                     std::string* plaintext) const {
+  if (plaintext == NULL || aes_impl_.get() == NULL || hmac_key() == NULL)
     return false;
 
   int key_size = size() / 8;
   int digest_size = hmac_key()->size() / 8;
 
-  std::string data_bytes = encrypted.substr(Key::GetHeaderSize());
+  std::string data_bytes = ciphertext.substr(Key::GetHeaderSize());
   int data_bytes_len = data_bytes.length();
 
   std::string iv_bytes = data_bytes.substr(0, key_size);
@@ -236,11 +235,11 @@ bool AESKey::Decrypt(const std::string& encrypted, std::string* data) const {
   std::string signature_bytes = data_bytes.substr(data_bytes_len - digest_size);
 
   if (!hmac_key()->Verify(
-          encrypted.substr(0, encrypted.length() - digest_size),
+          ciphertext.substr(0, ciphertext.length() - digest_size),
           signature_bytes))
     return false;
 
-  if (!aes_impl_->Decrypt(iv_bytes, aes_bytes, data))
+  if (!aes_impl_->Decrypt(iv_bytes, aes_bytes, plaintext))
     return false;
 
   return true;

@@ -21,12 +21,6 @@ namespace keyczar {
 
 namespace openssl {
 
-HMACOpenSSL::HMACOpenSSL(const EVP_MD* (*evp_md)(), const std::string& key)
-    : evp_md_(evp_md), key_(key), engine_(NULL) {
-  // Initializes the hmac context.
-  HMAC_CTX_init(&context_);
-}
-
 HMACOpenSSL::~HMACOpenSSL() {
   HMAC_CTX_cleanup(&context_);
 }
@@ -60,7 +54,7 @@ HMACOpenSSL* HMACOpenSSL::Create(DigestAlgorithm digest_algorithm,
   if (evp_md == NULL)
     return NULL;
 
-  if (key.length() < EVP_MD_size(evp_md())) {
+  if (key.length() < static_cast<uint32>(EVP_MD_size(evp_md()))) {
     LOG(ERROR) << "HMAC key size must at least be equal to its output length";
     return NULL;
   }
@@ -75,12 +69,12 @@ HMACOpenSSL* HMACOpenSSL::GenerateKey(DigestAlgorithm digest_algorithm,
   if (rand_impl == NULL)
     return NULL;
 
-  std::string key;
-  if (!rand_impl->RandBytes(size / 8, &key))
+  base::ScopedSafeString key(new std::string());
+  if (!rand_impl->RandBytes(size / 8, key.get()))
     return NULL;
-  CHECK_EQ(static_cast<int>(key.length()), size / 8);
+  CHECK_EQ(static_cast<int>(key->size()), size / 8);
 
-  return HMACOpenSSL::Create(digest_algorithm, key);
+  return HMACOpenSSL::Create(digest_algorithm, *key);
 }
 
 bool HMACOpenSSL::Init() {
@@ -91,8 +85,8 @@ bool HMACOpenSSL::Init() {
   // most recent versions of openssl is currently ignored.
   HMAC_Init_ex(&context_,
                reinterpret_cast<unsigned char*>(
-                   const_cast<char*>(key_.data())),
-               key_.length(),
+                   const_cast<char*>(key_->data())),
+               key_->size(),
                evp_md_(),
                engine_);
   return true;
@@ -120,6 +114,12 @@ bool HMACOpenSSL::Final(std::string* digest) {
   HMAC_Final(&context_, md_buffer, &md_len);
   digest->assign(reinterpret_cast<char*>(md_buffer), md_len);
   return true;
+}
+
+HMACOpenSSL::HMACOpenSSL(const EVP_MD* (*evp_md)(), const std::string& key)
+    : evp_md_(evp_md), key_(new std::string(key)), engine_(NULL) {
+  // Initializes the hmac context.
+  HMAC_CTX_init(&context_);
 }
 
 }  // namespace openssl

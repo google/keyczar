@@ -66,21 +66,8 @@
 #define ARCH_CPU_ARM_FAMILY 1
 #define ARCH_CPU_ARMEL 1
 #define ARCH_CPU_32_BITS 1
-#define WCHAR_T_IS_UNSIGNED 1
 #else
 #error Please add support for your architecture in keyczar/base/build_config.h
-#endif
-
-// Type detection for wchar_t.
-#if defined(OS_WIN)
-#define WCHAR_T_IS_UTF16
-#elif defined(OS_POSIX) && defined(COMPILER_GCC) &&                     \
-  defined(__WCHAR_MAX__) &&                                             \
-  ( __WCHAR_MAX__ == 0x7fffffff ||                                      \
-    ( defined(WCHAR_T_IS_UNSIGNED) && __WCHAR_MAX__ == 0xffffffff ) )
-#define WCHAR_T_IS_UTF32
-#else
-#error Please add support for your compiler in keyczar/base/build_config.h
 #endif
 
 #endif  // KEYCZAR_BASE_BUILD_CONFIG_H_

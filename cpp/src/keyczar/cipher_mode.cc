@@ -18,59 +18,66 @@
 namespace keyczar {
 
 // static
-CipherMode* CipherMode::Create(const std::string& name) {
-  if (name.compare("CBC") == 0)
-    return new CipherMode(CBC, true /* use_iv */);
-  if (name.compare("CTR") == 0)
-    return new CipherMode(CTR, true);
-  if (name.compare("ECB") == 0)
-    return new CipherMode(ECB, false);
-  if (name.compare("DET_CBC") == 0)
-    return new CipherMode(DET_CBC, false);
+CipherMode::Type CipherMode::GetTypeFromName(const std::string& name) {
+  if (name == "CBC")
+    return CBC;
+  if (name == "CTR")
+    return CTR;
+  if (name == "ECB")
+    return ECB;
+  if (name == "DET_CBC")
+    return DET_CBC;
+
   NOTREACHED();
-  return NULL;
+  return UNDEF;
 }
 
-bool CipherMode::GetName(std::string* name) const {
-  if (name == NULL)
-    return false;
-
-  switch (type_) {
+// static
+std::string CipherMode::GetNameFromType(Type type) {
+  switch (type) {
     case CBC:
-      name->assign("CBC");
-      return true;
+      return "CBC";
     case CTR:
-      name->assign("CTR");
+      return "CTR";
+    case ECB:
+      return "ECB";
+    case DET_CBC:
+      return "DET_CBC";
+    default:
+      NOTREACHED();
+  }
+  return "";
+}
+
+// static
+bool CipherMode::HasIV(Type type) {
+  switch (type) {
+    case CBC:
+    case CTR:
       return true;
     case ECB:
-      name->assign("ECB");
-      return true;
     case DET_CBC:
-      name->assign("DET_CBC");
-      return true;
+      return false;
     default:
       NOTREACHED();
   }
   return false;
 }
 
-int CipherMode::GetOutputSize(int block_size, int input_length) const {
-  if (type_ == CBC) {
-    return (input_length / block_size + 2) * block_size;
-  } else {
-    if (type_ == ECB) {
+// static
+int CipherMode::GetOutputSize(Type type, int block_size, int input_length) {
+  switch (type) {
+    case CBC:
+      return (input_length / block_size + 2) * block_size;
+    case ECB:
       return block_size;
-    } else {
-      if (type_ == CTR) {
-        return input_length + block_size / 2;
-      } else {
-        if (type_ == DET_CBC) {
-          return (input_length / block_size + 1) * block_size;
-        }
-      }
-    }
+    case CTR:
+      return input_length + block_size / 2;
+    case DET_CBC:
+      return (input_length / block_size + 1) * block_size;
+    default:
+      NOTREACHED();
   }
-  NOTREACHED();
   return 0;
 }
 

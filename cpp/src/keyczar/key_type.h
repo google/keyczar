@@ -24,7 +24,8 @@ namespace keyczar {
 class KeyType {
  public:
   enum Type {
-    AES = 0,
+    UNDEF,
+    AES,
 #ifdef COMPAT_KEYCZAR_06B
     HMAC_SHA1,
 #else
@@ -37,31 +38,22 @@ class KeyType {
     RSA_PRIV,
     RSA_PUB
   };
-  KeyType(Type type, const std::vector<int>& valid_sizes, int default_size);
 
-  // Creates KeyStatus instance from string |name|. The caller takes
-  // ownership of the result.
-  static KeyType* Create(const std::string& name);
+  static Type GetTypeFromName(const std::string& name);
 
-  Type type() const { return type_; }
+  static std::string GetNameFromType(Type type);
 
-  bool GetName(std::string* name) const;
+  static int DefaultCipherSize(Type type);
 
-  int default_size() const { return default_size_; }
+  static bool IsValidCipherSize(Type type, int size);
 
-  bool IsValidSize(int size) const;
-
-  std::vector<int> sizes() { return sizes_; }
+  static std::vector<int> CipherSizes(Type type);
 
  private:
-  Type type_;
-  std::vector<int> sizes_;
-  int default_size_;
+  KeyType();
 
   DISALLOW_COPY_AND_ASSIGN(KeyType);
 };
-
-bool IsValidSize(const std::string& key_type_name, int size);
 
 }  // namespace keyczar
 

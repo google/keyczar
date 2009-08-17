@@ -18,40 +18,35 @@
 namespace keyczar {
 
 // static
-KeyPurpose* KeyPurpose::Create(const std::string& name) {
-  if (name.compare("DECRYPT_AND_ENCRYPT") == 0)
-    return new KeyPurpose(DECRYPT_AND_ENCRYPT);
-  if (name.compare("ENCRYPT") == 0)
-    return new KeyPurpose(ENCRYPT);
-  if (name.compare("SIGN_AND_VERIFY") == 0)
-    return new KeyPurpose(SIGN_AND_VERIFY);
-  if (name.compare("VERIFY") == 0)
-    return new KeyPurpose(VERIFY);
+KeyPurpose::Type KeyPurpose::GetTypeFromName(const std::string& name) {
+  if (name == "DECRYPT_AND_ENCRYPT")
+    return DECRYPT_AND_ENCRYPT;
+  if (name == "ENCRYPT")
+    return ENCRYPT;
+  if (name == "SIGN_AND_VERIFY")
+    return SIGN_AND_VERIFY;
+  if (name == "VERIFY")
+    return VERIFY;
+
   NOTREACHED();
-  return NULL;
+  return UNDEF;
 }
 
-bool KeyPurpose::GetName(std::string* name) const {
-  if (name == NULL)
-    return false;
-
-  switch (type_) {
+// static
+std::string KeyPurpose::GetNameFromType(Type type) {
+  switch (type) {
     case DECRYPT_AND_ENCRYPT:
-      name->assign("DECRYPT_AND_ENCRYPT");
-      return true;
+      return "DECRYPT_AND_ENCRYPT";
     case ENCRYPT:
-      name->assign("ENCRYPT");
-      return true;
+      return "ENCRYPT";
     case SIGN_AND_VERIFY:
-      name->assign("SIGN_AND_VERIFY");
-      return true;
+      return "SIGN_AND_VERIFY";
     case VERIFY:
-      name->assign("VERIFY");
-      return true;
+      return "VERIFY";
     default:
       NOTREACHED();
   }
-  return false;
+  return "";
 }
 
 }  // namespace keyczar

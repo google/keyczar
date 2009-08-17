@@ -30,29 +30,31 @@ namespace openssl {
 // OpenSSL concrete implementation.
 class DSAOpenSSL : public DSAImpl {
  public:
-  DSAOpenSSL(DSA* key, bool private_key)
-      : key_(key), private_key_(private_key) {}
-
   virtual ~DSAOpenSSL() {}
 
-  // Builds a concrete DSA implementation object from |key|. |key| must be
-  // correctly initialized and will be used to instanciate an OpenSSL DSA
-  // key. The caller takes ownership over the returned object.
+  // Builds a DSAOpenSSL object from |key|. |key| must be correctly formed
+  // and initialized. The caller takes ownership over the returned object.
   static DSAOpenSSL* Create(const DSAIntermediateKey& key, bool private_key);
 
-  // Builds a concrete DSA implementation object from a new generated key of
-  // length |size| and returns the result to the caller who takes ownership
-  // over the returned instance. The value of |size| is expressed in bits.
+  // Builds a DSAOpenSSL object from a new generated key of size |size|. The
+  // value of |size| is expressed in bits. The caller takes ownership over
+  // the returned instance.
   static DSAOpenSSL* GenerateKey(int size);
 
-  // Builds a concrete DSA implementation object from the PEM private key stored
-  // at |filename|. |passphrase| is the optional passphrase. Pass NULL if there
-  // is no passphrase of if it will be asked interactively. The caller takes
-  // ownership over the returned object.
-  static DSAOpenSSL* CreateFromPEMKey(const std::string& filename,
-                                      const std::string* passphrase);
+  // Builds an DSAOpenSSL object from a PEM private key stored at |filename|.
+  // |passphrase| is an optional passphrase. Its value is NULL if no
+  // passphrase is expected or if it should be prompted interactively at
+  // execution. The caller takes ownership over the returned object.
+  // It can handle PEM format keys as well as PKCS8 format keys.
+  static DSAOpenSSL* CreateFromPEMPrivateKey(const std::string& filename,
+                                             const std::string* passphrase);
 
-  bool WriteKeyToPEMFile(const std::string& filename);
+  // Exports this key encrypted with |passphrase| to |filename|. The format
+  // used is PKCS8 and the key is encrypted with PBE algorithm as defined in
+  // PKCS5 v2.0, the associated cipher used is AES. If |passphrase| is NULL
+  // a callback function will be called to prompt a passphrase at execution.
+  virtual bool ExportPrivateKey(const std::string& filename,
+                                const std::string* passphrase) const;
 
   virtual bool GetAttributes(DSAIntermediateKey* key);
 
@@ -75,10 +77,15 @@ class DSAOpenSSL : public DSAImpl {
  private:
   FRIEND_TEST(DSAOpenSSL, CreateKeyAndCompare);
 
+  // DSA_free internally calls BN_clear_free() to clear the DSA fields
+  // with OPENSSL_cleanse() before freeing the memory.
   typedef scoped_ptr_malloc<
       DSA, openssl::OSSLDestroyer<DSA, DSA_free> > ScopedDSAKey;
 
-  ScopedDSAKey key_;
+  DSAOpenSSL(DSA* key, bool private_key)
+      : key_(key), private_key_(private_key) {}
+
+  const ScopedDSAKey key_;
 
   bool private_key_;
 

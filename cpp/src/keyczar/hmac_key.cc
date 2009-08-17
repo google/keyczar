@@ -15,6 +15,7 @@
 
 #include <keyczar/base/base64w.h>
 #include <keyczar/base/logging.h>
+#include <keyczar/base/stl_util-inl.h>
 #include <keyczar/crypto_factory.h>
 #include <keyczar/key_util.h>
 #include <keyczar/message_digest_impl.h>
@@ -59,31 +60,31 @@ HMACKey* HMACKey::CreateFromValue(const Value& root_key) {
   const DictionaryValue* hmac_key = static_cast<const DictionaryValue*>(
       &root_key);
 
-  std::string key;
-  if (!util::DeserializeString(*hmac_key, L"hmacKeyString", &key))
+  base::ScopedSafeString key(new std::string());
+  if (!util::SafeDeserializeString(*hmac_key, "hmacKeyString", key.get()))
     return NULL;
 
   int size;
-  if (!hmac_key->GetInteger(L"size", &size))
+  if (!hmac_key->GetInteger("size", &size))
     return NULL;
 
 #ifdef COMPAT_KEYCZAR_06B
   CHECK_EQ(size, 256);
   size = 160;
 
-  if (!IsValidSize("HMAC_SHA1", size))
+  if (!KeyType::IsValidCipherSize(KeyType::HMAC_SHA1, size))
     return NULL;
 #else
-  if (size / 8 != static_cast<int>(key.length())) {
+  if (size / 8 != static_cast<int>(key->size())) {
     LOG(ERROR) << "Mismatch between key string length and declared size";
     return NULL;
   }
 
-  if (!IsValidSize("HMAC", size))
+  if (!KeyType::IsValidCipherSize(KeyType::HMAC, size))
     return NULL;
 
   std::string digest_name;
-  if (!hmac_key->GetString(L"digest", &digest_name))
+  if (!hmac_key->GetString("digest", &digest_name))
     return NULL;
 
   std::string digest_name_check;
@@ -93,7 +94,7 @@ HMACKey* HMACKey::CreateFromValue(const Value& root_key) {
     return NULL;
 #endif
 
-  scoped_ptr<HMACImpl> hmac_key_impl(CryptoFactory::CreateHMAC(key));
+  scoped_ptr<HMACImpl> hmac_key_impl(CryptoFactory::CreateHMAC(*key));
   if (hmac_key_impl.get() == NULL)
     return NULL;
 
@@ -104,9 +105,9 @@ HMACKey* HMACKey::CreateFromValue(const Value& root_key) {
 HMACKey* HMACKey::GenerateKey(int size) {
 #ifdef COMPAT_KEYCZAR_06B
   CHECK_EQ(size, 160);
-  if (!IsValidSize("HMAC_SHA1", size))
+  if (!KeyType::IsValidCipherSize(KeyType::HMAC_SHA1, size))
 #else
-  if (!IsValidSize("HMAC", size))
+  if (!KeyType::IsValidCipherSize(KeyType::HMAC, size))
 #endif
     return NULL;
 
@@ -125,21 +126,21 @@ Value* HMACKey::GetValue() const {
   if (hmac_key.get() == NULL)
     return NULL;
 
-  if (!util::SerializeString(hmac_impl_->GetKey(), L"hmacKeyString",
-                             hmac_key.get()))
+  if (!util::SafeSerializeString(hmac_impl_->GetKey(), "hmacKeyString",
+                                 hmac_key.get()))
     return NULL;
 
 #ifdef COMPAT_KEYCZAR_06B
   CHECK_EQ(size(), 160);
-  if (!hmac_key->SetInteger(L"size", 256))
+  if (!hmac_key->SetInteger("size", 256))
 #else
   std::string digest_name;
   if (!GetDigestNameFromHMACKeySize(size(), &digest_name))
     return NULL;
-  if (!hmac_key->SetString(L"digest", digest_name))
+  if (!hmac_key->SetString("digest", digest_name))
     return NULL;
 
-  if (!hmac_key->SetInteger(L"size", size()))
+  if (!hmac_key->SetInteger("size", size()))
 #endif
     return NULL;
 
@@ -159,7 +160,7 @@ bool HMACKey::Hash(std::string* hash) const {
   digest_impl->Digest(hmac_impl_->GetKey(), &full_hash);
   CHECK_LE(Key::GetHashSize(), static_cast<int>(full_hash.length()));
 
-  Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
+  base::Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
   return true;
 }
 

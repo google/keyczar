@@ -1,4 +1,5 @@
-# Encrypts and decrypts a short message.
+# Signs a message and verifies its signature back. Uses raw encoding
+# and base64w encoding.
 #
 # Example: python basic_sign.py ~/my-dsa
 #
@@ -8,7 +9,7 @@ import sys
 import keyczar
 
 def Sign(keyset_path):
-    if not os.path.isdir(keyset_path):
+    if not os.path.exists(keyset_path):
         return
 
     input = 'Message to sign'
@@ -22,7 +23,7 @@ def Sign(keyset_path):
     assert verifier.Verify(input, signature)
 
 if __name__ == '__main__':
-    if (len(sys.argv) != 2):
-        print >> sys.stderr, "Provide a key set path as argument."
+    if (len(sys.argv) != 2 or not os.path.exists(sys.argv[1])):
+        print >> sys.stderr, "Provide a valid key set path as argument."
         sys.exit(1)
     Sign(sys.argv[1])

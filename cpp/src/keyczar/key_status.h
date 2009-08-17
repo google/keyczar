@@ -22,24 +22,21 @@ namespace keyczar {
 
 class KeyStatus {
  public:
+  // Update the corresponding enum structure inside keyczar.i if this one
+  // is modified.
   enum Type {
-    PRIMARY = 0,
+    UNDEF,
+    PRIMARY,
     ACTIVE,
     INACTIVE
   };
 
-  explicit KeyStatus(Type type) : type_(type) {}
+  static Type GetTypeFromName(const std::string& name);
 
-  // Creates KeyStatus instance from string |name|. The caller takes
-  // ownership of the result.
-  static KeyStatus* Create(const std::string& name);
-
-  Type type() const { return type_; }
-
-  bool GetName(std::string* name) const;
+  static std::string GetNameFromType(Type type);
 
  private:
-  Type type_;
+  KeyStatus();
 
   DISALLOW_COPY_AND_ASSIGN(KeyStatus);
 };

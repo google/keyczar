@@ -12,7 +12,7 @@
 
 namespace {
 
-class SelfAssign : public base::RefCounted<SelfAssign> {
+class SelfAssign : public keyczar::base::RefCounted<SelfAssign> {
 };
 
 class CheckDerivedMemberAccess : public scoped_refptr<SelfAssign> {

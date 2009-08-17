@@ -83,7 +83,7 @@ conf.CheckCXX()
 
 # Mandatory libraries
 # fixme: is pthread mandatory for unittests ?
-for lib in ('crypto', 'icuuc'):
+for lib in ('crypto',):
     # FIXME: currently these checks are not enforced some may not work
     # reliably on every supported architectures.
     conf.CheckLib(lib)
@@ -103,7 +103,9 @@ base_env = conf.Finish()
 # Linux environnment
 linux_env = base_env.Clone()
 linux_env.Tool('target_platform_linux')
-
+linux_env.Append(
+    CCFLAGS = [], #['-W', '-Wall'],
+    )
 
 # Debug Linux
 linux_debug_env = linux_env.Clone(

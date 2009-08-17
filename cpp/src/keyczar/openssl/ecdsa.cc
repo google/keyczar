@@ -17,7 +17,6 @@
 #include <openssl/ec.h>
 #include <openssl/objects.h>
 #include <openssl/pem.h>
-
 #include <string.h>
 
 #include <keyczar/base/file_util.h>
@@ -94,6 +93,11 @@ ECDSAOpenSSL* ECDSAOpenSSL::Create(const ECDSAIntermediateKey& key,
     return NULL;
   }
 
+  // Make sure this group has this flag set. This flag is needed for exporting
+  // this key with the ASN1 OID information which in turn is needed when the
+  // key is loaded back to get its curve name.
+  EC_GROUP_set_asn1_flag(group.get(), OPENSSL_EC_NAMED_CURVE);
+
   // group is duplicated by this function
   if (EC_KEY_set_group(ecdsa_key.get(), group.get()) == 0) {
     PrintOSSLErrors();
@@ -165,6 +169,11 @@ ECDSAOpenSSL* ECDSAOpenSSL::GenerateKey(ECDSAImpl::Curve curve) {
     return NULL;
   }
 
+  // Make sure this group has this flag set. This flag is needed for exporting
+  // this key with the ASN1 OID information which in turn is needed when the
+  // key is loaded back to get its curve name.
+  EC_GROUP_set_asn1_flag(group.get(), OPENSSL_EC_NAMED_CURVE);
+
   // group is duplicated by this function
   if (EC_KEY_set_group(ecdsa_key.get(), group.get()) == 0) {
     PrintOSSLErrors();
@@ -190,10 +199,10 @@ ECDSAOpenSSL* ECDSAOpenSSL::GenerateKey(ECDSAImpl::Curve curve) {
 }
 
 // static
-ECDSAOpenSSL* ECDSAOpenSSL::CreateFromPEMKey(const std::string& filename,
-                                             const std::string* passphrase) {
+ECDSAOpenSSL* ECDSAOpenSSL::CreateFromPEMPrivateKey(
+    const std::string& filename, const std::string* passphrase) {
   // Load the disk based private key.
-  ScopedEVPPKey evp_pkey(ReadPEMKeyFromFile(filename, passphrase));
+  ScopedEVPPKey evp_pkey(ReadPEMPrivateKeyFromFile(filename, passphrase));
   if (evp_pkey.get() == NULL) {
     PrintOSSLErrors();
     return NULL;
@@ -212,7 +221,9 @@ ECDSAOpenSSL* ECDSAOpenSSL::CreateFromPEMKey(const std::string& filename,
   }
 
   if (EC_KEY_check_key(ecdsa_key.get()) != 1 ||
-      EC_GROUP_check(EC_KEY_get0_group(ecdsa_key.get()), NULL) != 1) {
+      EC_GROUP_check(EC_KEY_get0_group(ecdsa_key.get()), NULL) != 1 ||
+      EC_GROUP_get_asn1_flag(EC_KEY_get0_group(
+                                 ecdsa_key.get())) != OPENSSL_EC_NAMED_CURVE) {
     PrintOSSLErrors();
     return NULL;
   }
@@ -221,32 +232,19 @@ ECDSAOpenSSL* ECDSAOpenSSL::CreateFromPEMKey(const std::string& filename,
                           true /* private_key */);
 }
 
-// FIXME: ways to improve this method:
-// - use a callback or a string to protect the private key with a passphrase
-// - use PEM_write_PKCS8PrivateKey() for writing the private key
-bool ECDSAOpenSSL::WriteKeyToPEMFile(const std::string& filename) {
-  if (key_.get() == NULL)
+bool ECDSAOpenSSL::ExportPrivateKey(const std::string& filename,
+                                    const std::string* passphrase) const {
+  if (key_.get() == NULL || !private_key_)
     return false;
 
-  FILE* dest_file = file_util::OpenFile(filename, "w+");
-  if (dest_file == NULL)
+  ScopedEVPPKey evp_key(EVP_PKEY_new());
+  if (evp_key.get() == NULL)
     return false;
 
-  // Write the ec parameters in both cases
-  if (!PEM_write_ECPKParameters(dest_file,
-                                EC_KEY_get0_group(key_.get())))
+  if (!EVP_PKEY_set1_EC_KEY(evp_key.get(), key_.get()))
     return false;
 
-  int return_value = 0;
-  if (private_key_)
-    return_value = PEM_write_ECPrivateKey(dest_file, key_.get(), NULL,
-                                          NULL, 0, NULL, NULL);
-  else
-    return_value = PEM_write_EC_PUBKEY(dest_file, key_.get());
-
-  if (!return_value)
-    return false;
-  return true;
+  return WritePEMPrivateKeyToFile(evp_key.get(), filename, passphrase);
 }
 
 bool ECDSAOpenSSL::GetAttributes(ECDSAIntermediateKey* key) {
@@ -272,6 +270,7 @@ bool ECDSAOpenSSL::GetAttributes(ECDSAIntermediateKey* key) {
   }
   key->private_key.assign(reinterpret_cast<char*>(private_key),
                           private_key_len);
+  memset(private_key, 0, private_key_len);
 
   return true;
 }
@@ -311,7 +310,7 @@ bool ECDSAOpenSSL::Sign(const std::string& message_digest,
   if (key_.get() == NULL || signature == NULL || !private_key_)
     return false;
 
-  int ecdsa_size = ECDSA_size(key_.get());
+  uint32 ecdsa_size = ECDSA_size(key_.get());
   base::STLStringResizeUninitialized(signature, ecdsa_size);
 
   uint32 signature_length = 0;

@@ -4,22 +4,17 @@
 //
 // This file defines utility functions for escaping strings.
 
+// This source code was copied from Chromium and was modified, any
+// encountered errors are probably due to these modifications.
+
 #ifndef KEYCZAR_BASE_STRING_ESCAPE_H_
 #define KEYCZAR_BASE_STRING_ESCAPE_H_
 
-#include <keyczar/base/string16.h>
+#include <string>
 
+namespace keyczar {
+namespace base {
 namespace string_escape {
-
-// Escape |str| appropriately for a javascript string litereal, _appending_ the
-// result to |dst|. This will create standard escape sequences (\b, \n),
-// hex escape sequences (\x00), and unicode escape sequences (\uXXXX).
-// If |put_in_quotes| is true, the result will be surrounded in double quotes.
-// The outputted literal, when interpreted by the browser, should result in a
-// javascript string that is identical and the same length as the input |str|.
-void JavascriptDoubleQuote(const string16& str,
-                           bool put_in_quotes,
-                           std::string* dst);
 
 // Similar to the wide version, but for narrow strings.  It will not use
 // \uXXXX unicode escape sequences.  It will pass non-7bit characters directly
@@ -31,5 +26,7 @@ void JavascriptDoubleQuote(const std::string& str,
                            std::string* dst);
 
 }  // namespace string_escape
+}  // namespace base
+}  // namespace keyczar
 
 #endif  // KEYCZAR_BASE_STRING_ESCAPE_H_

@@ -1,3 +1,8 @@
+// Signs a message and verifies its signature back. Uses raw encoding
+// and base64w encoding.
+//
+// Example: ./basic_sign ~/my-dsa
+//
 #include <cassert>
 #include <iostream>
 #include <string>

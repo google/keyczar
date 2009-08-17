@@ -57,7 +57,7 @@ TEST(HMACOpenSSL, SHA1) {
   EXPECT_EQ(value_1, value_2);
 
   std::string value_1_encoded;
-  Base64WEncode(value_1, &value_1_encoded);
+  base::Base64WEncode(value_1, &value_1_encoded);
   EXPECT_EQ(value_1_encoded, digest);
 }
 

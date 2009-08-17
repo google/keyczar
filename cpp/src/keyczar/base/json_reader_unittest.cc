@@ -8,10 +8,13 @@
 
 #include <testing/gtest/include/gtest/gtest.h>
 
+#include <keyczar/base/build_config.h>
 #include <keyczar/base/json_reader.h>
 #include <keyczar/base/scoped_ptr.h>
 #include <keyczar/base/values.h>
-#include <keyczar/base/build_config.h>
+
+namespace keyczar {
+namespace base {
 
 TEST(JSONReaderTest, Reading) {
   // some whitespace checking
@@ -96,35 +99,17 @@ TEST(JSONReaderTest, Reading) {
   root.reset(JSONReader().JsonToValue("\"hello world\"", false, false));
   ASSERT_TRUE(root.get());
   ASSERT_TRUE(root->IsType(Value::TYPE_STRING));
-  std::wstring str_val;
-  ASSERT_TRUE(root->GetAsString(&str_val));
-  ASSERT_EQ(L"hello world", str_val);
 
   // Empty string
   root.reset(JSONReader().JsonToValue("\"\"", false, false));
   ASSERT_TRUE(root.get());
   ASSERT_TRUE(root->IsType(Value::TYPE_STRING));
-  str_val.clear();
-  ASSERT_TRUE(root->GetAsString(&str_val));
-  ASSERT_EQ(L"", str_val);
 
   // Test basic string escapes
   root.reset(JSONReader().JsonToValue("\" \\\"\\\\\\/\\b\\f\\n\\r\\t\\v\"",
                                       false, false));
   ASSERT_TRUE(root.get());
   ASSERT_TRUE(root->IsType(Value::TYPE_STRING));
-  str_val.clear();
-  ASSERT_TRUE(root->GetAsString(&str_val));
-  ASSERT_EQ(L" \"\\/\b\f\n\r\t\v", str_val);
-
-  // Test hex and unicode escapes including the null character.
-  root.reset(JSONReader().JsonToValue("\"\\x41\\x00\\u1234\"", false,
-                                      false));
-  ASSERT_TRUE(root.get());
-  ASSERT_TRUE(root->IsType(Value::TYPE_STRING));
-  str_val.clear();
-  ASSERT_TRUE(root->GetAsString(&str_val));
-  ASSERT_EQ(std::wstring(L"A\0\x1234", 3), str_val);
 
   // Test invalid strings
   root.reset(JSONReader().JsonToValue("\"no closing quote", false, false));
@@ -231,11 +216,8 @@ TEST(JSONReaderTest, Reading) {
   ASSERT_TRUE(root->IsType(Value::TYPE_DICTIONARY));
   DictionaryValue* dict_val = static_cast<DictionaryValue*>(root.get());
   Value* null_val = NULL;
-  ASSERT_TRUE(dict_val->Get(L"null", &null_val));
+  ASSERT_TRUE(dict_val->Get("null", &null_val));
   ASSERT_TRUE(null_val->IsType(Value::TYPE_NULL));
-  str_val.clear();
-  ASSERT_TRUE(dict_val->GetString(L"S", &str_val));
-  ASSERT_EQ(L"str", str_val);
 
   root2.reset(JSONReader::Read(
     "{\"null\":null , \"\\x53\" : \"str\", }", true));
@@ -248,15 +230,15 @@ TEST(JSONReaderTest, Reading) {
   ASSERT_TRUE(root->IsType(Value::TYPE_DICTIONARY));
   dict_val = static_cast<DictionaryValue*>(root.get());
   DictionaryValue* inner_dict = NULL;
-  ASSERT_TRUE(dict_val->GetDictionary(L"inner", &inner_dict));
+  ASSERT_TRUE(dict_val->GetDictionary("inner", &inner_dict));
   ListValue* inner_array = NULL;
-  ASSERT_TRUE(inner_dict->GetList(L"array", &inner_array));
+  ASSERT_TRUE(inner_dict->GetList("array", &inner_array));
   ASSERT_EQ(1U, inner_array->GetSize());
   bool_value = true;
-  ASSERT_TRUE(dict_val->GetBoolean(L"false", &bool_value));
+  ASSERT_TRUE(dict_val->GetBoolean("false", &bool_value));
   ASSERT_FALSE(bool_value);
   inner_dict = NULL;
-  ASSERT_TRUE(dict_val->GetDictionary(L"d", &inner_dict));
+  ASSERT_TRUE(dict_val->GetDictionary("d", &inner_dict));
 
   root2.reset(JSONReader::Read(
     "{\"inner\": {\"array\":[true] , },\"false\":false,\"d\":{},}", true));
@@ -320,9 +302,6 @@ TEST(JSONReaderTest, Reading) {
                                       false, false));
   ASSERT_TRUE(root.get());
   ASSERT_TRUE(root->IsType(Value::TYPE_STRING));
-  str_val.clear();
-  ASSERT_TRUE(root->GetAsString(&str_val));
-  ASSERT_EQ(L"\x7f51\x9875", str_val);
 
   // Test invalid utf8 encoded input
   root.reset(JSONReader().JsonToValue("\"345\xb0\xa1\xb0\xa2\"",
@@ -343,81 +322,5 @@ TEST(JSONReaderTest, Reading) {
   ASSERT_FALSE(root.get());
 }
 
-TEST(JSONReaderTest, ErrorMessages) {
-  // Error strings should not be modified in case of success.
-  std::string error_message;
-  scoped_ptr<Value> root;
-  root.reset(JSONReader::ReadAndReturnError("[42]", false, &error_message));
-  EXPECT_TRUE(error_message.empty());
-
-  // Test line and column counting
-  const char* big_json = "[\n0,\n1,\n2,\n3,4,5,6 7,\n8,\n9\n]";
-  // error here --------------------------------^
-  root.reset(JSONReader::ReadAndReturnError(big_json, false, &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(5, 9, JSONReader::kSyntaxError),
-            error_message);
-
-  // Test each of the error conditions
-  root.reset(JSONReader::ReadAndReturnError("{},{}", false, &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(1, 3,
-      JSONReader::kUnexpectedDataAfterRoot), error_message);
-
-  std::string nested_json;
-  for (int i = 0; i < 101; ++i) {
-    nested_json.insert(nested_json.begin(), '[');
-    nested_json.append(1, ']');
-  }
-  root.reset(JSONReader::ReadAndReturnError(nested_json, false,
-                                            &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(1, 101, JSONReader::kTooMuchNesting),
-            error_message);
-
-  root.reset(JSONReader::ReadAndReturnError("42", false, &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(1, 1,
-      JSONReader::kBadRootElementType), error_message);
-
-  root.reset(JSONReader::ReadAndReturnError("[1,]", false, &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(1, 4, JSONReader::kTrailingComma),
-            error_message);
-
-  root.reset(JSONReader::ReadAndReturnError("{foo:\"bar\"}", false,
-                                            &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(1, 2,
-      JSONReader::kUnquotedDictionaryKey), error_message);
-
-  root.reset(JSONReader::ReadAndReturnError("{\"foo\":\"bar\",}", false,
-                                            &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(1, 14, JSONReader::kTrailingComma),
-            error_message);
-
-  root.reset(JSONReader::ReadAndReturnError("[nu]", false, &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(1, 2, JSONReader::kSyntaxError),
-            error_message);
-
-  root.reset(JSONReader::ReadAndReturnError("[\"xxx\\xq\"]", false,
-                                            &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(1, 7, JSONReader::kInvalidEscape),
-            error_message);
-
-  root.reset(JSONReader::ReadAndReturnError("[\"xxx\\uq\"]", false,
-                                            &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(1, 7, JSONReader::kInvalidEscape),
-            error_message);
-
-  root.reset(JSONReader::ReadAndReturnError("[\"xxx\\q\"]", false,
-                                            &error_message));
-  EXPECT_FALSE(root.get());
-  EXPECT_EQ(JSONReader::FormatErrorMessage(1, 7, JSONReader::kInvalidEscape),
-            error_message);
-
-}
+}  // namespace base
+}  // namespace keyczar

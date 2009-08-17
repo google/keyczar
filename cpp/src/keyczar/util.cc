@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <keyczar/util.h>
 
+#include <keyczar/base/basictypes.h>
+
 namespace keyczar {
 
 namespace util {
@@ -22,7 +24,7 @@ bool SafeStringEquals(const std::string& s1, const std::string& s2) {
     return false;
 
   int result = 0;
-  for (int i = 0; i < s1.length(); ++i)
+  for (uint32 i = 0; i < s1.length(); ++i)
     result |= s1[i] ^ s2[i];
   return result == 0;
 }

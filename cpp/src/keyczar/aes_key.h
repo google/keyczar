@@ -33,7 +33,7 @@ namespace keyczar {
 class AESKey : public SecretKey {
  public:
   // Takes ownership of |aes_impl|, |cipher_mode| and |hmac_key|.
-  AESKey(AESImpl* aes_impl, CipherMode* cipher_mode, int size,
+  AESKey(AESImpl* aes_impl, CipherMode::Type cipher_mode, int size,
          HMACKey* hmac_key)
       : SecretKey(size, hmac_key), cipher_mode_(cipher_mode),
         aes_impl_(aes_impl) {}
@@ -55,9 +55,11 @@ class AESKey : public SecretKey {
   // Returns the hash value of this key.
   virtual bool Hash(std::string* hash) const;
 
-  virtual bool Encrypt(const std::string& data, std::string* encrypted) const;
+  virtual bool Encrypt(const std::string& plaintext,
+                       std::string* ciphertext) const;
 
-  virtual bool Decrypt(const std::string& encrypted, std::string* data) const;
+  virtual bool Decrypt(const std::string& ciphertext,
+                       std::string* plaintext) const;
 
  private:
   FRIEND_TEST(AESTest, GenerateKeyDumpAndCompare);
@@ -65,7 +67,7 @@ class AESKey : public SecretKey {
   // The caller doesn't take ownership over the returned AESKey object.
   AESImpl* aes_impl() const { return aes_impl_.get(); }
 
-  scoped_ptr<CipherMode> cipher_mode_;
+  CipherMode::Type cipher_mode_;
 
   scoped_ptr<AESImpl> aes_impl_;
 

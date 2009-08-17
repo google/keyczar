@@ -71,7 +71,8 @@ class ObserverList {
   };
 
   ObserverList() : notify_depth_(0), type_(NOTIFY_ALL) {}
-  ObserverList(NotificationType type) : notify_depth_(0), type_(type) {}
+  explicit ObserverList(NotificationType type)
+      : notify_depth_(0), type_(type) {}
   ~ObserverList() {
     // When check_empty is true, assert that the list is empty on destruction.
     if (check_empty) {
@@ -112,7 +113,7 @@ class ObserverList {
   // also the FOREACH_OBSERVER macro defined below.
   class Iterator {
    public:
-    Iterator(const ObserverList<ObserverType>& list)
+    explicit Iterator(const ObserverList<ObserverType>& list)
         : list_(list),
           index_(0),
           max_index_(list.type_ == NOTIFY_ALL ?

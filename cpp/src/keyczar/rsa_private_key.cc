@@ -31,42 +31,42 @@ RSAPrivateKey* RSAPrivateKey::CreateFromValue(const Value& root_key) {
 
   RSAImpl::RSAIntermediateKey intermediate_key;
 
-  if (!util::DeserializeString(*private_key, L"privateExponent",
-                               &intermediate_key.d))
+  if (!util::SafeDeserializeString(*private_key, "privateExponent",
+                                   &intermediate_key.d))
     return NULL;
-  if (!util::DeserializeString(*private_key, L"primeP", &intermediate_key.p))
+  if (!util::SafeDeserializeString(*private_key, "primeP", &intermediate_key.p))
     return NULL;
-  if (!util::DeserializeString(*private_key, L"primeQ", &intermediate_key.q))
+  if (!util::SafeDeserializeString(*private_key, "primeQ", &intermediate_key.q))
     return NULL;
-  if (!util::DeserializeString(*private_key, L"primeExponentP",
-                               &intermediate_key.dmp1))
+  if (!util::SafeDeserializeString(*private_key, "primeExponentP",
+                                   &intermediate_key.dmp1))
     return NULL;
-  if (!util::DeserializeString(*private_key, L"primeExponentQ",
-                               &intermediate_key.dmq1))
+  if (!util::SafeDeserializeString(*private_key, "primeExponentQ",
+                                   &intermediate_key.dmq1))
     return NULL;
-  if (!util::DeserializeString(*private_key, L"crtCoefficient",
-                               &intermediate_key.iqmp))
+  if (!util::SafeDeserializeString(*private_key, "crtCoefficient",
+                                   &intermediate_key.iqmp))
     return NULL;
 
   int size;
-  if (!private_key->GetInteger(L"size", &size))
+  if (!private_key->GetInteger("size", &size))
     return NULL;
 
   DictionaryValue* public_key = NULL;
-  if (!private_key->GetDictionary(L"publicKey", &public_key))
+  if (!private_key->GetDictionary("publicKey", &public_key))
     return NULL;
 
   if (public_key == NULL)
     return NULL;
 
-  if (!util::DeserializeString(*public_key, L"modulus", &intermediate_key.n))
+  if (!util::DeserializeString(*public_key, "modulus", &intermediate_key.n))
     return NULL;
-  if (!util::DeserializeString(*public_key, L"publicExponent",
+  if (!util::DeserializeString(*public_key, "publicExponent",
                                &intermediate_key.e))
     return NULL;
 
   int size_public;
-  if (!public_key->GetInteger(L"size", &size_public))
+  if (!public_key->GetInteger("size", &size_public))
     return NULL;
 
   scoped_ptr<RSAImpl> rsa_private_key_impl(
@@ -76,7 +76,7 @@ RSAPrivateKey* RSAPrivateKey::CreateFromValue(const Value& root_key) {
 
   // Check the provided size is valid.
   if (size != size_public || size != rsa_private_key_impl->Size() ||
-      !IsValidSize("RSA_PRIV", size))
+      !KeyType::IsValidCipherSize(KeyType::RSA_PRIV, size))
     return NULL;
 
   scoped_ptr<RSAImpl> rsa_public_key_impl(
@@ -96,7 +96,7 @@ RSAPrivateKey* RSAPrivateKey::CreateFromValue(const Value& root_key) {
 
 // static
 RSAPrivateKey* RSAPrivateKey::GenerateKey(int size) {
-  if (!IsValidSize("RSA_PRIV", size))
+  if (!KeyType::IsValidCipherSize(KeyType::RSA_PRIV, size))
     return NULL;
 
   scoped_ptr<RSAImpl> rsa_private_key_impl(
@@ -105,7 +105,8 @@ RSAPrivateKey* RSAPrivateKey::GenerateKey(int size) {
     return NULL;
 
   RSAImpl::RSAIntermediateKey intermediate_public_key;
-  rsa_private_key_impl->GetPublicAttributes(&intermediate_public_key);
+  if (!rsa_private_key_impl->GetPublicAttributes(&intermediate_public_key))
+     return NULL;
 
   scoped_ptr<RSAImpl> rsa_public_key_impl(
       CryptoFactory::CreatePublicRSA(intermediate_public_key));
@@ -123,19 +124,20 @@ RSAPrivateKey* RSAPrivateKey::GenerateKey(int size) {
 }
 
 // static
-RSAPrivateKey* RSAPrivateKey::CreateFromPEMKey(const std::string& filename,
-                                               const std::string* passphrase) {
+RSAPrivateKey* RSAPrivateKey::CreateFromPEMPrivateKey(
+    const std::string& filename, const std::string* passphrase) {
   scoped_ptr<RSAImpl> rsa_private_key_impl(
-      CryptoFactory::CreatePrivateRSAFromPEMKey(filename, passphrase));
+      CryptoFactory::CreatePrivateRSAFromPEMPrivateKey(filename, passphrase));
   if (rsa_private_key_impl.get() == NULL)
     return NULL;
 
   const int size = rsa_private_key_impl->Size();
-  if (!IsValidSize("RSA_PRIV", size))
+  if (!KeyType::IsValidCipherSize(KeyType::RSA_PRIV, size))
     return NULL;
 
   RSAImpl::RSAIntermediateKey intermediate_public_key;
-  rsa_private_key_impl->GetPublicAttributes(&intermediate_public_key);
+  if (!rsa_private_key_impl->GetPublicAttributes(&intermediate_public_key))
+     return NULL;
 
   scoped_ptr<RSAImpl> rsa_public_key_impl(
       CryptoFactory::CreatePublicRSA(intermediate_public_key));
@@ -161,34 +163,43 @@ Value* RSAPrivateKey::GetValue() const {
   if (!rsa_impl()->GetAttributes(&intermediate_key))
     return NULL;
 
-  if (!util::SerializeString(intermediate_key.d, L"privateExponent",
-                       private_key.get()))
+  if (!util::SafeSerializeString(intermediate_key.d, "privateExponent",
+                                 private_key.get()))
     return NULL;
-  if (!util::SerializeString(intermediate_key.p, L"primeP", private_key.get()))
+  if (!util::SafeSerializeString(intermediate_key.p, "primeP",
+                                 private_key.get()))
     return NULL;
-  if (!util::SerializeString(intermediate_key.q, L"primeQ", private_key.get()))
+  if (!util::SafeSerializeString(intermediate_key.q, "primeQ",
+                                 private_key.get()))
     return NULL;
-  if (!util::SerializeString(intermediate_key.dmp1, L"primeExponentP",
-                       private_key.get()))
+  if (!util::SafeSerializeString(intermediate_key.dmp1, "primeExponentP",
+                                 private_key.get()))
     return NULL;
-  if (!util::SerializeString(intermediate_key.dmq1, L"primeExponentQ",
-                       private_key.get()))
+  if (!util::SafeSerializeString(intermediate_key.dmq1, "primeExponentQ",
+                                 private_key.get()))
     return NULL;
-  if (!util::SerializeString(intermediate_key.iqmp, L"crtCoefficient",
-                       private_key.get()))
+  if (!util::SafeSerializeString(intermediate_key.iqmp, "crtCoefficient",
+                                 private_key.get()))
     return NULL;
 
-  if (!private_key->SetInteger(L"size", size()))
+  if (!private_key->SetInteger("size", size()))
     return NULL;
 
   Value* public_key_value = public_key()->GetValue();
   if (public_key_value == NULL)
     return NULL;
 
-  if (!private_key->Set(L"publicKey", public_key_value))
+  if (!private_key->Set("publicKey", public_key_value))
     return NULL;
 
   return private_key.release();
+}
+
+bool RSAPrivateKey::ExportPrivateKey(const std::string& filename,
+                                     const std::string* passphrase) const {
+  if (rsa_impl() == NULL)
+    return false;
+  return rsa_impl()->ExportPrivateKey(filename, passphrase);
 }
 
 bool RSAPrivateKey::Sign(const std::string& data,
@@ -208,12 +219,13 @@ bool RSAPrivateKey::Sign(const std::string& data,
                           message_digest, signature);
 }
 
-bool RSAPrivateKey::Decrypt(const std::string& encrypted,
-                            std::string* data) const {
-  if (rsa_impl() == NULL || data == NULL)
+bool RSAPrivateKey::Decrypt(const std::string& ciphertext,
+                            std::string* plaintext) const {
+  if (rsa_impl() == NULL || plaintext == NULL)
     return false;
 
-  return rsa_impl()->Decrypt(encrypted.substr(Key::GetHeaderSize()), data);
+  return rsa_impl()->Decrypt(ciphertext.substr(Key::GetHeaderSize()),
+                             plaintext);
 }
 
 }  // namespace keyczar

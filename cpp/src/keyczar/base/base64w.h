@@ -16,6 +16,9 @@
 
 #include <string>
 
+namespace keyczar {
+namespace base {
+
 // Encodes the input string in web safe base64. Returns true if successful and
 // false otherwise. The output string is only modified if successful. The
 // outputted string will be emitted without padding nor trailing nul bytes.
@@ -27,5 +30,8 @@ bool Base64WEncode(const std::string& input, std::string* output);
 // be removed before decoding it. Likewise trailing whitespaces are removed
 // from input string.
 bool Base64WDecode(const std::string& input, std::string* output);
+
+}  // namespace base
+}  // namespace keyczar
 
 #endif  // KEYCZAR_BASE_BASE64W_H_

@@ -17,13 +17,13 @@
 
 #include <keyczar/base/file_path.h>
 #include <keyczar/base/file_util.h>
-#include <keyczar/base/path_service.h>
 #include <keyczar/base/scoped_ptr.h>
+#include <keyczar/base_test/path_service.h>
 #include <keyczar/keyczar.h>
 #include <keyczar/keyczar_test.h>
-#include <keyczar/keyset_encrypted_file_reader.h>
-#include <keyczar/keyset_file_reader.h>
-#include <keyczar/keyset_file_writer.h>
+#include <keyczar/rw/keyset_encrypted_file_reader.h>
+#include <keyczar/rw/keyset_file_reader.h>
+#include <keyczar/rw/keyset_file_writer.h>
 
 namespace keyczar {
 
@@ -158,7 +158,7 @@ TEST_F(KeyczarTest, RSADecrypt) {
   std::string encrypted, decrypted;
 
   const FilePath private_path = data_path_.Append("rsa");
-  EXPECT_TRUE(file_util::ReadFileToString(
+  EXPECT_TRUE(base::ReadFileToString(
                   private_path.Append("1.out"), &encrypted));
 
   scoped_ptr<Crypter> crypter(Crypter::Read(private_path.value()));
@@ -171,7 +171,7 @@ TEST_F(KeyczarTest, RSAVerify) {
   std::string signature;
 
   const FilePath private_path = data_path_.Append("rsa-sign");
-  EXPECT_TRUE(file_util::ReadFileToString(
+  EXPECT_TRUE(base::ReadFileToString(
                   private_path.Append("1.out"), &signature));
 
   const FilePath public_path = data_path_.Append("rsa-sign.public");
@@ -211,7 +211,7 @@ TEST_F(KeyczarTest, HMACSignAndVerifyUnversioned) {
 TEST_F(KeyczarTest, HMACVerify) {
   std::string signature;
   const FilePath hmac_path = data_path_.Append("hmac");
-  EXPECT_TRUE(file_util::ReadFileToString(
+  EXPECT_TRUE(base::ReadFileToString(
                   hmac_path.Append("1.out"), &signature));
 
   scoped_ptr<Verifier> verifier(Verifier::Read(hmac_path.value()));
@@ -261,7 +261,7 @@ TEST_F(KeyczarTest, AESDecrypt1) {
   std::string encrypted, decrypted;
 
   const FilePath aes_path = data_path_.Append("aes");
-  EXPECT_TRUE(file_util::ReadFileToString(
+  EXPECT_TRUE(base::ReadFileToString(
                   aes_path.Append("1.out"), &encrypted));
 
   scoped_ptr<Crypter> crypter(Crypter::Read(aes_path.value()));
@@ -274,7 +274,7 @@ TEST_F(KeyczarTest, AESDecrypt2) {
   std::string encrypted, decrypted;
 
   const FilePath aes_path = data_path_.Append("aes");
-  EXPECT_TRUE(file_util::ReadFileToString(
+  EXPECT_TRUE(base::ReadFileToString(
                   aes_path.Append("2.out"), &encrypted));
 
   scoped_ptr<Crypter> crypter(Crypter::Read(aes_path.value()));
@@ -289,7 +289,7 @@ TEST_F(KeyczarTest, AESCryptedEncryptAndDecrypt) {
   ASSERT_TRUE(decrypter.get());
 
   const FilePath aes_crypted_path = data_path_.Append("aes-crypted");
-  KeysetEncryptedJSONFileReader encrypted_reader(
+  rw::KeysetEncryptedJSONFileReader encrypted_reader(
       aes_crypted_path.value(), decrypter.release());
   scoped_ptr<Crypter> crypter(Crypter::Read(encrypted_reader));
   ASSERT_TRUE(crypter.get());
@@ -308,12 +308,12 @@ TEST_F(KeyczarTest, AESCryptedDecrypt1) {
   ASSERT_TRUE(decrypter.get());
 
   const FilePath aes_crypted_path = data_path_.Append("aes-crypted");
-  KeysetEncryptedJSONFileReader encrypted_reader(aes_crypted_path.value(),
-                                             decrypter.release());
+  rw::KeysetEncryptedJSONFileReader encrypted_reader(aes_crypted_path.value(),
+                                                     decrypter.release());
   scoped_ptr<Crypter> crypter(Crypter::Read(encrypted_reader));
   ASSERT_TRUE(crypter.get());
 
-  EXPECT_TRUE(file_util::ReadFileToString(
+  EXPECT_TRUE(base::ReadFileToString(
                   aes_crypted_path.Append("1.out"), &encrypted));
   EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
   EXPECT_EQ(input_data_, decrypted);
@@ -327,12 +327,12 @@ TEST_F(KeyczarTest, AESCryptedDecrypt2) {
   ASSERT_TRUE(decrypter.get());
 
   const FilePath aes_crypted_path = data_path_.Append("aes-crypted");
-  KeysetEncryptedJSONFileReader encrypted_reader(aes_crypted_path.value(),
-                                             decrypter.release());
+  rw::KeysetEncryptedJSONFileReader encrypted_reader(aes_crypted_path.value(),
+                                                     decrypter.release());
   scoped_ptr<Crypter> crypter(Crypter::Read(encrypted_reader));
   ASSERT_TRUE(crypter.get());
 
-  EXPECT_TRUE(file_util::ReadFileToString(
+  EXPECT_TRUE(base::ReadFileToString(
                   aes_crypted_path.Append("2.out"), &encrypted));
   EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
   EXPECT_EQ(input_data_, decrypted);
@@ -372,7 +372,7 @@ TEST_F(KeyczarTest, DSAVerify) {
   std::string signature;
 
   const FilePath private_path = data_path_.Append("dsa");
-  EXPECT_TRUE(file_util::ReadFileToString(
+  EXPECT_TRUE(base::ReadFileToString(
                   private_path.Append("1.out"), &signature));
 
   const FilePath public_path = data_path_.Append("dsa.public");
@@ -415,7 +415,7 @@ TEST_F(KeyczarTest, ECDSAVerify) {
   std::string signature;
 
   const FilePath private_path = data_path_.Append("ecdsa");
-  EXPECT_TRUE(file_util::ReadFileToString(
+  EXPECT_TRUE(base::ReadFileToString(
                   private_path.Append("1.out"), &signature));
 
   const FilePath public_path = data_path_.Append("ecdsa.public");
@@ -424,7 +424,7 @@ TEST_F(KeyczarTest, ECDSAVerify) {
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
 
-TEST_F(KeyczarTest, AESBigBufferEncryptAndDecrypt) {
+TEST_F(KeyczarTest, AESEncryptAndDecryptBigBuffer) {
   std::string encrypted, decrypted, input;
 
   const FilePath aes_path = data_path_.Append("aes");
@@ -432,8 +432,8 @@ TEST_F(KeyczarTest, AESBigBufferEncryptAndDecrypt) {
   ASSERT_TRUE(crypter.get());
 
   scoped_ptr_malloc<char> input_buffer;
-  int num_bytes = 10000000;
-  input_buffer.reset(reinterpret_cast<char*>(malloc(num_bytes * sizeof(char))));
+  int num_bytes = 1000000;
+  input_buffer.reset(reinterpret_cast<char*>(malloc(num_bytes)));
   ASSERT_TRUE(input_buffer.get());
 
   input.assign(input_buffer.get(), num_bytes);
@@ -474,4 +474,22 @@ TEST_F(KeyczarTest, Compression) {
 #endif  // HAVE_ZLIB
 }
 
+TEST_F(KeyczarTest, PBEEncryptAndDecrypt) {
+  const FilePath pbe_path = data_path_.Append("pbe_json");
+  const std::string password("cartman");
+  std::string encrypted, decrypted;
+
+  // AES key set, JSON format, password encrypted.
+  rw::KeysetPBEJSONFileReader pbe_reader(pbe_path, password);
+  scoped_ptr<Encrypter> encrypter(Encrypter::Read(pbe_reader));
+  ASSERT_TRUE(encrypter.get());
+  EXPECT_TRUE(encrypter->Encrypt(input_data_, &encrypted));
+
+  scoped_ptr<Crypter> crypter(Crypter::Read(pbe_reader));
+  ASSERT_TRUE(crypter.get());
+  EXPECT_TRUE(crypter->Decrypt(encrypted, &decrypted));
+  EXPECT_EQ(input_data_, decrypted);
+}
+
 }  // namespace keyczar
+

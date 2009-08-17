@@ -10,8 +10,8 @@
 
 #include <keyczar/base/logging.h>
 
+namespace keyczar {
 namespace base {
-
 namespace subtle {
 
 RefCountedBase::RefCountedBase() : ref_count_(0) {
@@ -53,6 +53,5 @@ bool RefCountedBase::Release() {
 }
 
 }  // namespace subtle
-
 }  // namespace base
-
+}  // namespace keyczar

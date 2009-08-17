@@ -27,25 +27,22 @@ namespace keyczar {
 // - Verify (only)
 class KeyPurpose {
  public:
+  // Update the corresponding enum structure inside keyczar.i if this one
+  // is modified.
   enum Type {
-    DECRYPT_AND_ENCRYPT = 0,
+    UNDEF,
+    DECRYPT_AND_ENCRYPT,
     ENCRYPT,
     SIGN_AND_VERIFY,
     VERIFY
   };
 
-  explicit KeyPurpose(Type type) : type_(type) {}
+  static Type GetTypeFromName(const std::string& name);
 
-  // Creates KeyPurpose instance from string |name|. The caller takes
-  // ownership of the result.
-  static KeyPurpose* Create(const std::string& name);
-
-  Type type() const { return type_; }
-
-  bool GetName(std::string* name) const;
+  static std::string GetNameFromType(Type type);
 
  private:
-  Type type_;
+  KeyPurpose();
 
   DISALLOW_COPY_AND_ASSIGN(KeyPurpose);
 };

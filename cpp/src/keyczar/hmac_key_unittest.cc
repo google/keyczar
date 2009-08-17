@@ -27,7 +27,7 @@
 #include <keyczar/key.h>
 #include <keyczar/key_type.h>
 #include <keyczar/keyczar_test.h>
-#include <keyczar/keyset_file_reader.h>
+#include <keyczar/rw/keyset_file_reader.h>
 
 namespace keyczar {
 
@@ -36,7 +36,7 @@ class HMACTest : public KeyczarTest {
   // Loads HMAC key from JSON file.
   scoped_refptr<HMACKey> LoadHMACKey(const FilePath& path,
                                      int key_version) {
-    KeysetJSONFileReader reader(path);
+    rw::KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
     scoped_refptr<HMACKey> hmac_key(HMACKey::CreateFromValue(*value));
@@ -47,15 +47,14 @@ class HMACTest : public KeyczarTest {
 
 TEST_F(HMACTest, GenerateKeyAndSign) {
 #ifdef COMPAT_KEYCZAR_06B
-  scoped_ptr<KeyType> key_type(KeyType::Create("HMAC_SHA1"));
+  const KeyType::Type key_type = KeyType::HMAC_SHA1;
 #else
-  scoped_ptr<KeyType> key_type(KeyType::Create("HMAC"));
+  const KeyType::Type key_type = KeyType::HMAC;
 #endif
-  ASSERT_TRUE(key_type.get());
-  const std::vector<int> sizes = key_type->sizes();
-
+  const std::vector<int> sizes = KeyType::CipherSizes(key_type);
   scoped_refptr<HMACKey> hmac_key;
   std::string signature;
+
   for (std::vector<int>::const_iterator iter = sizes.begin();
        iter != sizes.end(); ++iter) {
     hmac_key = HMACKey::GenerateKey(*iter);
@@ -67,14 +66,14 @@ TEST_F(HMACTest, GenerateKeyAndSign) {
 }
 
 TEST_F(HMACTest, LoadKeyAndVerify) {
-  FilePath hmac_path = data_path_.AppendASCII("hmac");
+  FilePath hmac_path = data_path_.Append("hmac");
   scoped_refptr<HMACKey> hmac_key = LoadHMACKey(hmac_path, 1);
 
   std::string b64w_signature;
-  EXPECT_TRUE(file_util::ReadFileToString(hmac_path.AppendASCII("1.out"),
-                                          &b64w_signature));
+  EXPECT_TRUE(base::ReadFileToString(hmac_path.Append("1.out"),
+                                     &b64w_signature));
   std::string signature;
-  EXPECT_TRUE(Base64WDecode(b64w_signature, &signature));
+  EXPECT_TRUE(base::Base64WDecode(b64w_signature, &signature));
 
   // Checks signature
   input_data_.push_back(Key::GetVersionByte());

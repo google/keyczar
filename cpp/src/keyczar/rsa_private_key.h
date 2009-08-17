@@ -41,15 +41,21 @@ class RSAPrivateKey : public PrivateKey {
 
   // Imports a PEM key |filename| and creates a new key. |passphrase| is
   // optional.
-  static RSAPrivateKey* CreateFromPEMKey(const std::string& filename,
-                                         const std::string* passphrase);
+  static RSAPrivateKey* CreateFromPEMPrivateKey(const std::string& filename,
+                                                const std::string* passphrase);
 
   // The caller takes ownership of the returned Value.
   virtual Value* GetValue() const;
 
+  // Exports this private key to PKCS8 file |filename| optionally encrypted
+  // with |passphrase|.
+  virtual bool ExportPrivateKey(const std::string& filename,
+                                const std::string* passphrase) const;
+
   virtual bool Sign(const std::string& data, std::string* signature) const;
 
-  virtual bool Decrypt(const std::string& encrypted, std::string* data) const;
+  virtual bool Decrypt(const std::string& ciphertext,
+                       std::string* plaintext) const;
 
  private:
   friend class RSATest;

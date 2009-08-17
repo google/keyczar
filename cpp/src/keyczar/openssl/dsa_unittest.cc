@@ -66,15 +66,22 @@ TEST_F(DSAOpenSSLTest, GenerateKeyAndSign) {
   EXPECT_TRUE(dsa->Verify(message_digest, signed_message_digest));
 }
 
-TEST_F(DSAOpenSSLTest, ExportToPEMFile) {
-  int size = 1024;
+TEST_F(DSAOpenSSLTest, ExportPrivateKey) {
+  int size = 2048;
   scoped_ptr<DSAOpenSSL> dsa(DSAOpenSSL::GenerateKey(size));
   ASSERT_TRUE(dsa.get());
   EXPECT_EQ(dsa->Size(), size);
 
-  FilePath pem_file = temp_path_.Append("1_pub.pem");
-  dsa->WriteKeyToPEMFile(pem_file.value());
-  EXPECT_TRUE(file_util::PathExists(pem_file));
+  const FilePath pem_file = temp_path_.Append("dsa_priv.pem");
+  const std::string passphrase("cartman");
+
+  EXPECT_TRUE(dsa->ExportPrivateKey(pem_file.value(), &passphrase));
+  EXPECT_TRUE(base::PathExists(pem_file));
+
+  scoped_ptr<DSAOpenSSL> dsa_imported(DSAOpenSSL::CreateFromPEMPrivateKey(
+                                          pem_file.value(), &passphrase));
+  ASSERT_TRUE(dsa_imported.get());
+  EXPECT_TRUE(dsa->Equals(*dsa_imported));
 }
 
 // Keys were created with these commands:
@@ -83,16 +90,16 @@ TEST_F(DSAOpenSSLTest, ExportToPEMFile) {
 //  openssl gendsa -out dsa_priv.pem dsaparam
 //  openssl gendsa -aes256 -out dsa_priv_encrypted.pem dsaparam
 //      with 'cartman' as passphrase
-TEST_F(DSAOpenSSLTest, CreateFromPEMKey) {
+TEST_F(DSAOpenSSLTest, CreateFromPEMPrivateKey) {
   const FilePath dsa_pem = data_path_.Append("dsa_pem");
 
-  scoped_ptr<DSAOpenSSL> dsa(DSAOpenSSL::CreateFromPEMKey(
+  scoped_ptr<DSAOpenSSL> dsa(DSAOpenSSL::CreateFromPEMPrivateKey(
                                  dsa_pem.Append("dsa_priv.pem").value(),
                                  NULL));
   EXPECT_TRUE(dsa.get());
 
   const std::string passphrase("cartman");
-  dsa.reset(DSAOpenSSL::CreateFromPEMKey(
+  dsa.reset(DSAOpenSSL::CreateFromPEMPrivateKey(
                 dsa_pem.Append("dsa_priv_encrypted.pem").value(),
                 &passphrase));
   EXPECT_TRUE(dsa.get());

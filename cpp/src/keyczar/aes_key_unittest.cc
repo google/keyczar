@@ -24,8 +24,8 @@
 #include <keyczar/base/scoped_ptr.h>
 #include <keyczar/base/values.h>
 #include <keyczar/keyczar_test.h>
-#include <keyczar/keyset_file_reader.h>
-#include <keyczar/keyset_file_writer.h>
+#include <keyczar/rw/keyset_file_reader.h>
+#include <keyczar/rw/keyset_file_writer.h>
 
 namespace keyczar {
 
@@ -34,7 +34,7 @@ class AESTest : public KeyczarTest {
   // Loads AES key from JSON file.
   scoped_refptr<AESKey> LoadAESKey(const FilePath& path,
                                           int key_version) {
-    KeysetJSONFileReader reader(path);
+    rw::KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
     scoped_refptr<AESKey> aes_key(AESKey::CreateFromValue(*value));
@@ -44,11 +44,9 @@ class AESTest : public KeyczarTest {
 };
 
 TEST_F(AESTest, GenerateKeyAndEncrypt) {
-  scoped_ptr<KeyType> key_type(KeyType::Create("AES"));
-  ASSERT_TRUE(key_type.get());
-  const std::vector<int> sizes = key_type->sizes();
-
+  const std::vector<int> sizes = KeyType::CipherSizes(KeyType::AES);
   scoped_refptr<AESKey> aes_key;
+
   for (std::vector<int>::const_iterator iter = sizes.begin();
        iter != sizes.end(); ++iter) {
     // Generates a new secret key
@@ -66,15 +64,15 @@ TEST_F(AESTest, GenerateKeyAndEncrypt) {
 }
 
 TEST_F(AESTest, LoadKeyAndDecrypt) {
-  FilePath aes_path = data_path_.AppendASCII("aes");
+  FilePath aes_path = data_path_.Append("aes");
   scoped_refptr<AESKey> aes_key = LoadAESKey(aes_path, 1);
 
   // Try to decrypt corresponding data file
   std::string b64w_encrypted_data;
-  EXPECT_TRUE(file_util::ReadFileToString(aes_path.AppendASCII("1.out"),
-                                          &b64w_encrypted_data));
+  EXPECT_TRUE(base::ReadFileToString(aes_path.Append("1.out"),
+                                     &b64w_encrypted_data));
   std::string encrypted_data;
-  EXPECT_TRUE(Base64WDecode(b64w_encrypted_data, &encrypted_data));
+  EXPECT_TRUE(base::Base64WDecode(b64w_encrypted_data, &encrypted_data));
   std::string decrypted_data;
   EXPECT_TRUE(aes_key->Decrypt(encrypted_data, &decrypted_data));
 
@@ -90,9 +88,9 @@ TEST_F(AESTest, GenerateKeyDumpAndCompare) {
   ASSERT_TRUE(aes_key.get());
 
   // Dumps this secret key into temporary path
-  KeysetJSONFileWriter writer(temp_path_);
+  rw::KeysetJSONFileWriter writer(temp_path_);
   EXPECT_TRUE(writer.WriteKey(*aes_key->GetValue(), 1));
-  ASSERT_TRUE(file_util::PathExists(temp_path_.Append("1")));
+  ASSERT_TRUE(base::PathExists(temp_path_.Append("1")));
 
   // Loads this key
   scoped_refptr<AESKey> dumped_key = LoadAESKey(temp_path_, 1);

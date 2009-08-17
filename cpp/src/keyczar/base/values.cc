@@ -2,9 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <keyczar/base/values.h>
+
+#include <string.h>
+
 #include <keyczar/base/logging.h>
 #include <keyczar/base/string_util.h>
-#include <keyczar/base/values.h>
 
 ///////////////////// Value ////////////////////
 
@@ -37,13 +40,13 @@ Value* Value::CreateStringValue(const std::string& in_value) {
 }
 
 // static
-Value* Value::CreateStringValue(const std::wstring& in_value) {
-  return new StringValue(in_value);
+BinaryValue* Value::CreateBinaryValue(char* buffer, size_t size) {
+  return BinaryValue::Create(buffer, size);
 }
 
 // static
-BinaryValue* Value::CreateBinaryValue(char* buffer, size_t size) {
-  return BinaryValue::Create(buffer, size);
+BinaryValue* Value::CreateBinaryValue(const char* buffer, size_t size) {
+  return BinaryValue::CreateWithCopiedBuffer(buffer, size);
 }
 
 bool Value::GetAsBoolean(bool* in_value) const {
@@ -59,10 +62,6 @@ bool Value::GetAsReal(double* in_value) const {
 }
 
 bool Value::GetAsString(std::string* in_value) const {
-  return false;
-}
-
-bool Value::GetAsString(std::wstring* in_value) const {
   return false;
 }
 
@@ -147,13 +146,8 @@ bool FundamentalValue::Equals(const Value* other) const {
 
 StringValue::StringValue(const std::string& in_value)
     : Value(TYPE_STRING),
-      value_(in_value) {
+      value_(new std::string(in_value)) {
   DCHECK(IsStringUTF8(in_value));
-}
-
-StringValue::StringValue(const std::wstring& in_value)
-    : Value(TYPE_STRING),
-      value_(WideToUTF8(in_value)) {
 }
 
 StringValue::~StringValue() {
@@ -161,18 +155,12 @@ StringValue::~StringValue() {
 
 bool StringValue::GetAsString(std::string* out_value) const {
   if (out_value)
-    *out_value = value_;
-  return true;
-}
-
-bool StringValue::GetAsString(std::wstring* out_value) const {
-  if (out_value)
-    *out_value = UTF8ToWide(value_);
+    *out_value = *value_;
   return true;
 }
 
 Value* StringValue::DeepCopy() const {
-  return CreateStringValue(value_);
+  return CreateStringValue(*value_);
 }
 
 bool StringValue::Equals(const Value* other) const {
@@ -184,7 +172,7 @@ bool StringValue::Equals(const Value* other) const {
 
 ///////////////////// BinaryValue ////////////////////
 
-//static
+// static
 BinaryValue* BinaryValue::Create(char* buffer, size_t size) {
   if (!buffer)
     return NULL;
@@ -192,8 +180,9 @@ BinaryValue* BinaryValue::Create(char* buffer, size_t size) {
   return new BinaryValue(buffer, size);
 }
 
-//static
-BinaryValue* BinaryValue::CreateWithCopiedBuffer(char* buffer, size_t size) {
+// static
+BinaryValue* BinaryValue::CreateWithCopiedBuffer(const char* buffer,
+                                                 size_t size) {
   if (!buffer)
     return NULL;
 
@@ -212,8 +201,10 @@ BinaryValue::BinaryValue(char* buffer, size_t size)
 
 BinaryValue::~BinaryValue() {
   DCHECK(buffer_);
-  if (buffer_)
+  if (buffer_) {
+    memset(buffer_, 0, size_);
     delete[] buffer_;
+  }
 }
 
 Value* BinaryValue::DeepCopy() const {
@@ -245,13 +236,13 @@ void DictionaryValue::Clear() {
   dictionary_.clear();
 }
 
-bool DictionaryValue::HasKey(const std::wstring& key) const {
+bool DictionaryValue::HasKey(const std::string& key) const {
   ValueMap::const_iterator current_entry = dictionary_.find(key);
   DCHECK((current_entry == dictionary_.end()) || current_entry->second);
   return current_entry != dictionary_.end();
 }
 
-void DictionaryValue::SetInCurrentNode(const std::wstring& key,
+void DictionaryValue::SetInCurrentNode(const std::string& key,
                                        Value* in_value) {
   // If there's an existing value here, we need to delete it, because
   // we own all our children.
@@ -263,14 +254,14 @@ void DictionaryValue::SetInCurrentNode(const std::wstring& key,
   dictionary_[key] = in_value;
 }
 
-bool DictionaryValue::Set(const std::wstring& path, Value* in_value) {
+bool DictionaryValue::Set(const std::string& path, Value* in_value) {
   DCHECK(in_value);
 
-  std::wstring key = path;
+  std::string key = path;
 
-  size_t delimiter_position = path.find_first_of(L".", 0);
+  size_t delimiter_position = path.find_first_of(".", 0);
   // If there isn't a dictionary delimiter in the path, we're done.
-  if (delimiter_position == std::wstring::npos) {
+  if (delimiter_position == std::string::npos) {
     SetInCurrentNode(key, in_value);
     return true;
   } else {
@@ -286,37 +277,32 @@ bool DictionaryValue::Set(const std::wstring& path, Value* in_value) {
     entry = static_cast<DictionaryValue*>(dictionary_[key]);
   }
 
-  std::wstring remaining_path = path.substr(delimiter_position + 1);
+  std::string remaining_path = path.substr(delimiter_position + 1);
   return entry->Set(remaining_path, in_value);
 }
 
-bool DictionaryValue::SetBoolean(const std::wstring& path, bool in_value) {
+bool DictionaryValue::SetBoolean(const std::string& path, bool in_value) {
   return Set(path, CreateBooleanValue(in_value));
 }
 
-bool DictionaryValue::SetInteger(const std::wstring& path, int in_value) {
+bool DictionaryValue::SetInteger(const std::string& path, int in_value) {
   return Set(path, CreateIntegerValue(in_value));
 }
 
-bool DictionaryValue::SetReal(const std::wstring& path, double in_value) {
+bool DictionaryValue::SetReal(const std::string& path, double in_value) {
   return Set(path, CreateRealValue(in_value));
 }
 
-bool DictionaryValue::SetString(const std::wstring& path,
+bool DictionaryValue::SetString(const std::string& path,
                                 const std::string& in_value) {
   return Set(path, CreateStringValue(in_value));
 }
 
-bool DictionaryValue::SetString(const std::wstring& path,
-                                const std::wstring& in_value) {
-  return Set(path, CreateStringValue(in_value));
-}
+bool DictionaryValue::Get(const std::string& path, Value** out_value) const {
+  std::string key = path;
 
-bool DictionaryValue::Get(const std::wstring& path, Value** out_value) const {
-  std::wstring key = path;
-
-  size_t delimiter_position = path.find_first_of(L".", 0);
-  if (delimiter_position != std::wstring::npos) {
+  size_t delimiter_position = path.find_first_of(".", 0);
+  if (delimiter_position != std::string::npos) {
     key = path.substr(0, delimiter_position);
   }
 
@@ -325,7 +311,7 @@ bool DictionaryValue::Get(const std::wstring& path, Value** out_value) const {
     return false;
   Value* entry = entry_iterator->second;
 
-  if (delimiter_position == std::wstring::npos) {
+  if (delimiter_position == std::string::npos) {
     if (out_value)
       *out_value = entry;
     return true;
@@ -339,7 +325,7 @@ bool DictionaryValue::Get(const std::wstring& path, Value** out_value) const {
   return false;
 }
 
-bool DictionaryValue::GetBoolean(const std::wstring& path,
+bool DictionaryValue::GetBoolean(const std::string& path,
                                  bool* bool_value) const {
   Value* value;
   if (!Get(path, &value))
@@ -348,7 +334,7 @@ bool DictionaryValue::GetBoolean(const std::wstring& path,
   return value->GetAsBoolean(bool_value);
 }
 
-bool DictionaryValue::GetInteger(const std::wstring& path,
+bool DictionaryValue::GetInteger(const std::string& path,
                                  int* out_value) const {
   Value* value;
   if (!Get(path, &value))
@@ -357,7 +343,7 @@ bool DictionaryValue::GetInteger(const std::wstring& path,
   return value->GetAsInteger(out_value);
 }
 
-bool DictionaryValue::GetReal(const std::wstring& path,
+bool DictionaryValue::GetReal(const std::string& path,
                               double* out_value) const {
   Value* value;
   if (!Get(path, &value))
@@ -366,7 +352,7 @@ bool DictionaryValue::GetReal(const std::wstring& path,
   return value->GetAsReal(out_value);
 }
 
-bool DictionaryValue::GetString(const std::wstring& path,
+bool DictionaryValue::GetString(const std::string& path,
                                 std::string* out_value) const {
   Value* value;
   if (!Get(path, &value))
@@ -375,16 +361,7 @@ bool DictionaryValue::GetString(const std::wstring& path,
   return value->GetAsString(out_value);
 }
 
-bool DictionaryValue::GetString(const std::wstring& path,
-                                std::wstring* out_value) const {
-  Value* value;
-  if (!Get(path, &value))
-    return false;
-
-  return value->GetAsString(out_value);
-}
-
-bool DictionaryValue::GetBinary(const std::wstring& path,
+bool DictionaryValue::GetBinary(const std::string& path,
                                 BinaryValue** out_value) const {
   Value* value;
   bool result = Get(path, &value);
@@ -397,7 +374,7 @@ bool DictionaryValue::GetBinary(const std::wstring& path,
   return true;
 }
 
-bool DictionaryValue::GetDictionary(const std::wstring& path,
+bool DictionaryValue::GetDictionary(const std::string& path,
                                     DictionaryValue** out_value) const {
   Value* value;
   bool result = Get(path, &value);
@@ -410,7 +387,7 @@ bool DictionaryValue::GetDictionary(const std::wstring& path,
   return true;
 }
 
-bool DictionaryValue::GetList(const std::wstring& path,
+bool DictionaryValue::GetList(const std::string& path,
                               ListValue** out_value) const {
   Value* value;
   bool result = Get(path, &value);
@@ -423,11 +400,11 @@ bool DictionaryValue::GetList(const std::wstring& path,
   return true;
 }
 
-bool DictionaryValue::Remove(const std::wstring& path, Value** out_value) {
-  std::wstring key = path;
+bool DictionaryValue::Remove(const std::string& path, Value** out_value) {
+  std::string key = path;
 
-  size_t delimiter_position = path.find_first_of(L".", 0);
-  if (delimiter_position != std::wstring::npos) {
+  size_t delimiter_position = path.find_first_of(".", 0);
+  if (delimiter_position != std::string::npos) {
     key = path.substr(0, delimiter_position);
   }
 
@@ -436,7 +413,7 @@ bool DictionaryValue::Remove(const std::wstring& path, Value** out_value) {
     return false;
   Value* entry = entry_iterator->second;
 
-  if (delimiter_position == std::wstring::npos) {
+  if (delimiter_position == std::string::npos) {
     if (out_value)
       *out_value = entry;
     else

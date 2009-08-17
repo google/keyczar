@@ -36,14 +36,16 @@ std::string ECDSAImpl::GetCurveName(ECDSAImpl::Curve curve) {
 
 // static
 ECDSAImpl::Curve ECDSAImpl::GetCurve(const std::string& name) {
-  if (name == std::string("prime192v1"))
+  if (name == "prime192v1")
     return PRIME192V1;
-  if (name == std::string("secp224r1"))
+  if (name == "secp224r1")
     return SECP224R1;
-  if (name == std::string("prime256v1"))
+  if (name == "prime256v1")
     return PRIME256V1;
-  if (name == std::string("secp384r1"))
+  if (name == "secp384r1")
     return SECP384R1;
+
+  NOTREACHED();
   return UNDEF;
 }
 

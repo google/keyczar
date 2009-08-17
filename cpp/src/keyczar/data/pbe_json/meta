@@ -1,0 +1,16 @@
+{
+   "encrypted": true,
+   "name": "toto",
+   "nextKeyVersionNumber": 3,
+   "purpose": "DECRYPT_AND_ENCRYPT",
+   "type": "AES",
+   "versions": [ {
+      "exportable": false,
+      "status": "ACTIVE",
+      "versionNumber": 1
+   }, {
+      "exportable": false,
+      "status": "PRIMARY",
+      "versionNumber": 2
+   } ]
+}

@@ -32,7 +32,11 @@
 #ifndef KEYCZAR_BASE_STL_UTIL_INL_H__
 #define KEYCZAR_BASE_STL_UTIL_INL_H__
 
+#include <string.h>
+
 #include <string>
+
+#include <keyczar/base/scoped_ptr.h>
 
 namespace keyczar {
 namespace base {
@@ -64,6 +68,8 @@ void STLDeleteContainerPointers(ForwardIterator begin,
 // place in open source code.  Feel free to fill this function in with your
 // own disgusting hack if you want the perf boost.
 inline void STLStringResizeUninitialized(std::string* s, size_t new_size) {
+  if (s == NULL)
+    return;
   s->resize(new_size);
 }
 
@@ -80,9 +86,27 @@ inline void STLStringResizeUninitialized(std::string* s, size_t new_size) {
 // proposes this as the method. According to Matt Austern, this should
 // already work on all current implementations.
 inline char* string_as_array(std::string* str) {
+  if (str == NULL)
+    return NULL;
   // DO NOT USE const_cast<char*>(str->data())! See the unittest for why.
   return str->empty() ? NULL : &*str->begin();
 }
+
+// Erases string's memory pointed by |str|.
+void STLStringMemErase(std::string* str);
+
+class ScopedStringMemEraseAndDelete {
+ public:
+  inline void operator()(std::string* x) const {
+    if (!x)
+      return;
+    base::STLStringMemErase(x);
+    delete(x);
+  }
+};
+
+typedef scoped_ptr_malloc<
+    std::string, ScopedStringMemEraseAndDelete > ScopedSafeString;
 
 // STLDeleteElements() deletes all the elements in an STL container and clears
 // the container.  This function is suitable for use with a vector, set,

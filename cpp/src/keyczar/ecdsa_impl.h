@@ -17,6 +17,7 @@
 #include <string>
 
 #include <keyczar/base/basictypes.h>
+#include <keyczar/base/stl_util-inl.h>
 
 namespace keyczar {
 
@@ -38,10 +39,17 @@ class ECDSAImpl {
     Curve curve;              // Normalized curve type
     std::string public_key;   // Public key bytes
     std::string private_key;  // Private key bytes
+
+    ~ECDSAIntermediateKey() {
+      base::STLStringMemErase(&private_key);
+    }
   };
 
   ECDSAImpl() {}
   virtual ~ECDSAImpl() {}
+
+  virtual bool ExportPrivateKey(const std::string& filename,
+                                const std::string* passphrase) const = 0;
 
   // Through this method the concrete implementation copies all its internal
   // private and public fields into |key|. This function returns true on
@@ -66,6 +74,7 @@ class ECDSAImpl {
 
   static Curve GetCurveFromSize(int size);
 
+  // Returns 0 if it fails.
   static int GetSizeFromCurve(Curve curve);
 
  private:

@@ -26,7 +26,7 @@
 #include <keyczar/ecdsa_public_key.h>
 #include <keyczar/key_type.h>
 #include <keyczar/keyczar_test.h>
-#include <keyczar/keyset_file_reader.h>
+#include <keyczar/rw/keyset_file_reader.h>
 
 namespace keyczar {
 
@@ -35,7 +35,7 @@ class ECDSATest : public KeyczarTest {
   // Loads public key from JSON file.
   scoped_refptr<ECDSAPublicKey> LoadECDSAPublicKey(const FilePath& path,
                                                int key_version) {
-    KeysetJSONFileReader reader(path);
+    rw::KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
     scoped_refptr<ECDSAPublicKey> public_key(ECDSAPublicKey::CreateFromValue(
@@ -46,11 +46,9 @@ class ECDSATest : public KeyczarTest {
 };
 
 TEST_F(ECDSATest, GenerateSignAndVerify) {
-  scoped_ptr<KeyType> ecdsa_type(KeyType::Create("ECDSA_PRIV"));
-  ASSERT_TRUE(ecdsa_type.get());
-  const std::vector<int> sizes = ecdsa_type->sizes();
-
+  const std::vector<int> sizes = KeyType::CipherSizes(KeyType::ECDSA_PRIV);
   scoped_refptr<ECDSAPrivateKey> private_key;
+
   for (std::vector<int>::const_iterator iter = sizes.begin();
        iter != sizes.end(); ++iter) {
     // Generates a new private key.
@@ -71,11 +69,10 @@ TEST_F(ECDSATest, VerifyDumpedSignature) {
   // Try to verify the signature file
   std::string b64w_signature;
   FilePath signature_file = data_path_.Append("ecdsa");
-  signature_file = signature_file.AppendASCII("2.out");
-  EXPECT_TRUE(file_util::ReadFileToString(signature_file,
-                                          &b64w_signature));
+  signature_file = signature_file.Append("2.out");
+  EXPECT_TRUE(base::ReadFileToString(signature_file, &b64w_signature));
   std::string signature;
-  EXPECT_TRUE(Base64WDecode(b64w_signature, &signature));
+  EXPECT_TRUE(base::Base64WDecode(b64w_signature, &signature));
 
   // Checks signature
   input_data_.push_back(Key::GetVersionByte());
@@ -84,22 +81,45 @@ TEST_F(ECDSATest, VerifyDumpedSignature) {
                                      Key::GetHeaderSize())));
 }
 
-TEST_F(ECDSATest, LoadPEMKey) {
-  const FilePath ecdsa_pem_path = data_path_.AppendASCII("ec_pem");
+TEST_F(ECDSATest, LoadPEMPrivateKey) {
+  const FilePath ecdsa_pem_path = data_path_.Append("ec_pem");
   scoped_refptr<ECDSAPrivateKey> private_key;
 
-  const FilePath simple_key = ecdsa_pem_path.AppendASCII("ec_priv.pem");
-  private_key = ECDSAPrivateKey::CreateFromPEMKey(simple_key.value(), NULL);
+  const FilePath simple_key = ecdsa_pem_path.Append("ec_priv.pem");
+  private_key = ECDSAPrivateKey::CreateFromPEMPrivateKey(simple_key.value(),
+                                                         NULL);
   EXPECT_TRUE(private_key);
 
   const std::string passphrase("cartman");
-  const FilePath protected_key = ecdsa_pem_path.AppendASCII(
+  const FilePath protected_key = ecdsa_pem_path.Append(
       "ec_priv_encrypted.pem");
-  private_key = ECDSAPrivateKey::CreateFromPEMKey(protected_key.value(),
-                                                &passphrase);
+  private_key = ECDSAPrivateKey::CreateFromPEMPrivateKey(protected_key.value(),
+                                                         &passphrase);
   EXPECT_TRUE(private_key);
 
   // Attempts to sign and verify input data.
+  std::string signature;
+  EXPECT_TRUE(private_key->Sign(input_data_, &signature));
+  EXPECT_TRUE(private_key->Verify(input_data_, signature));
+}
+
+TEST_F(ECDSATest, ExportAndImportPrivateKey) {
+  const FilePath pem = temp_path_.Append("ecdsa.pem");
+  const std::string password("cartman");
+
+  scoped_refptr<ECDSAPrivateKey> private_key =
+      ECDSAPrivateKey::GenerateKey(256);
+  ASSERT_TRUE(private_key.get());
+
+  // Exports private key
+  EXPECT_TRUE(private_key->ExportPrivateKey(pem.value(), &password));
+
+  // Reloads private key
+  scoped_refptr<ECDSAPrivateKey> imported_key =
+      ECDSAPrivateKey::CreateFromPEMPrivateKey(pem.value(), &password);
+  ASSERT_TRUE(imported_key.get());
+
+  // Sign data and verify
   std::string signature;
   EXPECT_TRUE(private_key->Sign(input_data_, &signature));
   EXPECT_TRUE(private_key->Verify(input_data_, signature));

@@ -56,7 +56,7 @@ class AESImpl {
   virtual bool DecryptFinal(std::string* plaintext) const = 0;
 
   // Returns the secret key.
-  virtual std::string GetKey() const = 0;
+  virtual const std::string& GetKey() const = 0;
 
   // Returns the secret key's length. This value is expressed in bytes.
   virtual int GetKeySize() const = 0;

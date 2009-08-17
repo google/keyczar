@@ -214,4 +214,4 @@ class ScopedHGlobal {
   DISALLOW_EVIL_CONSTRUCTORS(ScopedHGlobal);
 };
 
-#endif // KEYCZAR_BASE_SCOPED_HANDLE_WIN_H_
+#endif  // KEYCZAR_BASE_SCOPED_HANDLE_WIN_H_
