@@ -13,7 +13,7 @@ def RunCommands(keyset_type, keyset_password, rsa_path, rsa_pub_path):
     kt = keyczar.KeyczarTool(keyset_type)
     # Creates a RSA key set for encryption
     kt.CmdCreate(rsa_path, keyczar.KeyPurpose.DECRYPT_AND_ENCRYPT,
-                 "MyRSATest", "rsa")
+                 "MyRSATest", keyczar.KeyczarTool.RSA)
     # Adds a first key
     kt.CmdAddKey(rsa_path, keyczar.KeyStatus.ACTIVE, 0,
                  keyczar.KeyczarTool.PBE, keyset_password)

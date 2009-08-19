@@ -122,6 +122,16 @@ static bool GetSwitchValue(const keyczar::base::CommandLine& cmdl,
 namespace keyczar {
 namespace keyczar_tool {
 
+static KeyczarTool::Cipher GetCipher(const std::string& cipher) {
+  if (cipher == "rsa")
+    return KeyczarTool::RSA;
+  if (cipher == "dsa")
+    return KeyczarTool::DSA;
+  if (cipher == "ecdsa")
+    return KeyczarTool::ECDSA;
+  return KeyczarTool::SYMMETRIC;
+}
+
 // static
 bool KeyczarTool::ProcessCommandLine(LocationType location_type, int argc,
                                      char** argv) {
@@ -133,7 +143,7 @@ bool KeyczarTool::ProcessCommandLine(LocationType location_type, int argc,
 bool KeyczarTool::CmdCreate(const std::string& location,
                             KeyPurpose::Type key_purpose,
                             const std::string& name,
-                            const std::string& asymmetric) const {
+                            Cipher cipher) const {
   scoped_ptr<rw::KeysetReader> reader(GetReader(location, NONE, ""));
   if (reader.get() == NULL)
     return false;
@@ -155,44 +165,44 @@ bool KeyczarTool::CmdCreate(const std::string& location,
 
   KeyType::Type key_type;
   if (key_purpose == KeyPurpose::SIGN_AND_VERIFY) {
-    if (asymmetric.empty()) {
+    switch (cipher) {
+      case SYMMETRIC:
 #ifdef COMPAT_KEYCZAR_06B
-      key_type = KeyType::HMAC_SHA1;
+        key_type = KeyType::HMAC_SHA1;
 #else
-      key_type = KeyType::HMAC;
+        key_type = KeyType::HMAC;
 #endif
-    } else {
-      if (asymmetric == "rsa") {
+        break;
+      case RSA:
         key_type = KeyType::RSA_PRIV;
-      } else {
-        if (asymmetric == "dsa") {
-          key_type = KeyType::DSA_PRIV;
-        } else {
-          if (asymmetric == "ecdsa") {
-            key_type = KeyType::ECDSA_PRIV;
-          } else {
-            LOG(ERROR) << "Invalid asymmetric argument '" << asymmetric << "'.";
-            return false;
-          }
-        }
-      }
+        break;
+      case DSA:
+        key_type = KeyType::DSA_PRIV;
+        break;
+      case ECDSA:
+        key_type = KeyType::ECDSA_PRIV;
+        break;
+      default:
+        LOG(ERROR) << "Unknown signature cipher.";
+        return false;
     }
   } else {
-    if (key_purpose == KeyPurpose::DECRYPT_AND_ENCRYPT) {
-      if (asymmetric.empty()) {
-        key_type = KeyType::AES;
-      } else {
-        if (asymmetric == "rsa") {
-          key_type = KeyType::RSA_PRIV;
-        } else {
-          LOG(ERROR) << "Invalid asymmetric argument '" << asymmetric << "'.";
-          return false;
-        }
-      }
-    } else {
+    if (key_purpose != KeyPurpose::DECRYPT_AND_ENCRYPT) {
       LOG(ERROR) << "Invalid key purpose '"
                  << KeyPurpose::GetNameFromType(key_purpose) << "'.";
       return false;
+    }
+
+    switch (cipher) {
+      case SYMMETRIC:
+        key_type = KeyType::AES;
+        break;
+      case RSA:
+        key_type = KeyType::RSA_PRIV;
+        break;
+      default:
+        LOG(ERROR) << "Unknown encryption cipher.";
+        return false;
     }
   }
 
@@ -469,8 +479,9 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
     // asymmetric
     std::string asymmetric_string;
     GetSwitchValue(cmdl, "asymmetric", &asymmetric_string, true);
+    const Cipher cipher = GetCipher(asymmetric_string);
 
-    return CmdCreate(location, purpose, name_string, asymmetric_string);
+    return CmdCreate(location, purpose, name_string, cipher);
   }
 
   // Command addkey

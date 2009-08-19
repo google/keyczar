@@ -37,11 +37,8 @@ void SignAndVerifyBytes(const std::string& location) {
 
   std::string input = "My message to sign";
   std::string signature;
-  std::cout << "Message: " << input << std::endl;
-
   bool result = signer->Sign(input, &signature);
   if (result) {
-    std::cout << "Signature (Raw bytes): " << signature << std::endl;
     bool result = signer->Verify(input, signature);
     assert(result);
   }

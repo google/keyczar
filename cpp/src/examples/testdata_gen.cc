@@ -52,7 +52,8 @@ void TestdataGen(const FilePath& location) {
     // AES
     const FilePath cur_location = location.Append("aes");
     base::CreateDirectory(cur_location);
-    tool.CmdCreate(cur_location.value(), encrypt_purpose, "Test", "");
+    tool.CmdCreate(cur_location.value(), encrypt_purpose, "Test",
+                   keyczar_tool::KeyczarTool::SYMMETRIC);
     scoped_ptr<Encrypter> encrypter;
     for (int i = 1; i < 3; ++i) {
       tool.CmdAddKey(cur_location.value(), primary_status, 0,
@@ -67,7 +68,8 @@ void TestdataGen(const FilePath& location) {
     // AES crypted
     const FilePath cur_location = location.Append("aes-crypted");
     base::CreateDirectory(cur_location);
-    tool.CmdCreate(cur_location.value(), encrypt_purpose, "Test", "");
+    tool.CmdCreate(cur_location.value(), encrypt_purpose, "Test",
+                   keyczar_tool::KeyczarTool::SYMMETRIC);
     const FilePath aes_encrypter_path(location.Append("aes"));
     rw::KeysetEncryptedJSONFileReader encrypted_reader(
         cur_location, Crypter::Read(aes_encrypter_path.value()));
@@ -86,7 +88,8 @@ void TestdataGen(const FilePath& location) {
     // HMAC
     const FilePath cur_location = location.Append("hmac");
     base::CreateDirectory(cur_location);
-    tool.CmdCreate(cur_location.value(), sign_purpose, "Test", "");
+    tool.CmdCreate(cur_location.value(), sign_purpose, "Test",
+                   keyczar_tool::KeyczarTool::SYMMETRIC);
     scoped_ptr<Signer> signer;
     for (int i = 1; i < 3; ++i) {
       tool.CmdAddKey(cur_location.value(), primary_status, 0,
@@ -101,7 +104,8 @@ void TestdataGen(const FilePath& location) {
     // DSA_PRIV
     const FilePath cur_location = location.Append("dsa");
     base::CreateDirectory(cur_location);
-    tool.CmdCreate(cur_location.value(), sign_purpose, "Test", "dsa");
+    tool.CmdCreate(cur_location.value(), sign_purpose, "Test",
+                   keyczar_tool::KeyczarTool::DSA);
     scoped_ptr<Signer> signer;
     for (int i = 1; i < 3; ++i) {
       tool.CmdAddKey(cur_location.value(), primary_status, 0,
@@ -122,7 +126,8 @@ void TestdataGen(const FilePath& location) {
     // ECDSA_PRIV
     const FilePath cur_location = location.Append("ecdsa");
     base::CreateDirectory(cur_location);
-    tool.CmdCreate(cur_location.value(), sign_purpose, "Test", "ecdsa");
+    tool.CmdCreate(cur_location.value(), sign_purpose, "Test",
+                   keyczar_tool::KeyczarTool::ECDSA);
     scoped_ptr<Signer> signer;
     for (int i = 1; i < 3; ++i) {
       tool.CmdAddKey(cur_location.value(), primary_status, 0,
@@ -143,7 +148,8 @@ void TestdataGen(const FilePath& location) {
     // RSA_PRIV SIGN
     const FilePath cur_location = location.Append("rsa-sign");
     base::CreateDirectory(cur_location);
-    tool.CmdCreate(cur_location.value(), sign_purpose, "Test", "rsa");
+    tool.CmdCreate(cur_location.value(), sign_purpose, "Test",
+                   keyczar_tool::KeyczarTool::RSA);
     scoped_ptr<Signer> signer;
     for (int i = 1; i < 3; ++i) {
       tool.CmdAddKey(cur_location.value(), primary_status, 0,
@@ -164,7 +170,8 @@ void TestdataGen(const FilePath& location) {
     // RSA_PRIV ENCRYPT
     const FilePath cur_location = location.Append("rsa");
     base::CreateDirectory(cur_location);
-    tool.CmdCreate(cur_location.value(), encrypt_purpose, "Test", "rsa");
+    tool.CmdCreate(cur_location.value(), encrypt_purpose, "Test",
+                   keyczar_tool::KeyczarTool::RSA);
     scoped_ptr<Encrypter> encrypter;
     for (int i = 1; i < 3; ++i) {
       tool.CmdAddKey(cur_location.value(), primary_status, 0,

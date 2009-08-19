@@ -163,10 +163,17 @@ class KeyczarTool {
     PBE
   };
 
+  enum Cipher {
+    SYMMETRIC,
+    DSA,
+    ECDSA,
+    RSA
+  };
+
   explicit KeyczarTool(LocationType location_type);
 
   bool CmdCreate(const std::string& location, KeyPurpose::Type key_purpose,
-                 const std::string& name, const std::string& asymmetric) const;
+                 const std::string& name, Cipher cipher) const;
 
   int CmdAddKey(const std::string& location, KeyStatus::Type key_status,
                 int size, KeyEncryption key_enc_type,

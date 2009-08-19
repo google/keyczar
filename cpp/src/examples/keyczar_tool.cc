@@ -27,7 +27,7 @@ int RunCmds(const std::string& rsa_path, const std::string& rsa_pub_path) {
           rsa_path,
           KeyPurpose::SIGN_AND_VERIFY,  // key set purpose
           "MyRSASigner",                // key set name
-          "rsa")) {                     // asymmetric cipher type
+          KeyczarTool::RSA)) {                     // asymmetric cipher type
     std::cerr << "Command 'create' failed." << std::endl;
     return 1;
   }

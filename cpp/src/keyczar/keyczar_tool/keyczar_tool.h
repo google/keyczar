@@ -34,7 +34,7 @@ namespace keyczar_tool {
 class KeyczarTool {
  public:
   // Update the corresponding enum structure inside keyczar.i if this one
-  // is modified.
+  // was modified.
   enum LocationType {
     // Locations represent directories/files/others medias containing metadata
     // and keys files.
@@ -42,11 +42,20 @@ class KeyczarTool {
   };
 
   // Update the corresponding enum structure inside keyczar.i if this one
-  // is modified.
+  // was modified.
   enum KeyEncryption {
     NONE,     // No key encryption
     CRYPTER,  // Use another key set for encrypting this key
     PBE       // Password-based encryption
+  };
+
+  // Update the corresponding enum structure inside keyczar.i if this one
+  // was modified.
+  enum Cipher {
+    SYMMETRIC,
+    DSA,
+    ECDSA,
+    RSA
   };
 
   // |location_type| is used for instanciating the right reader and writer
@@ -60,20 +69,19 @@ class KeyczarTool {
                                  char** argv);
 
   // |location| is the path/file location of the key set. |name| is the name
-  // of the new created key set. If |asymmetric| is an empty string it means
-  // it is a symmetric cipher. Valids asymmetric ciphers are "rsa", "dsa" and
-  // "ecdsa". |key_purpose| designates the purpose assigned to this key set.
+  // of the new created key set. |cipher| is the key set's cipher type and
+  // |key_purpose| designates the purpose assigned to this key set.
   //
   // Python examples:
   // >>> import keyczar
   // >>> kt = keyczar.KeyczarTool(keyczar.KeyczarTool.JSON_FILE)
   // >>> kt.CmdCreate("/path/aes", keyczar.KeyPurpose.DECRYPT_AND_ENCRYPT,
-  //                  "Test", "")
+  //                  "Test", keyczar.KeyczarTool.SYMMETRIC)
   // or
   // >>> kt.CmdCreate("/path/rsa", keyczar.KeyPurpose.DECRYPT_AND_ENCRYPT,
-  //                  "Test", "rsa")
+  //                  "Test", keyczar.KeyczarTool.RSA)
   bool CmdCreate(const std::string& location, KeyPurpose::Type key_purpose,
-                 const std::string& name, const std::string& asymmetric) const;
+                 const std::string& name, Cipher cipher) const;
 
   // |location| is the path/file location of the key set. |size| is the key
   // size in bits, if |size| is equal to 0 the default size for this cipher
