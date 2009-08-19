@@ -61,9 +61,10 @@ class KeyczarTool {
 
   // |location| is the path/file location of the key set. |name| is the name
   // of the new created key set. If |asymmetric| is an empty string it means
-  // it is a symmetric cipher.
+  // it is a symmetric cipher. Valids asymmetric ciphers are "rsa", "dsa" and
+  // "ecdsa". |key_purpose| designates the purpose assigned to this key set.
   //
-  // Python example:
+  // Python examples:
   // >>> import keyczar
   // >>> kt = keyczar.KeyczarTool(keyczar.KeyczarTool.JSON_FILE)
   // >>> kt.CmdCreate("/path/aes", keyczar.KeyPurpose.DECRYPT_AND_ENCRYPT,
@@ -77,14 +78,16 @@ class KeyczarTool {
   // |location| is the path/file location of the key set. |size| is the key
   // size in bits, if |size| is equal to 0 the default size for this cipher
   // will be used. If |key_enc_type| is PBE and |key_enc_value| is empty
-  // a password will be prompted interactively. If |key_enc_value| is not NONE
-  // the metadata field "encrypted" will be set to true. The first key added
-  // to a key set sets the "encrypted" flag for the lifetime of this key set.
-  // If |key_enc_value| is equal to NONE or CRYPTER then |key_enc_value| is not
-  // considered. This method returns 0 if an error happened or its assigned key
-  // version number otherwise.
+  // a password will be prompted interactively. If |key_enc_type| is not NONE
+  // and if this is the first key added to the underlying key set then its
+  // "encrypted" flag will be set to true and it will only be possible to add
+  // encrypted keys after that operation (or the lifetime of this key set). If
+  // this key set already have keys |key_enc_type| must be compatible with its
+  // settings. If |key_enc_type| is equal to NONE or CRYPTER then
+  // |key_enc_value| is not considered. This method returns 0 on error or its
+  // assigned key version number otherwise.
   //
-  // Python example:
+  // Python examples:
   // >>> kt.CmdAddKey("/path/aes", keyczar.KeyStatus.PRIMARY, 0,
   //                  keyczar.KeyczarTool.NONE, "")
   // or

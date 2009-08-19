@@ -47,9 +47,14 @@ void DefaultLogHandler(LogLevel level, const char* filename, int line,
 
   // We use fprintf() instead of cerr because we want this to work at static
   // initialization time.
-  fprintf(stderr, "[Keyczar %s %s:%d] %s\n",
-          level_names[level], filename, line, message.c_str());
-  fflush(stderr);  // Needed on MSVC.
+  if (level == LOGLEVEL_INFO) {
+    fprintf(stdout, "[Keyczar] %s\n", message.c_str());
+    fflush(stdout);  // Needed on MSVC.
+  } else {
+    fprintf(stderr, "[Keyczar %s %s:%d] %s\n",
+            level_names[level], filename, line, message.c_str());
+    fflush(stderr);  // Needed on MSVC.
+  }
 }
 
 void NullLogHandler(LogLevel level, const char* filename, int line,
