@@ -10,9 +10,7 @@ import org.keyczar.util.Util;
 import java.nio.ByteBuffer;
 
 /**
- * A hybrid encrypter will generate and encrypt a session key with a given
- * Encrytper. That session key will be used to encrypt arbitrary data. The
- * output will be signed with the given signer.
+ * TODO(steveweis)
  *
  * @author steveweis@gmail.com (Steve Weis)
  *

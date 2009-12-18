@@ -44,6 +44,13 @@ public class HybridEncrypter {
     this.sessionMaterial = encrypter.encrypt(aesKeyBytes);
   }
 
+  /**
+   * TODO(steveweis)
+   * 
+   * @param plaintext
+   * @return
+   * @throws KeyczarException
+   */
   public byte[] encrypt(byte[] plaintext) throws KeyczarException {
     byte[] ciphertext = symmetricCrypter.encrypt(plaintext);
     byte[] signature = new byte[signer.digestSize()];
