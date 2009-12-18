@@ -53,9 +53,12 @@ class HmacKey extends KeyczarKey {
   }
 
   static HmacKey generate(int keySize) throws KeyczarException {
+    return fromBytes(Util.rand(keySize / 8));
+  }
+  
+  static HmacKey fromBytes(byte[] keyBytes) throws KeyczarException {
     HmacKey key = new HmacKey();
-    key.size = keySize;
-    byte[] keyBytes = Util.rand(key.size() / 8);
+    key.size = keyBytes.length * 8;
     key.hmacKeyString = Base64Coder.encode(keyBytes);
     key.init();
     return key;

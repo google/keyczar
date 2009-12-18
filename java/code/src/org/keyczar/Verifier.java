@@ -28,6 +28,7 @@ import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 
@@ -100,6 +101,21 @@ public class Verifier extends Keyczar {
    */
   public boolean verify(ByteBuffer data, ByteBuffer signature)
       throws KeyczarException {
+    return verify(data, null, signature);
+  }
+  
+  /**
+   * Verifies the signature on the data stored in the given ByteBuffer
+   *
+   * @param data The data to verify the signature on
+   * @param hidden Any hidden data to include in the signature
+   * @param signature The signature to verify
+   * @return Whether this is a valid signature
+   * @throws KeyczarException If the signature is malformed or a JCE error
+   * occurs.
+   */
+  boolean verify(ByteBuffer data, ByteBuffer hidden,
+      ByteBuffer signature) throws KeyczarException {
     VERIFIER_LOGGER.info(
         Messages.getString("Verifier.Verifying", data.remaining()));
     if (signature.remaining() < HEADER_SIZE) {
@@ -124,6 +140,9 @@ public class Verifier extends Keyczar {
       stream = (VerifyingStream) key.getStream();
     }
     stream.initVerify();
+    if (hidden != null) {
+      stream.updateVerify(hidden);
+    }
     stream.updateVerify(data);
     // The signed data is terminated with the current Keyczar format 
     stream.updateVerify(ByteBuffer.wrap(FORMAT_BYTES));
@@ -132,6 +151,7 @@ public class Verifier extends Keyczar {
     VERIFY_CACHE.put(key, stream);
     return result;
   }
+
 
   /**
    * Verifies the signature on the given String
@@ -143,7 +163,12 @@ public class Verifier extends Keyczar {
    * occurs.
    */
   public boolean verify(String data, String signature) throws KeyczarException {
-    return verify(data.getBytes(), Base64Coder.decode(signature));
+    try {
+      return verify(data.getBytes(DEFAULT_ENCODING),
+          Base64Coder.decode(signature));
+    } catch (UnsupportedEncodingException e) {
+      throw new KeyczarException(e);
+    }
   }
 
   @Override

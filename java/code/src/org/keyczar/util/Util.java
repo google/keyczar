@@ -21,6 +21,7 @@ import com.google.gson.GsonBuilder;
 
 import org.keyczar.exceptions.KeyczarException;
 
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -119,6 +120,54 @@ public class Util {
     byte[] digest = md.digest();
     DIGEST_QUEUE.add(md);
     return digest;
+  }
+  
+  /**
+   * Packs a set of input arrays into a single array. The packed array is
+   * prefixed by an integer value of the number of arrays. Then each individual
+   * array is prefixed by its length, followed by the contents of the array
+   * itself. Thus, three arrays A, B, C would output:
+   *   {3, len(A), A, len(B), B, len(C), C}
+   * 
+   * @param inputArrays A list of arrays to pack together 
+   * @return A packed list of arrays, with each preceded by its integer length
+   */
+  public static byte[] lenPrefixPack(byte[]... inputArrays) {
+    // Count an int for each input array
+    int outputSize = (1 + inputArrays.length) * 4; 
+    for (byte[] array : inputArrays) {
+      outputSize += array.length;
+    }
+    byte[] output = new byte[outputSize];
+    ByteBuffer outputBuffer = ByteBuffer.wrap(output);
+    // Put the number of total arrays
+    outputBuffer.putInt(inputArrays.length);
+    for (byte[] array : inputArrays) {
+      // Put the size of this array
+      outputBuffer.putInt(array.length);
+      // Put the array itself
+      outputBuffer.put(array);
+    }
+    return output;
+  }
+  
+  /**
+   * Unpack an input buffer into an array of byte arrays
+   * 
+   * @param packedInput A packed representation of an array of byte arrays
+   * @return A two dimensional array of arrays
+   */
+  public static byte[][] lenPrefixUnpack(byte[] packedInput) {
+    ByteBuffer input = ByteBuffer.wrap(packedInput);
+    int numArrays = input.getInt();
+    byte[][] output = new byte[numArrays][];
+    for (int i = 0; i < numArrays; i++) {
+      int len = input.getInt();
+      byte[] array = new byte[len];
+      input.get(array);
+      output[i] = array;
+    }
+    return output;
   }
   
   /**

@@ -190,6 +190,9 @@ class GenericKeyczar extends Keyczar {
    * @throws KeyczarException if unable to export key set.
    */
   void publicKeyExport(String destination) throws KeyczarException {
+    if (destination != null && !destination.endsWith(File.separator)) {
+      destination += File.separator;
+    }
     KeyMetadata kmd = getMetadata();
     // Can only export if type is DSA_PRIV and purpose is SIGN_AND_VERIFY
     KeyMetadata publicKmd = null;

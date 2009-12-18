@@ -48,6 +48,7 @@ import javax.crypto.spec.SecretKeySpec;
 class AesKey extends KeyczarKey {
   private Key aesKey;
   private int blockSize;
+  private boolean useHmac = true;
 
   private static final String AES_ALGORITHM = "AES";
   private static final CipherMode DEFAULT_MODE = CipherMode.CBC;
@@ -63,12 +64,26 @@ class AesKey extends KeyczarKey {
   }
 
   static AesKey generate(int keySize) throws KeyczarException {
+    return fromBytes(Util.rand(keySize / 8), true);
+  }
+  
+  // Used by HybridEncrypter
+  static AesKey fromBytes(byte[] aesBytes, boolean useHmac)
+      throws KeyczarException {
     AesKey key = new AesKey();
-    key.size = keySize;
-    byte[] aesBytes = Util.rand(key.size() / 8);
+    key.size = aesBytes.length * 8;
     key.aesKeyString = Base64Coder.encode(aesBytes);
     key.mode = DEFAULT_MODE;
-    key.hmacKey = HmacKey.generate();
+    // Hybrid crypters don't need to generate a HMAC key since the output will
+    // be signed by an external Signer
+    key.useHmac = useHmac;
+    if (useHmac) {
+      // Generate a fresh key
+      key.hmacKey = HmacKey.generate();
+    } else {
+      // Just use a placeholder value as a key. This will not be used.
+      key.hmacKey = HmacKey.fromBytes(new byte[1]);
+    }
     key.init();
     return key;
   }
@@ -85,6 +100,7 @@ class AesKey extends KeyczarKey {
 
   static AesKey read(String input) throws KeyczarException {
     AesKey key = Util.gson().fromJson(input, AesKey.class);
+    
     key.hmacKey.init();
     key.init();
     return key;
@@ -94,15 +110,40 @@ class AesKey extends KeyczarKey {
     byte[] aesBytes = Base64Coder.decode(aesKeyString);
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
     blockSize = aesBytes.length;
-    byte[] fullHash =
-      Util.hash(Util.fromInt(blockSize), aesBytes, hmacKey.keyBytes());
+    byte[] fullHash = (useHmac) ?
+        Util.hash(Util.fromInt(blockSize), aesBytes, hmacKey.keyBytes()) :
+        Util.hash(Util.fromInt(blockSize), aesBytes);
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
+  }
+
+  byte[] getEncoded() {
+    return aesKey.getEncoded();
   }
 
   @Override
   Stream getStream() throws KeyczarException {
     return new AesStream();
   }
+  
+  // Use this stream if HMACs are disabled. Should only be done with hybrid
+  // encrypters, since an external signer is used
+  private static final SigningStream NULL_SIGNING_STREAM = new SigningStream() {
+    public int digestSize() {
+      return 0;
+    }
+
+    public void initSign() {
+      // Do nothing
+    }
+
+    public void sign(ByteBuffer output) {
+      // Do nothing
+    }
+
+    public void updateSign(ByteBuffer input) {
+      // Do nothing      
+    }
+  };
 
   private class AesStream implements EncryptingStream, DecryptingStream {
     private Cipher encryptingCipher;
@@ -123,7 +164,10 @@ class AesKey extends KeyczarKey {
         encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey, zeroIv);
         decryptingCipher = Cipher.getInstance(mode.getMode());
         decryptingCipher.init(Cipher.DECRYPT_MODE, aesKey, zeroIv);
-        signStream = (SigningStream) hmacKey.getStream();
+        signStream = NULL_SIGNING_STREAM;
+        if (useHmac) {
+          signStream = (SigningStream) hmacKey.getStream();
+        }
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
@@ -221,4 +265,5 @@ class AesKey extends KeyczarKey {
       return mode.getOutputSize(blockSize, inputLen);
     }
   }
+  
 }

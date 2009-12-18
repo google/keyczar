@@ -18,6 +18,7 @@ package org.keyczar.experimental;
 
 
 import org.keyczar.Signer;
+import org.keyczar.annotations.Experimental;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyczarReader;
 
@@ -34,6 +35,7 @@ import java.util.TreeSet;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
+@Experimental
 public class UriSigner {
   private static final String DEFAULT_SIG_PARAM = "sig";
   private Signer signer;

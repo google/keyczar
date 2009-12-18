@@ -279,7 +279,7 @@ public class KeyczarTool {
       }
       try {
         FileOutputStream metaOutput = new FileOutputStream(file);
-        metaOutput.write(kmd.toString().getBytes());
+        metaOutput.write(kmd.toString().getBytes(Keyczar.DEFAULT_ENCODING));
         metaOutput.close();
       } catch (IOException e) {
         throw new KeyczarException(Messages.getString(

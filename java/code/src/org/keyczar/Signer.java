@@ -27,6 +27,7 @@ import org.keyczar.interfaces.SigningStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 /**
@@ -123,6 +124,7 @@ public class Signer extends Verifier {
    * @param hidden Hidden data to be signed
    * @param expirationTime The expiration time of this signature
    * @param output The destination of this signature
+   * 
    * @throws KeyczarException
    */
   void sign(ByteBuffer input, ByteBuffer hidden, long expirationTime,
@@ -188,7 +190,11 @@ public class Signer extends Verifier {
    * @throws KeyczarException
    */
   public String sign(String input) throws KeyczarException {
-    return Base64Coder.encode(sign(input.getBytes()));
+    try {
+      return Base64Coder.encode(sign(input.getBytes(DEFAULT_ENCODING)));
+    } catch (UnsupportedEncodingException e) {
+      throw new KeyczarException(e);
+    }
   }
 
   @Override

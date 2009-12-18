@@ -35,6 +35,7 @@ import java.util.HashMap;
  *
  */
 abstract class Keyczar {
+  static final String DEFAULT_ENCODING = "UTF-8";
   static final Logger KEYCZAR_LOGGER = Logger.getLogger(Keyczar.class);
   static final byte FORMAT_VERSION = 0;
   static final byte[] FORMAT_BYTES = { FORMAT_VERSION };

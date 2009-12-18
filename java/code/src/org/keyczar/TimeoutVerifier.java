@@ -22,6 +22,7 @@ import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Date;
 
@@ -89,7 +90,12 @@ public class TimeoutVerifier {
    * occurs.
    */
   public boolean verify(String data, String signature) throws KeyczarException {
-    return verify(data.getBytes(), Base64Coder.decode(signature));
+    try {
+      return verify(data.getBytes(Keyczar.DEFAULT_ENCODING),
+          Base64Coder.decode(signature));
+    } catch (UnsupportedEncodingException e) {
+      throw new KeyczarException(e);
+    }
   }
 
   /**
