@@ -53,9 +53,10 @@ class HmacKey extends KeyczarKey {
   }
 
   static HmacKey generate(int keySize) throws KeyczarException {
-    return fromBytes(Util.rand(keySize / 8));
+    byte[] keyBytes = Util.rand(keySize / 8);
+    return fromBytes(keyBytes);
   }
-  
+
   static HmacKey fromBytes(byte[] keyBytes) throws KeyczarException {
     HmacKey key = new HmacKey();
     key.size = keyBytes.length * 8;
@@ -63,7 +64,7 @@ class HmacKey extends KeyczarKey {
     key.init();
     return key;
   }
-
+  
   void init() throws KeyczarException {
     byte[] keyBytes = Base64Coder.decode(hmacKeyString);
     byte[] fullHash = Util.hash(keyBytes);
@@ -75,7 +76,7 @@ class HmacKey extends KeyczarKey {
    * This method is for AesKey to grab the key bytes to compute an identifying
    * hash.
    */
-  byte[] keyBytes() {
+  byte[] getEncoded() {
     return hmacKey.getEncoded();
   }
 
