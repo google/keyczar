@@ -75,12 +75,13 @@ class AesKey extends KeyczarKey {
   }
   
   /*
-   * Used by HybridDecrypters when decrypting encrypted keys
+   * Used by SessionDecrypters when decrypting encrypted keys
    */
   static AesKey fromPackedKey(byte[] packedKeys) throws KeyczarException {
     byte[][] unpackedKeys = Util.lenPrefixUnpack(packedKeys);
     if (unpackedKeys.length != 2) {
-      throw new KeyczarException(Messages.getString("AesKey.InvalidPackedKey"));
+      throw new KeyczarException(
+          Messages.getString("AesKey.InvalidPackedKey"));
     }
     byte[] aesBytes = unpackedKeys[0];
     byte[] hmacBytes = unpackedKeys[1];
@@ -120,8 +121,8 @@ class AesKey extends KeyczarKey {
   } 
 
   /*
-   * Used by HybridEncrypters to get a packed representation of an AES and HMAC
-   * key.
+   * Used by SessionEncrypters to get a packed representation of an AES and
+   * HMAC key.
    */
   byte[] getEncoded() {        
     return Util.lenPrefixPack(aesKey.getEncoded(), hmacKey.getEncoded());
