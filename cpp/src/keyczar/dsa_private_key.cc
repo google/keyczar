@@ -204,7 +204,10 @@ bool DSAPrivateKey::Sign(const std::string& data,
   DSAImpl::DSAIntermediateKey dsa_public_key;
   if (!dsa_impl()->GetPublicAttributes(&dsa_public_key))
     return false;
-  const uint32 q_length = dsa_public_key.q.length();
+  // Substract 1 because intermediate representations always have a
+  // leading null-byte prepended in order to conform to Java
+  // implementation's format.
+  const uint32 q_length = dsa_public_key.q.length() - 1;
   if (message_digest.length() > q_length)
     message_digest = message_digest.substr(0, q_length);
 

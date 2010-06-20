@@ -218,65 +218,77 @@ bool RSAOpenSSL::GetAttributes(RSAIntermediateKey* key) {
 
   // d
   int num_d = BN_num_bytes(key_->d);
-  unsigned char d[num_d];
-  if (BN_bn2bin(key_->d, d) != num_d) {
+  unsigned char d[num_d + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  d[0] = 0;
+  if (BN_bn2bin(key_->d, d + 1) != num_d) {
     PrintOSSLErrors();
     return false;
   }
-  key->d.assign(reinterpret_cast<char*>(d), num_d);
-  memset(d, 0, num_d);
+  key->d.assign(reinterpret_cast<char*>(d), num_d + 1);
+  memset(d, 0, num_d + 1);
 
   // p
   int num_p = BN_num_bytes(key_->p);
-  unsigned char p[num_p];
-  if (BN_bn2bin(key_->p, p) != num_p) {
+  unsigned char p[num_p + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  p[0] = 0;
+  if (BN_bn2bin(key_->p, p + 1) != num_p) {
     PrintOSSLErrors();
     return false;
   }
-  key->p.assign(reinterpret_cast<char*>(p), num_p);
-  memset(p, 0, num_p);
+  key->p.assign(reinterpret_cast<char*>(p), num_p + 1);
+  memset(p, 0, num_p + 1);
 
   // q
   int num_q = BN_num_bytes(key_->q);
-  unsigned char q[num_q];
-  if (BN_bn2bin(key_->q, q) != num_q) {
+  unsigned char q[num_q + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  q[0] = 0;
+  if (BN_bn2bin(key_->q, q + 1) != num_q) {
     PrintOSSLErrors();
     return false;
   }
-  key->q.assign(reinterpret_cast<char*>(q), num_q);
+  key->q.assign(reinterpret_cast<char*>(q), num_q + 1);
   // FIXME: could be better to use string_as_array to write directly
   // into the string and avoid this call to memset.
-  memset(q, 0, num_q);
+  memset(q, 0, num_q + 1);
 
   // dmp1
   int num_dmp1 = BN_num_bytes(key_->dmp1);
-  unsigned char dmp1[num_dmp1];
-  if (BN_bn2bin(key_->dmp1, dmp1) != num_dmp1) {
+  unsigned char dmp1[num_dmp1 + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  dmp1[0] = 0;
+  if (BN_bn2bin(key_->dmp1, dmp1 + 1) != num_dmp1) {
     PrintOSSLErrors();
     return false;
   }
-  key->dmp1.assign(reinterpret_cast<char*>(dmp1), num_dmp1);
-  memset(dmp1, 0, num_dmp1);
+  key->dmp1.assign(reinterpret_cast<char*>(dmp1), num_dmp1 + 1);
+  memset(dmp1, 0, num_dmp1 + 1);
 
   // dmq1
   int num_dmq1 = BN_num_bytes(key_->dmq1);
-  unsigned char dmq1[num_dmq1];
-  if (BN_bn2bin(key_->dmq1, dmq1) != num_dmq1) {
+  unsigned char dmq1[num_dmq1 + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  dmq1[0] = 0;
+  if (BN_bn2bin(key_->dmq1, dmq1 + 1) != num_dmq1) {
     PrintOSSLErrors();
     return false;
   }
-  key->dmq1.assign(reinterpret_cast<char*>(dmq1), num_dmq1);
-  memset(dmq1, 0, num_dmq1);
+  key->dmq1.assign(reinterpret_cast<char*>(dmq1), num_dmq1 + 1);
+  memset(dmq1, 0, num_dmq1 + 1);
 
   // iqmp
   int num_iqmp = BN_num_bytes(key_->iqmp);
-  unsigned char iqmp[num_iqmp];
-  if (BN_bn2bin(key_->iqmp, iqmp) != num_iqmp) {
+  unsigned char iqmp[num_iqmp + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  iqmp[0] = 0;
+  if (BN_bn2bin(key_->iqmp, iqmp + 1) != num_iqmp) {
     PrintOSSLErrors();
     return false;
   }
-  key->iqmp.assign(reinterpret_cast<char*>(iqmp), num_iqmp);
-  memset(iqmp, 0, num_iqmp);
+  key->iqmp.assign(reinterpret_cast<char*>(iqmp), num_iqmp + 1);
+  memset(iqmp, 0, num_iqmp + 1);
 
   return true;
 }
@@ -290,21 +302,25 @@ bool RSAOpenSSL::GetPublicAttributes(RSAIntermediateKey* key) {
 
   // n
   int num_n = BN_num_bytes(key_->n);
-  unsigned char n[num_n];
-  if (BN_bn2bin(key_->n, n) != num_n) {
+  unsigned char n[num_n + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  n[0] = 0;
+  if (BN_bn2bin(key_->n, n + 1) != num_n) {
     PrintOSSLErrors();
     return false;
   }
-  key->n.assign(reinterpret_cast<char*>(n), num_n);
+  key->n.assign(reinterpret_cast<char*>(n), num_n + 1);
 
   // e
   int num_e = BN_num_bytes(key_->e);
-  unsigned char e[num_e];
-  if (BN_bn2bin(key_->e, e) != num_e) {
+  unsigned char e[num_e + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  e[0] = 0;
+  if (BN_bn2bin(key_->e, e + 1) != num_e) {
     PrintOSSLErrors();
     return false;
   }
-  key->e.assign(reinterpret_cast<char*>(e), num_e);
+  key->e.assign(reinterpret_cast<char*>(e), num_e + 1);
 
   return true;
 }

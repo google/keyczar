@@ -10,7 +10,7 @@
 
 === Ubuntu/Debian ===
 
-Packages g++ make libssl-dev zlib1-dev python python-dev swig
+Packages g++ make libssl-dev zlib1g-dev python python-dev swig
 
 === MacOSX Leopard ===
 
@@ -46,9 +46,9 @@ You need to log as root and execute these commands:
 mode. This mode provides full compatibility with previous versions and others
 Keyczar implementations (Java, pure Python).
 
-- Default prefix paths used are /usr/local/ and /usr/lib/python2.x/site-packages
-  for Python stuffs. Use src/options.conf and read src/tools/installer.py for
-  overriding these choices.
+- Default prefix paths used are /usr/local/ and
+  /usr/lib/python2.x/[site|dist]-packages for Python stuffs. Use src/options.conf
+  and read src/tools/installer.py for overriding these choices.
 - Learn how to use this library by reading the tutorial (on the wiki page), the
   examples located under src/examples/ and the main headers
   src/keyczar/keyczar.h and src/keyczar/keyczar_tool/keyczar_tool.h

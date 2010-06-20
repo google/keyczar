@@ -152,13 +152,15 @@ bool DSAOpenSSL::GetAttributes(DSAIntermediateKey* key) {
 
   // priv_key (x)
   int num_priv_key = BN_num_bytes(key_->priv_key);
-  unsigned char priv_key[num_priv_key];
-  if (BN_bn2bin(key_->priv_key, priv_key) != num_priv_key) {
+  unsigned char priv_key[num_priv_key + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  priv_key[0] = 0;
+  if (BN_bn2bin(key_->priv_key, priv_key + 1) != num_priv_key) {
     PrintOSSLErrors();
     return false;
   }
-  key->x.assign(reinterpret_cast<char*>(priv_key), num_priv_key);
-  memset(priv_key, 0, num_priv_key);
+  key->x.assign(reinterpret_cast<char*>(priv_key), num_priv_key + 1);
+  memset(priv_key, 0, num_priv_key + 1);
 
   return true;
 }
@@ -172,39 +174,47 @@ bool DSAOpenSSL::GetPublicAttributes(DSAIntermediateKey* key) {
 
   // p
   int num_p = BN_num_bytes(key_->p);
-  unsigned char p[num_p];
-  if (BN_bn2bin(key_->p, p) != num_p) {
+  unsigned char p[num_p + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  p[0] = 0;
+  if (BN_bn2bin(key_->p, p + 1) != num_p) {
     PrintOSSLErrors();
     return false;
   }
-  key->p.assign(reinterpret_cast<char*>(p), num_p);
+  key->p.assign(reinterpret_cast<char*>(p), num_p + 1);
 
   // q
   int num_q = BN_num_bytes(key_->q);
-  unsigned char q[num_q];
-  if (BN_bn2bin(key_->q, q) != num_q) {
+  unsigned char q[num_q + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  q[0] = 0;
+  if (BN_bn2bin(key_->q, q + 1) != num_q) {
     PrintOSSLErrors();
     return false;
   }
-  key->q.assign(reinterpret_cast<char*>(q), num_q);
+  key->q.assign(reinterpret_cast<char*>(q), num_q + 1);
 
   // g
   int num_g = BN_num_bytes(key_->g);
-  unsigned char g[num_g];
-  if (BN_bn2bin(key_->g, g) != num_g) {
+  unsigned char g[num_g + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  g[0] = 0;
+  if (BN_bn2bin(key_->g, g + 1) != num_g) {
     PrintOSSLErrors();
     return false;
   }
-  key->g.assign(reinterpret_cast<char*>(g), num_g);
+  key->g.assign(reinterpret_cast<char*>(g), num_g + 1);
 
   // pub_key (y)
   int num_pub_key = BN_num_bytes(key_->pub_key);
-  unsigned char pub_key[num_pub_key];
-  if (BN_bn2bin(key_->pub_key, pub_key) != num_pub_key) {
+  unsigned char pub_key[num_pub_key + 1];
+  // Set the MSB to 0 to be compatible with Java implementation.
+  pub_key[0] = 0;
+  if (BN_bn2bin(key_->pub_key, pub_key + 1) != num_pub_key) {
     PrintOSSLErrors();
     return false;
   }
-  key->y.assign(reinterpret_cast<char*>(pub_key), num_pub_key);
+  key->y.assign(reinterpret_cast<char*>(pub_key), num_pub_key + 1);
 
   return true;
 }
