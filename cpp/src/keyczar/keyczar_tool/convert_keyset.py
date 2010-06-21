@@ -97,7 +97,7 @@ def doit(src_path, dst_path):
     for p in (src_path, dst_path):
         if not os.path.isdir(p):
             sys.stderr.write('Invalid directory: %s\n' % p)
-            break
+            return
     iterate_meta(src_path, dst_path)
 
 if __name__ == '__main__':
