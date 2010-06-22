@@ -30,8 +30,8 @@ import java.util.List;
  *   <li>HMAC-SHA1:   (256, 20)
  *   <li>DSA Private: (1024, 48)
  *   <li>DSA Public:  (1024, 48)
- *   <li>RSA Private: ((2048, 1024, 768, 512), 256)
- *   <li>RSA Public:  ((2048, 1024, 768, 512), 256)
+ *   <li>RSA Private: ((4096, 2048, 1024, 768, 512), 256)
+ *   <li>RSA Public:  ((4096, 2048, 1024, 768, 512), 256)
  *   <li>EC Private:  ((256, 384, 521, 192), 70)
  *   <li>EC Public:   ((256, 384, 521, 192), 70)
  *   <li>Test:        (1, 0)
@@ -54,8 +54,8 @@ public enum KeyType {
   HMAC_SHA1("HMAC-SHA1",1, Arrays.asList(256), 20),
   DSA_PRIV("DSA Private", 2, Arrays.asList(1024), 48),
   DSA_PUB("DSA Public", 3, Arrays.asList(1024), 48),
-  RSA_PRIV("RSA Private", 4, Arrays.asList(2048, 1024, 768, 512), 256),
-  RSA_PUB("RSA Public", 5, Arrays.asList(2048, 1024, 768, 512), 256),
+  RSA_PRIV("RSA Private", 4, Arrays.asList(4096, 2048, 1024, 768, 512), 256),
+  RSA_PUB("RSA Public", 5, Arrays.asList(4096, 2048, 1024, 768, 512), 256),
   EC_PRIV("EC Private", 6, Arrays.asList(256, 384, 521, 192), 70),
   EC_PUB("EC Public", 7, Arrays.asList(256, 384, 521, 192), 70),
   TEST("Test", 127, Arrays.asList(1), 0);
