@@ -5,9 +5,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,10 +27,10 @@ class _NameId(object):
   def __init__(self, name, id):
     self.name = name
     self.id = id
-  
+
   def __str__(self):
     return self.name
-  
+
 class KeyType(_NameId):
   """
   Encodes different key types and their properties:
@@ -41,17 +41,17 @@ class KeyType(_NameId):
     - RSA Private
     - RSA Public
   """
-  
-  sizes = property(lambda self: self.__sizes, 
+
+  sizes = property(lambda self: self.__sizes,
                    doc="""List of valid key sizes for this key type.""")
   # clients can't modify sizes
-  
+
   def __init__(self, name, id, sizes, output_size):
     _NameId.__init__(self, name, id)
     self.__sizes = sizes
     self.output_size = output_size
     self.default_size = self.__sizes[0]
-  
+
   def IsValidSize(self, size):
     return size in self.__sizes
 
@@ -59,9 +59,9 @@ AES = KeyType("AES", 0, [128, 192, 256], 0)
 HMAC_SHA1 = KeyType("HMAC_SHA1", 1, [256], 20)
 DSA_PRIV = KeyType("DSA_PRIV", 2, [1024], 48)
 DSA_PUB = KeyType("DSA_PUB", 3, [1024], 48)
-RSA_PRIV = KeyType("RSA_PRIV", 4, [2048, 1024, 768, 512], 256)
-RSA_PUB = KeyType("RSA_PUB", 4, [2048, 1024, 768, 512], 256)
-types = {"AES": AES, "HMAC_SHA1": HMAC_SHA1, "DSA_PRIV": DSA_PRIV, 
+RSA_PRIV = KeyType("RSA_PRIV", 4, [4096, 2048, 1024, 768, 512], 256)
+RSA_PUB = KeyType("RSA_PUB", 4, [4096, 2048, 1024, 768, 512], 256)
+types = {"AES": AES, "HMAC_SHA1": HMAC_SHA1, "DSA_PRIV": DSA_PRIV,
          "DSA_PUB": DSA_PUB, "RSA_PRIV": RSA_PRIV, "RSA_PUB": RSA_PUB}
 
 def GetType(name):
@@ -69,7 +69,7 @@ def GetType(name):
     return types[name]
   except KeyError:
     raise errors.KeyczarError("Invalid Key Type")
-    
+
 class KeyStatus(_NameId):
   """
   Encodes the different possible statuses of a key:
@@ -111,7 +111,7 @@ def GetPurpose(name):
     return purposes[name]
   except KeyError:
     raise errors.KeyczarError("Invalid Key Purpose")
-  
+
 class CipherMode(_NameId):
   """
   Encodes the different possible modes for a cipher:
@@ -120,12 +120,12 @@ class CipherMode(_NameId):
     - Electronic Code Book (ECB)
     - Cipher Block Chaining without IV (DET-CBC)
   """
-  
+
   def __init__(self, name, id, use_iv, OutputSizeFn):
     _NameId.__init__(self, name, id)
     self.use_iv = use_iv
     self.GetOutputSize = OutputSizeFn
-    
+
 CBC = CipherMode("CBC", 0, True, lambda b, i: (i/b + 2) * b)
 CTR = CipherMode("CTR", 1, True, lambda b, i: i + b / 2)
 ECB = CipherMode("ECB", 2, False, lambda b, i: b)
