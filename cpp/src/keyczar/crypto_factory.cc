@@ -96,6 +96,8 @@ MessageDigestImpl* CryptoFactory::SHAFromFFCIFCSize(int size) {
       return CryptoFactory::SHA224();
     case 3072:
       return CryptoFactory::SHA256();
+    case 4096:
+      return CryptoFactory::SHA512();
     default:
       NOTREACHED();
   }

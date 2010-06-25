@@ -23,10 +23,10 @@ namespace {
 static const int kAESSizes[] = {128, 192, 256, 0};
 #ifdef COMPAT_KEYCZAR_06B
 static const int kHMACSHA1Sizes[] = {160, 0};
-static const int kRSASizes[] = {512, 768, 1024, 2048, 3072, 0};
+static const int kRSASizes[] = {512, 768, 1024, 2048, 3072, 4096, 0};
 #else
 static const int kHMACSizes[] = {160, 224, 256, 384, 512, 0};
-static const int kRSASizes[] = {1024, 2048, 3072, 0};
+static const int kRSASizes[] = {1024, 2048, 3072, 4096, 0};
 #endif
 static const int kDSASizes[] = {1024, 2048, 3072, 0};
 static const int kECDSASizes[] = {192, 224, 256, 384, 0};

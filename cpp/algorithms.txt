@@ -35,6 +35,7 @@ DSA 3072 + SHA256 (truncated to 160 bits)
 RSA 1024 + SHA1
 RSA 2048 + SHA224
 RSA 3072 + SHA256
+RSA 4096 + SHA512
 
 ECDSA 192 + SHA256 (truncated to 192 bits)
 ECDSA 224 + SHA256 (truncated to 224 bits)
