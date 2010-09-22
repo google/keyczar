@@ -47,7 +47,7 @@ typedef scoped_ptr_malloc<
     EVP_PKEY, OSSLDestroyer<EVP_PKEY, EVP_PKEY_free> > ScopedEVPPKey;
 
 typedef scoped_ptr_malloc<
-    BIO, OSSLDestroyer<BIO, BIO_free_all> > ScopedBIO;
+    BIO, OSSLDestroyer<BIO, BIO_vfree> > ScopedBIO;
 
 void PrintOSSLErrors();
 
