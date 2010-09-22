@@ -22,6 +22,7 @@ Utility functions for keyczar package.
 
 import base64
 import math
+import os
 try:
   # Import hashlib if Python >= 2.5
   from hashlib import sha1
@@ -30,7 +31,6 @@ except ImportError:
   from sha import sha as sha1
   from Crypto.Hash.SHA256 import new as sha256
 
-from Crypto.Util import randpool
 from pyasn1.codec.der import decoder
 from pyasn1.codec.der import encoder
 from pyasn1.type import univ
@@ -291,7 +291,8 @@ def TrimBytes(bytes):
 
 def RandBytes(n):
   """Return n random bytes."""
-  return randpool.RandomPool(512).get_bytes(n)
+  # This function requires at least Python 2.4.
+  return os.urandom(n)
 
 def Hash(digest, *inputs):
   """Return a SHA-1 hash over a variable number of inputs."""

@@ -456,7 +456,8 @@ class DsaPrivateKey(PrivateKey):
     @return: byte string formatted as an ASN.1 sequnce of r and s
     @rtype: string
     """
-    # need to chose a random k per-message
+    # Need to chose a random k per-message, SystemRandom() is available
+    # since Python 2.4.
     k = random.SystemRandom().randint(2, self.key.q-1)
     (r, s) = self.key.sign(util.Hash('SHA1', msg), k)
     return util.MakeDsaSig(r, s)
