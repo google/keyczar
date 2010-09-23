@@ -61,10 +61,15 @@ def GenKey(type, size=None):
 
   @return: the generated key of the given type and size
 
-  @raise KeyczarError: if type is a public key or unsupported.
+  @raise KeyczarError: if type is a public key or unsupported or if key size
+                       is unsupported.
   """
   if size is None:
     size = type.default_size
+
+  if not type.IsValidSize(size):
+    raise errors.KeyczarError("Unsupported key size %d bits." % size)
+
   try:
     return {keyinfo.AES: AesKey.Generate,
             keyinfo.HMAC_SHA1: HmacKey.Generate,

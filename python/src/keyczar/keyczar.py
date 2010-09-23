@@ -147,8 +147,8 @@ class GenericKeyczar(Keyczar):
 
     Generates a new key of same type (repeated until hash identifier is unique)
     for this version. Uses supplied key size (if provided) in lieu of the
-    default key size. If this is an unacceptable key size, uses the default
-    key size. Uses next available version number.
+    default key size. If this is an unacceptable key size, raises an error. Uses
+    next available version number.
 
     @param status: the status of the new key to be added
     @type status: L{keyinfo.KeyStatus}
@@ -156,10 +156,13 @@ class GenericKeyczar(Keyczar):
     @param size: size of key in bits, uses default size if not provided.
     @type size: integer
 
-    @raise KeyczarError: if key type unsupported
+    @raise KeyczarError: if either key type or key size is unsupported.
     """
     if size is None:
       size = self.default_size
+
+    if not self.metadata.type.IsValidSize(size):
+      raise errors.KeyczarError("Unsupported key size %d bits." % size)
 
     max_version_number = 0
     for version in self.versions:
