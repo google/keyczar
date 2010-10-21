@@ -45,7 +45,7 @@ import java.nio.ByteBuffer;
  */
 public class UnversionedSigner extends UnversionedVerifier {
   static final int TIMESTAMP_SIZE = 8;
-  private static final Logger SIGNER_LOGGER = Logger.getLogger(UnversionedSigner.class);
+  private static final Logger LOG = Logger.getLogger(UnversionedSigner.class);
   private final StreamQueue<SigningStream> SIGN_QUEUE =
     new StreamQueue<SigningStream>();
 
@@ -117,7 +117,7 @@ public class UnversionedSigner extends UnversionedVerifier {
    * @throws KeyczarException
    */
   void sign(ByteBuffer input, ByteBuffer output) throws KeyczarException {
-    SIGNER_LOGGER.info(Messages.getString("Signer.Signing", input.remaining()));
+    LOG.debug(Messages.getString("Signer.Signing", input.remaining()));
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
       throw new NoPrimaryKeyException();

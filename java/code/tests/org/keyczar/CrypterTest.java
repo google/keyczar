@@ -22,6 +22,7 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
+import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.keyczar.exceptions.KeyNotFoundException;
 import org.keyczar.exceptions.KeyczarException;
@@ -36,6 +37,7 @@ import org.keyczar.interfaces.KeyczarReader;
  */
 
 public class CrypterTest extends TestCase {
+  private static final Logger LOG = Logger.getLogger(CrypterTest.class);
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
   
@@ -85,20 +87,30 @@ public class CrypterTest extends TestCase {
   public final void testAesEncryptAndDecrypt() throws KeyczarException {
     Crypter crypter = new Crypter(TEST_DATA + "/aes");
     String ciphertext = crypter.encrypt(input);
-    System.out.println("Aes Ciphertext: " + ciphertext);
+    LOG.debug(String.format("Aes Ciphertext: %s", ciphertext));
     String decrypted = crypter.decrypt(ciphertext);
     assertEquals(input, decrypted);
   }
 
   @Test
-  public final void testRsaEncryptAndDecrypt() throws KeyczarException {
+  public final void testRsaEncryptAndDecryptWithCrypter() throws KeyczarException {
     Crypter crypter = new Crypter(TEST_DATA + "/rsa");
     String ciphertext = crypter.encrypt(input);
-    System.out.println("Rsa Ciphertext: " + ciphertext);
+    LOG.debug(String.format("Rsa Ciphertext: %s", ciphertext));
     String decrypted = crypter.decrypt(ciphertext);
     assertEquals(input, decrypted);
   }
   
+  @Test
+  public final void testRsaEncryptAndDecryptWithEncrypter() throws KeyczarException {
+    Encrypter encrypter = new Encrypter(TEST_DATA + "/rsa.public");
+    String ciphertext = encrypter.encrypt(input);
+    LOG.debug(String.format("Rsa Ciphertext: %s", ciphertext));
+    Crypter crypter = new Crypter(TEST_DATA + "/rsa");
+    String decrypted = crypter.decrypt(ciphertext);
+    assertEquals(input, decrypted);
+  }
+
   @Test
   public final void testShortAesEncryptAndDecrypt() throws KeyczarException {
     Crypter crypter = new Crypter(TEST_DATA + "/aes");

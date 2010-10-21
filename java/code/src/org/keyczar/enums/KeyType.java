@@ -20,7 +20,9 @@ import com.google.gson.annotations.Expose;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Encodes different types of keys each with (default size, output size). Some
@@ -30,8 +32,8 @@ import java.util.List;
  *   <li>HMAC-SHA1:   (256, 20)
  *   <li>DSA Private: (1024, 48)
  *   <li>DSA Public:  (1024, 48)
- *   <li>RSA Private: ((4096, 2048, 1024, 768, 512), 256)
- *   <li>RSA Public:  ((4096, 2048, 1024, 768, 512), 256)
+ *   <li>RSA Private: ((4096, 2048, 1024), 256)
+ *   <li>RSA Public:  ((4096, 2048, 1024), 256)
  *   <li>EC Private:  ((256, 384, 521, 192), 70)
  *   <li>EC Public:   ((256, 384, 521, 192), 70)
  *   <li>Test:        (1, 0)
@@ -54,16 +56,17 @@ public enum KeyType {
   HMAC_SHA1("HMAC-SHA1",1, Arrays.asList(256), 20),
   DSA_PRIV("DSA Private", 2, Arrays.asList(1024), 48),
   DSA_PUB("DSA Public", 3, Arrays.asList(1024), 48),
-  RSA_PRIV("RSA Private", 4, Arrays.asList(4096, 2048, 1024, 768, 512), 256),
-  RSA_PUB("RSA Public", 5, Arrays.asList(4096, 2048, 1024, 768, 512), 256),
-  EC_PRIV("EC Private", 6, Arrays.asList(256, 384, 521, 192), 70),
+  RSA_PRIV("RSA Private", 4, Arrays.asList(4096, 2048, 1024), Arrays.asList(512, 256, 128)),
+  RSA_PUB("RSA Public", 5, Arrays.asList(4096, 2048, 1024), Arrays.asList(512, 256, 128)),
+  // TODO(sweis): The ECC output size is not correct. Fix this.
+  EC_PRIV("EC Private", 6, Arrays.asList(256, 384, 521, 192), 70),  
   EC_PUB("EC Public", 7, Arrays.asList(256, 384, 521, 192), 70),
   TEST("Test", 127, Arrays.asList(1), 0);
 
-  private int outputSize;
-  private List<Integer> acceptableSizes;
-  private String name;
-  @Expose private int value;
+  private final Map<Integer, Integer> outputSizeMap = new HashMap<Integer, Integer>();
+  private final List<Integer> acceptableSizes;
+  private final String name;
+  @Expose private final int value;
 
   /**
    * Takes a list of acceptable sizes for key lengths. The first one is assumed
@@ -77,7 +80,27 @@ public enum KeyType {
     name = n;
     value = v;
     this.acceptableSizes = sizes;
-    this.outputSize = outputSize;
+    for (int size : acceptableSizes) {
+    	// All keys have the same default output size
+    	outputSizeMap.put(size, outputSize);
+    }
+  }
+  
+  /**
+   * Takes a list of acceptable sizes for key lengths. The first one is assumed
+   * to be the default size.
+   *
+   * @param v
+   * @param sizes
+   * @param outputSizeList
+   */
+  private KeyType(String n, int v, List<Integer> sizes, List<Integer> outputSizeList) {
+    name = n;
+    value = v;
+    this.acceptableSizes = sizes;
+    for (int i = 0; i < sizes.size(); i++) {
+    	outputSizeMap.put(acceptableSizes.get(i), outputSizeList.get(i));
+    }
   }
 
   /**
@@ -89,8 +112,12 @@ public enum KeyType {
     return acceptableSizes.get(0);
   }
 
+  public int getOutputSize(int keySize) {
+	    return outputSizeMap.get(keySize);
+  }
+  
   public int getOutputSize() {
-    return outputSize;
+    return getOutputSize(defaultSize());
   }
 
   /**

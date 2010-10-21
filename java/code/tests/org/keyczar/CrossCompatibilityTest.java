@@ -61,8 +61,6 @@ public class CrossCompatibilityTest extends TestCase {
      new RandomAccessFile(dir + "/1.out", "r");
     String primaryCiphertext = primaryInput.readLine();
     primaryInput.close();
-    byte[] foo = crypter.encrypt("Bar".getBytes());
-    
     String primaryDecrypted = crypter.decrypt(primaryCiphertext);
     assertEquals(plaintext, primaryDecrypted);
   }

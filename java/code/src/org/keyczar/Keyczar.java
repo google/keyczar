@@ -35,8 +35,8 @@ import java.util.HashMap;
  *
  */
 abstract class Keyczar {
+  private static final Logger LOG = Logger.getLogger(Keyczar.class);
   static final String DEFAULT_ENCODING = "UTF-8";
-  static final Logger KEYCZAR_LOGGER = Logger.getLogger(Keyczar.class);
   static final byte FORMAT_VERSION = 0;
   static final byte[] FORMAT_BYTES = { FORMAT_VERSION };
   static final int KEY_HASH_SIZE = 4;
@@ -98,7 +98,7 @@ abstract class Keyczar {
       }
       KeyczarKey key = KeyczarKey.readKey(kmd.getType(),
           reader.getKey(version.getVersionNumber()));
-      KEYCZAR_LOGGER.info(Messages.getString("Keyczar.ReadVersion", version));
+      LOG.debug(Messages.getString("Keyczar.ReadVersion", version));
       hashMap.put(new KeyHash(key.hash()), key);
       versionMap.put(version, key);
     }

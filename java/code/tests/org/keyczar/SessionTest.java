@@ -18,6 +18,7 @@ package org.keyczar;
 
 import junit.framework.TestCase;
 
+import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.keyczar.annotations.Experimental;
 import org.keyczar.exceptions.KeyczarException;
@@ -35,6 +36,7 @@ import java.util.Arrays;
  */
 @Experimental
 public class SessionTest extends TestCase {
+  private static final Logger LOG = Logger.getLogger(SessionTest.class);
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
   // Bigger than a public key block
@@ -54,9 +56,11 @@ public class SessionTest extends TestCase {
   @Test
   public final void testEncryptAndDecrypt() throws KeyczarException {
     byte[] sessionMaterial = sessionEncrypter.getSessionMaterial();
-    String encodedSessionMaterial = Base64Coder.encode(sessionMaterial);
+    String sessionMaterialString = Base64Coder.encode(sessionMaterial);
+    LOG.debug(String.format("Encoded session material: %s", sessionMaterialString));
     byte[] ciphertext = sessionEncrypter.encrypt(input.getBytes());
-    String encodedCiphertext = Base64Coder.encode(ciphertext);
+    String ciphertextString = Base64Coder.encode(ciphertext);
+    LOG.debug(String.format("Encoded ciphertext: %s", ciphertextString));
     sessionDecrypter = new SessionDecrypter(privateKeyDecrypter, sessionMaterial);
     byte[] plaintext = sessionDecrypter.decrypt(ciphertext);
     String decrypted = new String(plaintext);
@@ -64,7 +68,6 @@ public class SessionTest extends TestCase {
     
     // Try encrypting a bigger input under the same session key
     byte[] bigCiphertext = sessionEncrypter.encrypt(bigInput);
-    String encodedBigCiphertext = Base64Coder.encode(bigCiphertext);
     byte[] bigPlaintext = sessionDecrypter.decrypt(bigCiphertext);
     assertTrue(Arrays.equals(bigInput, bigPlaintext));
   }

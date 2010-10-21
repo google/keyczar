@@ -59,7 +59,7 @@ class RsaPublicKey extends KeyczarPublicKey {
   private RSAPublicKey jcePublicKey;
   @Expose String modulus;
   @Expose String publicExponent;
-
+  
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   
   @Override
@@ -77,9 +77,10 @@ class RsaPublicKey extends KeyczarPublicKey {
     return KeyType.RSA_PUB;
   }
   
-  void set(BigInteger mod, BigInteger pubExp) throws KeyczarException {
-    modulus = Base64Coder.encode(mod.toByteArray());
-    publicExponent = Base64Coder.encode(pubExp.toByteArray());
+  void set(int size, BigInteger mod, BigInteger pubExp) throws KeyczarException {
+	this.size = size;
+    this.modulus = Base64Coder.encode(mod.toByteArray());
+    this.publicExponent = Base64Coder.encode(pubExp.toByteArray());
     init();
   }
   
@@ -114,7 +115,7 @@ class RsaPublicKey extends KeyczarPublicKey {
     private Cipher cipher;
     private Signature signature;
 
-    public RsaStream() throws KeyczarException {
+    RsaStream() throws KeyczarException {
       try {
         signature = Signature.getInstance(SIG_ALGORITHM);
         cipher = Cipher.getInstance(CRYPT_ALGORITHM);
@@ -174,7 +175,7 @@ class RsaPublicKey extends KeyczarPublicKey {
     }
 
     public int maxOutputSize(int inputLen) {
-      return getType().getOutputSize();
+      return getType().getOutputSize(size);
     }
 
     public int updateEncrypt(ByteBuffer input, ByteBuffer output)

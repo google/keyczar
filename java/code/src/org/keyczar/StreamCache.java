@@ -63,5 +63,5 @@ class StreamCache<T extends Stream> {
  * @param <T>
  */
 class StreamQueue<T extends Stream> extends ConcurrentLinkedQueue<T> {
-
+	private static final long serialVersionUID = 4914617278167817144L;
 }

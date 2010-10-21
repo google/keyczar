@@ -42,7 +42,7 @@ import java.nio.ByteBuffer;
  */
 public class Signer extends Verifier {
   static final int TIMESTAMP_SIZE = 8;
-  private static final Logger SIGNER_LOGGER = Logger.getLogger(Signer.class);
+  private static final Logger LOG = Logger.getLogger(Signer.class);
   private final StreamQueue<SigningStream> SIGN_QUEUE =
     new StreamQueue<SigningStream>();
 
@@ -129,7 +129,7 @@ public class Signer extends Verifier {
    */
   void sign(ByteBuffer input, ByteBuffer hidden, long expirationTime,
       ByteBuffer output) throws KeyczarException {
-    SIGNER_LOGGER.info(Messages.getString("Signer.Signing", input.remaining()));
+    LOG.debug(Messages.getString("Signer.Signing", input.remaining()));
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
       throw new NoPrimaryKeyException();

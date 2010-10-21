@@ -43,7 +43,6 @@ public class EcSignatureImpl extends SignatureSpi {
     hash = MessageDigest.getInstance(digestName);
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   protected Object engineGetParameter(String param)
       throws InvalidParameterException {
@@ -68,7 +67,6 @@ public class EcSignatureImpl extends SignatureSpi {
     this.params = this.publicKey.getParams();
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   protected void engineSetParameter(String param, Object value)
       throws InvalidParameterException {

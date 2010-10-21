@@ -1,5 +1,6 @@
 package org.keyczar;
 
+import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.enums.KeyType;
@@ -23,6 +24,7 @@ import java.util.Set;
  *
  */
 class GenericKeyczar extends Keyczar {
+  private static final Logger LOG = Logger.getLogger(GenericKeyczar.class);
   GenericKeyczar(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
@@ -58,7 +60,7 @@ class GenericKeyczar extends Keyczar {
    */
   void promote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
-    KEYCZAR_LOGGER.info(Messages.getString("Keyczar.PromotedVersion", version));
+    LOG.debug(Messages.getString("Keyczar.PromotedVersion", version));
     switch (version.getStatus()) {
       case PRIMARY:
         throw new KeyczarException(
@@ -86,7 +88,7 @@ class GenericKeyczar extends Keyczar {
    */
   void demote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
-    KEYCZAR_LOGGER.info(Messages.getString("Keyczar.DemotingVersion", version));
+    LOG.debug(Messages.getString("Keyczar.DemotingVersion", version));
     switch (version.getStatus()) {
       case PRIMARY:
         version.setStatus(KeyStatus.ACTIVE);
@@ -132,14 +134,14 @@ class GenericKeyczar extends Keyczar {
     }
     KeyczarKey key;
     if (keySize < kmd.getType().defaultSize()) { // print a warning statement
-      KEYCZAR_LOGGER.warn(Messages.getString("Keyczar.SizeWarning",
+      LOG.warn(Messages.getString("Keyczar.SizeWarning",
           keySize, kmd.getType().defaultSize(), kmd.getType().toString()));
     }
     do { // Make sure no keys collide on their identifiers
       key = KeyczarKey.genKey(kmd.getType(), keySize);
     } while (getKey(key.hash()) != null);
     addKey(version, key);
-    KEYCZAR_LOGGER.info(Messages.getString("Keyczar.NewVersion", version));
+    LOG.debug(Messages.getString("Keyczar.NewVersion", version));
   }
 
 

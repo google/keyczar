@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-
 package org.keyczar.exceptions;
-
 
 import org.keyczar.enums.KeyType;
 import org.keyczar.i18n.Messages;
@@ -27,8 +25,9 @@ import org.keyczar.i18n.Messages;
  * @author steveweis@gmail.com (Steve Weis)
  */
 public class UnsupportedTypeException extends KeyczarException {
+  private static final long serialVersionUID = 1L;
+
   public UnsupportedTypeException(KeyType type) {
     super(Messages.getString("InvalidTypeInInput", type));
   }
-
 }

@@ -109,7 +109,7 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
         new BigInteger(Base64Coder.decode(publicKey.publicExponent));
       
       // Set the public key values
-      publicKey.set(mod, pubExp);
+      publicKey.set(size, mod, pubExp);
       
       BigInteger privExp = new BigInteger(Base64Coder.decode(privateExponent));
       BigInteger p = new BigInteger(Base64Coder.decode(primeP));
@@ -134,7 +134,7 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
       kpg.initialize(key.size());
       KeyPair pair = kpg.generateKeyPair();
       key.jcePrivateKey = (RSAPrivateCrtKey) pair.getPrivate();
-      key.publicKey.set(key.jcePrivateKey.getModulus(),
+      key.publicKey.set(key.size, key.jcePrivateKey.getModulus(),
           key.jcePrivateKey.getPublicExponent());
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
@@ -241,7 +241,7 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     }
 
     public int maxOutputSize(int inputLen) {
-      return getType().getOutputSize() * 2;
+      return getType().getOutputSize(size);
     }
 
     public void sign(ByteBuffer output) throws KeyczarException {

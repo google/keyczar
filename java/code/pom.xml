@@ -18,7 +18,7 @@
   <groupId>org.keyczar</groupId>
   <artifactId>keyczar</artifactId>
   <name>Keyczar</name>
-  <version>0.65b-SNAPSHOT</version>
+  <version>0.66</version>
   <developers>
     <developer>
       <id>arkajit.dey</id>
@@ -46,28 +46,9 @@
   </mailingLists>
   <repositories>
     <repository>
-      <id>Gson</id>
-      <url>http://google-gson.googlecode.com/svn/mavenrepo</url>
-    </repository>
-    <repository>
-      <id>maven2-repository.dev.java.net</id>
-      <name>Java.net Repository for Maven</name>
-      <url>http://download.java.net/maven/2</url>
-    </repository>
-    <repository>
-      <id>maven repository.mit.edu</id>
-      <name>Jdmk_jmx jars</name>
-      <url>http://simile.mit.edu/maven/</url>
-     </repository>
-     <repository>
-       <id>maven2 repository.jboss.com</id>
-       <name>jms jars</name>
-       <url>http://repository.jboss.com/maven2</url>
-     </repository>
-     <repository>
-     	<id>keyczar repository</id>
-     	<name>Keyczar Repository</name>
-     	<url>http://keyczar.googlecode.com/svn/trunk/java/maven/</url>
+      <id>keyczar repository</id>
+      <name>Keyczar Repository</name>
+      <url>http://keyczar.googlecode.com/svn/trunk/java/maven/</url>
      </repository>
   </repositories>
   <build>
@@ -91,8 +72,27 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.1.2</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.4.2</version>
+        <version>2.6</version>
+        <configuration>
+          <excludes>
+            <exclude>**/SymmetricPerformanceTest.java</exclude>
+          </excludes>
+         </configuration>
       </plugin>
     </plugins>
     <extensions>
@@ -110,11 +110,6 @@
   </scm>
   <dependencies>
     <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>1.4</version>
-    </dependency>
-    <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>1.2.14</version>
@@ -131,11 +126,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.testng</groupId>
-      <artifactId>testng</artifactId>
-      <version>5.8</version>
-      <scope>test</scope>
-      <classifier>jdk15</classifier>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>1.4</version>
+      <type>jar</type>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
   <distributionManagement>

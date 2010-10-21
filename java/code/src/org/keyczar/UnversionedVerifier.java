@@ -45,7 +45,7 @@ import java.util.Map.Entry;
 *
 */
 public class UnversionedVerifier extends Keyczar {
-  private static final Logger VERIFIER_LOGGER =
+  private static final Logger LOG =
     Logger.getLogger(UnversionedVerifier.class);
   private static final StreamCache<VerifyingStream> VERIFY_CACHE
     = new StreamCache<VerifyingStream>();
@@ -105,7 +105,7 @@ public class UnversionedVerifier extends Keyczar {
    */
   public boolean verify(ByteBuffer data, ByteBuffer signature)
       throws KeyczarException {
-    VERIFIER_LOGGER.info(
+    LOG.debug(
         Messages.getString("UnversionedVerifier.Verifying", data.remaining()));
 
     // Try to verify the signature with each key in the set.

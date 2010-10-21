@@ -19,6 +19,7 @@ package org.keyczar;
 
 import junit.framework.TestCase;
 
+import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.keyczar.Signer;
 import org.keyczar.Verifier;
@@ -37,6 +38,7 @@ import java.nio.ByteBuffer;
  *
  */
 public class SignerTest extends TestCase {
+  private static final Logger LOG = Logger.getLogger(SignerTest.class);
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
   private byte[] inputBytes = input.getBytes();
@@ -97,7 +99,7 @@ public class SignerTest extends TestCase {
     Signer hmacSigner = new Signer(TEST_DATA + "/hmac");
     String sig = hmacSigner.sign(input);
     assertTrue(hmacSigner.verify(input, sig));
-    System.out.println("Hmac Sig: " + sig);
+    LOG.debug(String.format("Hmac Sig: %s", sig));
     // Try signing and verifying directly in a buffer
     ByteBuffer buffer =
       ByteBuffer.allocate(inputBytes.length + hmacSigner.digestSize());
@@ -125,7 +127,7 @@ public class SignerTest extends TestCase {
   public final void testDsaSignAndVerify() throws KeyczarException {
     Signer dsaSigner = new Signer(TEST_DATA + "/dsa");
     String sig = dsaSigner.sign(input);
-    System.out.println("Dsa Sig: " + sig);
+    LOG.debug(String.format("Dsa Sig: %s", sig));
     assertTrue(dsaSigner.verify(input, sig));
     assertFalse(dsaSigner.verify("Wrong string", sig));
   }
@@ -145,7 +147,7 @@ public class SignerTest extends TestCase {
   public final void testRsaSignAndVerify() throws KeyczarException {
     Signer rsaSigner = new Signer(TEST_DATA + "/rsa-sign");
     String sig = rsaSigner.sign(input);
-    System.out.println("Rsa Sig: " + sig);
+    LOG.debug(String.format("Rsa Sig: %s", sig));
     assertTrue(rsaSigner.verify(input, sig));
     assertFalse(rsaSigner.verify("Wrong string", sig));
   }

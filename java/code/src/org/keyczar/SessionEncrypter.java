@@ -16,7 +16,6 @@
 
 package org.keyczar;
 
-import org.apache.log4j.Logger;
 import org.keyczar.Crypter;
 import org.keyczar.Encrypter;
 import org.keyczar.annotations.Experimental;
@@ -25,7 +24,7 @@ import org.keyczar.exceptions.KeyczarException;
 
 /**
  * A session encrypter will generate and encrypt a session key with a given
- * Encrytper. That session key will be used to encrypt arbitrary data.
+ * {@link Encrytper}. That session key will be used to encrypt arbitrary data.
  *
  * @author steveweis@gmail.com (Steve Weis)
  *

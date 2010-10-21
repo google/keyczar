@@ -41,7 +41,7 @@ import java.nio.ByteBuffer;
  *
  */
 public class Encrypter extends Keyczar {
-  private static final Logger ENCRYPTER_LOGGER =
+  private static final Logger LOG =
     Logger.getLogger(Encrypter.class);
   private static final int ENCRYPT_CHUNK_SIZE = 1024;
   private final StreamQueue<EncryptingStream> ENCRYPT_QUEUE =
@@ -128,7 +128,7 @@ public class Encrypter extends Keyczar {
    */
   public void encrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
-    ENCRYPTER_LOGGER.info(Messages.getString("Encrypter.Encrypting", input.remaining()));
+    LOG.debug(Messages.getString("Encrypter.Encrypting", input.remaining()));
     KeyczarKey encryptingKey = getPrimaryKey();
     if (encryptingKey == null) {
       throw new NoPrimaryKeyException() ;

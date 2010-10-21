@@ -44,8 +44,7 @@ import java.nio.ByteBuffer;
 *
 */
 public class Verifier extends Keyczar {
-  private static final Logger VERIFIER_LOGGER =
-    Logger.getLogger(Verifier.class);
+  private static final Logger LOG = Logger.getLogger(Verifier.class);
   private static final StreamCache<VerifyingStream> VERIFY_CACHE
     = new StreamCache<VerifyingStream>();
 
@@ -116,8 +115,7 @@ public class Verifier extends Keyczar {
    */
   boolean verify(ByteBuffer data, ByteBuffer hidden,
       ByteBuffer signature) throws KeyczarException {
-    VERIFIER_LOGGER.info(
-        Messages.getString("Verifier.Verifying", data.remaining()));
+    LOG.debug(Messages.getString("Verifier.Verifying", data.remaining()));
     if (signature.remaining() < HEADER_SIZE) {
       throw new ShortSignatureException(signature.remaining());
     }
