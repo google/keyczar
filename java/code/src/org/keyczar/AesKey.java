@@ -48,8 +48,7 @@ import javax.crypto.spec.SecretKeySpec;
  */
 class AesKey extends KeyczarKey {
   private Key aesKey;
-  private int blockSize;
-
+  private static final int BLOCK_SIZE = 16;
   private static final String AES_ALGORITHM = "AES";
   private static final CipherMode DEFAULT_MODE = CipherMode.CBC;
 
@@ -114,9 +113,8 @@ class AesKey extends KeyczarKey {
   private void init() throws KeyczarException {
     byte[] aesBytes = Base64Coder.decode(aesKeyString);
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
-    blockSize = aesBytes.length;
     byte[] fullHash =
-        Util.hash(Util.fromInt(blockSize), aesBytes, hmacKey.getEncoded());
+        Util.hash(Util.fromInt(BLOCK_SIZE), aesBytes, hmacKey.getEncoded());
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
   } 
 
@@ -146,7 +144,7 @@ class AesKey extends KeyczarKey {
        * Then passing IVs for CBC mode ourselves. The Ciphers will be cached in
        * this stream
        */
-      IvParameterSpec zeroIv = new IvParameterSpec(new byte[blockSize]);
+      IvParameterSpec zeroIv = new IvParameterSpec(new byte[BLOCK_SIZE]);
       try {
         encryptingCipher = Cipher.getInstance(mode.getMode());
         encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey, zeroIv);
@@ -169,7 +167,7 @@ class AesKey extends KeyczarKey {
     public void initDecrypt(ByteBuffer input) {
       // This will simply decrypt the first block, leaving the CBC Cipher
       // ready for the next block of input.
-      byte[] iv = new byte[blockSize];
+      byte[] iv = new byte[BLOCK_SIZE];
       input.get(iv);
       decryptingCipher.update(iv);
       ivRead = true;
@@ -177,7 +175,7 @@ class AesKey extends KeyczarKey {
 
     public int initEncrypt(ByteBuffer output) throws KeyczarException {
       // Generate a random value and encrypt it. This will be the IV.
-      byte[] ivPreImage = new byte[blockSize];
+      byte[] ivPreImage = new byte[BLOCK_SIZE];
       Util.rand(ivPreImage);
       try {
         return encryptingCipher.update(ByteBuffer.wrap(ivPreImage), output);
@@ -188,9 +186,9 @@ class AesKey extends KeyczarKey {
 
     public int updateDecrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
-      if (ivRead && input.remaining() >= blockSize) {
+      if (ivRead && input.remaining() >= BLOCK_SIZE) {
         // The next output block will be the IV preimage, which we'll discard
-        byte[] temp = new byte[blockSize];
+        byte[] temp = new byte[BLOCK_SIZE];
         input.get(temp);
         decryptingCipher.update(temp);  // discard IV preimage byte array
         ivRead = false;
@@ -219,7 +217,7 @@ class AesKey extends KeyczarKey {
           return 0;
         }
         // The next output block will be the IV preimage, which we'll discard
-        byte[] temp = new byte[blockSize];
+        byte[] temp = new byte[BLOCK_SIZE];
         input.get(temp);
         decryptingCipher.update(temp);  // discard IV preimage byte array
         ivRead = false;
@@ -247,8 +245,7 @@ class AesKey extends KeyczarKey {
     }
 
     public int maxOutputSize(int inputLen) {
-      return mode.getOutputSize(blockSize, inputLen);
+      return mode.getOutputSize(BLOCK_SIZE, inputLen);
     }
   }
-  
 }
