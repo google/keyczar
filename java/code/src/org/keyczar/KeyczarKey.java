@@ -123,8 +123,9 @@ abstract class KeyczarKey {
         return DsaPrivateKey.generate(keySize);
       case RSA_PRIV:
         return RsaPrivateKey.generate(keySize);
-      case EC_PRIV:
-          return EcPrivateKey.generate(keySize);
+      // Currently unsupported. See "unofficial" directory.
+      //case EC_PRIV:
+      //    return EcPrivateKey.generate(keySize);
       case RSA_PUB: case DSA_PUB:
         throw new KeyczarException(
             Messages.getString("KeyczarKey.PublicKeyExport", type));
@@ -156,10 +157,11 @@ abstract class KeyczarKey {
         return RsaPrivateKey.read(key);
       case RSA_PUB:
         return RsaPublicKey.read(key);
-      case EC_PRIV:
-          return EcPrivateKey.read(key);
-      case EC_PUB:
-          return EcPublicKey.read(key);
+      // Currently unsupported. See "unofficial" directory.
+      //case EC_PRIV:
+      //    return EcPrivateKey.read(key);
+      //case EC_PUB:
+      //    return EcPublicKey.read(key);
     }
 
     throw new UnsupportedTypeException(type);
