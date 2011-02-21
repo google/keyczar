@@ -129,10 +129,9 @@ public class Signer extends Verifier {
    */
   void sign(ByteBuffer input, ByteBuffer hidden, long expirationTime,
       ByteBuffer output) throws KeyczarException {
-    if(LOG.isDebugEnabled())
-    {
+    if(LOG.isDebugEnabled()) {
 	  LOG.debug(Messages.getString("Signer.Signing", input.remaining()));
-	}
+    }
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
       throw new NoPrimaryKeyException();
