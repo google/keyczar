@@ -39,7 +39,7 @@ import java.util.Arrays;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-abstract class KeyczarKey {
+public abstract class KeyczarKey {
   @Expose int size = getType().defaultSize();
 
   void copyHeader(ByteBuffer dest) {

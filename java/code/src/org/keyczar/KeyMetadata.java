@@ -48,7 +48,7 @@ import java.util.Map;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-class KeyMetadata {
+public class KeyMetadata {
   @Expose String name = "";
   @Expose KeyPurpose purpose = KeyPurpose.TEST;
   @Expose KeyType type = KeyType.TEST;
@@ -59,11 +59,11 @@ class KeyMetadata {
       new HashMap<Integer, KeyVersion>(); // link version number to version
 
   @SuppressWarnings("unused")
-  private KeyMetadata() {
+  public KeyMetadata() {
     // For GSON
   }
 
-  KeyMetadata(String n, KeyPurpose p, KeyType t) {
+  public KeyMetadata(String n, KeyPurpose p, KeyType t) {
     name = n;
     purpose = p;
     type = t;
@@ -80,7 +80,7 @@ class KeyMetadata {
    * @param version KeyVersion of key to be added
    * @return true if add was successful, false if version number collides
    */
-  boolean addVersion(KeyVersion version) {
+  public boolean addVersion(KeyVersion version) {
     int versionNumber = version.getVersionNumber();
     if (!versionMap.containsKey(versionNumber)) {
       versionMap.put(versionNumber, version);
@@ -96,7 +96,7 @@ class KeyMetadata {
    * @param versionNumber integer version number of key to be removed
    * @return true if remove was successful
    */
-  boolean removeVersion(int versionNumber) {
+  public boolean removeVersion(int versionNumber) {
     if (versionMap.containsKey(versionNumber)) {
       KeyVersion version = versionMap.get(versionNumber);
       versions.remove(version);
@@ -106,15 +106,15 @@ class KeyMetadata {
     return false;
   }
 
-  String getName() {
+  public String getName() {
     return name;
   }
 
-  KeyPurpose getPurpose() {
+  public KeyPurpose getPurpose() {
     return purpose;
   }
 
-  KeyType getType() {
+  public KeyType getType() {
     return type;
   }
 
@@ -122,7 +122,7 @@ class KeyMetadata {
     this.encrypted = encrypted;
   }
 
-  boolean isEncrypted() {
+  public boolean isEncrypted() {
     return encrypted;
   }
 
@@ -132,11 +132,11 @@ class KeyMetadata {
    * @param versionNumber
    * @return KeyVersion corresponding to given number, or null if nonexistent
    */
-  KeyVersion getVersion(int versionNumber) {
+  public KeyVersion getVersion(int versionNumber) {
     return versionMap.get(versionNumber);
   }
 
-  List<KeyVersion> getVersions() {
+  public List<KeyVersion> getVersions() {
     return versions;
   }
 
@@ -147,7 +147,7 @@ class KeyMetadata {
    * @param jsonString
    * @return KeyMetadata corresponding to JSON input
    */
-  static KeyMetadata read(String jsonString) {
+  public static KeyMetadata read(String jsonString) {
     KeyMetadata kmd = Util.gson().fromJson(jsonString, KeyMetadata.class);
     for (KeyVersion version : kmd.getVersions()) {
       kmd.versionMap.put(version.getVersionNumber(), version);
