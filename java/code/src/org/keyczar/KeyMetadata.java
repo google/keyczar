@@ -58,7 +58,6 @@ public class KeyMetadata {
   protected Map<Integer, KeyVersion> versionMap =
       new HashMap<Integer, KeyVersion>(); // link version number to version
 
-  @SuppressWarnings("unused")
   public KeyMetadata() {
     // For GSON
   }

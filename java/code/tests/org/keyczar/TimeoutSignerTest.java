@@ -16,11 +16,17 @@
 
 package org.keyczar;
 
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 
 import junit.framework.TestCase;
 
+import org.easymock.EasyMock;
+import org.junit.Before;
 import org.junit.Test;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.util.Clock;
 
 /**
  * Tests Signer class for signing and verifying timeout signatures
@@ -31,10 +37,22 @@ import org.keyczar.exceptions.KeyczarException;
 public class TimeoutSignerTest extends TestCase {
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
-
+  private Clock mockClock;
+  
+  @Before
+  public void setUp() {
+	  mockClock = EasyMock.createMock(Clock.class);
+	  
+  }
+  
   private final void testTimeoutSignAndVerify(TimeoutSigner signer)
       throws KeyczarException, InterruptedException {
-    long now = System.currentTimeMillis();
+	long now = 1000000L;  // Some arbitrary moment in time
+	signer.setClock(mockClock);
+	expect(mockClock.now()).andReturn(now).times(3);
+	expect(mockClock.now()).andReturn(now + 1000l);
+	replay(mockClock);
+
     // Create a signature that will be valid for a long time
     String sig = signer.timeoutSign(input, now + 10000000);
     assertTrue(signer.verify(input, sig));
@@ -43,12 +61,11 @@ public class TimeoutSignerTest extends TestCase {
     sig = signer.timeoutSign(input, now - 1000);
     assertFalse(signer.verify(input, sig));
     
-    
     // Create a valid signature, let it expire, and check that it is now invalid
-    sig = signer.timeoutSign(input, now + 1000);
+    sig = signer.timeoutSign(input, now + 500);
     assertTrue(signer.verify(input, sig));
-    Thread.sleep(1000);
-    assertFalse(signer.verify(input, sig));    
+    assertFalse(signer.verify(input, sig));
+    verify(mockClock);
   }
   
   @Test

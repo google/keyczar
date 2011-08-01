@@ -163,7 +163,6 @@ public class SignerTest extends TestCase {
     testBadVerify("/rsa-sign");
   }
   
-  
   private final void testUnversionedSignAndVerify(String subDir)
       throws Exception {
     UnversionedSigner signer = new UnversionedSigner(TEST_DATA + subDir);

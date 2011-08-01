@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-
 package org.keyczar;
-
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import org.apache.log4j.PropertyConfigurator;
 import org.keyczar.experimental.UriSignerTest;
 
 /**
@@ -31,9 +28,6 @@ import org.keyczar.experimental.UriSignerTest;
  *
  */
 public class AllTests extends TestSuite {
-  static {
-    PropertyConfigurator.configure("./tests/log4j.properties");
-  }
   
   public static Test suite() {
     TestSuite suite = new TestSuite();
