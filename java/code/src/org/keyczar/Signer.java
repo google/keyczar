@@ -198,6 +198,56 @@ public class Signer extends Verifier {
       throw new KeyczarException(e);
     }
   }
+  
+  /**
+   * Signs an input blob and returns the data with attached signature
+   * 
+   * @param blob Data to sign
+   * @param hidden Hidden data or nonce to include in signature
+   * @return The input data with an attached signature
+   */
+  public byte[] attachedSign(final byte[] blob, final byte[] hidden)
+      throws KeyczarException {
+    KeyczarKey signingKey = getPrimaryKey();
+    if (signingKey == null) {
+      throw new NoPrimaryKeyException();
+    }
+
+    SigningStream stream = SIGN_QUEUE.poll();
+    
+    if (stream == null) {
+      // If not, allocate a new stream object.
+      stream = (SigningStream) signingKey.getStream();
+    }
+    
+    stream.initSign();
+    // Attached signature signs:
+    // [blob | hidden.length | hidden | format] or [blob | 0 | format]
+    byte[] hiddenPlusLength = Util.fromInt(0);
+    if (hidden.length > 0) {
+    	hiddenPlusLength = Util.lenPrefix(hidden);
+    }
+    
+    stream.updateSign(ByteBuffer.wrap(blob));
+    stream.updateSign(ByteBuffer.wrap(hiddenPlusLength));
+    stream.updateSign(ByteBuffer.wrap(FORMAT_BYTES));
+    
+    // now get signature output
+    ByteBuffer output = ByteBuffer.allocate(digestSize());
+    output.mark();
+    
+    stream.sign(output);
+    output.limit(output.position());
+     
+    // Attached signature format is:
+    // [Format number | 4 bytes of key hash | blob size | blob | raw signature]    
+    byte[] signature = Util.cat(FORMAT_BYTES, signingKey.hash(),
+        Util.lenPrefix(blob), output.array());
+    
+    SIGN_QUEUE.add(stream);
+    
+    return signature;
+  }
 
   @Override
   boolean isAcceptablePurpose(KeyPurpose purpose) {

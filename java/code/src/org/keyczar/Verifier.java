@@ -27,6 +27,7 @@ import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -119,20 +120,15 @@ public class Verifier extends Keyczar {
     if (signature.remaining() < HEADER_SIZE) {
       throw new ShortSignatureException(signature.remaining());
     }
-
-    byte version = signature.get();
-    if (version != FORMAT_VERSION) {
-      throw new BadVersionException(version);
-    }
-
-    byte[] hash = new byte[KEY_HASH_SIZE];
-    signature.get(hash);
-    KeyczarKey key = getKey(hash);
+    
+    byte[] hash = checkFormatAndGetHash(signature);
+    KeyczarKey key = getVerifyingKey(hash);
 
     if (key == null) {
       throw new KeyNotFoundException(hash);
     }
 
+    // TODO(normandl): replace following with rawVerify().
     VerifyingStream stream = VERIFY_CACHE.get(key);
     if (stream == null) {
       stream = (VerifyingStream) key.getStream();
@@ -141,7 +137,9 @@ public class Verifier extends Keyczar {
     if (hidden != null) {
       stream.updateVerify(hidden);
     }
+    
     stream.updateVerify(data);
+    
     // The signed data is terminated with the current Keyczar format 
     stream.updateVerify(ByteBuffer.wrap(FORMAT_BYTES));
 
@@ -167,6 +165,140 @@ public class Verifier extends Keyczar {
     } catch (UnsupportedEncodingException e) {
       throw new KeyczarException(e);
     }
+  }
+  
+  /*
+   * perform a verification, assume all key and hash checks have been performed.
+   */
+  boolean rawVerify(KeyczarKey key, final ByteBuffer data, final ByteBuffer hidden,
+      final ByteBuffer signature) throws KeyczarException {
+	VerifyingStream stream = VERIFY_CACHE.get(key);
+	if (stream == null) {
+	  stream = (VerifyingStream) key.getStream();
+	}
+	
+	stream.initVerify();
+	stream.updateVerify(data);
+	if (hidden != null) {
+	  stream.updateVerify(hidden);
+	}
+
+	// The signed data is terminated with the current Keyczar format 
+	stream.updateVerify(ByteBuffer.wrap(FORMAT_BYTES));
+
+	boolean result = stream.verify(signature);
+	VERIFY_CACHE.put(key, stream);
+	return result;
+  }
+  
+  /**
+   * Verifies an attached signature. The input signed blob contains both the
+   * data and its signature.
+   * 
+   * Data should be decoded prior to method entry.
+   *
+   * @param signedBlob Data and signature to be verified
+   * @param hidden Hidden data or nonce included in a signature
+   * @return The result of the verification
+   * @throws KeyczarException If an error occurred while
+   *    signing key was verifying the signature.
+   */
+  public boolean attachedVerify(final byte[] signedBlob,
+      final byte[] hidden) throws KeyczarException {
+    ByteBuffer sigBuffer = ByteBuffer.wrap(signedBlob);
+    // assume I need to decode here as well.
+    byte[] hash = checkFormatAndGetHash(sigBuffer);
+    KeyczarKey key = getVerifyingKey(hash);
+    
+    // we have stripped the format and hash, now just get the blob and
+    // raw signature
+    int blobSize = sigBuffer.getInt();
+    byte[] blob = new byte[blobSize];
+    sigBuffer.get(blob);
+    int signatureSize = sigBuffer.remaining();
+    byte[] signature = new byte[signatureSize];
+    sigBuffer.get(signature);
+    
+    // the signed mass to verify is:
+    // [blob | hidden.length | hidden | format] or [blob | 0 | format]
+    byte[] hiddenPlusLength = Util.fromInt(0);
+    if (hidden.length > 0) {
+    	hiddenPlusLength = Util.lenPrefix(hidden);
+    }    
+    return rawVerify(key, ByteBuffer.wrap(blob),
+      ByteBuffer.wrap(hiddenPlusLength), ByteBuffer.wrap(signature));
+  }
+  
+  /**
+   * Verify the signature on a signed blob of data and return the data. If the 
+   * signature fails to verify, then throw a KeyczarException
+   *
+   * Data should be decoded prior to method entry.
+   * 
+   * @param signedBlob A signed blob to verify.
+   * @param hidden Hidden data or nonce included in the signature
+   * @return The contents of the signed blob, only if the signature verifies
+   * @throws KeyczarException If the signature fails to verify.
+   */
+  public byte[] getAttachedData(final byte[] signedBlob,
+        final byte[] hidden) throws KeyczarException {
+    if (!attachedVerify(signedBlob, hidden)) {
+      throw new KeyczarException("Attached signature failed to verify." + 
+          " Unable to return signed data.");
+    }
+    
+    // The call to attachedVerify will ensure that the encoded blob length is
+    // not out of bounds. If it is, a malformed result will be returned.
+    return getAttachedDataWithoutVerifying(signedBlob);
+  }
+  
+  /**
+   * Gets the signed blob of data, without checking the signature.
+   * 
+   * Data should be decoded prior to method entry.
+   *
+   * @param signedBlob A signed blob to extract data from.
+   * @return The contents of the signed blob.
+   * @throws KeyczarException if unable to get attached blob.
+   */
+  public byte[] getAttachedDataWithoutVerifying(final byte[] signedBlob)
+      throws KeyczarException {
+	ByteBuffer sigBuffer = ByteBuffer.wrap(signedBlob);
+	
+    byte[] hash = checkFormatAndGetHash(sigBuffer);
+    // just get the bits even though we won't use it.
+	KeyczarKey key = getVerifyingKey(hash);
+	    
+	// we have stripped the format and hash, now just get the blob and
+	// raw signature
+	int blobSize = sigBuffer.getInt();
+	byte[] blob = new byte[blobSize];
+	sigBuffer.get(blob);
+
+    return blob;
+  }
+  
+  private byte[] checkFormatAndGetHash(ByteBuffer signature)
+      throws BadVersionException {
+    byte version = signature.get();
+    if (version != FORMAT_VERSION) {
+      throw new BadVersionException(version);
+    }
+
+    byte[] hash = new byte[KEY_HASH_SIZE];
+    signature.get(hash);
+    
+    return hash;
+  }
+  
+  private KeyczarKey getVerifyingKey(byte[] hash) throws KeyNotFoundException {
+    KeyczarKey key = getKey(hash);
+
+    if (key == null) {
+      throw new KeyNotFoundException(hash);
+    }
+    
+    return key;
   }
 
   @Override

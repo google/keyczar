@@ -123,6 +123,24 @@ public class Util {
   }
   
   /**
+   * Prefixes an input array with a 4-byte transportable length field.
+   * If the input data is null or has zero length, returns a 4-byte
+   * representation of 0.
+   *
+   * @param data
+   * @return The input data prefixed by a 4-byte representation of its length
+   */
+  public static byte[] lenPrefix(byte[] data) {
+    if (data == null || data.length == 0) {
+      return fromInt(0);
+    }
+    return ByteBuffer.allocate(4 + data.length)
+        .putInt(data.length)
+        .put(data)
+        .array();
+  }
+  
+  /**
    * Packs a set of input arrays into a single array. The packed array is
    * prefixed by an integer value of the number of arrays. Then each individual
    * array is prefixed by its length, followed by the contents of the array
@@ -198,7 +216,7 @@ public class Util {
    * Write random bytes into the destination. Uses pre-cached secure random
    * objects
    *
-   * @param dest Destionation to write the data
+   * @param dest Destination to write the data
    */
   public static void rand(byte[] dest) {
     SecureRandom random = RAND_QUEUE.poll();
@@ -347,5 +365,25 @@ public class Util {
       result |= a1[i] ^ a2[i];
     }
     return (result == 0);
+  }
+  
+  /**
+   * Concatenate arrays together.
+   * 
+   * @param arrays byte[] arrays to combine
+   * @return single byte[] with all the data combined.
+   */
+  public static byte[] cat(byte[]... arrays) {
+    int length = 0;
+    for (byte[] array : arrays) {
+      length += array.length;
+    }
+    byte[] result = new byte[length];
+    int pos = 0;
+    for (byte[] array : arrays) {
+      System.arraycopy(array, 0, result, pos, array.length);
+      pos += array.length;
+    }
+    return result;
   }
 }
