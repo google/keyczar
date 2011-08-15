@@ -16,7 +16,6 @@
 
 package org.keyczar;
 
-
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
@@ -42,10 +41,19 @@ public class KeyczarFileReader implements KeyczarReader {
     location = fileLocation;
   }
 
+  @Override
   public String getKey(int version) throws KeyczarException {
     return readFile(location + version);
   }
+  
+  @Override
+  public String getKey() throws KeyczarException {
+	KeyMetadata metadata = KeyMetadata.read(getMetadata());
+	
+    return getKey(metadata.getPrimaryVersion().getVersionNumber());
+  }
 
+  @Override
   public String getMetadata() throws KeyczarException {
     return readFile(location + META_FILE);
   }

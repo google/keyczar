@@ -34,6 +34,15 @@ public interface KeyczarReader {
    *         e.g. an IOException
    */
   String getKey(int version) throws KeyczarException;
+  
+  /**
+   * Return an input stream of the primary key.
+   * 
+   * @return A JSON string representation of the primary key.
+   * @throws KeyczarException If a primary key is not found or a load error
+   *         occurs.
+   */
+  String getKey() throws KeyczarException;
 
   /**
    * @return A JSON string representation of KeyMetadata

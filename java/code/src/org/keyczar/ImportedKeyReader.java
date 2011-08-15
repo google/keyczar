@@ -4,6 +4,7 @@ import org.keyczar.annotations.Experimental;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.enums.KeyType;
+import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyczarReader;
 
 import java.util.ArrayList;
@@ -36,13 +37,21 @@ public class ImportedKeyReader implements KeyczarReader {
     this.keys = new ArrayList<KeyczarKey>();
     this.keys.add(key);
   }
+  
+  @Override
+  public String getKey() throws KeyczarException {
+	KeyMetadata metadata = KeyMetadata.read(getMetadata());
+		
+	return getKey(metadata.getPrimaryVersion().getVersionNumber());
+  }
 
+  @Override
   public String getKey(int version) {
     return keys.get(version).toString();
   }
 
+  @Override
   public String getMetadata() {
     return metadata.toString();
   }
-
 }

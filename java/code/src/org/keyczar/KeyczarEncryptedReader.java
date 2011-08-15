@@ -41,11 +41,19 @@ public class KeyczarEncryptedReader implements EncryptedReader {
     this.reader = reader;
     this.crypter = crypter;
   }
+  
+  @Override
+  public String getKey() throws KeyczarException {
+	String encrypted = reader.getKey();
+	return crypter.decrypt(encrypted);
+  }
 
+  @Override
   public String getKey(int version) throws KeyczarException {
     return crypter.decrypt(reader.getKey(version));
   }
 
+  @Override
   public String getMetadata() throws KeyczarException {
     return reader.getMetadata();
   }

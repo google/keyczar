@@ -30,6 +30,7 @@ public class MockKeyczarReader implements KeyczarReader {
     publicKeys = new HashMap<Integer, KeyczarKey>();
   }
 
+  @Override
   public String getKey(int version) throws KeyczarException {
     if (keys.containsKey(version)) {
       return keys.get(version).toString();
@@ -37,7 +38,15 @@ public class MockKeyczarReader implements KeyczarReader {
       throw new BadVersionException((byte) version);
     }
   }
+  
+  @Override
+  public String getKey() throws KeyczarException {
+	KeyMetadata metadata = KeyMetadata.read(getMetadata());
+		
+	return getKey(metadata.getPrimaryVersion().getVersionNumber());
+  }
 
+  @Override
   public String getMetadata() {
     return Util.gson().toJson(kmd);
   }
