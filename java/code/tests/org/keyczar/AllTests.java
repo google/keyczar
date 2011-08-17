@@ -38,6 +38,7 @@ public class AllTests extends TestSuite {
     suite.addTestSuite(KeyczarToolTest.class);
     suite.addTestSuite(I18nTest.class);
     suite.addTestSuite(CrossCompatibilityTest.class);
+    suite.addTestSuite(SignedSessionTest.class);
     return suite;
   }
 }

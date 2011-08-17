@@ -5,7 +5,7 @@
   <groupId>org.keyczar</groupId>
   <artifactId>keyczar</artifactId>
   <name>Keyczar</name>
-  <version>0.66</version>
+  <version>0.70</version>
   <url>http://www.keyczar.org</url>
   <description>Keyczar is a toolkit to make cryptography safer and easier</description>
   <licenses>
@@ -27,6 +27,13 @@
       <id>steveweis</id>
       <name>Steve Weis</name>
       <email>steveweis@gmail.com</email>
+      <organization>Google</organization>
+      <organizationUrl>http://www.google.com</organizationUrl>
+    </developer>
+    <developer>
+      <id>normandl</id>
+      <name>David Norman</name>
+      <email>normandl@google.com</email>
       <organization>Google</organization>
       <organizationUrl>http://www.google.com</organizationUrl>
     </developer>
@@ -112,17 +119,29 @@
     	<scope>test</scope>
     </dependency>
     <dependency>
-		<groupId>org.easymock</groupId>
-		<artifactId>easymock</artifactId>
-		<version>3.0</version>
-		<scope>test</scope>
-	</dependency>
+	<groupId>org.easymock</groupId>
+	<artifactId>easymock</artifactId>
+	<version>3.0</version>
+	<scope>test</scope>
+    </dependency>
     <dependency>
     	<groupId>log4j</groupId>
     	<artifactId>log4j</artifactId>
     	<version>1.2.14</version>
     	<type>jar</type>
     	<scope>compile</scope>
+    </dependency>
+    <dependency>
+        <groupId>cglib</groupId>
+        <artifactId>cglib</artifactId>
+        <version>2.2.2</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>3.0</version>
+        <scope>test</scope>
     </dependency>
   </dependencies>
   <distributionManagement>
