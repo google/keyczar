@@ -47,6 +47,13 @@
       <post>keyczar-discuss@googlegroups.com</post>
     </mailingList>
   </mailingLists>
+  <repositories>		
+    <repository>		
+      <id>keyczar repository</id>		
+      <name>Keyczar Repository</name>		
+      <url>http://keyczar.googlecode.com/svn/trunk/java/maven/</url>
+     </repository>		
+  </repositories>
   <build>
     <finalName>${project.artifactId}-${project.version}</finalName>
     <sourceDirectory>src</sourceDirectory>
@@ -89,6 +96,54 @@
             <exclude>**/SymmetricPerformanceTest.java</exclude>
           </excludes>
          </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.5</version>
+        <executions>
+          <execution>
+            <id>copy-i18n-resources</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target/classes/org/keyczar/i18n</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/org/keyczar/i18n</directory>
+                  <includes>
+                    <include>**/*.properties</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>            
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.5</version>
+        <executions>
+          <execution>
+            <id>copy-license-resources</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target/classes/org/keyczar</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/org/keyczar</directory>
+                  <includes>
+                    <include>COPYING</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
     <extensions>
