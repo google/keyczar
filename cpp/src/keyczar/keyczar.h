@@ -107,10 +107,38 @@ class Keyczar {
   // an empty string if it fails.
   virtual std::string Sign(const std::string& data) const;
 
+  // Sign the |data| and the |hidden| data.  Attach the signature to
+  // the data and return that.  When the signature is verified, the
+  // same hidden data must be provided.
+  virtual bool AttachedSign(const std::string& data,
+                            const std::string& hidden,
+                            std::string* signed_data) const;
+
+  // Signs the |data| and the |hidden| data and returns the signature
+  // as a string value.  This method overloads the previous
+  // AttachedSign method and internally calls it.  It returns an empty
+  // string if it fails.
+  virtual std::string AttachedSign(const std::string& data,
+                                   const std::string& hidden) const;
+
   // Verifies the |signature| of the corresponding |data|. |signature| is
   // decoded accordingly to the current encoding algorithm set.
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
+
+  // Verifies the |signed_data|, which contains both data and
+  // signature and, if okay, extracts the |data|.  The signature is
+  // assumed to have had the |hidden| data signed with the data during
+  // signature generation.  The signature is decoded according to the
+  // current encoding algorithm set.  It returns false if it fails.
+  virtual bool AttachedVerify(const std::string& signed_data,
+                              const std::string& hidden,
+                              std::string* data) const;
+
+  // Gets the signed data from |signed_data|, without verifying the
+  // signature.  Returns true if extraction is successful.
+  virtual bool GetAttachedWithoutVerify(const std::string& signed_data,
+                                        std::string* data) const;
 
   // Encrypts the given input string |plaintext| and put the result as a
   // web-safe Base64 encoded string into |ciphertext|. This method uses the
@@ -283,6 +311,15 @@ class Verifier : public Keyczar {
   virtual bool Verify(const std::string& data,
                       const std::string& signature) const;
 
+  virtual bool AttachedVerify(const std::string& signed_data,
+                              const std::string& hidden,
+                              std::string* data) const;
+
+  virtual bool GetAttachedWithoutVerify(const std::string& signed_data,
+                                        std::string* data) const {
+    return ParseAttachedSignature(signed_data, NULL, data, NULL);
+  }
+
   virtual bool IsAcceptablePurpose() const;
 
  protected:
@@ -298,6 +335,15 @@ class Verifier : public Keyczar {
   bool InternalVerify(const std::string& verification_data,
                       const std::string& key_header,
                       const std::string& signature) const;
+
+  // Parses the key header, data and signature from an attached
+  // signature.  If any output argument is NULL, it will be ignored,
+  // so this method can be used to extract whichever pieces are
+  // desired.
+  bool ParseAttachedSignature(const std::string& signed_data,
+                              std::string* header,
+                              std::string* data,
+                              std::string* signature) const;
 
   DISALLOW_COPY_AND_ASSIGN(Verifier);
 };
@@ -342,6 +388,8 @@ class UnversionedVerifier : public Keyczar {
 // Signer objects should be used with symmetric or private key sets to
 // generate signatures.
 class Signer : public Verifier {
+  typedef Verifier super;
+
  public:
   explicit Signer(Keyset* keyset) : Verifier(keyset) {}
 
@@ -359,6 +407,15 @@ class Signer : public Verifier {
   virtual bool Sign(const std::string& data, std::string* signature) const;
 
   virtual std::string Sign(const std::string& data) const;
+
+  virtual bool AttachedSign(const std::string& data,
+                            const std::string& hidden,
+                            std::string* signed_data) const;
+
+  virtual std::string AttachedSign(const std::string& data,
+                                   const std::string& hidden) const {
+    return super::AttachedSign(data, hidden);
+  }
 
   virtual bool IsAcceptablePurpose() const;
 

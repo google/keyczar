@@ -34,8 +34,34 @@ std::string Keyczar::Sign(const std::string& data) const {
   return "";
 }
 
+bool Keyczar::AttachedSign(const std::string& data,
+                                  const std::string& hidden,
+                                  std::string* signed_data) const {
+  return false;
+}
+
+std::string Keyczar::AttachedSign(const std::string& data,
+                                  const std::string& hidden) const {
+  std::string signed_data;
+  if (AttachedSign(data, hidden, &signed_data))
+    return signed_data;
+  else
+    return "";
+}
+
 bool Keyczar::Verify(const std::string& data,
                      const std::string& signature) const {
+  return false;
+}
+
+bool Keyczar::AttachedVerify(const std::string& signed_blob,
+                             const std::string& hidden,
+                             std::string* blob) const {
+  return false;
+}
+
+bool Keyczar::GetAttachedWithoutVerify(const std::string& signed_blob,
+                                       std::string* blob) const {
   return false;
 }
 
@@ -345,6 +371,16 @@ bool Verifier::Verify(const std::string& data,
                         signature_bytes.substr(Key::GetHeaderSize()));
 }
 
+bool Verifier::AttachedVerify(const std::string& signed_data,
+                              const std::string& hidden,
+                              std::string* data) const {
+  std::string signature;
+  std::string header;
+  return data != NULL
+      && ParseAttachedSignature(signed_data, &header, data, &signature)
+      && InternalVerify(BuildMessageToSign(*data, &hidden), header, signature);
+}
+
 bool Verifier::IsAcceptablePurpose() const {
   const KeyPurpose::Type purpose = GetKeyPurpose();
   return purpose == KeyPurpose::VERIFY ||
@@ -367,6 +403,32 @@ bool Verifier::InternalVerify(const std::string& verification_data,
                               const std::string& signature) const {
   const Key* key = LookupKey(key_header);
   return key != NULL && key->Verify(verification_data, signature);
+}
+
+bool Verifier::ParseAttachedSignature(const std::string& signed_data,
+                                      std::string* header,
+                                      std::string* data,
+                                      std::string* signature) const {
+  if (header != NULL)
+    *header = signed_data.substr(0, Key::GetHeaderSize());
+
+  int cur_offset = Key::GetHeaderSize();
+  int data_len;
+  if (!util::ByteStringToInt32(signed_data, cur_offset, &data_len))
+    return false;
+
+  cur_offset += sizeof(data_len);
+  if (signed_data.size() < cur_offset + data_len)
+    return false;
+
+  if (data != NULL)
+    *data = signed_data.substr(cur_offset, data_len);
+
+  cur_offset += data_len;
+  if (signature != NULL)
+    *signature = signed_data.substr(cur_offset);
+
+  return true;
 }
 
 // static
@@ -471,6 +533,22 @@ std::string Signer::Sign(const std::string& data) const {
   if (!Sign(data, &signature))
     return "";
   return signature;
+}
+
+bool Signer::AttachedSign(const std::string& data,
+                          const std::string& hidden,
+                          std::string* signed_data) const {
+  std::string signature_bytes;
+  std::string key_header;
+  if (!InternalSign(data, &hidden, &signature_bytes, &key_header))
+    return false;
+
+  signed_data->assign(key_header);
+  signed_data->append(util::Int32ToByteString(data.size()));
+  signed_data->append(data);
+  signed_data->append(signature_bytes);
+
+  return true;
 }
 
 bool Signer::IsAcceptablePurpose() const {

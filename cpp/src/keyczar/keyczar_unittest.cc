@@ -119,6 +119,10 @@ TEST_F(KeyczarTest, RSASignAndVerify) {
   TestSignAndVerify("rsa-sign", "rsa-sign.public");
 }
 
+TEST_F(KeyczarTest, RSAAttachedSignAndVerify) {
+  TestAttachedSignAndVerify("rsa-sign", "rsa-sign.public");
+}
+
 // It is expected that this function raise these errors:
 //   error:0407006A:rsa routines:RSA_padding_check_PKCS1_type_1:block type
 //   is not 01
@@ -160,6 +164,10 @@ TEST_F(KeyczarTest, RSAVerify) {
 
 TEST_F(KeyczarTest, HMACSignAndVerify) {
   TestSignAndVerify("hmac", "hmac");
+}
+
+TEST_F(KeyczarTest, HMACAttachedSignAndVerify) {
+  TestAttachedSignAndVerify("hmac", "hmac");
 }
 
 TEST_F(KeyczarTest, HMACSignAndVerifyUnversioned) {
@@ -300,6 +308,9 @@ TEST_F(KeyczarTest, DSASignAndVerify) {
   TestSignAndVerify("dsa", "dsa.public");
 }
 
+TEST_F(KeyczarTest, DSAAttachedSignAndVerify) {
+  TestAttachedSignAndVerify("dsa", "dsa.public");
+}
 
 TEST_F(KeyczarTest, DSASignAndVerifyUnversioned) {
   TestSignAndVerifyUnversioned("dsa", "dsa.public");
@@ -322,6 +333,9 @@ TEST_F(KeyczarTest, ECDSASignAndVerify) {
   TestSignAndVerify("ecdsa", "ecdsa.public");
 }
 
+TEST_F(KeyczarTest, ECDSAAttachedSignAndVerify) {
+  TestAttachedSignAndVerify("ecdsa", "ecdsa.public");
+}
 
 TEST_F(KeyczarTest, ECDSASignAndVerifyUnversioned) {
   TestSignAndVerifyUnversioned("ecdsa", "ecdsa.public");

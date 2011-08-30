@@ -38,6 +38,20 @@ std::string Int32ToByteString(int32 num) {
   return std::string(reinterpret_cast<char*>(byte_array), sizeof(num));
 }
 
+bool ByteStringToInt32(const std::string& str, int offset, int32* num) {
+  if (offset + sizeof(*num) > str.size())
+    false;
+
+  const unsigned char* bytes =
+      reinterpret_cast<const unsigned char*>(str.c_str()) + offset;
+
+  *num = 0;
+  for (int i = 0; i < sizeof(*num); ++i)
+    *num = (*num << 8) | *bytes++;
+
+  return true;
+}
+
 }  // namespace util
 
 }  // namespace keyczar

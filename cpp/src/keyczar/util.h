@@ -30,6 +30,11 @@ bool SafeStringEquals(const std::string& s1, const std::string& s2);
 // Converts a 32-bit integer to a big-endian byte array in a string
 std::string Int32ToByteString(int32 num);
 
+// Converts a four-byte big-endian byte array at a specified offset in
+// a specified string to an int32.  Returns false if four bytes are
+// not available.
+bool ByteStringToInt32(const std::string& str, int offset, int32* num);
+
 }  // namespace util
 
 }  // namespace keyczar

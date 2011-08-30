@@ -35,6 +35,31 @@ void KeyczarTest::TestSignAndVerify(const std::string& sign_key,
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
 
+void KeyczarTest::TestAttachedSignAndVerify(
+    const std::string& sign_key,
+    const std::string& verify_key) const {
+  std::string signature;
+
+  const FilePath private_path = data_path_.Append("rsa-sign");
+  scoped_ptr<Signer> signer(Signer::Read(private_path.value()));
+  ASSERT_TRUE(signer.get());
+  EXPECT_TRUE(signer->AttachedSign(input_data_, hidden_data_, &signature));
+
+  const FilePath public_path = data_path_.Append("rsa-sign.public");
+  scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
+  ASSERT_TRUE(verifier.get());
+
+  std::string signed_data;
+  EXPECT_TRUE(verifier->AttachedVerify(signature, hidden_data_, &signed_data));
+  EXPECT_EQ(input_data_, signed_data);
+
+  // Now try with bad hidden data.  Verification should fail, but data should
+  // still be extracted correctly.
+  signed_data.clear();
+  EXPECT_FALSE(verifier->AttachedVerify(signature, "bogus", &signed_data));
+  EXPECT_EQ(input_data_, signed_data);
+}
+
 void KeyczarTest::TestSignAndVerifyUnversioned(
     const std::string& sign_key,
     const std::string& verify_key) const {

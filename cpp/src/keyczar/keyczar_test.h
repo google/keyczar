@@ -42,6 +42,7 @@ class KeyczarTest : public PlatformTest {
 #endif
 
     input_data_ = "This is some test data";
+    hidden_data_ = "This is some hidden data";
   }
 
   virtual void TearDown() {
@@ -53,10 +54,14 @@ class KeyczarTest : public PlatformTest {
   FilePath temp_path_;
   FilePath data_path_;
   std::string input_data_;
+  std::string hidden_data_;
 
   // Common test routines
   void TestSignAndVerify(const std::string& sign_key,
                          const std::string& verify_key) const;
+
+  void TestAttachedSignAndVerify(const std::string& sign_key,
+                                 const std::string& verify_key) const;
 
   void TestSignAndVerifyUnversioned(const std::string& sign_key,
                                     const std::string& verify_key) const;
