@@ -22,6 +22,7 @@
 #include <keyczar/key.h>
 #include <keyczar/keyset_metadata.h>
 #include <keyczar/rw/keyset_file_reader.h>
+#include <keyczar/util.h>
 
 namespace keyczar {
 
@@ -171,6 +172,17 @@ bool Keyczar::Decompress(const std::string& input,
   return false;
 }
 
+const Key* Keyczar::LookupKey(const std::string& key_header) const {
+  if (keyset() == NULL)
+    return NULL;
+
+  std::string hash;
+  if (!GetHash(key_header, &hash))
+    return NULL;
+
+  return keyset()->GetKeyFromHash(hash);
+}
+
 // static
 Encrypter* Encrypter::Read(const std::string& location) {
   return Read(FilePath(location));
@@ -276,16 +288,9 @@ bool Crypter::Decrypt(const std::string& ciphertext,
   if (!Decode(ciphertext, &ciphertext_bytes))
     return false;
 
-  std::string hash;
-  if (!GetHash(ciphertext_bytes, &hash))
-    return false;
-
-  const Key* key = keyset()->GetKeyFromHash(hash);
-  if (key == NULL)
-    return false;
-
   std::string compressed_plaintext;
-  if (!key->Decrypt(ciphertext_bytes, &compressed_plaintext))
+  const Key* key = LookupKey(ciphertext_bytes);
+  if (key == NULL || !key->Decrypt(ciphertext_bytes, &compressed_plaintext))
     return false;
 
   return Decompress(compressed_plaintext, plaintext);
@@ -334,33 +339,34 @@ Verifier* Verifier::Read(const rw::KeysetReader& reader) {
 
 bool Verifier::Verify(const std::string& data,
                       const std::string& signature) const {
-  if (keyset() == NULL)
-    return false;
-
   std::string signature_bytes;
-  if (!Decode(signature, &signature_bytes))
-    return false;
-
-  std::string hash;
-  if (!GetHash(signature_bytes, &hash))
-    return false;
-
-  const Key* key = keyset()->GetKeyFromHash(hash);
-  if (key == NULL)
-    return false;
-
-  std::string data_copy(data);
-  data_copy.push_back(Key::GetVersionByte());
-  if (!key->Verify(data_copy, signature_bytes.substr(Key::GetHeaderSize())))
-    return false;
-
-  return true;
+  return Decode(signature, &signature_bytes)
+      && InternalVerify(BuildMessageToSign(data, NULL), signature_bytes,
+                        signature_bytes.substr(Key::GetHeaderSize()));
 }
 
 bool Verifier::IsAcceptablePurpose() const {
   const KeyPurpose::Type purpose = GetKeyPurpose();
   return purpose == KeyPurpose::VERIFY ||
       purpose == KeyPurpose::SIGN_AND_VERIFY;
+}
+
+std::string Verifier::BuildMessageToSign(const std::string& data,
+                                         const std::string* hidden) const {
+  std::string message(data);
+  if (hidden) {
+    message.append(util::Int32ToByteString(hidden->size()));
+    message.append(*hidden);
+  }
+  message.push_back(Key::GetVersionByte());
+  return message;
+}
+
+bool Verifier::InternalVerify(const std::string& verification_data,
+                              const std::string& key_header,
+                              const std::string& signature) const {
+  const Key* key = LookupKey(key_header);
+  return key != NULL && key->Verify(verification_data, signature);
 }
 
 // static
@@ -453,31 +459,11 @@ Signer* Signer::Read(const rw::KeysetReader& reader) {
 }
 
 bool Signer::Sign(const std::string& data, std::string* signature) const {
-  if (keyset() == NULL || signature == NULL)
+  std::string raw_signature;
+  std::string key_header;
+  if (!InternalSign(data, NULL /* hidden */, &raw_signature, &key_header))
     return false;
-
-  const Key* key = keyset()->primary_key();
-  if (key == NULL)
-    return false;
-
-  std::string data_copy(data);
-  data_copy.push_back(Key::GetVersionByte());
-
-  std::string signed_bytes;
-  if (!key->Sign(data_copy, &signed_bytes))
-    return false;
-
-  std::string header;
-  if (!key->Header(&header))
-    return false;
-
-  std::string message(header);
-  message.append(signed_bytes);
-
-  if (!Encode(message, signature))
-    return false;
-
-  return true;
+  return Encode(key_header + raw_signature, signature);
 }
 
 std::string Signer::Sign(const std::string& data) const {
@@ -490,6 +476,19 @@ std::string Signer::Sign(const std::string& data) const {
 bool Signer::IsAcceptablePurpose() const {
   const KeyPurpose::Type purpose = GetKeyPurpose();
   return purpose == KeyPurpose::SIGN_AND_VERIFY;
+}
+
+bool Signer::InternalSign(const std::string& data,
+                          const std::string* hidden,
+                          std::string* signature,
+                          std::string* key_header) const {
+  if (keyset() == NULL || signature == NULL)
+    return false;
+
+  const Key* key = keyset()->primary_key();
+  return key != NULL
+      && key->Header(key_header)
+      && key->Sign(BuildMessageToSign(data, hidden), signature);
 }
 
 // static

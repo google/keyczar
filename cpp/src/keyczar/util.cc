@@ -29,6 +29,15 @@ bool SafeStringEquals(const std::string& s1, const std::string& s2) {
   return result == 0;
 }
 
+std::string Int32ToByteString(int32 num) {
+  unsigned char byte_array[sizeof(num)];
+  for (int i = 0; i < sizeof(num); ++i) {
+    unsigned char current_byte = (num >> ((i & 7) << 3)) & 0xFF;
+    byte_array[sizeof(num) - i - 1] = current_byte;
+  }
+  return std::string(reinterpret_cast<char*>(byte_array), sizeof(num));
+}
+
 }  // namespace util
 
 }  // namespace keyczar

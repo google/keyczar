@@ -25,6 +25,7 @@
 #include <keyczar/message_digest_impl.h>
 #include <keyczar/rsa_private_key.h>
 #include <keyczar/rsa_public_key.h>
+#include <keyczar/util.h>
 
 namespace {
 
@@ -33,15 +34,6 @@ static const char kVersionByte = '\x00';
 
 // Represents the length of the hash calculated for each key.
 static const int kKeyHashSize = 4;
-
-void Int32ToByteArray(int32 num, unsigned char* array) {
-  unsigned char current_byte;
-
-  for (int i = 0; i < 4; ++i) {
-    current_byte = (num >> ((i & 7) << 3)) & 0xFF;
-    array[4 - i - 1] = current_byte;
-  }
-}
 
 }  // namespace
 
@@ -199,15 +191,8 @@ void Key::AddToHash(const std::string& field,
   base::ScopedSafeString trimmed_field(new std::string());
   trimmed_field->assign(field.substr(field.find_first_not_of('\0')));
 
-  // Converts int field's length to bytes (big endian oriented)
-  int32 field_length = trimmed_field->size();
-  unsigned char bytes_array[sizeof(field_length)];
-  Int32ToByteArray(field_length, bytes_array);
-  std::string bytes(reinterpret_cast<char*>(bytes_array),
-                    sizeof(field_length));
-
   // Update the message digest value
-  digest_impl.Update(bytes);
+  digest_impl.Update(util::Int32ToByteString(trimmed_field->size()));
   digest_impl.Update(*trimmed_field);
 }
 

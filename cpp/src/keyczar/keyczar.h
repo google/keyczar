@@ -180,6 +180,13 @@ class Keyczar {
   // the result into |output|. Returns false if it fails.
   bool Decompress(const std::string& input, std::string* output) const;
 
+  // Searches the current keyset for a key matching the hash in
+  // |key_header|.  Returns NULL if there is no current keyset, or if
+  // the hash cannot be found in the header, or if there is no key
+  // matching the hash.  Note that |key_header| may contain additional
+  // bytes beyond the header; any extra data will be ignored.
+  const Key* LookupKey(const std::string& key_header) const;
+
  private:
   const scoped_ptr<Keyset> keyset_;
 
@@ -278,7 +285,20 @@ class Verifier : public Keyczar {
 
   virtual bool IsAcceptablePurpose() const;
 
+ protected:
+  // Constructs a message ready for signing (or signature verification)
+  std::string BuildMessageToSign(const std::string& data,
+                                 const std::string* hidden) const;
+
  private:
+  // Verifies that |signature| is a correct signature on |verification_data|
+  // using the key described by |key_header|.  Note that key_header may
+  // contain additional data after the header; any additional bytes will
+  // be ignored.
+  bool InternalVerify(const std::string& verification_data,
+                      const std::string& key_header,
+                      const std::string& signature) const;
+
   DISALLOW_COPY_AND_ASSIGN(Verifier);
 };
 
@@ -343,6 +363,12 @@ class Signer : public Verifier {
   virtual bool IsAcceptablePurpose() const;
 
  private:
+  // Signs |data| and |hidden| (if not NULL) and writes the resulting
+  // signature bytes into |signature| and the key header (needed to
+  // construct the output message) into |key_header|.
+  bool InternalSign(const std::string& data, const std::string* hidden,
+                    std::string* signature, std::string* key_header) const ;
+
   DISALLOW_COPY_AND_ASSIGN(Signer);
 };
 

@@ -27,6 +27,9 @@ namespace util {
 // exiting once it encounters a differing character.
 bool SafeStringEquals(const std::string& s1, const std::string& s2);
 
+// Converts a 32-bit integer to a big-endian byte array in a string
+std::string Int32ToByteString(int32 num);
+
 }  // namespace util
 
 }  // namespace keyczar
