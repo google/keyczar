@@ -115,18 +115,8 @@ TEST_F(KeyczarTest, RSAEncryptAndDecrypt) {
   EXPECT_EQ(input_data_, decrypted);
 }
 
-TEST_F(KeyczarTest, RSASignAnVerify) {
-  std::string signature;
-
-  const FilePath private_path = data_path_.Append("rsa-sign");
-  scoped_ptr<Signer> signer(Signer::Read(private_path.value()));
-  ASSERT_TRUE(signer.get());
-  EXPECT_TRUE(signer->Sign(input_data_, &signature));
-
-  const FilePath public_path = data_path_.Append("rsa-sign.public");
-  scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
-  ASSERT_TRUE(verifier.get());
-  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+TEST_F(KeyczarTest, RSASignAndVerify) {
+  TestSignAndVerify("rsa-sign", "rsa-sign.public");
 }
 
 // It is expected that this function raise these errors:
@@ -138,20 +128,8 @@ TEST_F(KeyczarTest, RSASignAnVerify) {
 // keyset in order to find if one match the signature. In this case, these
 // errors were raised by the first key of the keyset which was not the primary
 // key.
-TEST_F(KeyczarTest, RSASignAnVerifyUnversioned) {
-  std::string signature;
-
-  const FilePath private_path = data_path_.Append("rsa-sign");
-  scoped_ptr<UnversionedSigner> signer(
-      UnversionedSigner::Read(private_path.value()));
-  ASSERT_TRUE(signer.get());
-  EXPECT_TRUE(signer->Sign(input_data_, &signature));
-
-  const FilePath public_path = data_path_.Append("rsa-sign.public");
-  scoped_ptr<UnversionedVerifier> verifier(
-      UnversionedVerifier::Read(public_path.value()));
-  ASSERT_TRUE(verifier.get());
-  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+TEST_F(KeyczarTest, RSASignAndVerifyUnversioned) {
+  TestSignAndVerifyUnversioned("rsa-sign", "rsa-sign.public");
 }
 
 TEST_F(KeyczarTest, RSADecrypt) {
@@ -181,31 +159,11 @@ TEST_F(KeyczarTest, RSAVerify) {
 }
 
 TEST_F(KeyczarTest, HMACSignAndVerify) {
-  std::string signature;
-
-  const FilePath hmac_path = data_path_.Append("hmac");
-  scoped_ptr<Signer> signer(Signer::Read(hmac_path.value()));
-  ASSERT_TRUE(signer.get());
-  EXPECT_TRUE(signer->Sign(input_data_, &signature));
-
-  scoped_ptr<Verifier> verifier(Verifier::Read(hmac_path.value()));
-  ASSERT_TRUE(verifier.get());
-  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+  TestSignAndVerify("hmac", "hmac");
 }
 
 TEST_F(KeyczarTest, HMACSignAndVerifyUnversioned) {
-  std::string signature;
-
-  const FilePath hmac_path = data_path_.Append("hmac");
-  scoped_ptr<UnversionedSigner> signer(
-      UnversionedSigner::Read(hmac_path.value()));
-  ASSERT_TRUE(signer.get());
-  EXPECT_TRUE(signer->Sign(input_data_, &signature));
-
-  scoped_ptr<UnversionedVerifier> verifier(
-      UnversionedVerifier::Read(hmac_path.value()));
-  ASSERT_TRUE(verifier.get());
-  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+  TestSignAndVerifyUnversioned("hmac", "hmac");
 }
 
 TEST_F(KeyczarTest, HMACVerify) {
@@ -338,34 +296,13 @@ TEST_F(KeyczarTest, AESCryptedDecrypt2) {
   EXPECT_EQ(input_data_, decrypted);
 }
 
-TEST_F(KeyczarTest, DSASignAnVerify) {
-  std::string signature;
-
-  const FilePath private_path = data_path_.Append("dsa");
-  scoped_ptr<Signer> signer(Signer::Read(private_path.value()));
-  ASSERT_TRUE(signer.get());
-  EXPECT_TRUE(signer->Sign(input_data_, &signature));
-
-  const FilePath public_path = data_path_.Append("dsa.public");
-  scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
-  ASSERT_TRUE(verifier.get());
-  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+TEST_F(KeyczarTest, DSASignAndVerify) {
+  TestSignAndVerify("dsa", "dsa.public");
 }
 
-TEST_F(KeyczarTest, DSASignAnVerifyUnversioned) {
-  std::string signature;
 
-  const FilePath private_path = data_path_.Append("dsa");
-  scoped_ptr<UnversionedSigner> signer(
-      UnversionedSigner::Read(private_path.value()));
-  ASSERT_TRUE(signer.get());
-  EXPECT_TRUE(signer->Sign(input_data_, &signature));
-
-  const FilePath public_path = data_path_.Append("dsa.public");
-  scoped_ptr<UnversionedVerifier> verifier(
-      UnversionedVerifier::Read(public_path.value()));
-  ASSERT_TRUE(verifier.get());
-  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+TEST_F(KeyczarTest, DSASignAndVerifyUnversioned) {
+  TestSignAndVerifyUnversioned("dsa", "dsa.public");
 }
 
 TEST_F(KeyczarTest, DSAVerify) {
@@ -381,34 +318,13 @@ TEST_F(KeyczarTest, DSAVerify) {
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
 }
 
-TEST_F(KeyczarTest, ECDSASignAnVerify) {
-  std::string signature;
-
-  const FilePath private_path = data_path_.Append("ecdsa");
-  scoped_ptr<Signer> signer(Signer::Read(private_path.value()));
-  ASSERT_TRUE(signer.get());
-  EXPECT_TRUE(signer->Sign(input_data_, &signature));
-
-  const FilePath public_path = data_path_.Append("ecdsa.public");
-  scoped_ptr<Verifier> verifier(Verifier::Read(public_path.value()));
-  ASSERT_TRUE(verifier.get());
-  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+TEST_F(KeyczarTest, ECDSASignAndVerify) {
+  TestSignAndVerify("ecdsa", "ecdsa.public");
 }
 
-TEST_F(KeyczarTest, ECDSASignAnVerifyUnversioned) {
-  std::string signature;
 
-  const FilePath private_path = data_path_.Append("ecdsa");
-  scoped_ptr<UnversionedSigner> signer(
-      UnversionedSigner::Read(private_path.value()));
-  ASSERT_TRUE(signer.get());
-  EXPECT_TRUE(signer->Sign(input_data_, &signature));
-
-  const FilePath public_path = data_path_.Append("ecdsa.public");
-  scoped_ptr<UnversionedVerifier> verifier(
-      UnversionedVerifier::Read(public_path.value()));
-  ASSERT_TRUE(verifier.get());
-  EXPECT_TRUE(verifier->Verify(input_data_, signature));
+TEST_F(KeyczarTest, ECDSASignAndVerifyUnversioned) {
+  TestSignAndVerifyUnversioned("ecdsa", "ecdsa.public");
 }
 
 TEST_F(KeyczarTest, ECDSAVerify) {
@@ -492,4 +408,3 @@ TEST_F(KeyczarTest, PBEEncryptAndDecrypt) {
 }
 
 }  // namespace keyczar
-

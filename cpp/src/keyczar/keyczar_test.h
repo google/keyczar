@@ -53,6 +53,13 @@ class KeyczarTest : public PlatformTest {
   FilePath temp_path_;
   FilePath data_path_;
   std::string input_data_;
+
+  // Common test routines
+  void TestSignAndVerify(const std::string& sign_key,
+                         const std::string& verify_key) const;
+
+  void TestSignAndVerifyUnversioned(const std::string& sign_key,
+                                    const std::string& verify_key) const;
 };
 
 }  // namespace keyczar

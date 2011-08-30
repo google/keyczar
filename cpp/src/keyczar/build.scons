@@ -353,6 +353,7 @@ keyczar_unittests = [
     'dsa_key_unittest.cc',
     'ecdsa_key_unittest.cc',
     'hmac_key_unittest.cc',
+    'keyczar_test.cc',
     'keyczar_unittest.cc',
     'keyset_metadata_unittest.cc',
     'keyset_unittest.cc',
