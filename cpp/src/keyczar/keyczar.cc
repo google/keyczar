@@ -409,24 +409,28 @@ bool Verifier::ParseAttachedSignature(const std::string& signed_data,
                                       std::string* header,
                                       std::string* data,
                                       std::string* signature) const {
+  std::string decoded_bytes;
+  if (!Decode(signed_data, &decoded_bytes))
+    return false;
+
   if (header != NULL)
-    *header = signed_data.substr(0, Key::GetHeaderSize());
+    *header = decoded_bytes.substr(0, Key::GetHeaderSize());
 
   int cur_offset = Key::GetHeaderSize();
   int data_len;
-  if (!util::ByteStringToInt32(signed_data, cur_offset, &data_len))
+  if (!util::ByteStringToInt32(decoded_bytes, cur_offset, &data_len))
     return false;
 
   cur_offset += sizeof(data_len);
-  if (signed_data.size() < cur_offset + data_len)
+  if (decoded_bytes.size() < cur_offset + data_len)
     return false;
 
   if (data != NULL)
-    *data = signed_data.substr(cur_offset, data_len);
+    *data = decoded_bytes.substr(cur_offset, data_len);
 
   cur_offset += data_len;
   if (signature != NULL)
-    *signature = signed_data.substr(cur_offset);
+    *signature = decoded_bytes.substr(cur_offset);
 
   return true;
 }
@@ -543,12 +547,12 @@ bool Signer::AttachedSign(const std::string& data,
   if (!InternalSign(data, &hidden, &signature_bytes, &key_header))
     return false;
 
-  signed_data->assign(key_header);
-  signed_data->append(util::Int32ToByteString(data.size()));
-  signed_data->append(data);
-  signed_data->append(signature_bytes);
+  std::string unencoded_result(key_header);
+  unencoded_result.append(util::Int32ToByteString(data.size()));
+  unencoded_result.append(data);
+  unencoded_result.append(signature_bytes);
 
-  return true;
+  return Encode(unencoded_result, signed_data);
 }
 
 bool Signer::IsAcceptablePurpose() const {

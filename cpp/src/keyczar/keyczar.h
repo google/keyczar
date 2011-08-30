@@ -32,7 +32,8 @@ class KeysetReader;
 // purpose of the loaded key set. Keys are automatically selected for each
 // operations. Clients should access cryptographic operations through this
 // interface. By default, all cryptographic operations returns web-safe base64
-// encoded strings.
+// encoded strings.  To get binary outputs, call
+// set_encoding(Keyczar::NO_ENCODING).
 //
 // Inheritance tree:
 //
