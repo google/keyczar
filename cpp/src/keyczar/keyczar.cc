@@ -209,34 +209,55 @@ const Key* Keyczar::LookupKey(const std::string& key_header) const {
   return keyset()->GetKeyFromHash(hash);
 }
 
-// static
-Encrypter* Encrypter::Read(const std::string& location) {
-  return Read(FilePath(location));
-}
-
-// static
-Encrypter* Encrypter::Read(const FilePath& location) {
-  const scoped_ptr<rw::KeysetReader> reader(
-      rw::KeysetReader::CreateReader(location));
-  if (reader.get() == NULL)
-    return NULL;
-  return Encrypter::Read(*reader);
-}
-
-// static
-Encrypter* Encrypter::Read(const rw::KeysetReader& reader) {
+// Note: |returnType| is for type inference.  It's value is ignored.
+template <class T>
+static T* ReadKeyset(const rw::KeysetReader& reader,
+                     T* returnType) {
   scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
   if (keyset.get() == NULL)
     return NULL;
 
-  scoped_ptr<Encrypter> encrypter(new Encrypter(keyset.release()));
-  if (encrypter.get() == NULL)
+  scoped_ptr<T> keyczar(new T(keyset.release()));
+  if (keyczar.get() == NULL)
     return NULL;
 
-  if (!encrypter->IsAcceptablePurpose())
+  if (!keyczar->IsAcceptablePurpose())
     return NULL;
 
-  return encrypter.release();
+  return keyczar.release();
+}
+
+// Note: |returnType| is for type inference.  It's value is ignored.
+template<class T>
+static T* ReadKeyset(const FilePath& location,
+                     T* returnType) {
+  const scoped_ptr<rw::KeysetReader> reader(
+      rw::KeysetReader::CreateReader(location));
+  if (reader.get() == NULL)
+    return NULL;
+  return ReadKeyset(*reader, returnType);
+}
+
+// Note: |returnType| is for type inference.  It's value is ignored.
+template<class T>
+static T* ReadKeyset(const std::string& location,
+                     T* returnType) {
+  return ReadKeyset(FilePath(location), returnType);
+}
+
+// static
+Encrypter* Encrypter::Read(const std::string& location) {
+  return ReadKeyset(location, (Encrypter*)0);
+}
+
+// static
+Encrypter* Encrypter::Read(const FilePath& location) {
+  return ReadKeyset(location, (Encrypter*)0);
+}
+
+// static
+Encrypter* Encrypter::Read(const rw::KeysetReader& reader) {
+  return ReadKeyset(reader, (Encrypter*)0);
 }
 
 bool Encrypter::Encrypt(const std::string& plaintext,
@@ -277,32 +298,17 @@ bool Encrypter::IsAcceptablePurpose() const {
 
 // static
 Crypter* Crypter::Read(const std::string& location) {
-  return Read(FilePath(location));
+  return ReadKeyset(location, (Crypter*)0);
 }
 
 // static
 Crypter* Crypter::Read(const FilePath& location) {
-  const scoped_ptr<rw::KeysetReader> reader(
-      rw::KeysetReader::CreateReader(location));
-  if (reader.get() == NULL)
-    return NULL;
-  return Crypter::Read(*reader);
+  return ReadKeyset(location, (Crypter*)0);
 }
 
 // static
 Crypter* Crypter::Read(const rw::KeysetReader& reader) {
-  scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
-  if (keyset.get() == NULL)
-    return NULL;
-
-  scoped_ptr<Crypter> crypter(new Crypter(keyset.release()));
-  if (crypter.get() == NULL)
-    return NULL;
-
-  if (!crypter->IsAcceptablePurpose())
-    return NULL;
-
-  return crypter.release();
+  return ReadKeyset(reader, (Crypter*)0);
 }
 
 bool Crypter::Decrypt(const std::string& ciphertext,
@@ -335,32 +341,17 @@ bool Crypter::IsAcceptablePurpose() const {
 
 // static
 Verifier* Verifier::Read(const std::string& location) {
-  return Read(FilePath(location));
+  return ReadKeyset(location, (Verifier*)0);
 }
 
 // static
 Verifier* Verifier::Read(const FilePath& location) {
-  const scoped_ptr<rw::KeysetReader> reader(
-      rw::KeysetReader::CreateReader(location));
-  if (reader.get() == NULL)
-    return NULL;
-  return Verifier::Read(*reader);
+  return ReadKeyset(location, (Verifier*)0);
 }
 
 // static
 Verifier* Verifier::Read(const rw::KeysetReader& reader) {
-  scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
-  if (keyset.get() == NULL)
-    return NULL;
-
-  scoped_ptr<Verifier> verifier(new Verifier(keyset.release()));
-  if (verifier.get() == NULL)
-    return NULL;
-
-  if (!verifier->IsAcceptablePurpose())
-    return NULL;
-
-  return verifier.release();
+  return ReadKeyset(reader, (Verifier*)0);
 }
 
 bool Verifier::Verify(const std::string& data,
@@ -437,33 +428,17 @@ bool Verifier::ParseAttachedSignature(const std::string& signed_data,
 
 // static
 UnversionedVerifier* UnversionedVerifier::Read(const std::string& location) {
-  return Read(FilePath(location));
+  return ReadKeyset(location, (UnversionedVerifier*)0);
 }
 
 // static
 UnversionedVerifier* UnversionedVerifier::Read(const FilePath& location) {
-  const scoped_ptr<rw::KeysetReader> reader(
-      rw::KeysetReader::CreateReader(location));
-  if (reader.get() == NULL)
-    return NULL;
-  return UnversionedVerifier::Read(*reader);
+  return ReadKeyset(location, (UnversionedVerifier*)0);
 }
 
 // static
 UnversionedVerifier* UnversionedVerifier::Read(const rw::KeysetReader& reader) {
-  scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
-  if (keyset.get() == NULL)
-    return NULL;
-
-  scoped_ptr<UnversionedVerifier> verifier(new UnversionedVerifier(
-                                               keyset.release()));
-  if (verifier.get() == NULL)
-    return NULL;
-
-  if (!verifier->IsAcceptablePurpose())
-    return NULL;
-
-  return verifier.release();
+  return ReadKeyset(reader, (UnversionedVerifier*)0);
 }
 
 bool UnversionedVerifier::Verify(const std::string& data,
@@ -496,32 +471,17 @@ bool UnversionedVerifier::IsAcceptablePurpose() const {
 
 // static
 Signer* Signer::Read(const std::string& location) {
-  return Read(FilePath(location));
+  return ReadKeyset(location, (Signer*)0);
 }
 
 // static
 Signer* Signer::Read(const FilePath& location) {
-  const scoped_ptr<rw::KeysetReader> reader(
-      rw::KeysetReader::CreateReader(location));
-  if (reader.get() == NULL)
-    return NULL;
-  return Signer::Read(*reader);
+  return ReadKeyset(location, (Signer*)0);
 }
 
 // static
 Signer* Signer::Read(const rw::KeysetReader& reader) {
-  scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
-  if (keyset.get() == NULL)
-    return NULL;
-
-  scoped_ptr<Signer> signer(new Signer(keyset.release()));
-  if (signer.get() == NULL)
-    return NULL;
-
-  if (!signer->IsAcceptablePurpose())
-    return NULL;
-
-  return signer.release();
+  return ReadKeyset(reader, (Signer*)0);
 }
 
 bool Signer::Sign(const std::string& data, std::string* signature) const {
@@ -575,32 +535,17 @@ bool Signer::InternalSign(const std::string& data,
 
 // static
 UnversionedSigner* UnversionedSigner::Read(const std::string& location) {
-  return Read(FilePath(location));
+  return ReadKeyset(location, (UnversionedSigner*)0);
 }
 
 // static
 UnversionedSigner* UnversionedSigner::Read(const FilePath& location) {
-  const scoped_ptr<rw::KeysetReader> reader(
-      rw::KeysetReader::CreateReader(location));
-  if (reader.get() == NULL)
-    return NULL;
-  return UnversionedSigner::Read(*reader);
+  return ReadKeyset(location, (UnversionedSigner*)0);
 }
 
 // static
 UnversionedSigner* UnversionedSigner::Read(const rw::KeysetReader& reader) {
-  scoped_ptr<Keyset> keyset(Keyset::Read(reader, true));
-  if (keyset.get() == NULL)
-    return NULL;
-
-  scoped_ptr<UnversionedSigner> signer(new UnversionedSigner(keyset.release()));
-  if (signer.get() == NULL)
-    return NULL;
-
-  if (!signer->IsAcceptablePurpose())
-    return NULL;
-
-  return signer.release();
+  return ReadKeyset(reader, (UnversionedSigner*)0);
 }
 
 bool UnversionedSigner::Sign(const std::string& data,
