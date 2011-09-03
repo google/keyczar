@@ -86,6 +86,7 @@ keyczar_sources = [
     'rsa_private_key.cc',
     'rsa_public_key.cc',
     'secret_key.cc',
+    'session.cc',
     'util.cc',
     ]
 
@@ -359,6 +360,7 @@ keyczar_unittests = [
     'keyset_unittest.cc',
     'rsa_key_unittest.cc',
     'run_all_unittests.cc',
+    'session_unittest.cc',
     ]
 
 openssl_unittests = [

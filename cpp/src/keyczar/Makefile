@@ -6,12 +6,21 @@
 # little easier to build the C++ keyczar.  All it does is call the
 # scons script.
 #
-# If building on a multi-core machine
+# If building on a multi-core machine, set the JOBS environment variable
+# to a value greater than 1 to build in parallel.
 
 JOBS ?= 1
+BUILD_CMD=cd ..; ./tools/swtoolkit/hammer.sh -j$(JOBS)
 
 all:
-	cd ..; ./tools/swtoolkit/hammer.sh --compat -j$(JOBS)
+	$(BUILD_CMD)
+
+CXXFLAGS=-I.
+
+test: test.cc
+
+run_keyczar_unittests:
+	$(BUILD_CMD) run_keyczar_unittests
 
 clean:
-	cd ..; ./tools/swtoolkit/hammer.sh -c -j20
+	$(BUILD_CMD) -c
