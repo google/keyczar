@@ -17,3 +17,6 @@
 /cpp/src/.sconf_temp
 /cpp/src/scons-out
 *pyc
+
+# Miscellaneous
+*~
