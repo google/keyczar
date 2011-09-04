@@ -196,6 +196,9 @@ SignedSessionDecrypter* SignedSessionDecrypter::NewSessionDecrypter(
     Crypter* crypter,
     Verifier* verifier,
     const std::string& session_material) {
+  if (crypter == NULL || verifier == NULL)
+    return NULL;
+
   scoped_ptr<Crypter> crypter_p(crypter);
   scoped_ptr<Verifier> verifier_p(verifier);
 
@@ -203,11 +206,11 @@ SignedSessionDecrypter* SignedSessionDecrypter::NewSessionDecrypter(
   crypter_p->set_encoding(Keyczar::BASE64W);
   if (!crypter_p->Decrypt(session_material, &decrypted_session))
     return NULL;
-
+  
   scoped_ptr<Session> session(Session::Parse(decrypted_session));
-  if (session.get() != NULL
-      && verifier_p.get() != NULL)
-    return new SignedSessionDecrypter(verifier_p.release(), session.release());
+  if (session.get() == NULL)
+    return NULL;
+  return new SignedSessionDecrypter(verifier_p.release(), session.release());
 }
 
 }
