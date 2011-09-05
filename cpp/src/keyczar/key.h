@@ -130,6 +130,12 @@ Key(int size) : size_(size) {}
   // instance. This hash will be used as unique identifier of this key.
   virtual bool Hash(std::string* hash) const = 0;
 
+  // Returns an additional "buggy" hash which some messages encrypted by
+  // previous versions of Keyczar may use to reference this key.  Returns
+  // false if no buggy hash exists (only AES keys with leading zero bytes
+  // had buggy hashes).
+  virtual bool BuggyHash(std::string* buggy_hash) const;
+
   static int GetHashSize();
 
   static int GetHeaderSize();
@@ -143,10 +149,13 @@ Key(int size) : size_(size) {}
   int size() const { return size_; }
 
  protected:
-  // Helper function for building the Hash value. Be sure to have properly
-  // initialized the message digest object before calling it the first time.
+  // Helper function for building the Hash value. If |trim_zeros| is true,
+  // any leading zeros in |field| will first be removed.  Be sure to have
+  // properly initialized the message digest object before calling it the
+  // first time.
   void AddToHash(const std::string& field,
-                 MessageDigestImpl& digest_impl) const;
+                 MessageDigestImpl& digest_impl,
+                 bool trim_zeros = true) const;
 
  private:
   // Key size in bits

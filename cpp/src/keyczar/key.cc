@@ -152,6 +152,10 @@ bool Key::Decrypt(const std::string& ciphertext,
   return false;
 }
 
+bool Key::BuggyHash(std::string* hash) const {
+  return false;
+}
+
 // Static
 int Key::GetHashSize() {
   return kKeyHashSize;
@@ -186,10 +190,13 @@ bool Key::Header(std::string* header) const {
 }
 
 void Key::AddToHash(const std::string& field,
-                    MessageDigestImpl& digest_impl) const {
-  // Removes nul leading characters
+                    MessageDigestImpl& digest_impl,
+                    bool trim_zeros) const {
   base::ScopedSafeString trimmed_field(new std::string());
-  trimmed_field->assign(field.substr(field.find_first_not_of('\0')));
+  if (trim_zeros)
+    trimmed_field->assign(field.substr(field.find_first_not_of('\0')));
+  else
+    trimmed_field->assign(field);
 
   // Update the message digest value
   digest_impl.Update(util::Int32ToByteString(trimmed_field->size()));
