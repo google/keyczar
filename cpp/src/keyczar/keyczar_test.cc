@@ -14,6 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fstream>
+
 #include <keyczar/base/scoped_ptr.h>
 #include <keyczar/keyczar.h>
 #include <keyczar/keyczar_test.h>
@@ -76,6 +78,18 @@ void KeyczarTest::TestSignAndVerifyUnversioned(
       UnversionedVerifier::Read(public_path.value()));
   ASSERT_TRUE(verifier.get());
   EXPECT_TRUE(verifier->Verify(input_data_, signature));
+}
+
+void KeyczarTest::ReadDataFile(const std::string& filename,
+                               std::string* content) const {
+  ASSERT_TRUE(content != NULL);
+
+  const FilePath path = data_path_.Append(filename);
+  std::ifstream input_file(path.value().c_str());
+  ASSERT_TRUE(input_file);
+
+  input_file >> *content;
+  ASSERT_GT(content->size(), 0);
 }
 
 }  // namespace keyczar

@@ -65,6 +65,9 @@ class KeyczarTest : public PlatformTest {
 
   void TestSignAndVerifyUnversioned(const std::string& sign_key,
                                     const std::string& verify_key) const;
+
+  // Utility methods
+  void ReadDataFile(const std::string& filename, std::string* content) const;
 };
 
 }  // namespace keyczar
