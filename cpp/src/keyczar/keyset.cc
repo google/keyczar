@@ -143,6 +143,10 @@ bool Keyset::AddKey(Key* key, int version_number) {
   version_number_map_[version_number] = key;
   hash_map_[hash] = key;
 
+  if (key->BuggyHash(&hash)) {
+      hash_map_[hash] = key;
+  }
+
   NotifyOnNewKey(*key, version_number);
   return true;
 }

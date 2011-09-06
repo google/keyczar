@@ -421,4 +421,24 @@ TEST_F(KeyczarTest, PBEEncryptAndDecrypt) {
   EXPECT_EQ(input_data_, decrypted);
 }
 
+TEST_F(KeyczarTest, BuggyAesHash) {
+  scoped_ptr<Crypter> crypter;
+
+  const FilePath buggy_aes_path = data_path_.Append("aes-buggy");
+  crypter.reset(Crypter::Read(buggy_aes_path));
+  ASSERT_TRUE(crypter.get());
+
+  std::string buggy_ciphertext;
+  std::string correct_ciphertext;
+  ReadDataFile("aes_buggy_hash_ciphertext.txt", &buggy_ciphertext);
+  ReadDataFile("aes_correct_hash_ciphertext.txt", &correct_ciphertext);
+
+  std::string buggy_msg_plaintext;
+  ASSERT_TRUE(crypter->Decrypt(buggy_ciphertext, &buggy_msg_plaintext));
+
+  std::string correct_msg_plaintext;
+  ASSERT_TRUE(crypter->Decrypt(correct_ciphertext, &correct_msg_plaintext));
+  ASSERT_EQ(buggy_msg_plaintext, correct_msg_plaintext);
+}
+
 }  // namespace keyczar

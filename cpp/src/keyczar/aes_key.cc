@@ -163,17 +163,23 @@ Value* AESKey::GetValue() const {
   return aes_key.release();
 }
 
-bool AESKey::Hash(std::string* hash) const {
+bool AESKey::ComputeHash(std::string* hash, bool buggy) const {
   if (hash == NULL || aes_impl_.get() == NULL || hmac_key() == NULL ||
       hmac_key()->hmac_impl() == NULL)
     return false;
+
+  // The buggy hash is only distinct from the correct hash when the key
+  // has one or more leading zero bytes.
+  if (buggy && aes_impl_->GetKey()[0] != 0) {
+    return false;
+  }
 
   MessageDigestImpl* digest_impl = CryptoFactory::SHA1();
   if (digest_impl == NULL)
     return false;
 
   digest_impl->Init();
-  AddToHash(aes_impl_->GetKey(), *digest_impl);
+  AddToHash(aes_impl_->GetKey(), *digest_impl, buggy);
   digest_impl->Update(hmac_key()->hmac_impl()->GetKey());
   std::string full_hash;
   digest_impl->Final(&full_hash);
@@ -181,6 +187,14 @@ bool AESKey::Hash(std::string* hash) const {
 
   base::Base64WEncode(full_hash.substr(0, Key::GetHashSize()), hash);
   return true;
+}
+
+bool AESKey::Hash(std::string* hash) const {
+  return ComputeHash(hash, false);
+}
+
+bool AESKey::BuggyHash(std::string* hash) const {
+  return ComputeHash(hash, true);
 }
 
 bool AESKey::Encrypt(const std::string& plaintext,

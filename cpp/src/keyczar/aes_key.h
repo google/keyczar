@@ -55,6 +55,9 @@ class AESKey : public SecretKey {
   // Returns the hash value of this key.
   virtual bool Hash(std::string* hash) const;
 
+  // Returns the buggy hash value of this key, if any.
+  virtual bool BuggyHash(std::string* hash) const;
+
   virtual bool Encrypt(const std::string& plaintext,
                        std::string* ciphertext) const;
 
@@ -63,6 +66,8 @@ class AESKey : public SecretKey {
 
  private:
   FRIEND_TEST(AESTest, GenerateKeyDumpAndCompare);
+
+  bool ComputeHash(std::string* hash, bool buggy) const;
 
   // The caller doesn't take ownership over the returned AESKey object.
   AESImpl* aes_impl() const { return aes_impl_.get(); }
