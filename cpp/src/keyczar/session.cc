@@ -206,11 +206,11 @@ SignedSessionDecrypter* SignedSessionDecrypter::NewSessionDecrypter(
   crypter_p->set_encoding(Keyczar::BASE64W);
   if (!crypter_p->Decrypt(session_material, &decrypted_session))
     return NULL;
-  
+
   scoped_ptr<Session> session(Session::Parse(decrypted_session));
   if (session.get() == NULL)
     return NULL;
   return new SignedSessionDecrypter(verifier_p.release(), session.release());
 }
 
-}
+} // namespace keyczar

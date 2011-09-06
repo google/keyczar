@@ -53,7 +53,13 @@ class SignedSessionEncrypter {
   static SignedSessionEncrypter* NewSessionEncrypter(
       Encrypter* encrypter,
       Signer* signer,
-      int session_key_bits = 192);
+      int session_key_bits);
+
+  static SignedSessionEncrypter* NewSessionEncrypter(
+      Encrypter* encrypter,
+      Signer* signer) {
+    return NewSessionEncrypter(encrypter, signer, 128);
+  }
 
   ~SignedSessionEncrypter();
 
@@ -123,7 +129,7 @@ private:
 //     (Base64W-encoded) to NewSessionEncrypter to create a
 //     SignedSessionDecryper.
 //
-// 2.  Call SessionDecrypt with the encrypted and signed ciphetext.
+// 2.  Call SessionDecrypt with the encrypted and signed ciphertext.
 //
 // The const methods of this class are threadsafe, assuming the provided
 // Verifier is not used outside of the SignedSessionDecrypter.
@@ -182,4 +188,4 @@ private:
   const Session* session_; // raw because scoped_ptr requires full definition
 };
 
-}
+} // namespace keyczar
