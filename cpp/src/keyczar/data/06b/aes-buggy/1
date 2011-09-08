@@ -1,0 +1,9 @@
+{
+   "aesKeyString": "AA5v4PxhY_5ljn7vbXyLlw",
+   "hmacKey": {
+      "hmacKeyString": "_9CRZPJzeq8dZNGXg-LNPvejJ5pFRZ4NNedkCu1Vmeg",
+      "size": 256
+   },
+   "mode": "CBC",
+   "size": 128
+}

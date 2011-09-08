@@ -19,7 +19,7 @@ ifeq ($(DEBUG),1)
 endif
 OPTS="HAMMER_OPTS=$(HAMMER_OPTS)"
 
-BUILD_CMD=cd ..; ./tools/swtoolkit/hammer.sh -j$(JOBS) $(OPTS)
+BUILD_CMD=cd ..; ./tools/swtoolkit/hammer.sh --compat -j$(JOBS) $(OPTS)
 
 all:
 	$(BUILD_CMD)
