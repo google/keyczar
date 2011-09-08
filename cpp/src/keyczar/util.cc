@@ -40,7 +40,7 @@ std::string Int32ToByteString(int32 num) {
 
 bool ByteStringToInt32(const std::string& str, int offset, int32* num) {
   if (offset + sizeof(*num) > str.size())
-    false;
+    return false;
 
   const unsigned char* bytes =
       reinterpret_cast<const unsigned char*>(str.c_str()) + offset;
