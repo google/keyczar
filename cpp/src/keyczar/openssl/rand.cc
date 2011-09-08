@@ -35,10 +35,10 @@ bool RandOpenSSL::Init() {
 }
 
 bool RandOpenSSL::RandBytes(int num, std::string* bytes) const {
+  unsigned char buffer[num];
+
   if (bytes == NULL)
     return false;
-
-  unsigned char buffer[num];
 
   if (RAND_bytes(buffer, num) != 1) {
     PrintOSSLErrors();
