@@ -1,0 +1,19 @@
+2011-09-08  Shawn Willden  <swillden@google.com>
+
+	Release 0.70
+
+	- Added support for session encryption.  This allows the user to
+	  encrypt using a session key.  The data is encrypted with a
+	  randomly-generated session key and then signed with a provided
+	  Signer.  The session key is encrypted with a provided
+	  Encrypter.
+	- Fixed AES key hashing bug.  Prior to this release, leading zero
+	  bytes were erroneously trimmed from AES keys before hashing them
+	  to produce a key "fingerprint" which is embedded in encrypted
+	  messages to identify the encryption key.  This meant that the
+	  different Keyczar libraries were incompatible when using AES
+	  keys with leading zeros.  The fix corrects this incompatibility,
+	  but preserves the ability to decrypt messages encrypted by
+	  previous versions of the C++ library (though previous versions
+	  may not be able to decrypt messages encrypted by 0.70 or
+	  above).

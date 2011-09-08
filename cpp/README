@@ -12,10 +12,15 @@
 
 Packages g++ make libssl-dev zlib1g-dev python python-dev swig
 
-=== MacOSX Leopard ===
+=== MacOSX Snow Leopard ===
 
-XCode > 3.1 and MacPorts with the following packages: zlib openssl swig
+XCode > 3.6 and MacPorts with the following packages: swig
 
+MacPorts is necessary only for the Python (via swig) binding.  If
+you are using the C++ API, MacPorts is not necessary.
+
+Previous versions of Mac OS X should also work, but you should test to be
+sure.
 
 == Supported architectures and systems ==
 
@@ -29,7 +34,7 @@ Note: only Linux x86 has been tested extensively
 
 For a local build of Keyczar C++ on Linux run these commands:
 
- $ cd cpp/src && sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat
+ $ cd src && sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat
 
 - Replace opt-linux by opt-bsd or opt-mac depending on your system
 - The Python binding is built automatically if swig is detected
@@ -40,15 +45,18 @@ For a local build of Keyczar C++ on Linux run these commands:
 
 You need to log as root and execute these commands:
 
-  $ cd cpp/src && sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat install
+  $ cd src && sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat install
 
 /!\ Note: it is actually highly recommanded to use the compatibility (--compat)
-mode. This mode provides full compatibility with previous versions and others
-Keyczar implementations (Java, pure Python).
+mode. This mode provides full compatibility with previous versions, other
+Keyczar implementations (Java, pure Python) and the Google reference
+implementation.
 
 - Default prefix paths used are /usr/local/ and
-  /usr/lib/python2.x/[site|dist]-packages for Python stuffs. Use src/options.conf
-  and read src/tools/installer.py for overriding these choices.
+  /usr/lib/python2.x/[site|dist]-packages for Python stuffs. Use
+  src/options.conf and read src/tools/installer.py for overriding these
+  choices.
+
 - Learn how to use this library by reading the tutorial (on the wiki page), the
   examples located under src/examples/ and the main headers
   src/keyczar/keyczar.h and src/keyczar/keyczar_tool/keyczar_tool.h
