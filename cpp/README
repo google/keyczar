@@ -39,7 +39,9 @@ For a local build of Keyczar C++ on Linux run these commands:
 - Replace opt-linux by opt-bsd or opt-mac depending on your system
 - The Python binding is built automatically if swig is detected
 - Libraries and executables are assembled under scons-out/opt-linux/
-
+- The keyczart tool is located at scons-out/opt-linux/staging/keyczart.
+  You can run it from that location or move it somewhere more
+  convenient if you prefer not to install it.
 
 == Install ==
 
@@ -60,7 +62,6 @@ implementation.
 - Learn how to use this library by reading the tutorial (on the wiki page), the
   examples located under src/examples/ and the main headers
   src/keyczar/keyczar.h and src/keyczar/keyczar_tool/keyczar_tool.h
-
 
 == Options ==
 
