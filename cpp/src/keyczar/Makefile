@@ -27,5 +27,8 @@ all:
 kctests:
 	$(BUILD_CMD) run_keyczar_unittests
 
+keyczart:
+	$(BUILD_CMD) keyczart
+
 clean:
 	$(BUILD_CMD) -c

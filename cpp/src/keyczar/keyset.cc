@@ -250,9 +250,14 @@ int Keyset::ImportPrivateKey(KeyStatus::Type status,
 bool Keyset::ExportPrivateKey(const std::string& filename,
                               const std::string* passphrase) {
   const Key* key = primary_key();
-  if (key == NULL)
+  if (key == NULL) {
+    LOG(INFO) << "Export failed:  No primary key";
     return false;
-  return key->ExportPrivateKey(filename, passphrase);
+  }
+
+  if (!key->ExportPrivateKey(filename, passphrase))
+    LOG(INFO) << "Failed to export key of type "
+               << KeyType::GetNameFromType(metadata()->key_type());
 }
 
 bool Keyset::PromoteKey(int version_number) {
