@@ -478,9 +478,13 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
 
     // asymmetric
     std::string asymmetric_string;
-    GetSwitchValue(cmdl, "asymmetric", &asymmetric_string, true);
-    const Cipher cipher = GetCipher(asymmetric_string);
+    if (GetSwitchValue(cmdl, "asymmetric", &asymmetric_string, true)
+        && asymmetric_string.empty()) {
+      LOG(INFO) << "Asymmetric key type must be one of rsa, dsa or ecsda";
+      return false;
+    }
 
+    const Cipher cipher = GetCipher(asymmetric_string);
     return CmdCreate(location, purpose, name_string, cipher);
   }
 
