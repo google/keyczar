@@ -337,10 +337,12 @@ bool KeyczarTool::CmdExportKey(const std::string& location,
     LOG(INFO) << "For each key of this key set enter its password";
 
   scoped_ptr<Keyset> keyset(Keyset::Read(*reader, true));
-  if (keyset.get() == NULL)
+  if (keyset.get() == NULL) {
+    LOG(INFO) << "Export failed:  No keyset found";
     return false;
+  }
 
-  return keyset->ExportPrivateKey(filename, passphrase);
+  bool result = keyset->ExportPrivateKey(filename, passphrase);
 }
 
 bool KeyczarTool::CmdPubKey(const std::string& location,
