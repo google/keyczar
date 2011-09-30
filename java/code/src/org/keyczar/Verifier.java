@@ -267,7 +267,7 @@ public class Verifier extends Keyczar {
 	
     byte[] hash = checkFormatAndGetHash(sigBuffer);
     // just get the bits even though we won't use it.
-	KeyczarKey key = getVerifyingKey(hash);
+	getVerifyingKey(hash);
 	    
 	// we have stripped the format and hash, now just get the blob and
 	// raw signature

@@ -112,10 +112,12 @@ class HmacKey extends KeyczarKey {
       }
     }
 
+    @Override
     public int digestSize() {
       return getType().getOutputSize();
     }
 
+    @Override
     public void initSign() throws KeyczarException {
       try {
         hmac.init(hmacKey);
@@ -124,22 +126,27 @@ class HmacKey extends KeyczarKey {
       }
     }
 
+    @Override
     public void initVerify() throws KeyczarException {
       initSign();
     }
 
+    @Override
     public void sign(ByteBuffer output) {
       output.put(hmac.doFinal());
     }
 
+    @Override
     public void updateSign(ByteBuffer input) {
       hmac.update(input);
     }
 
+    @Override
     public void updateVerify(ByteBuffer input) {
       updateSign(input);
     }
 
+    @Override
     public boolean verify(ByteBuffer signature) {
       byte[] sigBytes = new byte[signature.remaining()];
       signature.get(sigBytes);

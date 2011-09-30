@@ -116,7 +116,8 @@ public class SymmetricPerformanceTest {
       this.trials = trials;
     }
 
-   public void run() {
+   @Override
+  public void run() {
       try {
         for (int i = 0; i < trials; i++) {
           signer.sign(input, output);
@@ -142,7 +143,8 @@ public class SymmetricPerformanceTest {
       this.trials = trials;
     }
 
-   public void run() {
+   @Override
+  public void run() {
       try {
         for (int i = 0; i < trials; i++) {
           crypter.encrypt(input, output);
