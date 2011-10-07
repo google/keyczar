@@ -125,13 +125,6 @@ public class GenericKeyczar extends Keyczar {
    * @throws KeyczarException if key type is unsupported.
    */
   public void addVersion(KeyStatus status, int keySize) throws KeyczarException {
-    KeyVersion version = new KeyVersion(numVersions() + 1, status, false);
-    if (status == KeyStatus.PRIMARY) {
-      if (primaryVersion != null) {
-        primaryVersion.setStatus(KeyStatus.ACTIVE);
-      }
-      primaryVersion = version;
-    }
     KeyczarKey key;
     if (keySize < kmd.getType().defaultSize()) { // print a warning statement
       LOG.warn(Messages.getString("Keyczar.SizeWarning",
@@ -140,13 +133,25 @@ public class GenericKeyczar extends Keyczar {
     do { // Make sure no keys collide on their identifiers
       key = KeyczarKey.genKey(kmd.getType(), keySize);
     } while (getKey(key.hash()) != null);
-    addKey(version, key);
-    LOG.debug(Messages.getString("Keyczar.NewVersion", version));
+    addVersion(status, key);
   }
 
-
-  public int numVersions() {
-    return versionMap.size();
+  /**
+   * Adds the given key as a new version with given status and next available
+   * version number to key set.
+   *
+   * @param status KeyStatus desired for new key version
+   */
+  public void addVersion(KeyStatus status, KeyczarKey key) {
+    KeyVersion version = new KeyVersion(numVersions() + 1, status, false);
+    if (status == KeyStatus.PRIMARY) {
+      if (primaryVersion != null) {
+        primaryVersion.setStatus(KeyStatus.ACTIVE);
+      }
+      primaryVersion = version;
+    }
+    addKey(version, key);
+    LOG.debug(Messages.getString("Keyczar.NewVersion", version));
   }
 
   /**
@@ -180,6 +185,13 @@ public class GenericKeyczar extends Keyczar {
     } else {
       throw new KeyczarException(Messages.getString("Keyczar.CantRevoke"));
     }
+  }
+
+  /**
+   * Returns the number of versions in the keyset.
+   */
+  private int numVersions() {
+    return versionMap.size();
   }
 
   /**
