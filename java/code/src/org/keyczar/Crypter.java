@@ -180,7 +180,7 @@ public class Crypter extends Encrypter {
    * not web-safe Base64 encoded, or a JCE error occurs.
    */
   public String decrypt(String ciphertext) throws KeyczarException {
-    return new String(decrypt(Base64Coder.decode(ciphertext)));
+    return new String(decrypt(Base64Coder.decodeWebSafe(ciphertext)));
   }
 
   @Override

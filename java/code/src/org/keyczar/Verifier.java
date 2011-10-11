@@ -161,7 +161,7 @@ public class Verifier extends Keyczar {
   public boolean verify(String data, String signature) throws KeyczarException {
     try {
       return verify(data.getBytes(DEFAULT_ENCODING),
-          Base64Coder.decode(signature));
+          Base64Coder.decodeWebSafe(signature));
     } catch (UnsupportedEncodingException e) {
       throw new KeyczarException(e);
     }

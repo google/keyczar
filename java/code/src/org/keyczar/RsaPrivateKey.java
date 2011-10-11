@@ -104,19 +104,19 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     // Read all the JSON fields and use it to instantiate a RSAPrivateCrtKey
     try {
       KeyFactory factory = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
-      BigInteger mod = new BigInteger(Base64Coder.decode(publicKey.modulus));
+      BigInteger mod = new BigInteger(Base64Coder.decodeWebSafe(publicKey.modulus));
       BigInteger pubExp =
-        new BigInteger(Base64Coder.decode(publicKey.publicExponent));
+        new BigInteger(Base64Coder.decodeWebSafe(publicKey.publicExponent));
       
       // Set the public key values
       publicKey.set(size, mod, pubExp);
       
-      BigInteger privExp = new BigInteger(Base64Coder.decode(privateExponent));
-      BigInteger p = new BigInteger(Base64Coder.decode(primeP));
-      BigInteger q = new BigInteger(Base64Coder.decode(primeQ));
-      BigInteger expP = new BigInteger(Base64Coder.decode(primeExponentP));
-      BigInteger expQ = new BigInteger(Base64Coder.decode(primeExponentQ));
-      BigInteger crt = new BigInteger(Base64Coder.decode(crtCoefficient));
+      BigInteger privExp = new BigInteger(Base64Coder.decodeWebSafe(privateExponent));
+      BigInteger p = new BigInteger(Base64Coder.decodeWebSafe(primeP));
+      BigInteger q = new BigInteger(Base64Coder.decodeWebSafe(primeQ));
+      BigInteger expP = new BigInteger(Base64Coder.decodeWebSafe(primeExponentP));
+      BigInteger expQ = new BigInteger(Base64Coder.decodeWebSafe(primeExponentQ));
+      BigInteger crt = new BigInteger(Base64Coder.decodeWebSafe(crtCoefficient));
       RSAPrivateCrtKeySpec spec =
         new RSAPrivateCrtKeySpec(mod, pubExp, privExp, p, q, expP, expQ, crt);
       jcePrivateKey = (RSAPrivateCrtKey) factory.generatePrivate(spec);
@@ -141,17 +141,17 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     }
     // Set all the JSON fields for this RSA Private CRT key
     key.privateExponent =
-      Base64Coder.encode(key.jcePrivateKey.getPrivateExponent().toByteArray());
+      Base64Coder.encodeWebSafe(key.jcePrivateKey.getPrivateExponent().toByteArray());
     key.primeP =
-      Base64Coder.encode(key.jcePrivateKey.getPrimeP().toByteArray());
+      Base64Coder.encodeWebSafe(key.jcePrivateKey.getPrimeP().toByteArray());
     key.primeQ =
-      Base64Coder.encode(key.jcePrivateKey.getPrimeQ().toByteArray());
+      Base64Coder.encodeWebSafe(key.jcePrivateKey.getPrimeQ().toByteArray());
     key.primeExponentP =
-      Base64Coder.encode(key.jcePrivateKey.getPrimeExponentP().toByteArray());
+      Base64Coder.encodeWebSafe(key.jcePrivateKey.getPrimeExponentP().toByteArray());
     key.primeExponentQ = 
-      Base64Coder.encode(key.jcePrivateKey.getPrimeExponentQ().toByteArray());
+      Base64Coder.encodeWebSafe(key.jcePrivateKey.getPrimeExponentQ().toByteArray());
     key.crtCoefficient =
-      Base64Coder.encode(key.jcePrivateKey.getCrtCoefficient().toByteArray());
+      Base64Coder.encodeWebSafe(key.jcePrivateKey.getCrtCoefficient().toByteArray());
     return key;
   }
 

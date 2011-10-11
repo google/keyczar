@@ -85,7 +85,7 @@ public class SignedSessionEncrypter {
     byte[] nonce = new byte[NONCE_SIZE];
     rand(nonce);
     
-    String nonceString = Base64Coder.encode(nonce);
+    String nonceString = Base64Coder.encodeWebSafe(nonce);
     
     session.set(new SessionMaterial(aesKey, nonceString));
     
@@ -112,6 +112,6 @@ public class SignedSessionEncrypter {
     
     // encrypted nonce is not base 64 encoded for the signature, so decode before
     // using for hidden.
-    return signer.attachedSign(ciphertext, Base64Coder.decode(material.getNonce()));
+    return signer.attachedSign(ciphertext, Base64Coder.decodeWebSafe(material.getNonce()));
   }
 }

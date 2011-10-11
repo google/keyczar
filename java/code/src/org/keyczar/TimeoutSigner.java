@@ -87,7 +87,7 @@ public class TimeoutSigner extends TimeoutVerifier {
   public String timeoutSign(String input, long expirationTime)
       throws KeyczarException {
     try {
-      return Base64Coder.encode(timeoutSign(input.getBytes(
+      return Base64Coder.encodeWebSafe(timeoutSign(input.getBytes(
           Keyczar.DEFAULT_ENCODING), expirationTime));
     } catch (UnsupportedEncodingException e) {
       throw new KeyczarException(e);

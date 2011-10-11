@@ -79,14 +79,14 @@ class RsaPublicKey extends KeyczarPublicKey {
   
   void set(int size, BigInteger mod, BigInteger pubExp) throws KeyczarException {
 	this.size = size;
-    this.modulus = Base64Coder.encode(mod.toByteArray());
-    this.publicExponent = Base64Coder.encode(pubExp.toByteArray());
+    this.modulus = Base64Coder.encodeWebSafe(mod.toByteArray());
+    this.publicExponent = Base64Coder.encodeWebSafe(pubExp.toByteArray());
     init();
   }
   
   void init() throws KeyczarException {
-    byte[] modBytes = Base64Coder.decode(modulus);
-    byte[] pubExpBytes = Base64Coder.decode(publicExponent);
+    byte[] modBytes = Base64Coder.decodeWebSafe(modulus);
+    byte[] pubExpBytes = Base64Coder.decodeWebSafe(publicExponent);
     BigInteger mod = new BigInteger(modBytes);
     BigInteger pubExp = new BigInteger(pubExpBytes);
     // Sets the JCE Public key value

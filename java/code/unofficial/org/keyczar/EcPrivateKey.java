@@ -89,7 +89,7 @@ class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   void init() throws KeyczarException {
-    byte[] pkcs8Bytes = Base64Coder.decode(pkcs8);
+    byte[] pkcs8Bytes = Base64Coder.decodeWebSafe(pkcs8);
     try {
       KeyFactory kf = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
       jcePrivateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(pkcs8Bytes));
@@ -113,7 +113,7 @@ class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
-    key.pkcs8 = Base64Coder.encode(key.jcePrivateKey.getEncoded());
+    key.pkcs8 = Base64Coder.encodeWebSafe(key.jcePrivateKey.getEncoded());
     key.init();
     return key;
   }
