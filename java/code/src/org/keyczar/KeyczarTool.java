@@ -26,6 +26,8 @@ import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -49,7 +51,7 @@ import java.util.HashMap;
  */
 
 public class KeyczarTool {
-  static MockKeyczarReader mock = null;
+  private static MockKeyczarReader mock = null;
 
   /**
    * Sets the mock KeyczarReader used only for testing.
@@ -101,15 +103,16 @@ public class KeyczarTool {
         }
 
         switch (c) {
-          case CREATE:
+          case CREATE: {
             String nameFlag = flagMap.get(Flag.NAME);
             KeyPurpose purposeFlag =
               KeyPurpose.getPurpose(flagMap.get(Flag.PURPOSE));
             String asymmetricFlag = flagMap.get(Flag.ASYMMETRIC);
-            create(locationFlag, nameFlag, purposeFlag, asymmetricFlag); break;
-          case ADDKEY:
-            KeyStatus statusFlag = KeyStatus.getStatus(
-                                                      flagMap.get(Flag.STATUS));
+            create(locationFlag, nameFlag, purposeFlag, asymmetricFlag);
+            break;
+          }
+          case ADDKEY: {
+            KeyStatus statusFlag = KeyStatus.getStatus(flagMap.get(Flag.STATUS));
             String crypterFlag = flagMap.get(Flag.CRYPTER);
             int sizeFlag = -1;
             if (flagMap.containsKey(Flag.SIZE)) {
@@ -117,6 +120,7 @@ public class KeyczarTool {
             }
             addKey(locationFlag, statusFlag, crypterFlag, sizeFlag);
             break;
+          }
           case PUBKEY:
             publicKeys(locationFlag, flagMap.get(Flag.DESTINATION));
             break;
@@ -137,6 +141,12 @@ public class KeyczarTool {
               printUsage();
             }
             break;
+          case IMPORT_KEY: {
+            KeyStatus statusFlag = KeyStatus.getStatus(flagMap.get(Flag.STATUS));
+            String crypterFlag = flagMap.get(Flag.CRYPTER);
+            importKey(locationFlag, flagMap.get(Flag.PEMFILE), statusFlag, crypterFlag);
+            break;
+          }
         }
       } catch (NumberFormatException e) {
         e.printStackTrace();
@@ -151,6 +161,28 @@ public class KeyczarTool {
         e.printStackTrace();
         printUsage();
       }
+    }
+  }
+
+  private static void importKey(String locationFlag, String pemFileFlag, KeyStatus statusFlag,
+      String crypterFlag) throws KeyczarException {
+    final GenericKeyczar destinationKeyczar = createGenericKeyczar(locationFlag, crypterFlag);
+    final KeyPurpose purpose = destinationKeyczar.getMetadata().getPurpose();
+    FileInputStream certificateStream;
+    try {
+       certificateStream = new FileInputStream(pemFileFlag);
+    } catch (FileNotFoundException e) {
+      throw new KeyczarException(Messages.getString("KeyczarTool.FileNotFound", pemFileFlag));
+    }
+
+    destinationKeyczar.addVersion(statusFlag,
+        new GenericKeyczar(new X509CertificateReader(purpose, certificateStream)).getPrimaryKey());
+
+    if (crypterFlag != null) {
+      Encrypter encrypter = new Encrypter(crypterFlag);
+      updateGenericKeyczar(destinationKeyczar, encrypter, locationFlag);
+    } else {
+      updateGenericKeyczar(destinationKeyczar, locationFlag);
     }
   }
 

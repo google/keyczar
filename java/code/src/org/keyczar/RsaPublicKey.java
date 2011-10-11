@@ -78,13 +78,16 @@ class RsaPublicKey extends KeyczarPublicKey {
   }
   
   void set(int size, BigInteger mod, BigInteger pubExp) throws KeyczarException {
-	this.size = size;
+    if (size % 8 != 0) {
+      throw new KeyczarException("Invalid public modulus size");
+    }
+    this.size = size;
     this.modulus = Base64Coder.encode(mod.toByteArray());
     this.publicExponent = Base64Coder.encode(pubExp.toByteArray());
     init();
   }
   
-  void init() throws KeyczarException {
+  private void init() throws KeyczarException {
     byte[] modBytes = Base64Coder.decode(modulus);
     byte[] pubExpBytes = Base64Coder.decode(publicExponent);
     BigInteger mod = new BigInteger(modBytes);

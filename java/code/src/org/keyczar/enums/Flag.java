@@ -32,7 +32,8 @@ public enum Flag {
   DESTINATION("destination"),
   VERSION("version"),
   ASYMMETRIC("asymmetric"),
-  CRYPTER("crypter");
+  CRYPTER("crypter"),
+  PEMFILE("pemfile");
 
   private final String name;
 
@@ -67,6 +68,8 @@ public enum Flag {
       return ASYMMETRIC;
     } else if (name.equalsIgnoreCase(CRYPTER.toString())) {
       return CRYPTER;
+    } else if (name.equalsIgnoreCase(PEMFILE.toString())) {
+      return PEMFILE;
     }
     throw new IllegalArgumentException(
         Messages.getString("Flag.UnknownFlag", name));
