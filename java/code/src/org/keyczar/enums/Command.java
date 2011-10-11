@@ -31,7 +31,8 @@ public enum Command {
   PROMOTE("promote"),
   DEMOTE("demote"),
   REVOKE("revoke"),
-  USEKEY("usekey");
+  USEKEY("usekey"),
+  IMPORT_KEY("importkey");
 
   private final String name;
 
@@ -62,6 +63,8 @@ public enum Command {
       return REVOKE;
     } else if (command.equalsIgnoreCase(USEKEY.toString())) {
       return USEKEY;
+    } else if (command.equalsIgnoreCase(IMPORT_KEY.toString())) {
+      return IMPORT_KEY;
     }
     throw new IllegalArgumentException(
         Messages.getString("Command.UnknownCommand", command));

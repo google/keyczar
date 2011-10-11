@@ -39,6 +39,7 @@ public class AllTests extends TestSuite {
     suite.addTestSuite(I18nTest.class);
     suite.addTestSuite(CrossCompatibilityTest.class);
     suite.addTestSuite(SignedSessionTest.class);
+    suite.addTestSuite(CertificateImportTest.class);
     return suite;
   }
 }

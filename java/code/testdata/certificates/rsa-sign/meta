@@ -1,0 +1,11 @@
+{
+   "encrypted": false,
+   "name": "Test",
+   "purpose": "SIGN_AND_VERIFY",
+   "type": "RSA_PRIV",
+   "versions": [ {
+      "exportable": false,
+      "status": "PRIMARY",
+      "versionNumber": 1
+   } ]
+}

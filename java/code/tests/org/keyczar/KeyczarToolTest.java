@@ -36,6 +36,7 @@ import org.keyczar.exceptions.KeyczarException;
  * 
  */
 public class KeyczarToolTest extends TestCase {
+  private static final String TEST_DATA = "./testdata/certificates/";
   
   MockKeyczarReader mock;
   MockKeyczarReader pubMock;
@@ -116,6 +117,15 @@ public class KeyczarToolTest extends TestCase {
     assertFalse(mock.existsVersion(99));
   }
   
+  @Test
+  public final void testImportCertificate() {
+    String[] args = {"importkey", "--pemfile=" + TEST_DATA + "rsa-crypt-crt.pem" };
+    assertEquals(3, mock.numKeys());
+    KeyczarTool.main(args);
+    assertEquals(4, mock.numKeys());
+    assertTrue(mock.existsVersion(4));
+  }
+
   @Override
   public final void tearDown() {
     KeyczarTool.setReader(null); // remove mock reader
