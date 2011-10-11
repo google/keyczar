@@ -94,10 +94,10 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   void init() throws KeyczarException {
     publicKey.init();
     
-    BigInteger xVal = new BigInteger(Base64Coder.decode(x));
-    BigInteger pVal = new BigInteger(Base64Coder.decode(publicKey.p));
-    BigInteger qVal = new BigInteger(Base64Coder.decode(publicKey.q));
-    BigInteger gVal = new BigInteger(Base64Coder.decode(publicKey.g));
+    BigInteger xVal = new BigInteger(Base64Coder.decodeWebSafe(x));
+    BigInteger pVal = new BigInteger(Base64Coder.decodeWebSafe(publicKey.p));
+    BigInteger qVal = new BigInteger(Base64Coder.decodeWebSafe(publicKey.q));
+    BigInteger gVal = new BigInteger(Base64Coder.decodeWebSafe(publicKey.g));
     DSAPrivateKeySpec spec = new DSAPrivateKeySpec(xVal, pVal, qVal, gVal);
     
     try {
@@ -127,7 +127,7 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
         pubKey.getParams().getQ(), pubKey.getParams().getG());
     
     // Initialize the private key's JSON fields
-    key.x = Base64Coder.encode(key.jcePrivateKey.getX().toByteArray());
+    key.x = Base64Coder.encodeWebSafe(key.jcePrivateKey.getX().toByteArray());
     
     key.init();
     return key;

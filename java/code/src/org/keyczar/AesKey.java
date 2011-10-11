@@ -66,7 +66,7 @@ class AesKey extends KeyczarKey {
     AesKey key = new AesKey();
     key.size = keySize;
     byte[] aesBytes = Util.rand(key.size() / 8);
-    key.aesKeyString = Base64Coder.encode(aesBytes);
+    key.aesKeyString = Base64Coder.encodeWebSafe(aesBytes);
     key.mode = DEFAULT_MODE;
     key.hmacKey = HmacKey.generate();
     key.init();
@@ -86,7 +86,7 @@ class AesKey extends KeyczarKey {
     byte[] hmacBytes = unpackedKeys[1];
     AesKey key = new AesKey();
     key.size = aesBytes.length * 8;
-    key.aesKeyString = Base64Coder.encode(aesBytes);
+    key.aesKeyString = Base64Coder.encodeWebSafe(aesBytes);
     key.mode = DEFAULT_MODE;
     key.hmacKey = HmacKey.fromBytes(hmacBytes);
     key.init();
@@ -111,7 +111,7 @@ class AesKey extends KeyczarKey {
   }
 
   private void init() throws KeyczarException {
-    byte[] aesBytes = Base64Coder.decode(aesKeyString);
+    byte[] aesBytes = Base64Coder.decodeWebSafe(aesKeyString);
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
     byte[] fullHash =
         Util.hash(Util.fromInt(BLOCK_SIZE), aesBytes, hmacKey.getEncoded());

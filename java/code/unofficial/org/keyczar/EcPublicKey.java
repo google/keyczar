@@ -50,7 +50,7 @@ class EcPublicKey extends KeyczarPublicKey {
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   
   void init() throws KeyczarException {
-    byte[] x509Bytes = Base64Coder.decode(x509);
+    byte[] x509Bytes = Base64Coder.decodeWebSafe(x509);
     try {
       KeyFactory kf = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
       jcePublicKey = kf.generatePublic(new X509EncodedKeySpec(x509Bytes));
@@ -62,7 +62,7 @@ class EcPublicKey extends KeyczarPublicKey {
   }
 
   void set(byte[] x509Bytes) throws KeyczarException {
-    x509 = Base64Coder.encode(x509Bytes);
+    x509 = Base64Coder.encodeWebSafe(x509Bytes);
     byte[] fullHash = Util.prefixHash(x509Bytes);
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
     init();

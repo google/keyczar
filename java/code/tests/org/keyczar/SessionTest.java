@@ -56,10 +56,10 @@ public class SessionTest extends TestCase {
   @Test
   public final void testEncryptAndDecrypt() throws KeyczarException {
     byte[] sessionMaterial = sessionEncrypter.getSessionMaterial();
-    String sessionMaterialString = Base64Coder.encode(sessionMaterial);
+    String sessionMaterialString = Base64Coder.encodeWebSafe(sessionMaterial);
     LOG.debug(String.format("Encoded session material: %s", sessionMaterialString));
     byte[] ciphertext = sessionEncrypter.encrypt(input.getBytes());
-    String ciphertextString = Base64Coder.encode(ciphertext);
+    String ciphertextString = Base64Coder.encodeWebSafe(ciphertext);
     LOG.debug(String.format("Encoded ciphertext: %s", ciphertextString));
     sessionDecrypter = new SessionDecrypter(privateKeyDecrypter, sessionMaterial);
     byte[] plaintext = sessionDecrypter.decrypt(ciphertext);
@@ -78,13 +78,13 @@ public class SessionTest extends TestCase {
       new RandomAccessFile(TEST_DATA + "/rsa/session.material.out", "r");
     String sessionMaterialString = sessionMaterialInput.readLine();
     sessionMaterialInput.close();
-    byte[] sessionMaterial = Base64Coder.decode(sessionMaterialString);
+    byte[] sessionMaterial = Base64Coder.decodeWebSafe(sessionMaterialString);
     
     RandomAccessFile sessionCiphertextInput =
       new RandomAccessFile(TEST_DATA + "/rsa/session.ciphertext.out", "r");
     String sessionCiphertextString = sessionCiphertextInput.readLine(); 
     sessionCiphertextInput.close();
-    byte[] sessionCiphertext = Base64Coder.decode(sessionCiphertextString);
+    byte[] sessionCiphertext = Base64Coder.decodeWebSafe(sessionCiphertextString);
     sessionDecrypter =
       new SessionDecrypter(privateKeyDecrypter, sessionMaterial);
     byte[] plaintext = sessionDecrypter.decrypt(sessionCiphertext);

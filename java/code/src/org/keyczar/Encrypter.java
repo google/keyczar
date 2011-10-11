@@ -183,7 +183,7 @@ public class Encrypter extends Keyczar {
    */
   public String encrypt(String input) throws KeyczarException {
     try {
-      return Base64Coder.encode(encrypt(input.getBytes(DEFAULT_ENCODING)));
+      return Base64Coder.encodeWebSafe(encrypt(input.getBytes(DEFAULT_ENCODING)));
     } catch (UnsupportedEncodingException e) {
       throw new KeyczarException(e);
     }

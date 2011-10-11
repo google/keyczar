@@ -45,7 +45,7 @@ public class SignedSessionDecrypter {
     this.verifier= verifier;
     
     // decode & decrypt session
-    byte[] decoded = Base64Coder.decode(session);
+    byte[] decoded = Base64Coder.decodeWebSafe(session);
     String sessionString = new String(crypter.decrypt(decoded));
     this.session = SessionMaterial.read(sessionString);
   }
@@ -67,7 +67,7 @@ public class SignedSessionDecrypter {
     Crypter symmetricCrypter = new Crypter(importedKeyReader);
 
     byte[] ciphertext =
-      verifier.getAttachedData(signedBlob, Base64Coder.decode(session.getNonce()));
+      verifier.getAttachedData(signedBlob, Base64Coder.decodeWebSafe(session.getNonce()));
         
     return symmetricCrypter.decrypt(ciphertext);
   }

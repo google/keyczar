@@ -61,6 +61,15 @@ public class Base64Coder {
   }
 
   /**
+   * Decodes a web-safe Base64 encoded string.
+   * @deprecated Use {@link #decodeWebSafe(String)} instead.
+   */
+  @Deprecated
+  public static byte[] decode(String source) throws Base64DecodingException {
+    return decodeWebSafe(source);
+  }
+
+  /**
    * Decodes a web-safe Base64 encoded string
    * @param source The string to decode. May contain whitespace and optionally
    * up to two padding '=' characters.
@@ -68,7 +77,7 @@ public class Base64Coder {
    * @throws Base64DecodingException If the source string contains an illegal
    * character or is of an illegal length (1 mod 4).
    */
-  public static byte[] decode(String source) throws Base64DecodingException {
+  public static byte[] decodeWebSafe(String source) throws Base64DecodingException {
     char[] input = source.toCharArray();
     int inLen = input.length;
     // Trim up to two trailing '=' padding characters
@@ -132,12 +141,35 @@ public class Base64Coder {
   }
 
   /**
+   * Decodes a MIME Base64 encoded string.
+   * @param source The string to decode.  May contain whitespace and optionally up to
+   * two padding '=' characters.
+   * @return a byte array representation of the encoded data.
+   * @throws Base64DecodingException if the source string contains an illegal character
+   * or is of an illegal length (1 mod 4).
+   */
+  public static byte[] decodeMime(String source) throws Base64DecodingException {
+    source = source.replace('+', '-');
+    source = source.replace('/', '_');
+    return decodeWebSafe(source);
+  }
+
+  /**
+   * Encodes an arbitrary array of input as a web-safe Base64 string.
+   * @deprecated Use {@link #encodeWebSafe(byte[])} instead.
+   */
+  @Deprecated
+  public static String encode(byte[] input) {
+    return encodeWebSafe(input);
+  }
+
+  /**
    * Encodes an arbitrary array of input as a web-safe Base64 string.
    * @param input Input bytes to encode as a web-safe Base64 String
    * @return A web-safe Base64 representation of the input. This string will not
    * be padded with '=' characters.
    */
-  public static String encode(byte[] input) {
+  public static String encodeWebSafe(byte[] input) {
     int inputBlocks = input.length / 3;
     int remainder = input.length % 3;
     int outputLen = inputBlocks * 4;
@@ -176,6 +208,30 @@ public class Base64Coder {
       }
     }
     return new String(out);
+  }
+
+  /**
+   * Encodes an arbitrary array of input as a MIME Base64 string.
+   * @param input Input bytes to encode as a MIME Base64 String
+   * @param pad If true, the Base64 string will be padded with up to two '=' characters.
+   * @return A MIME Base64 representation of the input. This string will not
+   * be padded with '=' characters.
+   */
+  public static String encodeMime(byte[] input, boolean pad) {
+    String result = encodeWebSafe(input);
+    result = result.replace('-', '+');
+    result = result.replace('_', '/');
+    switch (result.length() % 4) {
+      case 0:
+        return result;
+      case 2:
+        return result + "==";
+      case 3:
+        return result + "=";
+      case 1:
+      default:
+        throw new RuntimeException("Bug in Base64 encoder");
+    }
   }
 
   private static byte getByte(int i) throws Base64DecodingException {

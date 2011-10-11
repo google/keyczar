@@ -60,13 +60,13 @@ class HmacKey extends KeyczarKey {
   static HmacKey fromBytes(byte[] keyBytes) throws KeyczarException {
     HmacKey key = new HmacKey();
     key.size = keyBytes.length * 8;
-    key.hmacKeyString = Base64Coder.encode(keyBytes);
+    key.hmacKeyString = Base64Coder.encodeWebSafe(keyBytes);
     key.init();
     return key;
   }
   
   void init() throws KeyczarException {
-    byte[] keyBytes = Base64Coder.decode(hmacKeyString);
+    byte[] keyBytes = Base64Coder.decodeWebSafe(hmacKeyString);
     byte[] fullHash = Util.hash(keyBytes);
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
     hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
