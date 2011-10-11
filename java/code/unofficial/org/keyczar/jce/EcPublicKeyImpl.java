@@ -38,14 +38,17 @@ public class EcPublicKeyImpl implements ECPublicKey {
   }
 
 
+  @Override
   public ECPoint getW() {
     return new ECPoint(x, y);
   }
 
+  @Override
   public String getAlgorithm() {
     return "EC";
   }
 
+  @Override
   public byte[] getEncoded() {
     SEQUENCE outer = new SEQUENCE();
 
@@ -67,10 +70,12 @@ public class EcPublicKeyImpl implements ECPublicKey {
     return baos.toByteArray();
   }
 
+  @Override
   public String getFormat() {
     return "X.509";
   }
 
+  @Override
   public ECParameterSpec getParams() {
     return params;
   }

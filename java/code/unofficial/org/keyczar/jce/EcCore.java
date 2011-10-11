@@ -21,6 +21,7 @@ import java.security.AccessController;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.security.Signature;
@@ -67,7 +68,8 @@ public final class EcCore extends Provider {
   @SuppressWarnings("unchecked")
   public EcCore() {
     super(NAME, 0.1, INFO);
-    AccessController.doPrivileged(new java.security.PrivilegedAction() {
+    AccessController.doPrivileged(new PrivilegedAction<Object>() {
+      @Override
       public Object run() {
         put("Signature.SHA1withECDSA", "org.keyczar.jce.EcSignatureImpl$SHA1");
         put("Alg.Alias.Signature.ECDSA", "SHA1withDSA");
@@ -345,7 +347,7 @@ public final class EcCore extends Provider {
     return R;
   }
 
-  // Simultaneous multiple point multiplication, also known as Shamir’s trick
+  // Simultaneous multiple point multiplication, also known as Shamir's trick
   static BigInteger[] multiplyPoints(BigInteger[] P, BigInteger k,
       BigInteger[] Q, BigInteger l, ECParameterSpec params) {
     BigInteger[] PQ = addPointsA(P, Q, params);
