@@ -147,6 +147,11 @@ public class KeyczarTool {
             importKey(locationFlag, flagMap.get(Flag.PEMFILE), statusFlag, crypterFlag);
             break;
           }
+          case EXPORT_KEY: {
+            String crypterFlag = flagMap.get(Flag.CRYPTER);
+            exportKey(locationFlag, crypterFlag, Integer.parseInt(flagMap.get(Flag.VERSION)),
+                flagMap.get(Flag.PEMFILE), flagMap.get(Flag.PASSPHRASE));
+          }
         }
       } catch (NumberFormatException e) {
         e.printStackTrace();
@@ -161,6 +166,30 @@ public class KeyczarTool {
         e.printStackTrace();
         printUsage();
       }
+    }
+  }
+
+  private static void exportKey(String locationFlag, String crypterFlag, int versionFlag,
+      String pemFileFlag, String passphraseFlag) throws KeyczarException {
+    if (versionFlag < 0) {
+      throw new KeyczarException(
+          Messages.getString("KeyczarTool.MissingVersion"));
+    }
+
+    final GenericKeyczar sourceKeyczar = createGenericKeyczar(locationFlag, crypterFlag);
+    KeyVersion keyVersion = sourceKeyczar.getVersion(versionFlag);
+    KeyczarKey key = sourceKeyczar.getKey(keyVersion);
+    String pemString = key.getPemString(passphraseFlag);
+
+    try {
+      File pemFile = new File(pemFileFlag);
+      if (!pemFile.createNewFile()) {
+        throw new KeyczarException(Messages.getString("", pemFile));
+      }
+      FileOutputStream pemFileStream = new FileOutputStream(pemFile);
+      pemFileStream.write(pemString.getBytes("UTF8"));
+    } catch (IOException e) {
+      throw new KeyczarException(Messages.getString(""), e);
     }
   }
 

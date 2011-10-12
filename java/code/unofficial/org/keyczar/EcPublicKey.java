@@ -83,6 +83,11 @@ class EcPublicKey extends KeyczarPublicKey {
     return KeyType.EC_PUB;
   }
 
+  @Override
+  protected PublicKey getJceKey() {
+    return jcePublicKey;
+  }
+
   static EcPublicKey read(String input) throws KeyczarException {
     EcPublicKey key = Util.gson().fromJson(input, EcPublicKey.class);
     key.init();

@@ -105,7 +105,16 @@ class DsaPublicKey extends KeyczarPublicKey {
         Util.stripLeadingZeros(yVal.toByteArray()));
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
   }
-  
+
+  @Override
+  protected PublicKey getJceKey() {
+    return jcePublicKey;
+  }
+
+  @Override
+  protected boolean isSecret() {
+    return false;
+  }
 
   private class DsaVerifyingStream implements VerifyingStream {
     private Signature signature;

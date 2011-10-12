@@ -156,6 +156,11 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     return key;
   }
 
+  @Override
+  protected RSAPrivateCrtKey getJceKey() {
+    return jcePrivateKey;
+  }
+
   private class RsaPrivateStream implements SigningStream, VerifyingStream,
       DecryptingStream, EncryptingStream {
     private Cipher cipher;

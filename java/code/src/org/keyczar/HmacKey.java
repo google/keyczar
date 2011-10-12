@@ -101,6 +101,11 @@ class HmacKey extends KeyczarKey {
     return key;
   }
 
+  @Override
+  protected Key getJceKey() {
+    return hmacKey;
+  }
+
   private class HmacStream implements VerifyingStream, SigningStream {
     private Mac hmac;
 

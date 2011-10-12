@@ -131,6 +131,11 @@ class AesKey extends KeyczarKey {
     return new AesStream();
   }
 
+  @Override
+  protected Key getJceKey() {
+    return aesKey;
+  }
+
   private class AesStream implements EncryptingStream, DecryptingStream {
     private Cipher encryptingCipher;
     private Cipher decryptingCipher;

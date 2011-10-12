@@ -85,6 +85,11 @@ class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     publicKey.init();
   }
 
+  @Override
+  protected PrivateKey getJceKey() {
+    return jcePrivateKey;
+  }
+
   static EcPrivateKey generate() throws KeyczarException {
     return generate(KeyType.EC_PRIV.defaultSize());
   }

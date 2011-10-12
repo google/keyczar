@@ -139,6 +139,11 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     return key;
   }
 
+  @Override
+  protected DSAPrivateKey getJceKey() {
+    return jcePrivateKey;
+  }
+
   private class DsaSigningStream implements SigningStream, VerifyingStream {
     private Signature signature;
     private VerifyingStream verifyingStream;

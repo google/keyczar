@@ -24,10 +24,20 @@ import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.Stream;
+import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.Key;
 import java.util.Arrays;
+
+import javax.crypto.Cipher;
+import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 
 /**
  * Common base wrapper class for different types of KeyczarKeys (e.g. AesKey).
@@ -41,6 +51,13 @@ import java.util.Arrays;
  */
 public abstract class KeyczarKey {
   @Expose int size = getType().defaultSize();
+
+  private static final int PBE_SALT_SIZE = 8;
+  private static final int IV_SIZE = 16;
+  private static final int PBE_ITERATION_COUNT = 1000;
+
+  // Note that SHA1 and 3DES appears to be the best PBE configuration supported by Sun's JCE.
+  private static final String PBE_CIPHER = "PBEWithSHA1AndDESede";
 
   void copyHeader(ByteBuffer dest) {
     dest.put(Keyczar.FORMAT_VERSION);
@@ -165,5 +182,83 @@ public abstract class KeyczarKey {
     }
 
     throw new UnsupportedTypeException(type);
+  }
+
+  /**
+   * Returns a PKCS8 PEM-format string containing the key information.
+   *
+   * @param passphrase Passphrase to use for encrypting private keys.
+   * Required for private keys, must be null for public keys.
+   * @return PEM-format key data.
+   */
+  public String getPemString(String passphrase) throws KeyczarException {
+    if (isSecret()) {
+      if (passphrase == null || passphrase.length() < 8) {
+        throw new KeyczarException(Messages.getString("KeyczarTool.PassphraseRequired"));
+      }
+      return convertDerToPem(encryptPrivateKey(getJceKey(), passphrase));
+    } else {
+      if (passphrase != null && !"".equals(passphrase)) {
+        throw new KeyczarException(Messages.getString("KeyczarTool.PassphraseNotAllowed"));
+      }
+      return convertDerToPem(getJceKey().getEncoded());
+    }
+  }
+
+  private static byte[] encryptPrivateKey(Key key, String passphrase) throws KeyczarException {
+    try {
+      PBEKeySpec pbeSpec = new PBEKeySpec(passphrase.toCharArray());
+      SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_CIPHER);
+      Key pkcs8EncryptionKey = keyFactory.generateSecret(pbeSpec);
+
+      byte[] salt = new byte[PBE_SALT_SIZE];
+      Util.rand(salt);
+
+      byte[] iv = new byte[IV_SIZE];
+      Util.rand(iv);
+
+      Cipher cipher = Cipher.getInstance(PBE_CIPHER);
+      cipher.init(
+          Cipher.ENCRYPT_MODE, pkcs8EncryptionKey, new PBEParameterSpec(salt, PBE_ITERATION_COUNT));
+      byte[] encryptedKey = cipher.doFinal(key.getEncoded());
+      EncryptedPrivateKeyInfo inf = new EncryptedPrivateKeyInfo(cipher.getParameters(), encryptedKey);
+      return inf.getEncoded();
+    } catch (GeneralSecurityException e) {
+      throw new KeyczarException(Messages.getString(""), e);
+    } catch (IOException e) {
+      // This should be impossible.
+      throw new KeyczarException(Messages.getString(""), e);
+    }
+  }
+
+  private String convertDerToPem(final byte[] keyData) {
+    String base64Key = Base64Coder.encodeMime(keyData, true);
+    StringBuffer result = new StringBuffer();
+    result.append("-----BEGIN ");
+    result.append(getPemType());
+    result.append("-----\n");
+    for (String line : Util.split(base64Key, 64)) {
+      result.append(line);
+      result.append('\n');
+    }
+    result.append("-----END ");
+    result.append(getPemType());
+    result.append("-----\n");
+
+    return result.toString();
+  }
+
+  protected boolean isSecret() {
+    return true;
+  }
+
+  abstract protected Key getJceKey();
+
+  private String getPemType() {
+    if (isSecret()) {
+      return "ENCRYPTED PRIVATE KEY";
+    } else {
+      return getJceKey().getAlgorithm() + " PUBLIC KEY";
+    }
   }
 }

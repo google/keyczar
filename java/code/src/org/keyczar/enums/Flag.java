@@ -33,7 +33,8 @@ public enum Flag {
   VERSION("version"),
   ASYMMETRIC("asymmetric"),
   CRYPTER("crypter"),
-  PEMFILE("pemfile");
+  PEMFILE("pemfile"),
+  PASSPHRASE("passphrase");
 
   private final String name;
 
