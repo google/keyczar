@@ -29,14 +29,17 @@ public class EcPrivateKeyImpl implements ECPrivateKey {
     this.params = params;
   }
 
+  @Override
   public BigInteger getS() {
     return S;
   }
 
+  @Override
   public String getAlgorithm() {
     return "EC";
   }
 
+  @Override
   public byte[] getEncoded() {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -71,10 +74,12 @@ public class EcPrivateKeyImpl implements ECPrivateKey {
     return baos.toByteArray();
   }
 
+  @Override
   public String getFormat() {
     return "PKCS#8";
   }
 
+  @Override
   public ECParameterSpec getParams() {
     return params;
   }

@@ -38,9 +38,8 @@ public class SessionMaterial {
   @Expose private AesKey key = null;
   @Expose private String nonce = ""; // encoded
   
-  @SuppressWarnings("unused")
   public SessionMaterial() {
-    // For GSON
+    // For GSON only.  Don't use.
   }
     
   public SessionMaterial(AesKey key, String nonce) {
