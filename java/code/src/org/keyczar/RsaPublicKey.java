@@ -124,10 +124,12 @@ class RsaPublicKey extends KeyczarPublicKey {
       }
     }
 
+    @Override
     public int digestSize() {
       return getType().getOutputSize();
     }
 
+    @Override
     public int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       try {
@@ -137,26 +139,32 @@ class RsaPublicKey extends KeyczarPublicKey {
       }
     }
 
+    @Override
     public SigningStream getSigningStream() {
       return new SigningStream() {
+        @Override
         public int digestSize() {
           return 0;
         }
 
+        @Override
         public void initSign() {
           // Do nothing
         }
 
+        @Override
         public void sign(ByteBuffer output) {
           // Do nothing
         }
 
+        @Override
         public void updateSign(ByteBuffer input) {
           // Do nothing
         }
       };
     }
 
+    @Override
     public int initEncrypt(ByteBuffer output) throws KeyczarException {
       try {
         cipher.init(Cipher.ENCRYPT_MODE, jcePublicKey);
@@ -166,6 +174,7 @@ class RsaPublicKey extends KeyczarPublicKey {
       return 0;
     }
 
+    @Override
     public void initVerify() throws KeyczarException {
       try {
         signature.initVerify(jcePublicKey);
@@ -174,10 +183,12 @@ class RsaPublicKey extends KeyczarPublicKey {
       }
     }
 
+    @Override
     public int maxOutputSize(int inputLen) {
       return getType().getOutputSize(size);
     }
 
+    @Override
     public int updateEncrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       try {
@@ -187,6 +198,7 @@ class RsaPublicKey extends KeyczarPublicKey {
       }
     }
 
+    @Override
     public void updateVerify(ByteBuffer input) throws KeyczarException {
       try {
         signature.update(input);
@@ -195,6 +207,7 @@ class RsaPublicKey extends KeyczarPublicKey {
       }
     }
 
+    @Override
     public boolean verify(ByteBuffer sig) throws KeyczarException {
       try {
         return signature.verify(sig.array(), sig.position(), sig.limit()

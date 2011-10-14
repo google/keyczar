@@ -67,6 +67,7 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     return KEY_GEN_ALGORITHM;
   }
 
+  @Override
   public KeyczarPublicKey getPublic() {
     return publicKey;
   }
@@ -151,10 +152,12 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
       }
     }
 
+    @Override
     public int digestSize() {
       return getType().getOutputSize();
     }
 
+    @Override
     public void initSign() throws KeyczarException {
       try {
         signature.initSign(jcePrivateKey);
@@ -163,10 +166,12 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
       }
     }
 
+    @Override
     public void initVerify() throws KeyczarException {
       verifyingStream.initVerify();
     }
 
+    @Override
     public void sign(ByteBuffer output) throws KeyczarException {
       try {
         byte[] sig = signature.sign();
@@ -176,6 +181,7 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
       }
     }
 
+    @Override
     public void updateSign(ByteBuffer input) throws KeyczarException {
       try {
         signature.update(input);
@@ -184,10 +190,12 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
       }
     }
 
+    @Override
     public void updateVerify(ByteBuffer input) throws KeyczarException {
       verifyingStream.updateVerify(input);
     }
 
+    @Override
     public boolean verify(ByteBuffer sig) throws KeyczarException {
       return verifyingStream.verify(sig);
     }

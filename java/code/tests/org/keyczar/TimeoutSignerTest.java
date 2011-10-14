@@ -39,6 +39,7 @@ public class TimeoutSignerTest extends TestCase {
   private String input = "This is some test data";
   private Clock mockClock;
   
+  @Override
   @Before
   public void setUp() {
 	  mockClock = EasyMock.createMock(Clock.class);
@@ -46,7 +47,7 @@ public class TimeoutSignerTest extends TestCase {
   }
   
   private final void testTimeoutSignAndVerify(TimeoutSigner signer)
-      throws KeyczarException, InterruptedException {
+      throws KeyczarException {
 	long now = 1000000L;  // Some arbitrary moment in time
 	signer.setClock(mockClock);
 	expect(mockClock.now()).andReturn(now).times(3);
@@ -69,22 +70,19 @@ public class TimeoutSignerTest extends TestCase {
   }
   
   @Test
-  public final void testHmac() throws KeyczarException,
-      InterruptedException {
+  public final void testHmac() throws KeyczarException {
     TimeoutSigner signer = new TimeoutSigner(TEST_DATA + "/hmac");
     testTimeoutSignAndVerify(signer);
   }
   
   @Test
-  public final void testDsa() throws KeyczarException,
-      InterruptedException {
+  public final void testDsa() throws KeyczarException {
     TimeoutSigner signer = new TimeoutSigner(TEST_DATA + "/dsa");
     testTimeoutSignAndVerify(signer);
   }
   
   @Test
-  public final void testRsa() throws KeyczarException,
-      InterruptedException {
+  public final void testRsa() throws KeyczarException {
     TimeoutSigner signer = new TimeoutSigner(TEST_DATA + "/rsa-sign");
     testTimeoutSignAndVerify(signer);
   }

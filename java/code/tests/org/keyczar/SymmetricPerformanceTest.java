@@ -116,7 +116,8 @@ public class SymmetricPerformanceTest {
       this.trials = trials;
     }
 
-   public void run() {
+    @Override
+    public void run() {
       try {
         for (int i = 0; i < trials; i++) {
           signer.sign(input, output);
@@ -126,8 +127,8 @@ public class SymmetricPerformanceTest {
       } catch (KeyczarException e) {
         e.printStackTrace();
       }
-      }
     }
+  }
   
   static class CrypterRunnable implements Runnable {
     private Crypter crypter;
@@ -142,7 +143,8 @@ public class SymmetricPerformanceTest {
       this.trials = trials;
     }
 
-   public void run() {
+    @Override
+    public void run() {
       try {
         for (int i = 0; i < trials; i++) {
           crypter.encrypt(input, output);
@@ -152,6 +154,6 @@ public class SymmetricPerformanceTest {
       } catch (KeyczarException e) {
         e.printStackTrace();
       }
-      }
     }
+  }
 }

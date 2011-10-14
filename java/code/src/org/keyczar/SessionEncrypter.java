@@ -24,7 +24,7 @@ import org.keyczar.exceptions.KeyczarException;
 
 /**
  * A session encrypter will generate and encrypt a session key with a given
- * {@link Encrytper}. That session key will be used to encrypt arbitrary data.
+ * {@link Encrypter}. That session key will be used to encrypt arbitrary data.
  *
  * @author steveweis@gmail.com (Steve Weis)
  *

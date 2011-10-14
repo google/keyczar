@@ -263,17 +263,17 @@ public class Verifier extends Keyczar {
    */
   public byte[] getAttachedDataWithoutVerifying(final byte[] signedBlob)
       throws KeyczarException {
-	ByteBuffer sigBuffer = ByteBuffer.wrap(signedBlob);
+    ByteBuffer sigBuffer = ByteBuffer.wrap(signedBlob);
 	
     byte[] hash = checkFormatAndGetHash(sigBuffer);
     // just get the bits even though we won't use it.
-	KeyczarKey key = getVerifyingKey(hash);
+    getVerifyingKey(hash);
 	    
-	// we have stripped the format and hash, now just get the blob and
-	// raw signature
-	int blobSize = sigBuffer.getInt();
-	byte[] blob = new byte[blobSize];
-	sigBuffer.get(blob);
+    // we have stripped the format and hash, now just get the blob and
+    // raw signature
+    int blobSize = sigBuffer.getInt();
+    byte[] blob = new byte[blobSize];
+    sigBuffer.get(blob);
 
     return blob;
   }
