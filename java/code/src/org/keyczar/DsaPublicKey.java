@@ -77,18 +77,18 @@ class DsaPublicKey extends KeyczarPublicKey {
   void set(BigInteger yVal, BigInteger pVal, BigInteger qVal, BigInteger gVal)
     throws KeyczarException {
     // Initialize the JSON fields
-    y = Base64Coder.encode(yVal.toByteArray());
-    p = Base64Coder.encode(pVal.toByteArray());
-    q = Base64Coder.encode(qVal.toByteArray());
-    g = Base64Coder.encode(gVal.toByteArray());
+    y = Base64Coder.encodeWebSafe(yVal.toByteArray());
+    p = Base64Coder.encodeWebSafe(pVal.toByteArray());
+    q = Base64Coder.encodeWebSafe(qVal.toByteArray());
+    g = Base64Coder.encodeWebSafe(gVal.toByteArray());
     init();
   }
 
   void init() throws KeyczarException {
-    BigInteger yVal = new BigInteger(Base64Coder.decode(y));
-    BigInteger pVal = new BigInteger(Base64Coder.decode(p));
-    BigInteger qVal = new BigInteger(Base64Coder.decode(q));
-    BigInteger gVal = new BigInteger(Base64Coder.decode(g));
+    BigInteger yVal = new BigInteger(Base64Coder.decodeWebSafe(y));
+    BigInteger pVal = new BigInteger(Base64Coder.decodeWebSafe(p));
+    BigInteger qVal = new BigInteger(Base64Coder.decodeWebSafe(q));
+    BigInteger gVal = new BigInteger(Base64Coder.decodeWebSafe(g));
     DSAPublicKeySpec spec = new DSAPublicKeySpec(yVal, pVal, qVal, gVal);
     
     try {
@@ -105,7 +105,16 @@ class DsaPublicKey extends KeyczarPublicKey {
         Util.stripLeadingZeros(yVal.toByteArray()));
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
   }
-  
+
+  @Override
+  protected PublicKey getJceKey() {
+    return jcePublicKey;
+  }
+
+  @Override
+  protected boolean isSecret() {
+    return false;
+  }
 
   private class DsaVerifyingStream implements VerifyingStream {
     private Signature signature;

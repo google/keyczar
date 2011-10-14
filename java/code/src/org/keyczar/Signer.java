@@ -193,7 +193,7 @@ public class Signer extends Verifier {
    */
   public String sign(String input) throws KeyczarException {
     try {
-      return Base64Coder.encode(sign(input.getBytes(DEFAULT_ENCODING)));
+      return Base64Coder.encodeWebSafe(sign(input.getBytes(DEFAULT_ENCODING)));
     } catch (UnsupportedEncodingException e) {
       throw new KeyczarException(e);
     }

@@ -68,7 +68,7 @@ public class SignedSessionTest extends TestCase {
     
     // perform encryption
     byte[] ciphertext = sessionEncrypter.encrypt(input.getBytes());
-    String ciphertextString = Base64Coder.encode(ciphertext);
+    String ciphertextString = Base64Coder.encodeWebSafe(ciphertext);
     LOG.debug(String.format("Encoded ciphertext: %s", ciphertextString));
     
     // perform decryption
@@ -95,7 +95,7 @@ public class SignedSessionTest extends TestCase {
         new RandomAccessFile(TEST_DATA + "/signedsession/signed.ciphertext.out", "r");
     String sessionCiphertextString = sessionCiphertextInput.readLine(); 
     sessionCiphertextInput.close();
-    byte[] sessionCiphertext = Base64Coder.decode(sessionCiphertextString);
+    byte[] sessionCiphertext = Base64Coder.decodeWebSafe(sessionCiphertextString);
     sessionDecrypter = new SignedSessionDecrypter(privateKeyDecrypter,
        publicKeyVerifier, sessionMaterialString);
     byte[] plaintext = sessionDecrypter.decrypt(sessionCiphertext);

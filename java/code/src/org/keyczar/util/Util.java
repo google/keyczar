@@ -25,6 +25,8 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -53,12 +55,12 @@ public class Util {
 
   public static byte[] stripLeadingZeros(byte[] input) {
     int zeros = 0;
-    
+
     // Find the first non-zero byte
     while (zeros < input.length && input[zeros] == 0) {
       zeros++;
     }
-    
+
     if (zeros == 0) {
       return input;
     } else {
@@ -67,7 +69,7 @@ public class Util {
       return output;
     }
   }
-  
+
   /**
    * Returns a byte array containing 4 big-endian ordered bytes representing the
    * given integer.
@@ -96,7 +98,7 @@ public class Util {
 
   /**
    * Takes a variable number of byte arrays as input and hashes each one
-   * prefixed by an integer representation of its size. For example, 
+   * prefixed by an integer representation of its size. For example,
    * prefixHash({0, 1, 2}, {1}) would hash the bytes equivalent to:
    * {3, 0, 1, 2, 1, 1}
    *
@@ -121,7 +123,7 @@ public class Util {
     DIGEST_QUEUE.add(md);
     return digest;
   }
-  
+
   /**
    * Prefixes an input array with a 4-byte transportable length field.
    * If the input data is null or has zero length, returns a 4-byte
@@ -139,20 +141,20 @@ public class Util {
         .put(data)
         .array();
   }
-  
+
   /**
    * Packs a set of input arrays into a single array. The packed array is
    * prefixed by an integer value of the number of arrays. Then each individual
    * array is prefixed by its length, followed by the contents of the array
    * itself. Thus, three arrays A, B, C would output:
    *   {3, len(A), A, len(B), B, len(C), C}
-   * 
-   * @param inputArrays A list of arrays to pack together 
+   *
+   * @param inputArrays A list of arrays to pack together
    * @return A packed list of arrays, with each preceded by its integer length
    */
   public static byte[] lenPrefixPack(byte[]... inputArrays) {
     // Count an int for each input array
-    int outputSize = (1 + inputArrays.length) * 4; 
+    int outputSize = (1 + inputArrays.length) * 4;
     for (byte[] array : inputArrays) {
       outputSize += array.length;
     }
@@ -168,10 +170,10 @@ public class Util {
     }
     return output;
   }
-  
+
   /**
    * Unpack an input buffer into an array of byte arrays
-   * 
+   *
    * @param packedInput A packed representation of an array of byte arrays
    * @return A two dimensional array of arrays
    */
@@ -187,10 +189,10 @@ public class Util {
     }
     return output;
   }
-  
+
   /**
    * Hashes a variable number of byte arrays
-   * 
+   *
    * @param inputs The inputs to hash
    * @return The hash output
    * @throws KeyczarException If the SHA-1 algorithm is not found
@@ -342,12 +344,12 @@ public class Util {
     dest[offset++] = (byte) (input >> 8);
     dest[offset++] = (byte) (input);
   }
-  
+
   /**
    * An array comparison that is safe from timing attacks. If two arrays are
    * of equal length, this code will always check all elements, rather than
-   * exiting once it encounters a differing byte. 
-   * 
+   * exiting once it encounters a differing byte.
+   *
    * @param a1 An array to compare
    * @param a2 Another array to compare
    * @return True if these arrays are both null or if they have equal length
@@ -366,10 +368,10 @@ public class Util {
     }
     return (result == 0);
   }
-  
+
   /**
    * Concatenate arrays together.
-   * 
+   *
    * @param arrays byte[] arrays to combine
    * @return single byte[] with all the data combined.
    */
@@ -385,5 +387,17 @@ public class Util {
       pos += array.length;
     }
     return result;
+  }
+
+  /**
+   * Splits a string into chunks of specified size.
+   */
+  public static List<String> split(String s, int chunkSize) {
+    List<String> chunks = new ArrayList<String>();
+    int length = s.length();
+    for (int i = 0; i < length; i += chunkSize) {
+      chunks.add(s.substring(i, Math.min(length, i + chunkSize)));
+    }
+    return chunks;
   }
 }

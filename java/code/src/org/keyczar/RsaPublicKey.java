@@ -55,13 +55,13 @@ class RsaPublicKey extends KeyczarPublicKey {
     "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
   private static final String KEY_GEN_ALGORITHM = "RSA";
   private static final String SIG_ALGORITHM = "SHA1withRSA";
-  
+
   private RSAPublicKey jcePublicKey;
   @Expose String modulus;
   @Expose String publicExponent;
-  
+
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
-  
+
   @Override
   public byte[] hash() {
     return hash;
@@ -76,20 +76,20 @@ class RsaPublicKey extends KeyczarPublicKey {
   KeyType getType() {
     return KeyType.RSA_PUB;
   }
-  
+
   void set(int size, BigInteger mod, BigInteger pubExp) throws KeyczarException {
     if (size % 8 != 0) {
       throw new KeyczarException("Invalid public modulus size");
     }
     this.size = size;
-    this.modulus = Base64Coder.encode(mod.toByteArray());
-    this.publicExponent = Base64Coder.encode(pubExp.toByteArray());
+    this.modulus = Base64Coder.encodeWebSafe(mod.toByteArray());
+    this.publicExponent = Base64Coder.encodeWebSafe(pubExp.toByteArray());
     init();
   }
-  
+
   private void init() throws KeyczarException {
-    byte[] modBytes = Base64Coder.decode(modulus);
-    byte[] pubExpBytes = Base64Coder.decode(publicExponent);
+    byte[] modBytes = Base64Coder.decodeWebSafe(modulus);
+    byte[] pubExpBytes = Base64Coder.decodeWebSafe(publicExponent);
     BigInteger mod = new BigInteger(modBytes);
     BigInteger pubExp = new BigInteger(pubExpBytes);
     // Sets the JCE Public key value
@@ -112,6 +112,16 @@ class RsaPublicKey extends KeyczarPublicKey {
     }
     key.init();
     return key;
+  }
+
+  @Override
+  protected RSAPublicKey getJceKey() {
+    return jcePublicKey;
+  }
+
+  @Override
+  protected boolean isSecret() {
+    return false;
   }
 
   private class RsaStream implements VerifyingStream, EncryptingStream {

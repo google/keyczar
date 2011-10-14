@@ -116,7 +116,7 @@ public class SymmetricPerformanceTest {
       this.trials = trials;
     }
 
-	@Override
+    @Override
     public void run() {
       try {
         for (int i = 0; i < trials; i++) {
