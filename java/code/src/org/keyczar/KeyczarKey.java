@@ -50,6 +50,10 @@ import javax.crypto.spec.PBEParameterSpec;
  *
  */
 public abstract class KeyczarKey {
+  private static final String PEM_FOOTER_BEGIN = "-----END ";
+  private static final String PEM_LINE_ENDING = "-----\n";
+  private static final String PEM_HEADER_BEGIN = "-----BEGIN ";
+
   @Expose int size = getType().defaultSize();
 
   private static final int PBE_SALT_SIZE = 8;
@@ -224,26 +228,26 @@ public abstract class KeyczarKey {
       EncryptedPrivateKeyInfo inf = new EncryptedPrivateKeyInfo(cipher.getParameters(), encryptedKey);
       return inf.getEncoded();
     } catch (GeneralSecurityException e) {
-      throw new KeyczarException(Messages.getString(""), e);
+      throw new KeyczarException(Messages.getString("KeyczarTool.FailedToEncryptPrivateKey"), e);
     } catch (IOException e) {
       // This should be impossible.
-      throw new KeyczarException(Messages.getString(""), e);
+      throw new KeyczarException(Messages.getString("KeyczarTool.FailedToEncryptPrivateKey"), e);
     }
   }
 
   private String convertDerToPem(final byte[] keyData) {
     String base64Key = Base64Coder.encodeMime(keyData, true);
     StringBuffer result = new StringBuffer();
-    result.append("-----BEGIN ");
+    result.append(PEM_HEADER_BEGIN);
     result.append(getPemType());
-    result.append("-----\n");
+    result.append(PEM_LINE_ENDING);
     for (String line : Util.split(base64Key, 64)) {
       result.append(line);
       result.append('\n');
     }
-    result.append("-----END ");
+    result.append(PEM_FOOTER_BEGIN);
     result.append(getPemType());
-    result.append("-----\n");
+    result.append(PEM_LINE_ENDING);
 
     return result.toString();
   }
