@@ -9,6 +9,8 @@ import org.keyczar.enums.KeyPurpose;
 import java.io.FileInputStream;
 
 /**
+ * Tests of X.509 certificate import functionality.
+ *
  * @author swillden@google.com (Shawn Willden)
  */
 public class CertificateImportTest extends TestCase {

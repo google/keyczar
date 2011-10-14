@@ -26,7 +26,14 @@ public class X509CertificateReader implements KeyczarReader {
   private KeyMetadata meta = null;
   private KeyczarPublicKey key;
 
-  public X509CertificateReader(KeyPurpose purpose, InputStream certificateStream) {
+  public X509CertificateReader(KeyPurpose purpose, InputStream certificateStream)
+      throws KeyczarException {
+    if (purpose == null) {
+      throw new KeyczarException("X509Certificate purpose must not be null");
+	}
+	if (certificateStream == null) {
+	  throw new KeyczarException("X509Certificate stream must not be null");
+	}
     this.purpose = purpose;
     this.certificateStream = certificateStream;
   }
