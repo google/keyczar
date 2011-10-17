@@ -71,6 +71,8 @@ public enum Flag {
       return CRYPTER;
     } else if (name.equalsIgnoreCase(PEMFILE.toString())) {
       return PEMFILE;
+    } else if (name.equalsIgnoreCase(PASSPHRASE.toString())) {
+      return PASSPHRASE;
     }
     throw new IllegalArgumentException(
         Messages.getString("Flag.UnknownFlag", name));
