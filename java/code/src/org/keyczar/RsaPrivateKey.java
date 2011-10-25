@@ -51,8 +51,6 @@ import javax.crypto.ShortBufferException;
  *
  */
 class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
-  private static final String CRYPT_ALGORITHM =
-      "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
   private static final String KEY_GEN_ALGORITHM = "RSA";
 
   @Expose private RsaPublicKey publicKey;
@@ -172,7 +170,7 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
       try {
         signature = Signature.getInstance(SIG_ALGORITHM);
         verifyingStream = (VerifyingStream) publicKey.getStream();
-        cipher = Cipher.getInstance(CRYPT_ALGORITHM);
+        cipher = Cipher.getInstance(publicKey.getPadding().getCryptAlgorithm());
         encryptingStream = (EncryptingStream) publicKey.getStream();
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);

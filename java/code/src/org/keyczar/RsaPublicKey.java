@@ -51,14 +51,28 @@ import javax.crypto.ShortBufferException;
  *
  */
 class RsaPublicKey extends KeyczarPublicKey {
-  private static final String CRYPT_ALGORITHM =
-    "RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING";
   private static final String KEY_GEN_ALGORITHM = "RSA";
   private static final String SIG_ALGORITHM = "SHA1withRSA";
 
   private RSAPublicKey jcePublicKey;
   @Expose String modulus;
   @Expose String publicExponent;
+  @Expose Padding padding = Padding.OAEP;
+
+  public enum Padding {
+    OAEP("RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING"),
+    PKCS("RSA/ECB/PKCS1PADDING");
+
+    private String cryptAlgorithm;
+
+    private Padding(String cryptAlgorithm) {
+      this.cryptAlgorithm = cryptAlgorithm;
+    }
+
+    public String getCryptAlgorithm() {
+      return cryptAlgorithm;
+    }
+  }
 
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
@@ -131,7 +145,7 @@ class RsaPublicKey extends KeyczarPublicKey {
     RsaStream() throws KeyczarException {
       try {
         signature = Signature.getInstance(SIG_ALGORITHM);
-        cipher = Cipher.getInstance(CRYPT_ALGORITHM);
+        cipher = Cipher.getInstance(padding.getCryptAlgorithm());
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
@@ -229,5 +243,9 @@ class RsaPublicKey extends KeyczarPublicKey {
         throw new KeyczarException(e);
       }
     }
+  }
+
+  public Padding getPadding() {
+    return padding;
   }
 }
