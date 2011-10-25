@@ -72,6 +72,21 @@ class RsaPublicKey extends KeyczarPublicKey {
     public String getCryptAlgorithm() {
       return cryptAlgorithm;
     }
+
+    byte[] computeFullHash(RSAPublicKey key) throws KeyczarException {
+      switch (this) {
+        case OAEP:
+          return Util.prefixHash(
+              Util.stripLeadingZeros(key.getModulus().toByteArray()),
+              Util.stripLeadingZeros(key.getPublicExponent().toByteArray()));
+        case PKCS:
+          return Util.prefixHash(
+              key.getModulus().toByteArray(),
+              key.getPublicExponent().toByteArray());
+        default:
+          throw new KeyczarException("Bug! Unknown padding type");
+      }
+    }
   }
 
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
@@ -114,9 +129,7 @@ class RsaPublicKey extends KeyczarPublicKey {
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
-    byte[] fullHash = Util.prefixHash(Util.stripLeadingZeros(modBytes),
-        Util.stripLeadingZeros(pubExpBytes));
-    System.arraycopy(fullHash, 0, hash, 0, hash.length);
+    System.arraycopy(padding.computeFullHash(jcePublicKey), 0, hash, 0, hash.length);
   }
 
   static RsaPublicKey read(String input) throws KeyczarException {

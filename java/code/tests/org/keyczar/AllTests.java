@@ -41,6 +41,7 @@ public class AllTests extends TestSuite {
     suite.addTestSuite(SignedSessionTest.class);
     suite.addTestSuite(CertificateImportTest.class);
     suite.addTestSuite(KeyExportTest.class);
+    suite.addTestSuite(RsaPaddingTest.class);
     return suite;
   }
 }
