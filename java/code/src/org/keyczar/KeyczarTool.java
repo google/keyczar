@@ -96,62 +96,56 @@ public class KeyczarTool {
           }
         }
 
-        // All commands need a location.
         String locationFlag = flagMap.get(Flag.LOCATION);
         if (locationFlag != null && !locationFlag.endsWith(File.separator)) {
           locationFlag += File.separator;
         }
+        final KeyPurpose purposeFlag = KeyPurpose.getPurpose(flagMap.get(Flag.PURPOSE));
+        final KeyStatus statusFlag = KeyStatus.getStatus(flagMap.get(Flag.STATUS));
+        final String asymmetricFlag = flagMap.get(Flag.ASYMMETRIC);
+        final String crypterFlag = flagMap.get(Flag.CRYPTER);
+        final String destinationFlag = flagMap.get(Flag.DESTINATION);
+        final String nameFlag = flagMap.get(Flag.NAME);
+        final String passphraseFlag = flagMap.get(Flag.PASSPHRASE);
+        final String pemFileFlag = flagMap.get(Flag.PEMFILE);
+        final String versionFlag = flagMap.get(Flag.VERSION);
+        int sizeFlag = -1;
+        if (flagMap.containsKey(Flag.SIZE)) {
+          sizeFlag = Integer.parseInt(flagMap.get(Flag.SIZE));
+        }
 
         switch (c) {
-          case CREATE: {
-            String nameFlag = flagMap.get(Flag.NAME);
-            KeyPurpose purposeFlag =
-              KeyPurpose.getPurpose(flagMap.get(Flag.PURPOSE));
-            String asymmetricFlag = flagMap.get(Flag.ASYMMETRIC);
+          case CREATE:
             create(locationFlag, nameFlag, purposeFlag, asymmetricFlag);
             break;
-          }
-          case ADDKEY: {
-            KeyStatus statusFlag = KeyStatus.getStatus(flagMap.get(Flag.STATUS));
-            String crypterFlag = flagMap.get(Flag.CRYPTER);
-            int sizeFlag = -1;
-            if (flagMap.containsKey(Flag.SIZE)) {
-              sizeFlag = Integer.parseInt(flagMap.get(Flag.SIZE));
-            }
+          case ADDKEY:
             addKey(locationFlag, statusFlag, crypterFlag, sizeFlag);
             break;
-          }
           case PUBKEY:
-            publicKeys(locationFlag, flagMap.get(Flag.DESTINATION));
+            publicKeys(locationFlag, destinationFlag);
             break;
           case PROMOTE:
-            promote(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
+            promote(locationFlag, Integer.parseInt(versionFlag));
             break;
           case DEMOTE:
-            demote(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
+            demote(locationFlag, Integer.parseInt(versionFlag));
             break;
           case REVOKE:
-            revoke(locationFlag, Integer.parseInt(flagMap.get(Flag.VERSION)));
+            revoke(locationFlag, Integer.parseInt(versionFlag));
             break;
           case USEKEY:
             if (args.length > 2) {
-              useKey(args[1], locationFlag, flagMap.get(Flag.DESTINATION),
-                    flagMap.get(Flag.CRYPTER));
+              useKey(args[1], locationFlag, destinationFlag, crypterFlag);
             } else {
               printUsage();
             }
             break;
-          case IMPORT_KEY: {
-            KeyStatus statusFlag = KeyStatus.getStatus(flagMap.get(Flag.STATUS));
-            String crypterFlag = flagMap.get(Flag.CRYPTER);
-            importKey(locationFlag, flagMap.get(Flag.PEMFILE), statusFlag, crypterFlag);
+          case IMPORT_KEY:
+            importKey(locationFlag, pemFileFlag, statusFlag, crypterFlag);
             break;
-          }
-          case EXPORT_KEY: {
-            String crypterFlag = flagMap.get(Flag.CRYPTER);
-            exportKey(locationFlag, crypterFlag, Integer.parseInt(flagMap.get(Flag.VERSION)),
-                flagMap.get(Flag.PEMFILE), flagMap.get(Flag.PASSPHRASE));
-          }
+          case EXPORT_KEY:
+            exportKey(locationFlag, crypterFlag, Integer.parseInt(versionFlag),
+                pemFileFlag, passphraseFlag);
         }
       } catch (NumberFormatException e) {
         e.printStackTrace();
@@ -207,12 +201,7 @@ public class KeyczarTool {
     destinationKeyczar.addVersion(statusFlag,
         new GenericKeyczar(new X509CertificateReader(purpose, certificateStream)).getPrimaryKey());
 
-    if (crypterFlag != null) {
-      Encrypter encrypter = new Encrypter(crypterFlag);
-      updateGenericKeyczar(destinationKeyczar, encrypter, locationFlag);
-    } else {
-      updateGenericKeyczar(destinationKeyczar, locationFlag);
-    }
+    updateGenericKeyczar(destinationKeyczar, crypterFlag, locationFlag);
   }
 
   private static void useKey(String msg, String locationFlag,
@@ -267,12 +256,7 @@ public class KeyczarTool {
     } else { // use given size
       genericKeyczar.addVersion(statusFlag, sizeFlag);
     }
-    if (crypterFlag != null) {
-      Encrypter encrypter = new Encrypter(crypterFlag);
-      updateGenericKeyczar(genericKeyczar, encrypter, locationFlag);
-    } else {
-      updateGenericKeyczar(genericKeyczar, locationFlag);
-    }
+    updateGenericKeyczar(genericKeyczar, crypterFlag, locationFlag);
   }
 
   /**
@@ -489,14 +473,14 @@ public class KeyczarTool {
   }
 
   private static void updateGenericKeyczar(GenericKeyczar genericKeyczar,
-      Encrypter encrypter, String locationFlag) throws KeyczarException {
+      String crypterFlag, String locationFlag) throws KeyczarException {
     if (mock != null) {
       mock.setMetadata(genericKeyczar.getMetadata()); // update metadata
       for (KeyVersion version : genericKeyczar.getVersions()) {
         mock.setKey(version.getVersionNumber(), genericKeyczar.getKey(version));
       } // update key data
-    } else if (encrypter != null) {
-      genericKeyczar.writeEncrypted(locationFlag, encrypter);
+    } else if (crypterFlag != null) {
+      genericKeyczar.writeEncrypted(locationFlag, new Encrypter(crypterFlag));
     } else {
       genericKeyczar.write(locationFlag);
     }
