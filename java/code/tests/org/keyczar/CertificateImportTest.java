@@ -39,9 +39,14 @@ public class CertificateImportTest extends TestCase {
   private void doTestSignImport(String keyType, String fileFormat) throws Exception {
     String signature = new Signer(TEST_DATA + keyType + "-sign").sign(input);
 
+    Padding padding = null;
+    if ("rsa".equals(keyType)) {
+      padding = Padding.OAEP;
+    }
+
     Verifier verifier =
         new Verifier(new X509CertificateReader(KeyPurpose.VERIFY,
-            new FileInputStream(TEST_DATA + keyType + "-sign-crt." + fileFormat), Padding.OAEP));
+            new FileInputStream(TEST_DATA + keyType + "-sign-crt." + fileFormat), padding));
     assertTrue(verifier.verify(input, signature));
   }
 
