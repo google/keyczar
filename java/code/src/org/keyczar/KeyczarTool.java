@@ -106,6 +106,7 @@ public class KeyczarTool {
         final String crypterFlag = flagMap.get(Flag.CRYPTER);
         final String destinationFlag = flagMap.get(Flag.DESTINATION);
         final String nameFlag = flagMap.get(Flag.NAME);
+        final String paddingFlag = flagMap.get(Flag.PADDING);
         final String passphraseFlag = flagMap.get(Flag.PASSPHRASE);
         final String pemFileFlag = flagMap.get(Flag.PEMFILE);
         final String versionFlag = flagMap.get(Flag.VERSION);
@@ -119,7 +120,7 @@ public class KeyczarTool {
             create(locationFlag, nameFlag, purposeFlag, asymmetricFlag);
             break;
           case ADDKEY:
-            addKey(locationFlag, statusFlag, crypterFlag, sizeFlag);
+            addKey(locationFlag, statusFlag, crypterFlag, sizeFlag, paddingFlag);
             break;
           case PUBKEY:
             publicKeys(locationFlag, destinationFlag);
@@ -141,7 +142,7 @@ public class KeyczarTool {
             }
             break;
           case IMPORT_KEY:
-            importKey(locationFlag, pemFileFlag, statusFlag, crypterFlag);
+            importKey(locationFlag, pemFileFlag, statusFlag, crypterFlag, paddingFlag);
             break;
           case EXPORT_KEY:
             exportKey(locationFlag, crypterFlag, Integer.parseInt(versionFlag),
@@ -188,7 +189,7 @@ public class KeyczarTool {
   }
 
   private static void importKey(String locationFlag, String pemFileFlag, KeyStatus statusFlag,
-      String crypterFlag) throws KeyczarException {
+      String crypterFlag, String paddingFlag) throws KeyczarException {
     final GenericKeyczar destinationKeyczar = createGenericKeyczar(locationFlag, crypterFlag);
     final KeyPurpose purpose = destinationKeyczar.getMetadata().getPurpose();
     FileInputStream certificateStream;
@@ -199,7 +200,9 @@ public class KeyczarTool {
     }
 
     destinationKeyczar.addVersion(statusFlag,
-        new GenericKeyczar(new X509CertificateReader(purpose, certificateStream)).getPrimaryKey());
+        new GenericKeyczar(
+            new X509CertificateReader(purpose, certificateStream, getPadding(paddingFlag)))
+        .getPrimaryKey());
 
     updateGenericKeyczar(destinationKeyczar, crypterFlag, locationFlag);
   }
@@ -248,15 +251,26 @@ public class KeyczarTool {
    * key type is unsupported
    */
   private static void addKey(String locationFlag, KeyStatus statusFlag,
-      String crypterFlag, int sizeFlag) throws KeyczarException {
-    GenericKeyczar genericKeyczar =
-      createGenericKeyczar(locationFlag, crypterFlag);
+      String crypterFlag, int sizeFlag, String paddingFlag) throws KeyczarException {
+    GenericKeyczar genericKeyczar = createGenericKeyczar(locationFlag, crypterFlag);
     if (sizeFlag == -1) { // use default size
-      genericKeyczar.addVersion(statusFlag);
+      genericKeyczar.addVersion(statusFlag, getPadding(paddingFlag));
     } else { // use given size
-      genericKeyczar.addVersion(statusFlag, sizeFlag);
+      genericKeyczar.addVersion(statusFlag, getPadding(paddingFlag), sizeFlag);
     }
     updateGenericKeyczar(genericKeyczar, crypterFlag, locationFlag);
+  }
+
+  private static RsaPublicKey.Padding getPadding(String paddingFlag) throws KeyczarException {
+    RsaPublicKey.Padding padding = null;
+    if (paddingFlag != null) {
+      try {
+        padding = RsaPublicKey.Padding.valueOf(paddingFlag.toUpperCase());
+      } catch (IllegalArgumentException e) {
+        throw new KeyczarException(Messages.getString("InvalidPadding", paddingFlag));
+      }
+    }
+    return padding;
   }
 
   /**

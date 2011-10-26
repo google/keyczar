@@ -1,6 +1,7 @@
 package org.keyczar;
 
 import org.apache.log4j.Logger;
+import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.enums.KeyType;
@@ -103,14 +104,14 @@ public class GenericKeyczar extends Keyczar {
     }
   }
 
-
   /**
    * Uses default key size to add a new key version.
    *
    * @param status KeyStatus desired for new key version
+   * @param padding Encryption padding type for RSA keys.  Should be null for others.
    */
-  public void addVersion(KeyStatus status) throws KeyczarException {
-    addVersion(status, kmd.getType().defaultSize());
+  public void addVersion(KeyStatus status, Padding padding) throws KeyczarException {
+    addVersion(status, padding, kmd.getType().defaultSize());
   }
 
   /**
@@ -121,17 +122,18 @@ public class GenericKeyczar extends Keyczar {
    * to the default key size.
    *
    * @param status KeyStatus desired for new key version
+   * @param padding Encryption padding type for RSA keys.  Should be null for others.
    * @param keySize desired key size in bits
    * @throws KeyczarException if key type is unsupported.
    */
-  public void addVersion(KeyStatus status, int keySize) throws KeyczarException {
+  public void addVersion(KeyStatus status, Padding padding, int keySize) throws KeyczarException {
     KeyczarKey key;
     if (keySize < kmd.getType().defaultSize()) { // print a warning statement
       LOG.warn(Messages.getString("Keyczar.SizeWarning",
           keySize, kmd.getType().defaultSize(), kmd.getType().toString()));
     }
     do { // Make sure no keys collide on their identifiers
-      key = KeyczarKey.genKey(kmd.getType(), keySize);
+      key = KeyczarKey.genKey(kmd.getType(), padding, keySize);
     } while (getKey(key.hash()) != null);
     addVersion(status, key);
   }

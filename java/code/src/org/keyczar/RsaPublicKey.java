@@ -258,7 +258,17 @@ class RsaPublicKey extends KeyczarPublicKey {
     }
   }
 
+  /**
+   * Returns the padding used when this key is used to encrypt data.
+   */
   public Padding getPadding() {
     return padding;
+  }
+
+  /**
+   * Sets the padding used when this key is used to encrypt data.
+   */
+  void setPadding(Padding padding) {
+    this.padding = padding;
   }
 }

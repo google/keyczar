@@ -18,6 +18,7 @@ package org.keyczar;
 
 import com.google.gson.annotations.Expose;
 
+import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.DecryptingStream;
@@ -90,8 +91,8 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     return key;
   }
 
-  static RsaPrivateKey generate() throws KeyczarException {
-    return generate(KeyType.RSA_PRIV.defaultSize());
+  static RsaPrivateKey generate(Padding padding) throws KeyczarException {
+    return generate(KeyType.RSA_PRIV.defaultSize(), padding);
   }
 
   @Override
@@ -124,7 +125,7 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     }    
   }
 
-  static RsaPrivateKey generate(int keySize) throws KeyczarException {
+  static RsaPrivateKey generate(int keySize, Padding padding) throws KeyczarException {
     RsaPrivateKey key = new RsaPrivateKey();
     try {
       KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_GEN_ALGORITHM);
@@ -135,6 +136,7 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
       key.jcePrivateKey = (RSAPrivateCrtKey) pair.getPrivate();
       key.publicKey.set(key.size, key.jcePrivateKey.getModulus(),
           key.jcePrivateKey.getPublicExponent());
+      key.publicKey.setPadding(padding);
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }

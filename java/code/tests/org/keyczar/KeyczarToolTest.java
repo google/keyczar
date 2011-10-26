@@ -118,12 +118,25 @@ public class KeyczarToolTest extends TestCase {
   }
   
   @Test
-  public final void testImportCertificate() {
+  public final void testImportCertificate() throws KeyczarException {
     String[] args = {"importkey", "--pemfile=" + TEST_DATA + "rsa-crypt-crt.pem" };
     assertEquals(3, mock.numKeys());
     KeyczarTool.main(args);
     assertEquals(4, mock.numKeys());
     assertTrue(mock.existsVersion(4));
+    assertTrue(mock.getKey(4).contains("\"OAEP\""));
+    assertFalse(mock.getKey(4).contains("\"PKCS\""));
+  }
+
+  @Test
+  public final void testImportCertificateWithPkcsPadding() throws KeyczarException {
+    String[] args = {"importkey", "--pemfile=" + TEST_DATA + "rsa-crypt-crt.pem", "--padding=PKCS"};
+    assertEquals(3, mock.numKeys());
+    KeyczarTool.main(args);
+    assertEquals(4, mock.numKeys());
+    assertTrue(mock.existsVersion(4));
+    assertFalse(mock.getKey(4).contains("\"OAEP\""));
+    assertTrue(mock.getKey(4).contains("\"PKCS\""));
   }
 
   @Override

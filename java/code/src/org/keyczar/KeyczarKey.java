@@ -19,6 +19,7 @@ package org.keyczar;
 
 import com.google.gson.annotations.Expose;
 
+import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
@@ -118,7 +119,7 @@ public abstract class KeyczarKey {
   public String toString() {
     return Util.gson().toJson(this);
   }
-  
+
   /**
    * Generates private key of the desired type and size. Cannot generate public
    * key, instead must export public key set from private keys.
@@ -132,8 +133,32 @@ public abstract class KeyczarKey {
    * @throws KeyczarException for unsupported key types
    */
   static KeyczarKey genKey(KeyType type, int keySize) throws KeyczarException {
+    Padding padding = null;
+    if (type == KeyType.RSA_PRIV) {
+      padding = Padding.OAEP;
+    }
+    return genKey(type, padding, keySize);
+  }
+
+  /**
+   * Generates private key of the desired type and size. Cannot generate public
+   * key, instead must export public key set from private keys.
+   *
+   * If given size is unacceptable, falls back to using default size for the
+   * desired key type.
+   *
+   * @param type KeyType desired
+   * @param padding Encryption padding type for RSA keys.  Should be null for others.
+   * @param keySize desired length of key
+   * @return KeyczarKey of desired type
+   * @throws KeyczarException for unsupported key types
+   */
+  static KeyczarKey genKey(KeyType type, Padding padding, int keySize) throws KeyczarException {
     if (!type.isAcceptableSize(keySize)) {
       keySize = type.defaultSize();  // fall back to default
+    }
+    if (padding != null && type != KeyType.RSA_PRIV) {
+      throw new KeyczarException(Messages.getString("InvalidPadding", padding.name()));
     }
     switch (type) {
       case AES:
@@ -143,7 +168,7 @@ public abstract class KeyczarKey {
       case DSA_PRIV:
         return DsaPrivateKey.generate(keySize);
       case RSA_PRIV:
-        return RsaPrivateKey.generate(keySize);
+        return RsaPrivateKey.generate(keySize, padding);
       // Currently unsupported. See "unofficial" directory.
       //case EC_PRIV:
       //    return EcPrivateKey.generate(keySize);

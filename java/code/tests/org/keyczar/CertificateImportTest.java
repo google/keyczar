@@ -4,6 +4,7 @@ package org.keyczar;
 
 import junit.framework.TestCase;
 
+import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyPurpose;
 
 import java.io.FileInputStream;
@@ -20,8 +21,9 @@ public class CertificateImportTest extends TestCase {
   private String input = "This is some test data";
 
   private void doTestCryptImport(String fileFormat) throws Exception {
-    Encrypter encrypter = new Encrypter(new X509CertificateReader(
-        KeyPurpose.ENCRYPT, new FileInputStream(TEST_DATA + "rsa-crypt-crt." + fileFormat)));
+    Encrypter encrypter =
+        new Encrypter(new X509CertificateReader(KeyPurpose.ENCRYPT,
+            new FileInputStream(TEST_DATA + "rsa-crypt-crt." + fileFormat), Padding.OAEP));
 
     String ciphertext = encrypter.encrypt(input);
     String plaintext = new Crypter(TEST_DATA + "rsa-crypt").decrypt(ciphertext);
@@ -37,8 +39,9 @@ public class CertificateImportTest extends TestCase {
   private void doTestSignImport(String keyType, String fileFormat) throws Exception {
     String signature = new Signer(TEST_DATA + keyType + "-sign").sign(input);
 
-    Verifier verifier = new Verifier(new X509CertificateReader(
-        KeyPurpose.VERIFY, new FileInputStream(TEST_DATA + keyType + "-sign-crt." + fileFormat)));
+    Verifier verifier =
+        new Verifier(new X509CertificateReader(KeyPurpose.VERIFY,
+            new FileInputStream(TEST_DATA + keyType + "-sign-crt." + fileFormat), Padding.OAEP));
     assertTrue(verifier.verify(input, signature));
   }
 

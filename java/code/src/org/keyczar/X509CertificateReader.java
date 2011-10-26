@@ -2,6 +2,7 @@
 
 package org.keyczar;
 
+import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.enums.KeyType;
@@ -23,10 +24,19 @@ import java.security.interfaces.RSAPublicKey;
 public class X509CertificateReader implements KeyczarReader {
   private final InputStream certificateStream;
   private final KeyPurpose purpose;
+  private final Padding padding;
   private KeyMetadata meta = null;
   private KeyczarPublicKey key;
 
-  public X509CertificateReader(KeyPurpose purpose, InputStream certificateStream)
+  /**
+   * Creates an certificate reader that reads a key from the specified stream, tags it with the
+   * specified purpose and sets it to use the specified padding.
+   *
+   * @param padding The padding to associate with the key.  May be null for RSA keys, in
+   * which case it will default to OAEP.  Must be null for DSA keys.
+   * @throws KeyczarException
+   */
+  public X509CertificateReader(KeyPurpose purpose, InputStream certificateStream, Padding padding)
       throws KeyczarException {
     if (purpose == null) {
       throw new KeyczarException("X509Certificate purpose must not be null");
@@ -36,6 +46,7 @@ public class X509CertificateReader implements KeyczarReader {
 	}
     this.purpose = purpose;
     this.certificateStream = certificateStream;
+    this.padding = padding;
   }
 
   @Override
@@ -58,21 +69,12 @@ public class X509CertificateReader implements KeyczarReader {
 
   private void ensureCertificateRead() throws KeyczarException {
     if (key == null) {
-      readX509Certificate(certificateStream);
-    }
-  }
-
-  /**
-   * Converts a PEM or DER-formatted X.509 certificate file into the appropriate
-   * KeyczarKey object.
-   * @throws KeyczarException
-   */
-  private void readX509Certificate(InputStream certificateStream) throws KeyczarException {
-    try {
-      parseCertificate(certificateStream);
-      constructMetadata();
-    } catch (CertificateException e) {
-      throw new KeyczarException(Messages.getString("KeyczarTool.InvalidCertificate"));
+      try {
+        parseCertificate();
+        constructMetadata();
+      } catch (CertificateException e) {
+        throw new KeyczarException(Messages.getString("KeyczarTool.InvalidCertificate"));
+      }
     }
   }
 
@@ -84,15 +86,17 @@ public class X509CertificateReader implements KeyczarReader {
     meta.addVersion(new KeyVersion(1, KeyStatus.PRIMARY, true /* exportable */));
   }
 
-  private void parseCertificate(InputStream certificateStream) throws CertificateException,
-      KeyczarException {
+  private void parseCertificate() throws CertificateException, KeyczarException {
     Certificate certificate = CertificateFactory.getInstance("X.509")
         .generateCertificate(certificateStream);
     PublicKey publicKey = certificate.getPublicKey();
 
     if (publicKey instanceof RSAPublicKey) {
-      key = readRsaX509Certificate(publicKey);
+      key = readRsaX509Certificate(publicKey, padding);
     } else if (publicKey instanceof DSAPublicKey) {
+      if (padding != null) {
+        throw new KeyczarException(Messages.getString("InvalidPadding", padding.name()));
+      }
       key = readDsaX509Certificate(publicKey);
     } else {
       throw new KeyczarException("Unrecognized key type " + publicKey.getAlgorithm() +
@@ -108,10 +112,12 @@ public class X509CertificateReader implements KeyczarReader {
     return key;
   }
 
-  private static RsaPublicKey readRsaX509Certificate(PublicKey publicKey) throws KeyczarException {
+  private static RsaPublicKey readRsaX509Certificate(PublicKey publicKey, Padding padding)
+      throws KeyczarException {
     RSAPublicKey jceKey = (RSAPublicKey) publicKey;
     RsaPublicKey key = new RsaPublicKey();
     key.set(jceKey.getModulus().bitLength(), jceKey.getModulus(), jceKey.getPublicExponent());
+    key.setPadding(padding == null ? Padding.OAEP : padding);
     return key;
   }
 }

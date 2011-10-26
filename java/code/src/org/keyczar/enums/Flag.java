@@ -29,6 +29,7 @@ public enum Flag {
   SIZE("size"),
   STATUS("status"),
   PURPOSE("purpose"),
+  PADDING("padding"),
   DESTINATION("destination"),
   VERSION("version"),
   ASYMMETRIC("asymmetric"),
@@ -73,6 +74,8 @@ public enum Flag {
       return PEMFILE;
     } else if (name.equalsIgnoreCase(PASSPHRASE.toString())) {
       return PASSPHRASE;
+    } else if (name.equalsIgnoreCase(PADDING.toString())) {
+      return PADDING;
     }
     throw new IllegalArgumentException(
         Messages.getString("Flag.UnknownFlag", name));
