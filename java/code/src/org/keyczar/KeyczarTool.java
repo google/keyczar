@@ -197,21 +197,30 @@ public class KeyczarTool {
       String crypterFlag) throws KeyczarException {
     final GenericKeyczar destinationKeyczar = createGenericKeyczar(locationFlag, crypterFlag);
     final KeyPurpose purpose = destinationKeyczar.getMetadata().getPurpose();
-    FileInputStream certificateStream;
-    try {
-       certificateStream = new FileInputStream(pemFileFlag);
-    } catch (FileNotFoundException e) {
-      throw new KeyczarException(Messages.getString("KeyczarTool.FileNotFound", pemFileFlag));
-    }
+    final GenericKeyczar sourceKeyczar = importCertificate(pemFileFlag, purpose);
 
-    destinationKeyczar.addVersion(statusFlag,
-        new GenericKeyczar(new X509CertificateReader(purpose, certificateStream)).getPrimaryKey());
+    // Change destination type if necessary, but only if there aren't any keys in it yet.
+    final KeyType sourceKeyType = sourceKeyczar.getMetadata().getType();
+    if (destinationKeyczar.getMetadata().getType() != sourceKeyType
+        && destinationKeyczar.getVersions().isEmpty()) {
+      destinationKeyczar.getMetadata().setType(sourceKeyType);
+    }
+    destinationKeyczar.addVersion(statusFlag, sourceKeyczar.getPrimaryKey());
 
     if (crypterFlag != null) {
-      Encrypter encrypter = new Encrypter(crypterFlag);
-      updateGenericKeyczar(destinationKeyczar, encrypter, locationFlag);
+      updateGenericKeyczar(destinationKeyczar, new Encrypter(crypterFlag), locationFlag);
     } else {
       updateGenericKeyczar(destinationKeyczar, locationFlag);
+    }
+  }
+
+  private static GenericKeyczar importCertificate(String pemFileFlag, final KeyPurpose purpose)
+      throws KeyczarException {
+    try {
+      return new GenericKeyczar(
+        new X509CertificateReader(purpose, new FileInputStream(pemFileFlag)));
+    } catch (FileNotFoundException e) {
+      throw new KeyczarException(Messages.getString("KeyczarTool.FileNotFound", pemFileFlag));
     }
   }
 

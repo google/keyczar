@@ -119,6 +119,10 @@ public class KeyMetadata {
     return type;
   }
 
+  void setType(KeyType type) {
+    this.type = type;
+  }
+
   void setEncrypted(boolean encrypted) {
     this.encrypted = encrypted;
   }
