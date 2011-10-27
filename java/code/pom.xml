@@ -76,7 +76,9 @@
 
   <!-- Build Rules -->
   <build>
-    <finalName>${project.artifactId}-${project.version}</finalName>
+    <finalName>
+      ${project.artifactId}-${project.version}-${buildNumber}
+    </finalName>
 
     <!-- Sources and resources -->
     <sourceDirectory>src</sourceDirectory>
@@ -90,6 +92,27 @@
 
     <!-- The following plugins define the actual build processes -->
     <plugins>
+
+      <!-- Generate a timestamp for a build number -->
+      <plugin>
+	<groupId>org.codehaus.mojo</groupId>
+	<artifactId>buildnumber-maven-plugin</artifactId>
+	<version>1.0</version>
+	<executions>
+	  <execution>
+	    <phase>validate</phase>
+	    <goals>
+	      <goal>create</goal>
+	    </goals>
+	  </execution>
+	</executions>
+	<configuration>
+	  <format>{0,date,MMddyy}</format>
+	  <items>
+	    <item>timestamp</item>
+	  </items>
+	</configuration>
+      </plugin>
 
       <!-- Compiler settings.  Java 1.5 is currently the default, but we set
 	   it to be safe. -->
@@ -121,7 +144,9 @@
 	    <configuration>
 	      <!-- Configure shade not to replace the original jar -->
 	      <shadedArtifactAttached>true</shadedArtifactAttached>
-	      <finalName>keytool-${project.version}</finalName>
+	      <finalName>
+		KeyczarTool-${project.version}-${buildNumber}
+	      </finalName>
 	      <!-- This transformer adds a Main-Class to the manifest -->
 	      <transformers>
 		<transformer implementation=
