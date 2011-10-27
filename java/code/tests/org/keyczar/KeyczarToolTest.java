@@ -138,6 +138,12 @@ public class KeyczarToolTest extends TestCase {
     assertFalse(mock.getKey(4).contains("\"OAEP\""));
     assertTrue(mock.getKey(4).contains("\"PKCS\""));
   }
+  
+  @Test
+  public final void testHelp() {
+    String[] args = {};
+    KeyczarTool.main(args);
+  }
 
   @Override
   public final void tearDown() {
