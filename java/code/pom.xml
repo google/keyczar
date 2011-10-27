@@ -4,10 +4,19 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.keyczar</groupId>
   <artifactId>keyczar</artifactId>
+
   <name>Keyczar</name>
   <version>0.71</version>
   <url>http://www.keyczar.org</url>
-  <description>Keyczar is a toolkit to make cryptography safer and easier</description>
+
+  <description>
+    Keyczar is a toolkit to make cryptography safer and easier
+  </description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
@@ -15,6 +24,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
   <developers>
     <developer>
       <id>arkajit.dey</id>
@@ -45,6 +55,7 @@
       <organizationUrl>http://www.google.com</organizationUrl>
     </developer>
   </developers>
+
   <mailingLists>
     <mailingList>
       <name>Keyczar Discussion List</name>
@@ -54,15 +65,20 @@
       <post>keyczar-discuss@googlegroups.com</post>
     </mailingList>
   </mailingLists>
-  <repositories>		
-    <repository>		
-      <id>keyczar repository</id>		
-      <name>Keyczar Repository</name>		
-      <url>http://keyczar.googlecode.com/svn/trunk/java/maven/</url>
-     </repository>		
+
+  <repositories>
+    <repository>
+      <id>keyczar repository</id>
+      <name>Keyczar Repository</name>
+      <url>http://keyczar.googlecode.com/git/java/maven/</url>
+     </repository>
   </repositories>
+
+  <!-- Build Rules -->
   <build>
     <finalName>${project.artifactId}-${project.version}</finalName>
+
+    <!-- Sources and resources -->
     <sourceDirectory>src</sourceDirectory>
     <scriptSourceDirectory>scripts</scriptSourceDirectory>
     <testSourceDirectory>tests</testSourceDirectory>
@@ -71,29 +87,75 @@
         <directory>testdata</directory>
       </testResource>
     </testResources>
+
+    <!-- The following plugins define the actual build processes -->
     <plugins>
+
+      <!-- Compiler settings.  Java 1.5 is currently the default, but we set
+	   it to be safe. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+	<version>2.3.2</version>
         <configuration>
           <source>1.5</source>
           <target>1.5</target>
         </configuration>
       </plugin>
+
+      <!-- Rule to build an uber-jar of the binaries plus dependencies.  Note
+	   that the shade plugin is smart enough to grab only the needed
+	   dependencies, and to only include dependencies of the non-test
+	   sources, so we don't need to specify that the test dependencies
+	   should be excluded. -->
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-shade-plugin</artifactId>
+	<version>1.4</version>
+	<executions>
+	  <execution>
+	    <phase>package</phase>
+	    <goals>
+	      <goal>shade</goal>
+	    </goals>
+	    <configuration>
+	      <!-- Configure shade not to replace the original jar -->
+	      <shadedArtifactAttached>true</shadedArtifactAttached>
+	      <finalName>keytool-${project.version}</finalName>
+	      <!-- This transformer adds a Main-Class to the manifest -->
+	      <transformers>
+		<transformer implementation=
+			     "org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+		  <mainClass>org.keyczar.KeyczarTool</mainClass>
+		</transformer>
+	      </transformers>
+	      <!-- Configure shade to clean up dependencies -->
+	      <minimizeJar>true</minimizeJar>
+	      <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+	    </configuration>
+	  </execution>
+	</executions>
+      </plugin>
+
+      <!-- Rule to build a jar of the sources -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
         <version>2.1.2</version>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>jar-no-fork</goal>
-            </goals>
-          </execution>
-        </executions>
+        <configuration>
+          <outputDirectory>${basedir}/target/</outputDirectory>
+	</configuration>
+	<executions>
+	  <execution>
+	    <phase>package</phase>
+	    <goals>
+	      <goal>jar</goal>
+	    </goals>
+	  </execution>
+	</executions>
       </plugin>
+
+      <!-- Rule to run the JUnit tests  -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -104,12 +166,14 @@
           </excludes>
          </configuration>
       </plugin>
+
+      <!-- Rule to copy i18n properties to output directory -->
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <version>2.5</version>
         <executions>
           <execution>
-            <id>copy-i18n-resources</id>
+            <id>copy-resources</id>
             <phase>validate</phase>
             <goals>
               <goal>copy-resources</goal>
@@ -123,25 +187,7 @@
                     <include>**/*.properties</include>
                   </includes>
                 </resource>
-              </resources>
-            </configuration>            
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>2.5</version>
-        <executions>
-          <execution>
-            <id>copy-license-resources</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/target/classes/org/keyczar</outputDirectory>
-              <resources>
-                <resource>
+		<resource>
                   <directory>src/org/keyczar</directory>
                   <includes>
                     <include>COPYING</include>
@@ -152,21 +198,20 @@
           </execution>
         </executions>
       </plugin>
+
     </plugins>
-    <extensions>
-      <extension>
-        <groupId>org.jvnet.wagon-svn</groupId>
-        <artifactId>wagon-svn</artifactId>
-        <version>1.9</version>
-      </extension>
-    </extensions>
   </build>
+
+
+  <!-- Link to git repository -->
   <scm>
-    <connection>scm:svn:svn://keyczar.googlecode.com/svn/trunk/java/code</connection>
-    <developerConnection>scm:svn:svn://keyczar.googlecode.com/svn/trunk/java/code</developerConnection>
-    <url>https://keyczar.googlecode.com/svn/trunk/java/code</url>
+    <connection>scm:git:https://code.google.com/p/keyczar/</connection>
+    <url>http://code.google.com/p/keyczar/source/browse</url>
   </scm>
+
   <dependencies>
+
+    <!-- Dependencies required at runtime -->
     <dependency>
     	<groupId>com.google.code.gson</groupId>
     	<artifactId>gson</artifactId>
@@ -174,6 +219,15 @@
     	<type>jar</type>
     	<scope>compile</scope>
     </dependency>
+    <dependency>
+    	<groupId>log4j</groupId>
+    	<artifactId>log4j</artifactId>
+    	<version>1.2.14</version>
+    	<type>jar</type>
+    	<scope>compile</scope>
+    </dependency>
+
+    <!-- Dependencies required for testing -->
     <dependency>
     	<groupId>junit</groupId>
     	<artifactId>junit</artifactId>
@@ -185,13 +239,6 @@
 	<artifactId>easymock</artifactId>
 	<version>3.0</version>
 	<scope>test</scope>
-    </dependency>
-    <dependency>
-    	<groupId>log4j</groupId>
-    	<artifactId>log4j</artifactId>
-    	<version>1.2.14</version>
-    	<type>jar</type>
-    	<scope>compile</scope>
     </dependency>
     <dependency>
         <groupId>cglib</groupId>
@@ -206,12 +253,20 @@
         <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <!-- Perhaps we can't do this with git?
+       TODO(swillden) Figure out how to automatically deploy to a
+       maven repository
+
   <distributionManagement>
     <repository>
       <id>keyczar</id>
       <name>Keyczar Repository</name>
-      <url>svn:https://keyczar.googlecode.com/svn/trunk/java/maven</url>
+      <url>git:https://keyczar.googlecode.com/git/java/maven/</url>
       <uniqueVersion>false</uniqueVersion>
     </repository>
   </distributionManagement>
+
+  -->
+
 </project>
