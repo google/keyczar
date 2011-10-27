@@ -5,7 +5,7 @@
   <groupId>org.keyczar</groupId>
   <artifactId>keyczar</artifactId>
   <name>Keyczar</name>
-  <version>0.70</version>
+  <version>0.71</version>
   <url>http://www.keyczar.org</url>
   <description>Keyczar is a toolkit to make cryptography safer and easier</description>
   <licenses>
@@ -34,6 +34,13 @@
       <id>normandl</id>
       <name>David Norman</name>
       <email>normandl@google.com</email>
+      <organization>Google</organization>
+      <organizationUrl>http://www.google.com</organizationUrl>
+    </developer>
+    <developer>
+      <id>swillden</id>
+      <name>Shawn Wilden</name>
+      <email>swillden@google.com</email>
       <organization>Google</organization>
       <organizationUrl>http://www.google.com</organizationUrl>
     </developer>
