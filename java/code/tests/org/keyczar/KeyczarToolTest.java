@@ -189,6 +189,8 @@ public class KeyczarToolTest extends TestCase {
     assertEquals(1, mock.numKeys());
     assertEquals(KeyStatus.PRIMARY, mock.getStatus(1));
   }
+  
+  // TODO(swillden) Add export tests.
 
   @Override
   public final void tearDown() {
