@@ -26,6 +26,8 @@ import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.exceptions.NoPrimaryKeyException;
+import org.keyczar.i18n.Messages;
 
 /**
  * 
@@ -118,14 +120,43 @@ public class KeyczarToolTest extends TestCase {
   }
   
   @Test
-  public final void testImportCertificate() throws KeyczarException {
-    String[] args = {"importkey", "--pemfile=" + TEST_DATA + "rsa-crypt-crt.pem" };
-    assertEquals(3, mock.numKeys());
+  public final void testImportCertificateAsActive() throws KeyczarException {
+    KeyczarTool.setReader(pubMock); // use pubMock reader instead
+
+    String[] args = {"importkey", "--pemfile=" + TEST_DATA + "rsa-crypt-crt.pem"};
+    assertEquals(0, pubMock.numKeys());
     KeyczarTool.main(args);
-    assertEquals(4, mock.numKeys());
-    assertTrue(mock.existsVersion(4));
-    assertTrue(mock.getKey(4).contains("\"OAEP\""));
-    assertFalse(mock.getKey(4).contains("\"PKCS\""));
+    assertEquals(1, pubMock.numKeys());
+    assertTrue(pubMock.existsVersion(1));
+    assertEquals(KeyStatus.ACTIVE, pubMock.getStatus(1));
+    try {
+      new GenericKeyczar(pubMock).getMetadata().getPrimaryVersion();
+    } catch (NoPrimaryKeyException e) {
+      assertEquals(Messages.getString("NoPrimaryKeyFound"), e.getMessage());
+    }
+    assertTrue(pubMock.getKey(1).contains("\"OAEP\""));
+    assertFalse(pubMock.getKey(1).contains("\"PKCS\""));
+  }
+
+  @Test
+  public final void testImportCertificateAsPrimary() throws KeyczarException {
+    KeyczarTool.setReader(pubMock); // use pubMock reader instead
+
+    assertEquals(0, pubMock.numKeys());
+    KeyczarTool.main(new String[] { "importkey", "--pemfile=" + TEST_DATA + "rsa-crypt-crt.pem",
+        "--status=primary"});
+    assertEquals(1, pubMock.numKeys());
+    assertTrue(pubMock.existsVersion(1));
+    assertEquals(KeyStatus.PRIMARY, pubMock.getStatus(1));
+    assertTrue(pubMock.getKey(1).contains("\"OAEP\""));
+    assertFalse(pubMock.getKey(1).contains("\"PKCS\""));
+
+    KeyczarTool.main(new String[] { "importkey", "--pemfile=" + TEST_DATA + "rsa-sign-crt.pem",
+        "--status=primary"});
+    assertEquals(2, pubMock.numKeys());
+    assertTrue(pubMock.existsVersion(2));
+    assertEquals(KeyStatus.ACTIVE, pubMock.getStatus(1));
+    assertEquals(KeyStatus.PRIMARY, pubMock.getStatus(2));
   }
 
   @Test
@@ -144,6 +175,22 @@ public class KeyczarToolTest extends TestCase {
     String[] args = {};
     KeyczarTool.main(args);
   }
+
+  /**
+   * Tests adding a new primary key to an empty key set.
+   */
+  @Test
+  public final void testAddNewKey() {
+    mock = new MockKeyczarReader("TEST", KeyPurpose.ENCRYPT, KeyType.AES);
+    KeyczarTool.setReader(mock); // use mock reader
+    assertEquals(0, mock.numKeys());
+    String[] args = {"addkey", "--status=primary"};
+    KeyczarTool.main(args);
+    assertEquals(1, mock.numKeys());
+    assertEquals(KeyStatus.PRIMARY, mock.getStatus(1));
+  }
+  
+  // TODO(swillden) Add export tests.
 
   @Override
   public final void tearDown() {
