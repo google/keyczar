@@ -131,12 +131,6 @@ public abstract class Keyczar {
     hashMap.put(new KeyHash(key.hash()), key);
     versionMap.put(version, key);
     kmd.addVersion(version);
-    if (version.getStatus() == KeyStatus.PRIMARY) {
-      if (primaryVersion != null) {
-        primaryVersion.setStatus(KeyStatus.ACTIVE);
-      }
-      primaryVersion = version;
-    }
   }
 
   KeyczarKey getPrimaryKey() {
