@@ -153,7 +153,14 @@ public class RsaPaddingTest extends TestCase {
      */
     private String setPadding(String jsonString) {
       RsaPrivateKey privKey = Util.gson().fromJson(jsonString, RsaPrivateKey.class);
-      String jsonStringWithPadding = Util.gson().toJson(privKey);
+      RsaPublicKey pubKey = (RsaPublicKey) privKey.getPublic();
+      String publicKeyString = Util.gson().toJson(pubKey);
+      pubKey.setPadding(Padding.OAEP);
+      String jsonPubStringWithPadding = Util.gson().toJson(pubKey);
+      
+      // replace public key in private key.
+      String jsonStringWithPadding = jsonString.replace(publicKeyString, jsonPubStringWithPadding);
+      // now do replacement
       return jsonStringWithPadding.replace("\"OAEP\"", '"' + paddingString + '"');
     }
   }

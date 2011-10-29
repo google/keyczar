@@ -57,7 +57,8 @@ class RsaPublicKey extends KeyczarPublicKey {
   private RSAPublicKey jcePublicKey;
   @Expose String modulus;
   @Expose String publicExponent;
-  @Expose Padding padding = Padding.OAEP;
+  @Expose Padding padding = null;
+  Padding localPadding = Padding.OAEP;
 
   public enum Padding {
     OAEP("RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING"),
@@ -126,14 +127,19 @@ class RsaPublicKey extends KeyczarPublicKey {
       KeyFactory kf = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
       RSAPublicKeySpec spec = new RSAPublicKeySpec(mod, pubExp);
       jcePublicKey = (RSAPublicKey) kf.generatePublic(spec);
+      
+      if (padding != null) {
+        localPadding = padding;
+      }
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
-    System.arraycopy(padding.computeFullHash(jcePublicKey), 0, hash, 0, hash.length);
+    System.arraycopy(localPadding.computeFullHash(jcePublicKey), 0, hash, 0, hash.length);
   }
 
   static RsaPublicKey read(String input) throws KeyczarException {
     RsaPublicKey key = Util.gson().fromJson(input, RsaPublicKey.class);
+    
     if (key.getType() != KeyType.RSA_PUB) {
       throw new UnsupportedTypeException(key.getType());
     }
@@ -158,7 +164,7 @@ class RsaPublicKey extends KeyczarPublicKey {
     RsaStream() throws KeyczarException {
       try {
         signature = Signature.getInstance(SIG_ALGORITHM);
-        cipher = Cipher.getInstance(padding.getCryptAlgorithm());
+        cipher = Cipher.getInstance(localPadding.getCryptAlgorithm());
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
@@ -262,7 +268,7 @@ class RsaPublicKey extends KeyczarPublicKey {
    * Returns the padding used when this key is used to encrypt data.
    */
   public Padding getPadding() {
-    return padding;
+    return localPadding;
   }
 
   /**
@@ -270,5 +276,6 @@ class RsaPublicKey extends KeyczarPublicKey {
    */
   void setPadding(Padding padding) {
     this.padding = padding;
+    this.localPadding = padding;
   }
 }
