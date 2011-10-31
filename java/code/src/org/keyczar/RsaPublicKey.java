@@ -275,7 +275,11 @@ class RsaPublicKey extends KeyczarPublicKey {
    * Sets the padding used when this key is used to encrypt data.
    */
   void setPadding(Padding padding) {
-    this.padding = padding;
+    // Only if this is PKCS will the value to be exported be set.
+    if (padding == Padding.PKCS) {
+      this.padding = padding;
+    }
+    
     this.localPadding = padding;
   }
 }
