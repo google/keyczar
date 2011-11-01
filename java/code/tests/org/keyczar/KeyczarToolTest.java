@@ -134,7 +134,6 @@ public class KeyczarToolTest extends TestCase {
     } catch (NoPrimaryKeyException e) {
       assertEquals(Messages.getString("NoPrimaryKeyFound"), e.getMessage());
     }
-    assertTrue(pubMock.getKey(1).contains("\"OAEP\""));
     assertFalse(pubMock.getKey(1).contains("\"PKCS\""));
   }
 
@@ -148,7 +147,6 @@ public class KeyczarToolTest extends TestCase {
     assertEquals(1, pubMock.numKeys());
     assertTrue(pubMock.existsVersion(1));
     assertEquals(KeyStatus.PRIMARY, pubMock.getStatus(1));
-    assertTrue(pubMock.getKey(1).contains("\"OAEP\""));
     assertFalse(pubMock.getKey(1).contains("\"PKCS\""));
 
     KeyczarTool.main(new String[] { "importkey", "--pemfile=" + TEST_DATA + "rsa-sign-crt.pem",

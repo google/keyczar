@@ -65,7 +65,7 @@ public class RsaPaddingTest extends TestCase {
     try {
       new Encrypter(new AddPaddingKeyczarReader(fileReader, "INVALID"));
       fail("Should throw");
-    } catch (JsonParseException e) {
+    } catch (IllegalArgumentException e) {
       assertTrue(e.getMessage().contains("INVALID"));
     }
   }
@@ -155,13 +155,18 @@ public class RsaPaddingTest extends TestCase {
       RsaPrivateKey privKey = Util.gson().fromJson(jsonString, RsaPrivateKey.class);
       RsaPublicKey pubKey = (RsaPublicKey) privKey.getPublic();
       String publicKeyString = Util.gson().toJson(pubKey);
-      pubKey.setPadding(Padding.OAEP);
-      String jsonPubStringWithPadding = Util.gson().toJson(pubKey);
       
-      // replace public key in private key.
-      String jsonStringWithPadding = jsonString.replace(publicKeyString, jsonPubStringWithPadding);
-      // now do replacement
-      return jsonStringWithPadding.replace("\"OAEP\"", '"' + paddingString + '"');
+      // check invalid padding
+      Padding localPadding = Padding.valueOf(paddingString);
+      
+      if (localPadding == Padding.PKCS) {
+        pubKey.setPadding(Padding.PKCS);
+        String jsonPubStringWithPadding = Util.gson().toJson(pubKey);
+        // replace public key in private key.
+        return jsonString.replace(publicKeyString, jsonPubStringWithPadding);
+      }
+      
+      return jsonString;
     }
   }
 }
