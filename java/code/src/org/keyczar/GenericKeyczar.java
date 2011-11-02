@@ -105,6 +105,20 @@ public class GenericKeyczar extends Keyczar {
   }
 
   /**
+   * Uses default key size and padding to add a new key version.
+   */
+  public void addVersion(KeyStatus status) throws KeyczarException {
+    addVersion(status, null, kmd.getType().defaultSize());
+  }
+
+  /**
+   * Uses default padding to add a new key version.
+   */
+  public void addVersion(KeyStatus status, int keySize) throws KeyczarException {
+    addVersion(status, null, keySize);
+  }
+
+  /**
    * Uses default key size to add a new key version.
    *
    * @param status KeyStatus desired for new key version
