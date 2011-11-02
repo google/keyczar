@@ -1,0 +1,12 @@
+Keyzcar Java release 0.71b
+==========================
+
+2011-11-02  Shawn Willden  <swillden@google.com>
+
+	* Omit '"padding"="OAEP"' from RSA key files that use the default
+	padding.  Adding the padding field breaks the current Python
+	code.
+	* Added this ChangeLog so we can more easily document what changes
+	from releast to release.  Will also begin tagging each release in
+	git.
+
