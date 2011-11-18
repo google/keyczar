@@ -24,6 +24,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAPublicKeySpec;
 
@@ -37,7 +38,6 @@ import org.keyczar.interfaces.EncryptingStream;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
-import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
 import com.google.gson.annotations.Expose;
@@ -48,23 +48,21 @@ import com.google.gson.annotations.Expose;
  * private key sets.
  *
  * @author steveweis@gmail.com (Steve Weis)
- *
  */
 class RsaPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "RSA";
   private static final String SIG_ALGORITHM = "SHA1withRSA";
 
   private RSAPublicKey jcePublicKey;
-  @Expose String modulus;
-  @Expose String publicExponent;
-  @Expose Padding padding = null;
-  Padding localPadding = Padding.OAEP;
+  @Expose final String modulus;
+  @Expose final String publicExponent;
+  @Expose final Padding padding;
 
   public enum Padding {
     OAEP("RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING"),
     PKCS("RSA/ECB/PKCS1PADDING");
 
-    private String cryptAlgorithm;
+    private final String cryptAlgorithm;
 
     private Padding(String cryptAlgorithm) {
       this.cryptAlgorithm = cryptAlgorithm;
@@ -90,7 +88,16 @@ class RsaPublicKey extends KeyczarPublicKey {
     }
   }
 
-  private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
+  private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
+
+  static RsaPublicKey read(String input) throws KeyczarException {
+    RsaPublicKey key = Util.gson().fromJson(input, RsaPublicKey.class);
+
+    if (key.getType() != KeyType.RSA_PUB) {
+      throw new UnsupportedTypeException(key.getType());
+    }
+    return key.initFromJson();
+  }
 
   @Override
   public byte[] hash() {
@@ -107,44 +114,55 @@ class RsaPublicKey extends KeyczarPublicKey {
     return KeyType.RSA_PUB;
   }
 
-  void set(int size, BigInteger mod, BigInteger pubExp) throws KeyczarException {
-    if (size % 8 != 0) {
-      throw new KeyczarException("Invalid public modulus size");
-    }
-    this.size = size;
-    this.modulus = Base64Coder.encodeWebSafe(mod.toByteArray());
-    this.publicExponent = Base64Coder.encodeWebSafe(pubExp.toByteArray());
-    init();
+  RsaPublicKey(RSAPrivateCrtKey privateKey, Padding padding) throws KeyczarException {
+    this(privateKey.getModulus(), privateKey.getPublicExponent(), padding);
+    initializeJceKey(privateKey.getModulus(), privateKey.getPublicExponent());
+    initializeHash();
   }
 
-  private void init() throws KeyczarException {
-    byte[] modBytes = Base64Coder.decodeWebSafe(modulus);
-    byte[] pubExpBytes = Base64Coder.decodeWebSafe(publicExponent);
-    BigInteger mod = new BigInteger(modBytes);
-    BigInteger pubExp = new BigInteger(pubExpBytes);
-    // Sets the JCE Public key value
+  RsaPublicKey(RSAPublicKey publicKey, Padding padding) throws KeyczarException {
+    this(publicKey.getModulus(), publicKey.getPublicExponent(), padding);
+    jcePublicKey = publicKey;
+    initializeHash();
+  }
+
+  @SuppressWarnings("unused") // Used by GSON, which will overwrite the values set here.
+  private RsaPublicKey() {
+    size = 0;
+    modulus = publicExponent = null;
+    padding = null;
+  }
+
+  private RsaPublicKey(BigInteger mod, BigInteger exp, Padding padding) throws KeyczarException {
+    this.size = mod.bitLength();
+    this.modulus = Util.encodeBigInteger(mod);
+    this.publicExponent = Util.encodeBigInteger(exp);
+    this.padding = (padding == Padding.PKCS) ? Padding.PKCS : null;
+  }
+
+  /**
+   * Initialize JCE key from JSON data.  Must be called after an instance is read from JSON.
+   * In default scope so {@link RsaPrivateKey} can call it when a private key string (which
+   * contains a public key string) is deserialized.
+   */
+  RsaPublicKey initFromJson() throws KeyczarException {
+    initializeJceKey(Util.decodeBigInteger(modulus), Util.decodeBigInteger(publicExponent));
+    initializeHash();
+    return this;
+  }
+
+  private void initializeJceKey(BigInteger publicModulus, BigInteger publicExponent)
+      throws KeyczarException {
     try {
-      KeyFactory kf = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
-      RSAPublicKeySpec spec = new RSAPublicKeySpec(mod, pubExp);
-      jcePublicKey = (RSAPublicKey) kf.generatePublic(spec);
-      
-      if (padding != null) {
-        localPadding = padding;
-      }
+      RSAPublicKeySpec spec = new RSAPublicKeySpec(publicModulus, publicExponent);
+      jcePublicKey = (RSAPublicKey) KeyFactory.getInstance(KEY_GEN_ALGORITHM).generatePublic(spec);
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
-    System.arraycopy(localPadding.computeFullHash(jcePublicKey), 0, hash, 0, hash.length);
   }
 
-  static RsaPublicKey read(String input) throws KeyczarException {
-    RsaPublicKey key = Util.gson().fromJson(input, RsaPublicKey.class);
-    
-    if (key.getType() != KeyType.RSA_PUB) {
-      throw new UnsupportedTypeException(key.getType());
-    }
-    key.init();
-    return key;
+  private void initializeHash() throws KeyczarException {
+    System.arraycopy(getPadding().computeFullHash(jcePublicKey), 0, hash, 0, hash.length);
   }
 
   @Override
@@ -157,6 +175,17 @@ class RsaPublicKey extends KeyczarPublicKey {
     return false;
   }
 
+  /**
+   * Returns the padding used when this key is used to encrypt data.
+   */
+  public Padding getPadding() {
+    if (padding == null || padding == Padding.OAEP) {
+      return Padding.OAEP;
+    } else {
+      return Padding.PKCS;
+    }
+  }
+
   private class RsaStream implements VerifyingStream, EncryptingStream {
     private Cipher cipher;
     private Signature signature;
@@ -164,7 +193,7 @@ class RsaPublicKey extends KeyczarPublicKey {
     RsaStream() throws KeyczarException {
       try {
         signature = Signature.getInstance(SIG_ALGORITHM);
-        cipher = Cipher.getInstance(localPadding.getCryptAlgorithm());
+        cipher = Cipher.getInstance(getPadding().getCryptAlgorithm());
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
@@ -262,24 +291,5 @@ class RsaPublicKey extends KeyczarPublicKey {
         throw new KeyczarException(e);
       }
     }
-  }
-
-  /**
-   * Returns the padding used when this key is used to encrypt data.
-   */
-  public Padding getPadding() {
-    return localPadding;
-  }
-
-  /**
-   * Sets the padding used when this key is used to encrypt data.
-   */
-  void setPadding(Padding padding) {
-    // Only if this is PKCS will the value to be exported be set.
-    if (padding == Padding.PKCS) {
-      this.padding = padding;
-    }
-    
-    this.localPadding = padding;
   }
 }

@@ -16,7 +16,14 @@
 
 package org.keyczar.util;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -24,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.keyczar.exceptions.Base64DecodingException;
 import org.keyczar.exceptions.KeyczarException;
 
 import com.google.gson.Gson;
@@ -41,6 +49,7 @@ public class Util {
     new ConcurrentLinkedQueue<MessageDigest>();
   private static final ConcurrentLinkedQueue<SecureRandom> RAND_QUEUE =
     new ConcurrentLinkedQueue<SecureRandom>();
+  private static final int READ_BUF_SIZE = 8192;
 
   private Util() {
     // Don't new me.
@@ -399,5 +408,47 @@ public class Util {
       chunks.add(s.substring(i, Math.min(length, i + chunkSize)));
     }
     return chunks;
+  }
+
+  /**
+   * Reads all data from the provided stream into memory and returns it as a byte array.
+   */
+  public static byte[] readStreamFully(InputStream inStream) throws IOException {
+    ByteArrayOutputStream tempStream = new ByteArrayOutputStream();
+    byte[] buf = new byte[Util.READ_BUF_SIZE];
+    int bytesRead = 0;
+    while ((bytesRead = inStream.read(buf)) != -1) {
+      tempStream.write(buf, 0, bytesRead);
+    }
+    return tempStream.toByteArray();
+  }
+
+  /**
+   * Web safe Base64-encode a BigInteger.
+   */
+  public static String encodeBigInteger(BigInteger value) {
+    return Base64Coder.encodeWebSafe(value.toByteArray());
+  }
+
+  /**
+   * Web safe Base64-decode a BigInteger.
+   */
+  public static BigInteger decodeBigInteger(String value) throws Base64DecodingException {
+    return new BigInteger(Base64Coder.decodeWebSafe(value));
+  }
+
+  /**
+   * Generate a public/private key pair with the specified algorithm and key size.
+   */
+  public static KeyPair generateKeyPair(String algorithm, int keySize)
+      throws KeyczarException {
+    try {
+      KeyPairGenerator kpg = KeyPairGenerator.getInstance(algorithm);
+      kpg.initialize(keySize);
+      KeyPair pair = kpg.generateKeyPair();
+      return pair;
+    } catch (GeneralSecurityException e) {
+      throw new KeyczarException(e);
+    }
   }
 }

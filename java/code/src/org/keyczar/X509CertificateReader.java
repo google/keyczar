@@ -92,32 +92,15 @@ public class X509CertificateReader implements KeyczarReader {
     PublicKey publicKey = certificate.getPublicKey();
 
     if (publicKey instanceof RSAPublicKey) {
-      key = readRsaX509Certificate(publicKey, padding);
+      key = new RsaPublicKey((RSAPublicKey) publicKey, padding);
     } else if (publicKey instanceof DSAPublicKey) {
       if (padding != null) {
         throw new KeyczarException(Messages.getString("InvalidPadding", padding.name()));
       }
-      key = readDsaX509Certificate(publicKey);
+      key = new DsaPublicKey((DSAPublicKey) publicKey);
     } else {
       throw new KeyczarException("Unrecognized key type " + publicKey.getAlgorithm() +
           " in certificate");
     }
-  }
-
-  private static DsaPublicKey readDsaX509Certificate(PublicKey publicKey) throws KeyczarException {
-    DSAPublicKey jcePublicKey = (DSAPublicKey) publicKey;
-    DsaPublicKey key = new DsaPublicKey();
-    key.set(jcePublicKey.getY(), jcePublicKey.getParams().getP(), jcePublicKey.getParams().getQ(),
-        jcePublicKey.getParams().getG());
-    return key;
-  }
-
-  private static RsaPublicKey readRsaX509Certificate(PublicKey publicKey, Padding padding)
-      throws KeyczarException {
-    RSAPublicKey jceKey = (RSAPublicKey) publicKey;
-    RsaPublicKey key = new RsaPublicKey();
-    key.set(jceKey.getModulus().bitLength(), jceKey.getModulus(), jceKey.getPublicExponent());
-    key.setPadding(padding == null ? Padding.OAEP : padding);
-    return key;
   }
 }

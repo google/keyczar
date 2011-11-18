@@ -21,11 +21,9 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.DSAPrivateKey;
-import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPrivateKeySpec;
 
 import org.keyczar.enums.KeyType;
@@ -43,21 +41,42 @@ import com.google.gson.annotations.Expose;
  *
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
- *
  */
 class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String KEY_GEN_ALGORITHM = "DSA";
   private static final String SIG_ALGORITHM = "SHA1withDSA";
 
-  @Expose private DsaPublicKey publicKey;
-  @Expose private String x;
-  
+  @Expose private final DsaPublicKey publicKey;
+  @Expose private final String x;
+
   private DSAPrivateKey jcePrivateKey;
-  
-  private DsaPrivateKey() {
-    publicKey = new DsaPublicKey();
+
+  static DsaPrivateKey generate() throws KeyczarException {
+    return generate(KeyType.DSA_PRIV.defaultSize());
   }
-  
+
+  static DsaPrivateKey generate(int keySize) throws KeyczarException {
+    KeyPair pair = Util.generateKeyPair(KEY_GEN_ALGORITHM, keySize);
+    return new DsaPrivateKey((DSAPrivateKey) pair.getPrivate());
+  }
+
+  static DsaPrivateKey read(String input) throws KeyczarException {
+    DsaPrivateKey key = Util.gson().fromJson(input, DsaPrivateKey.class);
+    return key.initFromJson();
+  }
+
+  DsaPrivateKey(DSAPrivateKey privateKey) throws KeyczarException {
+    publicKey = new DsaPublicKey(privateKey);
+    jcePrivateKey = privateKey;
+    x = Base64Coder.encodeWebSafe(jcePrivateKey.getX().toByteArray());
+  }
+
+  @SuppressWarnings("unused") // Used by GSON, which will overwrite the values set here.
+  private DsaPrivateKey() {
+    publicKey = null;
+    x = null;
+  }
+
   @Override
   byte[] hash() {
     return getPublic().hash();
@@ -82,61 +101,24 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     return KeyType.DSA_PRIV;
   }
 
-  public void setPublic(KeyczarPublicKey pub) throws KeyczarException {
-    publicKey = (DsaPublicKey) pub;
-    publicKey.init();
-  }
+  /**
+   * Initialize JCE key from JSON data.  Must be called after an instance is read from JSON.
+   */
+  private DsaPrivateKey initFromJson() throws KeyczarException {
+    publicKey.initFromJson();
 
-  static DsaPrivateKey generate() throws KeyczarException {
-    return generate(KeyType.DSA_PRIV.defaultSize());
-  }
-
-  void init() throws KeyczarException {
-    publicKey.init();
-    
     BigInteger xVal = new BigInteger(Base64Coder.decodeWebSafe(x));
     BigInteger pVal = new BigInteger(Base64Coder.decodeWebSafe(publicKey.p));
     BigInteger qVal = new BigInteger(Base64Coder.decodeWebSafe(publicKey.q));
     BigInteger gVal = new BigInteger(Base64Coder.decodeWebSafe(publicKey.g));
-    DSAPrivateKeySpec spec = new DSAPrivateKeySpec(xVal, pVal, qVal, gVal);
-    
     try {
       KeyFactory kf = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
+      final DSAPrivateKeySpec spec = new DSAPrivateKeySpec(xVal, pVal, qVal, gVal);
       jcePrivateKey = (DSAPrivateKey) kf.generatePrivate(spec);
-      
+      return this;
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
-  }
-
-  
-  static DsaPrivateKey generate(int keySize) throws KeyczarException {
-    DsaPrivateKey key = new DsaPrivateKey();
-    KeyPairGenerator kpg;
-    try {
-      kpg = KeyPairGenerator.getInstance(KEY_GEN_ALGORITHM);
-    } catch (GeneralSecurityException e) {
-      throw new KeyczarException(e);
-    }
-    key.size = keySize;
-    kpg.initialize(key.size());
-    KeyPair pair = kpg.generateKeyPair();
-    key.jcePrivateKey = (DSAPrivateKey) pair.getPrivate();
-    DSAPublicKey pubKey = (DSAPublicKey) pair.getPublic();
-    key.publicKey.set(pubKey.getY(), pubKey.getParams().getP(),
-        pubKey.getParams().getQ(), pubKey.getParams().getG());
-    
-    // Initialize the private key's JSON fields
-    key.x = Base64Coder.encodeWebSafe(key.jcePrivateKey.getX().toByteArray());
-    
-    key.init();
-    return key;
-  }
-
-  static DsaPrivateKey read(String input) throws KeyczarException {
-    DsaPrivateKey key = Util.gson().fromJson(input, DsaPrivateKey.class);
-    key.init();
-    return key;
   }
 
   @Override
