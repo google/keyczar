@@ -17,18 +17,6 @@
 package org.keyczar;
 
 
-import com.google.gson.annotations.Expose;
-
-import org.keyczar.enums.KeyType;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.exceptions.UnsupportedTypeException;
-import org.keyczar.interfaces.EncryptingStream;
-import org.keyczar.interfaces.SigningStream;
-import org.keyczar.interfaces.Stream;
-import org.keyczar.interfaces.VerifyingStream;
-import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
-
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -41,6 +29,18 @@ import java.security.spec.RSAPublicKeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
+
+import org.keyczar.enums.KeyType;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.exceptions.UnsupportedTypeException;
+import org.keyczar.interfaces.EncryptingStream;
+import org.keyczar.interfaces.SigningStream;
+import org.keyczar.interfaces.Stream;
+import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
+
+import com.google.gson.annotations.Expose;
 
 
 /**

@@ -17,14 +17,14 @@
 package org.keyczar.experimental;
 
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.TreeSet;
+
 import org.keyczar.Signer;
 import org.keyczar.annotations.Experimental;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyczarReader;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.TreeSet;
 
 /**
  * Adds a signature parameter, named sig by default, to a URI query which

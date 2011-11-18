@@ -16,12 +16,12 @@
 
 package org.keyczar;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.util.Base64Coder;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 
 /**
  * Timeout signers can generate signatures that are valid until a specified

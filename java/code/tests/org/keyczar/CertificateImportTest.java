@@ -2,12 +2,12 @@
 
 package org.keyczar;
 
+import java.io.FileInputStream;
+
 import junit.framework.TestCase;
 
 import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyPurpose;
-
-import java.io.FileInputStream;
 
 /**
  * Tests of X.509 certificate import functionality.

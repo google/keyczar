@@ -16,11 +16,6 @@
 
 package org.keyczar.util;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.keyczar.exceptions.KeyczarException;
-
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -28,6 +23,11 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.keyczar.exceptions.KeyczarException;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * A miscellaneous utility class. Includes random number generation, int-to-byte

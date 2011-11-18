@@ -16,6 +16,9 @@
 
 package org.keyczar;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
@@ -25,9 +28,6 @@ import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.util.Base64Coder;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 
 /**
  * UnversionedSigners may both sign and verify data using sets of symmetric or

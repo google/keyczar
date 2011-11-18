@@ -16,10 +16,10 @@
 
 package org.keyczar;
 
-import org.keyczar.interfaces.Stream;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.keyczar.interfaces.Stream;
 
 /**
  * Caches StreamQueue objects for KeyczarKeys so they can reused.

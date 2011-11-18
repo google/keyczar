@@ -1,11 +1,11 @@
 package org.keyczar.i18n;
 
-import org.keyczar.annotations.ForTesting;
-
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+
+import org.keyczar.annotations.ForTesting;
 
 /**
  * TODO(steveweis): javadoc this

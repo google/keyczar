@@ -16,7 +16,13 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.keyczar.enums.CipherMode;
 import org.keyczar.enums.KeyType;
@@ -31,13 +37,7 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import com.google.gson.annotations.Expose;
 
 /**
  * Wrapping class for AES keys. Currently the default is to use CBC mode.

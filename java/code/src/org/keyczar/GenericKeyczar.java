@@ -1,5 +1,11 @@
 package org.keyczar;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.log4j.Logger;
 import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyPurpose;
@@ -8,12 +14,6 @@ import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * Wrapper class to access Keyczar utility methods of reading and manipulating

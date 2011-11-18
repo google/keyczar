@@ -16,6 +16,11 @@
 
 package org.keyczar;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.Map.Entry;
+
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
@@ -23,11 +28,6 @@ import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 /**
 * Unversioned Verifiers are used strictly to verify standard signatures

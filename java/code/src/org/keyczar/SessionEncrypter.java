@@ -16,8 +16,6 @@
 
 package org.keyczar;
 
-import org.keyczar.Crypter;
-import org.keyczar.Encrypter;
 import org.keyczar.annotations.Experimental;
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;

@@ -16,12 +16,10 @@
 
 package org.keyczar;
 
-import org.keyczar.Crypter;
-import org.keyczar.Signer;
-import org.keyczar.exceptions.KeyczarException;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+
+import org.keyczar.exceptions.KeyczarException;
 
 public class SymmetricPerformanceTest {
   enum Tests { HMAC, AES }

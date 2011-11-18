@@ -19,7 +19,6 @@ package org.keyczar;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-
 import junit.framework.TestCase;
 
 import org.easymock.EasyMock;

@@ -17,14 +17,13 @@
 package org.keyczar.experimental;
 
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import junit.framework.TestCase;
 
 import org.junit.Test;
 import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.experimental.UriSigner;
-
-import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * Tests UriSigner utility.

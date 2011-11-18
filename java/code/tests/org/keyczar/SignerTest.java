@@ -17,19 +17,17 @@
 package org.keyczar;
 
 
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 import org.junit.Test;
-import org.keyczar.Signer;
-import org.keyczar.Verifier;
 import org.keyczar.exceptions.BadVersionException;
 import org.keyczar.exceptions.KeyNotFoundException;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.ShortSignatureException;
-
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 
 /**
  * Tests Signer class for signing and verifying with HMAC, RSA, and DSA.

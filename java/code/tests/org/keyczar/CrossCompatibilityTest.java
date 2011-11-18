@@ -16,11 +16,11 @@
 
 package org.keyczar;
 
-import org.junit.Test;
+import java.io.RandomAccessFile;
 
 import junit.framework.TestCase;
 
-import java.io.RandomAccessFile;
+import org.junit.Test;
 
 /**
  * These tests read keys that were exported from a reference implementation.

@@ -17,6 +17,9 @@
 package org.keyczar;
 
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.BadVersionException;
@@ -28,9 +31,6 @@ import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 
 
 /**

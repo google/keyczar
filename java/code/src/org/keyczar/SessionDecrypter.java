@@ -16,7 +16,6 @@
 
 package org.keyczar;
 
-import org.keyczar.Crypter;
 import org.keyczar.annotations.Experimental;
 import org.keyczar.exceptions.KeyczarException;
 

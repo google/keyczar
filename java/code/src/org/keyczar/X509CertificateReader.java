@@ -2,14 +2,6 @@
 
 package org.keyczar;
 
-import org.keyczar.RsaPublicKey.Padding;
-import org.keyczar.enums.KeyPurpose;
-import org.keyczar.enums.KeyStatus;
-import org.keyczar.enums.KeyType;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.i18n.Messages;
-import org.keyczar.interfaces.KeyczarReader;
-
 import java.io.InputStream;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
@@ -17,6 +9,14 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
+
+import org.keyczar.RsaPublicKey.Padding;
+import org.keyczar.enums.KeyPurpose;
+import org.keyczar.enums.KeyStatus;
+import org.keyczar.enums.KeyType;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.i18n.Messages;
+import org.keyczar.interfaces.KeyczarReader;
 
 /**
  * @author swillden@google.com (Shawn Willden)

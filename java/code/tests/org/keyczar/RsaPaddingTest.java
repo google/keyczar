@@ -2,8 +2,6 @@
 
 package org.keyczar;
 
-import com.google.gson.JsonParseException;
-
 import junit.framework.TestCase;
 
 import org.junit.Before;

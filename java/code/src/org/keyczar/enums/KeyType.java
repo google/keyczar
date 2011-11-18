@@ -16,13 +16,13 @@
 
 package org.keyczar.enums;
 
-import com.google.gson.annotations.Expose;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.google.gson.annotations.Expose;
 
 /**
  * Encodes different types of keys each with (default size, output size). Some

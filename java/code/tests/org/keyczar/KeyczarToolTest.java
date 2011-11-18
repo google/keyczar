@@ -20,8 +20,6 @@ package org.keyczar;
 import junit.framework.TestCase;
 
 import org.junit.Test;
-import org.keyczar.KeyczarTool;
-import org.keyczar.MockKeyczarReader;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.enums.KeyType;

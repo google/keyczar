@@ -16,10 +16,10 @@
 
 package org.keyczar;
 
+import junit.framework.TestCase;
+
 import org.keyczar.exceptions.NoPrimaryKeyException;
 import org.keyczar.interfaces.KeyczarReader;
-
-import junit.framework.TestCase;
 
 /**
  * Test for primary key loading for KeyczarReader.

@@ -16,13 +16,13 @@
 
 package org.keyczar;
 
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.i18n.Messages;
-import org.keyczar.interfaces.KeyczarReader;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.i18n.Messages;
+import org.keyczar.interfaces.KeyczarReader;
 
 /**
  * Reads metadata and key files from the given location.
