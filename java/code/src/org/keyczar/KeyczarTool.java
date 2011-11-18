@@ -29,6 +29,7 @@ import org.keyczar.enums.Flag;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.enums.KeyType;
+import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
@@ -270,11 +271,11 @@ public class KeyczarTool {
     updateGenericKeyczar(genericKeyczar, crypterFlag, locationFlag);
   }
 
-  private static RsaPublicKey.Padding getPadding(String paddingFlag) throws KeyczarException {
-    RsaPublicKey.Padding padding = null;
+  private static RsaPadding getPadding(String paddingFlag) throws KeyczarException {
+    RsaPadding padding = null;
     if (paddingFlag != null) {
       try {
-        padding = RsaPublicKey.Padding.valueOf(paddingFlag.toUpperCase());
+        padding = RsaPadding.valueOf(paddingFlag.toUpperCase());
       } catch (IllegalArgumentException e) {
         throw new KeyczarException(Messages.getString("InvalidPadding", paddingFlag));
       }

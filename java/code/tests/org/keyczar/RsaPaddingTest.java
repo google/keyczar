@@ -6,7 +6,7 @@ import junit.framework.TestCase;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keyczar.RsaPublicKey.Padding;
+import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyNotFoundException;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyczarReader;
@@ -83,7 +83,7 @@ public class RsaPaddingTest extends TestCase {
 
     // Now check that the padding is defaulted to OAEP
     final RsaPublicKey pubKey = getPublicKey(new Encrypter(defaultReader));
-    assertEquals(RsaPublicKey.Padding.OAEP, pubKey.getPadding());
+    assertEquals(RsaPadding.OAEP, pubKey.getPadding());
   }
 
   /**
@@ -92,7 +92,7 @@ public class RsaPaddingTest extends TestCase {
   @Test
   public void testPaddingPkcs() throws KeyczarException {
     final RsaPublicKey pubKey = getPublicKey(new Encrypter(pkcsReader));
-    assertEquals(RsaPublicKey.Padding.PKCS, pubKey.getPadding());
+    assertEquals(RsaPadding.PKCS, pubKey.getPadding());
   }
 
   /**
@@ -114,11 +114,11 @@ public class RsaPaddingTest extends TestCase {
   @Test
   public void testIncompatibility() throws KeyczarException {
     final Encrypter encrypter = new Encrypter(oaepReader);
-    assertEquals(Padding.OAEP, getPublicKey(encrypter).getPadding());
+    assertEquals(RsaPadding.OAEP, getPublicKey(encrypter).getPadding());
     final String ciphertext = encrypter.encrypt(TEST_DATA);
 
     final Crypter crypter = new Crypter(pkcsReader);
-    assertEquals(Padding.PKCS, getPublicKey(crypter).getPadding());
+    assertEquals(RsaPadding.PKCS, getPublicKey(crypter).getPadding());
     try {
       crypter.decrypt(ciphertext);
       fail("Should throw");

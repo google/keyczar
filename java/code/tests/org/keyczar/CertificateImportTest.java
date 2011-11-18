@@ -6,8 +6,8 @@ import java.io.FileInputStream;
 
 import junit.framework.TestCase;
 
-import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyPurpose;
+import org.keyczar.enums.RsaPadding;
 
 /**
  * Tests of X.509 certificate import functionality.
@@ -23,7 +23,7 @@ public class CertificateImportTest extends TestCase {
   private void doTestCryptImport(String fileFormat) throws Exception {
     Encrypter encrypter =
         new Encrypter(new X509CertificateReader(KeyPurpose.ENCRYPT,
-            new FileInputStream(TEST_DATA + "rsa-crypt-crt." + fileFormat), Padding.OAEP));
+            new FileInputStream(TEST_DATA + "rsa-crypt-crt." + fileFormat), RsaPadding.OAEP));
 
     String ciphertext = encrypter.encrypt(input);
     String plaintext = new Crypter(TEST_DATA + "rsa-crypt").decrypt(ciphertext);
@@ -39,9 +39,9 @@ public class CertificateImportTest extends TestCase {
   private void doTestSignImport(String keyType, String fileFormat) throws Exception {
     String signature = new Signer(TEST_DATA + keyType + "-sign").sign(input);
 
-    Padding padding = null;
+    RsaPadding padding = null;
     if ("rsa".equals(keyType)) {
-      padding = Padding.OAEP;
+      padding = RsaPadding.OAEP;
     }
 
     Verifier verifier =

@@ -32,6 +32,7 @@ import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 
 import org.keyczar.enums.KeyType;
+import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
 import org.keyczar.interfaces.EncryptingStream;
@@ -56,37 +57,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
   private RSAPublicKey jcePublicKey;
   @Expose final String modulus;
   @Expose final String publicExponent;
-  @Expose final Padding padding;
-
-  public enum Padding {
-    OAEP("RSA/ECB/OAEPWITHSHA1ANDMGF1PADDING"),
-    PKCS("RSA/ECB/PKCS1PADDING");
-
-    private final String cryptAlgorithm;
-
-    private Padding(String cryptAlgorithm) {
-      this.cryptAlgorithm = cryptAlgorithm;
-    }
-
-    public String getCryptAlgorithm() {
-      return cryptAlgorithm;
-    }
-
-    byte[] computeFullHash(RSAPublicKey key) throws KeyczarException {
-      switch (this) {
-        case OAEP:
-          return Util.prefixHash(
-              Util.stripLeadingZeros(key.getModulus().toByteArray()),
-              Util.stripLeadingZeros(key.getPublicExponent().toByteArray()));
-        case PKCS:
-          return Util.prefixHash(
-              key.getModulus().toByteArray(),
-              key.getPublicExponent().toByteArray());
-        default:
-          throw new KeyczarException("Bug! Unknown padding type");
-      }
-    }
-  }
+  @Expose final RsaPadding padding;
 
   private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
@@ -114,13 +85,13 @@ public class RsaPublicKey extends KeyczarPublicKey {
     return KeyType.RSA_PUB;
   }
 
-  RsaPublicKey(RSAPrivateCrtKey privateKey, Padding padding) throws KeyczarException {
+  RsaPublicKey(RSAPrivateCrtKey privateKey, RsaPadding padding) throws KeyczarException {
     this(privateKey.getModulus(), privateKey.getPublicExponent(), padding);
     initializeJceKey(privateKey.getModulus(), privateKey.getPublicExponent());
     initializeHash();
   }
 
-  RsaPublicKey(RSAPublicKey publicKey, Padding padding) throws KeyczarException {
+  RsaPublicKey(RSAPublicKey publicKey, RsaPadding padding) throws KeyczarException {
     this(publicKey.getModulus(), publicKey.getPublicExponent(), padding);
     jcePublicKey = publicKey;
     initializeHash();
@@ -133,12 +104,12 @@ public class RsaPublicKey extends KeyczarPublicKey {
     padding = null;
   }
 
-  private RsaPublicKey(BigInteger mod, BigInteger exp, Padding padding)
+  private RsaPublicKey(BigInteger mod, BigInteger exp, RsaPadding padding)
       throws KeyczarException {
     super(mod.bitLength());
     this.modulus = Util.encodeBigInteger(mod);
     this.publicExponent = Util.encodeBigInteger(exp);
-    this.padding = (padding == Padding.PKCS) ? Padding.PKCS : null;
+    this.padding = (padding == RsaPadding.PKCS) ? RsaPadding.PKCS : null;
   }
 
   /**
@@ -179,11 +150,11 @@ public class RsaPublicKey extends KeyczarPublicKey {
   /**
    * Returns the padding used when this key is used to encrypt data.
    */
-  public Padding getPadding() {
-    if (padding == null || padding == Padding.OAEP) {
-      return Padding.OAEP;
+  public RsaPadding getPadding() {
+    if (padding == null || padding == RsaPadding.OAEP) {
+      return RsaPadding.OAEP;
     } else {
-      return Padding.PKCS;
+      return RsaPadding.PKCS;
     }
   }
 

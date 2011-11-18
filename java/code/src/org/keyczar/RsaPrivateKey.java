@@ -32,8 +32,8 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 
-import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyType;
+import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.DecryptingStream;
 import org.keyczar.interfaces.EncryptingStream;
@@ -65,11 +65,11 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
   private RSAPrivateCrtKey jcePrivateKey;
 
-  static RsaPrivateKey generate(Padding padding) throws KeyczarException {
+  static RsaPrivateKey generate(RsaPadding padding) throws KeyczarException {
     return generate(KeyType.RSA_PRIV.defaultSize(), padding);
   }
 
-  static RsaPrivateKey generate(int keySize, Padding padding) throws KeyczarException {
+  static RsaPrivateKey generate(int keySize, RsaPadding padding) throws KeyczarException {
     KeyPair keyPair = Util.generateKeyPair(KEY_GEN_ALGORITHM, keySize);
     return new RsaPrivateKey((RSAPrivateCrtKey) keyPair.getPrivate(), padding);
   }
@@ -79,7 +79,7 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     return key.initFromJson();
   }
 
-  public RsaPrivateKey(RSAPrivateCrtKey privateKey, Padding padding) throws KeyczarException {
+  public RsaPrivateKey(RSAPrivateCrtKey privateKey, RsaPadding padding) throws KeyczarException {
     super(privateKey.getModulus().bitLength());
     publicKey = new RsaPublicKey(privateKey, padding);
     privateExponent = encodeBigInteger(privateKey.getPrivateExponent());

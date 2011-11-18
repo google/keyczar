@@ -10,10 +10,10 @@ import java.security.cert.CertificateFactory;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 
-import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.enums.KeyType;
+import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
@@ -24,7 +24,7 @@ import org.keyczar.interfaces.KeyczarReader;
 public class X509CertificateReader implements KeyczarReader {
   private final InputStream certificateStream;
   private final KeyPurpose purpose;
-  private final Padding padding;
+  private final RsaPadding padding;
   private KeyMetadata meta = null;
   private KeyczarPublicKey key;
 
@@ -36,7 +36,7 @@ public class X509CertificateReader implements KeyczarReader {
    * which case it will default to OAEP.  Must be null for DSA keys.
    * @throws KeyczarException
    */
-  public X509CertificateReader(KeyPurpose purpose, InputStream certificateStream, Padding padding)
+  public X509CertificateReader(KeyPurpose purpose, InputStream certificateStream, RsaPadding padding)
       throws KeyczarException {
     if (purpose == null) {
       throw new KeyczarException("X509Certificate purpose must not be null");

@@ -29,8 +29,8 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
-import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyType;
+import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
 import org.keyczar.i18n.Messages;
@@ -137,9 +137,9 @@ public abstract class KeyczarKey {
    * @throws KeyczarException for unsupported key types
    */
   static KeyczarKey genKey(KeyType type, int keySize) throws KeyczarException {
-    Padding padding = null;
+    RsaPadding padding = null;
     if (type == KeyType.RSA_PRIV) {
-      padding = Padding.OAEP;
+      padding = RsaPadding.OAEP;
     }
     return genKey(type, padding, keySize);
   }
@@ -157,7 +157,8 @@ public abstract class KeyczarKey {
    * @return KeyczarKey of desired type
    * @throws KeyczarException for unsupported key types
    */
-  static KeyczarKey genKey(KeyType type, Padding padding, int keySize) throws KeyczarException {
+  static KeyczarKey genKey(KeyType type, RsaPadding padding, int keySize)
+      throws KeyczarException {
     if (!type.isAcceptableSize(keySize)) {
       keySize = type.defaultSize();  // fall back to default
     }
