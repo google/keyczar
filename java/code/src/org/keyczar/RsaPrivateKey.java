@@ -50,7 +50,7 @@ import com.google.gson.annotations.Expose;
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  */
-class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
+public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String KEY_GEN_ALGORITHM = "RSA";
 
   @Expose private final RsaPublicKey publicKey;
@@ -79,7 +79,8 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     return key.initFromJson();
   }
 
-  RsaPrivateKey(RSAPrivateCrtKey privateKey, Padding padding) throws KeyczarException {
+  public RsaPrivateKey(RSAPrivateCrtKey privateKey, Padding padding) throws KeyczarException {
+    super(privateKey.getModulus().bitLength());
     publicKey = new RsaPublicKey(privateKey, padding);
     privateExponent = encodeBigInteger(privateKey.getPrivateExponent());
     primeP = encodeBigInteger(privateKey.getPrimeP());
@@ -96,7 +97,7 @@ class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   @Override
-  KeyType getType() {
+  public KeyType getType() {
     return KeyType.RSA_PRIV;
   }
 

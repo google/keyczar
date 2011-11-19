@@ -42,7 +42,7 @@ import com.google.gson.annotations.Expose;
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  */
-class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
+public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String KEY_GEN_ALGORITHM = "DSA";
   private static final String SIG_ALGORITHM = "SHA1withDSA";
 
@@ -65,14 +65,16 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     return key.initFromJson();
   }
 
-  DsaPrivateKey(DSAPrivateKey privateKey) throws KeyczarException {
+  public DsaPrivateKey(DSAPrivateKey privateKey) throws KeyczarException {
+    super(privateKey.getParams().getP().bitLength());
     publicKey = new DsaPublicKey(privateKey);
     jcePrivateKey = privateKey;
     x = Base64Coder.encodeWebSafe(jcePrivateKey.getX().toByteArray());
   }
 
-  @SuppressWarnings("unused") // Used by GSON, which will overwrite the values set here.
+  // Used by GSON, which will overwrite the values set here.
   private DsaPrivateKey() {
+    super(0);
     publicKey = null;
     x = null;
   }
@@ -97,7 +99,7 @@ class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   @Override
-  KeyType getType() {
+  public KeyType getType() {
     return KeyType.DSA_PRIV;
   }
 

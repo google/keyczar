@@ -55,7 +55,7 @@ public abstract class KeyczarKey {
   private static final String PEM_LINE_ENDING = "-----\n";
   private static final String PEM_HEADER_BEGIN = "-----BEGIN ";
 
-  @Expose int size = getType().defaultSize();
+  @Expose final int size;
 
   private static final int PBE_SALT_SIZE = 8;
   private static final int IV_SIZE = 16;
@@ -63,6 +63,10 @@ public abstract class KeyczarKey {
 
   // Note that SHA1 and 3DES appears to be the best PBE configuration supported by Sun's JCE.
   private static final String PBE_CIPHER = "PBEWithSHA1AndDESede";
+
+  protected KeyczarKey(int size) {
+    this.size = size;
+  }
 
   void copyHeader(ByteBuffer dest) {
     dest.put(Keyczar.FORMAT_VERSION);
@@ -91,7 +95,7 @@ public abstract class KeyczarKey {
    *
    * @return KeyType of this key
    */
-  abstract KeyType getType();
+  public abstract KeyType getType();
 
   /**
    * Return this key's hash value

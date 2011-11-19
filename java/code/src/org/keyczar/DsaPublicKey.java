@@ -74,13 +74,15 @@ class DsaPublicKey extends KeyczarPublicKey {
     this(computeY(jcePrivateKey), jcePrivateKey.getParams());
   }
 
-  @SuppressWarnings("unused") // Used by GSON
+  // Used by GSON, which will overwrite the values set here.
   private DsaPublicKey() {
+    super(0);
     jcePublicKey = null;
     y = p = q = g = null;
   }
 
   private DsaPublicKey(BigInteger yVal, DSAParams params) throws KeyczarException {
+    super(yVal.bitLength());
     BigInteger pVal = params.getP();
     BigInteger qVal = params.getQ();
     BigInteger gVal = params.getG();
@@ -105,7 +107,7 @@ class DsaPublicKey extends KeyczarPublicKey {
   }
 
   @Override
-  KeyType getType() {
+  public KeyType getType() {
     return KeyType.DSA_PUB;
   }
 

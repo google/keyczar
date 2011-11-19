@@ -18,9 +18,9 @@ package org.keyczar;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.security.Key;
 
 import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -46,55 +46,59 @@ import com.google.gson.annotations.Expose;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-class AesKey extends KeyczarKey {
-  private Key aesKey;
+public class AesKey extends KeyczarKey {
   private static final int BLOCK_SIZE = 16;
   private static final String AES_ALGORITHM = "AES";
   private static final CipherMode DEFAULT_MODE = CipherMode.CBC;
 
-  @Expose private String aesKeyString = "";
-  @Expose private HmacKey hmacKey = new HmacKey();
-  @Expose private CipherMode mode = DEFAULT_MODE;
+  private SecretKey aesKey;
+  @Expose private final String aesKeyString;
+  @Expose private final HmacKey hmacKey;
+  @Expose private final CipherMode mode;
 
-  private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
+  private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
+
+  /**
+   * Creates an AES key from the provided key data and HMAC key.  The key data can be any
+   * byte array, but must be a valid AES key length (128, 192 or 256 bits).
+   */
+  public AesKey(byte[] aesKeyBytes, HmacKey hmacKey) throws KeyczarException {
+    super(aesKeyBytes.length * 8);
+    this.aesKeyString = Base64Coder.encodeWebSafe(aesKeyBytes);
+    this.mode = DEFAULT_MODE;
+    this.hmacKey = hmacKey;
+    initJceKey(aesKeyBytes);
+  }
+
+  // Used by GSON, which will overwrite the values set here.
+  private AesKey() {
+    super(0);
+    aesKeyString = null;
+    hmacKey = null;
+    mode = null;
+  }
 
   static AesKey generate() throws KeyczarException {
     return generate(KeyType.AES.defaultSize());
   }
 
   static AesKey generate(int keySize) throws KeyczarException {
-    AesKey key = new AesKey();
-    key.size = keySize;
-    byte[] aesBytes = Util.rand(key.size() / 8);
-    key.aesKeyString = Base64Coder.encodeWebSafe(aesBytes);
-    key.mode = DEFAULT_MODE;
-    key.hmacKey = HmacKey.generate();
-    key.init();
-    return key;
+    return new AesKey(Util.rand(keySize / 8), HmacKey.generate());
   }
-  
+
   /*
    * Used by SessionDecrypters when decrypting encrypted keys
    */
   static AesKey fromPackedKey(byte[] packedKeys) throws KeyczarException {
     byte[][] unpackedKeys = Util.lenPrefixUnpack(packedKeys);
     if (unpackedKeys.length != 2) {
-      throw new KeyczarException(
-          Messages.getString("AesKey.InvalidPackedKey"));
+      throw new KeyczarException(Messages.getString("AesKey.InvalidPackedKey"));
     }
-    byte[] aesBytes = unpackedKeys[0];
-    byte[] hmacBytes = unpackedKeys[1];
-    AesKey key = new AesKey();
-    key.size = aesBytes.length * 8;
-    key.aesKeyString = Base64Coder.encodeWebSafe(aesBytes);
-    key.mode = DEFAULT_MODE;
-    key.hmacKey = HmacKey.fromBytes(hmacBytes);
-    key.init();
-    return key;
+    return new AesKey(unpackedKeys[0], new HmacKey(unpackedKeys[1]));
   }
 
   @Override
-  KeyType getType() {
+  public KeyType getType() {
     return KeyType.AES;
   }
 
@@ -105,24 +109,22 @@ class AesKey extends KeyczarKey {
 
   static AesKey read(String input) throws KeyczarException {
     AesKey key = Util.gson().fromJson(input, AesKey.class);
-    key.hmacKey.init();
-    key.init();
+    key.hmacKey.initFromJson();
+    key.initJceKey(Base64Coder.decodeWebSafe(key.aesKeyString));
     return key;
   }
 
-  private void init() throws KeyczarException {
-    byte[] aesBytes = Base64Coder.decodeWebSafe(aesKeyString);
+  public void initJceKey(byte[] aesBytes) throws KeyczarException {
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
-    byte[] fullHash =
-        Util.hash(Util.fromInt(BLOCK_SIZE), aesBytes, hmacKey.getEncoded());
+    byte[] fullHash = Util.hash(Util.fromInt(BLOCK_SIZE), aesBytes, hmacKey.getEncoded());
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
-  } 
+  }
 
   /*
    * Used by SessionEncrypters to get a packed representation of an AES and
    * HMAC key.
    */
-  byte[] getEncoded() {        
+  byte[] getEncoded() {
     return Util.lenPrefixPack(aesKey.getEncoded(), hmacKey.getEncoded());
   }
 
@@ -132,14 +134,14 @@ class AesKey extends KeyczarKey {
   }
 
   @Override
-  protected Key getJceKey() {
+  protected SecretKey getJceKey() {
     return aesKey;
   }
 
   private class AesStream implements EncryptingStream, DecryptingStream {
-    private Cipher encryptingCipher;
-    private Cipher decryptingCipher;
-    private SigningStream signStream;
+    private final Cipher encryptingCipher;
+    private final Cipher decryptingCipher;
+    private final SigningStream signStream;
     boolean ivRead = false;
 
     public AesStream() throws KeyczarException  {

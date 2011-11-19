@@ -49,7 +49,7 @@ import com.google.gson.annotations.Expose;
  *
  * @author steveweis@gmail.com (Steve Weis)
  */
-class RsaPublicKey extends KeyczarPublicKey {
+public class RsaPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "RSA";
   private static final String SIG_ALGORITHM = "SHA1withRSA";
 
@@ -110,7 +110,7 @@ class RsaPublicKey extends KeyczarPublicKey {
   }
 
   @Override
-  KeyType getType() {
+  public KeyType getType() {
     return KeyType.RSA_PUB;
   }
 
@@ -126,15 +126,16 @@ class RsaPublicKey extends KeyczarPublicKey {
     initializeHash();
   }
 
-  @SuppressWarnings("unused") // Used by GSON, which will overwrite the values set here.
+  // Used by GSON, which will overwrite the values set here.
   private RsaPublicKey() {
-    size = 0;
+    super(0);
     modulus = publicExponent = null;
     padding = null;
   }
 
-  private RsaPublicKey(BigInteger mod, BigInteger exp, Padding padding) throws KeyczarException {
-    this.size = mod.bitLength();
+  private RsaPublicKey(BigInteger mod, BigInteger exp, Padding padding)
+      throws KeyczarException {
+    super(mod.bitLength());
     this.modulus = Util.encodeBigInteger(mod);
     this.publicExponent = Util.encodeBigInteger(exp);
     this.padding = (padding == Padding.PKCS) ? Padding.PKCS : null;
