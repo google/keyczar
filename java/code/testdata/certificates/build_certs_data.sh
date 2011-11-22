@@ -26,6 +26,16 @@ build_keys_and_cert() {
   echo "Exporting $KSET key pair to PEM file"
   keyczart exportkey --location="$KSET" --dest="$KSET".pem --passphrase="pass"
 
+  echo "Exporting $KSET public key to keyczar keyset $KSET-pub"
+  mkdir "$KSET"-pub
+  keyczart pubkey --location="$KSET" --destination="$KSET"-pub
+
+  echo "Exporting $KSET public key to PEM file"
+  openssl $ALGO -in "$KSET".pem -passin "pass:pass" -pubout -out "$KSET"-pub.pem
+
+  echo "Exporting $KSET public key to DER file"
+  openssl $ALGO -in "$KSET".pem -passin "pass:pass" -pubout -outform DER -out "$KSET"-pub.der
+
   echo "Converting $KSET key pair PEM file to DER file"
   openssl $ALGO -outform DER -in "$KSET".pem -out "$KSET".der \
     -passin "pass:pass" -passout "pass:pass" >> /dev/null
