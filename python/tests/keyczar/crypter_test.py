@@ -28,7 +28,7 @@ from keyczar import keyczar
 from keyczar import readers
 from keyczar import util
 
-TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "testdata"))
 
 class CrypterTest(unittest.TestCase):
   
