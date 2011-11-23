@@ -32,10 +32,10 @@ import keyinfo
 class KeyMetadata(object):
   """Encodes metadata for a keyset with a name, purpose, type, and versions."""
 
-  def __init__(self, name, purpose, type, encrypted=False):
+  def __init__(self, name, purpose, key_type, encrypted=False):
     self.name = name
     self.purpose = purpose
-    self.type = type
+    self.type = key_type
     self.encrypted = encrypted
     self.__versions = {}  # dictionary from version nums to KeyVersions
 

@@ -61,7 +61,7 @@ class Keyczar(object):
       key = keys.ReadKey(self.metadata.type,
                          reader.GetKey(version.version_number))
       self._keys[version] = key
-      self._keys[key.hash] = key
+      self._keys[key.hash_id] = key
 
   versions = property(lambda self: [k for k in self._keys.keys()
                                     if isinstance(k, keydata.KeyVersion)],
@@ -88,8 +88,7 @@ class Keyczar(object):
     version = ord(header[0])
     if version != VERSION:
       raise errors.BadVersionError(version)
-    hash = util.Encode(header[1:])
-    return self.GetKey(hash)
+    return self.GetKey(util.Encode(header[1:]))
 
   @staticmethod
   def Read(location):
@@ -107,25 +106,25 @@ class Keyczar(object):
   def IsAcceptablePurpose(self, purpose):
     """Indicates whether purpose is valid. Abstract method."""
 
-  def GetKey(self, id):
+  def GetKey(self, key_id):
     """
-    Returns the key associated with the given id, a hash or a version.
+    Returns the key associated with the given key_id, a hash or a version.
 
-    @param id: Either the hash identifier of the key or its version.
-    @type id: string or L{keydata.KeyVersion}
+    @param key_id: Either the hash identifier of the key or its version.
+    @type key_id: string or L{keydata.KeyVersion}
 
-    @return: key associated with this id or None if id doesn't exist.
+    @return: key associated with this key_id or None if key_id doesn't exist.
     @rtype: L{keys.Key}
 
-    @raise KeyNotFoundError: if key with given id doesn't exist
+    @raise KeyNotFoundError: if key with given key_id doesn't exist
     """
     try:
-      return self._keys[id]
+      return self._keys[key_id]
     except KeyError:
-      raise errors.KeyNotFoundError(id)
+      raise errors.KeyNotFoundError(key_id)
 
   def _AddKey(self, version, key):
-    self._keys[version] = self._keys[key.hash] = key
+    self._keys[version] = self._keys[key.hash_id] = key
     self.metadata.AddVersion(version)
 
 class GenericKeyczar(Keyczar):
@@ -185,7 +184,7 @@ class GenericKeyczar(Keyczar):
     # Make sure no keys collide on their identifiers
     while True:
       key = keys.GenKey(self.metadata.type, size)
-      if self._keys.get(key.hash) is None:
+      if self._keys.get(key.hash_id) is None:
         break
 
     self._AddKey(version, key)

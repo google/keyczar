@@ -16,7 +16,7 @@
 
 """Represents cryptographic keys in Keyczar.
 
-Identifies a key by its hash and type. Includes several subclasses
+Identifies a key by its hash_id and type. Includes several subclasses
 of base class Key.
 
 @author: arkajit.dey@gmail.com (Arkajit Dey)
@@ -49,52 +49,52 @@ import util
 #Currently, only problem arose with base64 conversions -- this was dealt with
 #directly in the encode/decode methods. Luckily 'hello' == u'hello'.
 
-def GenKey(type, size=None):
+def GenKey(key_type, size=None):
   """
-  Generates a key of the given type and length.
+  Generates a key of the given key_type and length.
 
-  @param type: the type of key to generate
-  @type type: L{keyinfo.KeyType}
+  @param key_type: the key_type of key to generate
+  @key_type key_type: L{keyinfo.KeyType}
 
   @param size: the length in bits of the key to be generated
-  @type size: integer
+  @key_type size: integer
 
-  @return: the generated key of the given type and size
+  @return: the generated key of the given key_type and size
 
-  @raise KeyczarError: if type is a public key or unsupported or if key size
+  @raise KeyczarError: if key_type is a public key or unsupported or if key size
                        is unsupported.
   """
   if size is None:
-    size = type.default_size
+    size = key_type.default_size
 
-  if not type.IsValidSize(size):
+  if not key_type.IsValidSize(size):
     raise errors.KeyczarError("Unsupported key size %d bits." % size)
 
   try:
     return {keyinfo.AES: AesKey.Generate,
             keyinfo.HMAC_SHA1: HmacKey.Generate,
             keyinfo.DSA_PRIV: DsaPrivateKey.Generate,
-            keyinfo.RSA_PRIV: RsaPrivateKey.Generate}[type](size)
+            keyinfo.RSA_PRIV: RsaPrivateKey.Generate}[key_type](size)
   except KeyError:
-    if type == keyinfo.DSA_PUB or type == keyinfo.RSA_PUB:
-      msg = "Public keys of type %s must be exported from private keys."
+    if key_type == keyinfo.DSA_PUB or key_type == keyinfo.RSA_PUB:
+      msg = "Public keys of key_type %s must be exported from private keys."
     else:
-      msg = "Unsupported key type: %s"
-    raise errors.KeyczarError(msg % type)
+      msg = "Unsupported key key_type: %s"
+    raise errors.KeyczarError(msg % key_type)
 
-def ReadKey(type, key):
+def ReadKey(key_type, key):
   """
-  Reads a key of the given type from a JSON string representation.
+  Reads a key of the given key_type from a JSON string representation.
 
-  @param type: the type of key to read
-  @type type: L{keyinfo.KeyType}
+  @param key_type: the key_type of key to read
+  @key_type key_type: L{keyinfo.KeyType}
 
   @param key: the JSON string representation of the key
-  @type key: string
+  @key_type key: string
 
   @return: the key object read from the JSON string
 
-  @raise KeyczarError: if type is unsupported
+  @raise KeyczarError: if key_type is unsupported
   """
   try:
     return {keyinfo.AES: AesKey.Read,
@@ -102,16 +102,16 @@ def ReadKey(type, key):
             keyinfo.DSA_PRIV: DsaPrivateKey.Read,
             keyinfo.RSA_PRIV: RsaPrivateKey.Read,
             keyinfo.DSA_PUB: DsaPublicKey.Read,
-            keyinfo.RSA_PUB: RsaPublicKey.Read}[type](key)
+            keyinfo.RSA_PUB: RsaPublicKey.Read}[key_type](key)
   except KeyError:
-    raise errors.KeyczarError("Unsupported key type: %s" % type)
+    raise errors.KeyczarError("Unsupported key key_type: %s" % key_type)
 
 class Key(object):
 
   """Parent class for Keyczar Keys."""
 
-  def __init__(self, type):
-    self.type = type
+  def __init__(self, key_type):
+    self.type = key_type
     self.__size = self.type.default_size  # initially default
 
   def __eq__(self, other):
@@ -131,15 +131,15 @@ class Key(object):
     return self._GetKeyString()
 
   def _Hash(self):
-    """Compute and return the hash id of this key. Can override default hash."""
+    """Compute and return the hash_id id of this key. Can override default hash_id."""
     fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)), self.key_bytes)
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
 
   def __Hash(self):
-    """Indirect getter for hash."""
+    """Indirect getter for hash_id."""
     return self._Hash()
 
-  hash = property(__Hash, doc="""The hash id of the key.""")
+  hash_id = property(__Hash, doc="""The hash_id id of the key.""")
   size = property(lambda self: self.__size, __SetSize,
                   doc="""The size of the key in bits.""")
   key_string = property(__GetKeyString, doc="""The key as a Base64 string.""")
@@ -147,14 +147,14 @@ class Key(object):
                        doc="""The key as bytes.""")
 
   def Header(self):
-    """Return the 5-byte header string including version byte, 4-byte hash."""
-    return chr(keyczar.VERSION) + util.Decode(self.hash)
+    """Return the 5-byte header string including version byte, 4-byte hash_id."""
+    return chr(keyczar.VERSION) + util.Decode(self.hash_id)
 
 class SymmetricKey(Key):
   """Parent class for symmetric keys such as AES, HMAC-SHA1"""
 
-  def __init__(self, type, key_string):
-    Key.__init__(self, type)
+  def __init__(self, key_type, key_string):
+    Key.__init__(self, key_type)
     self.__key_string = key_string
 
   def _GetKeyString(self):
@@ -164,8 +164,8 @@ class SymmetricKey(Key):
 class AsymmetricKey(Key):
   """Parent class for asymmetric keys."""
 
-  def __init__(self, type, params):
-    Key.__init__(self, type)
+  def __init__(self, key_type, params):
+    Key.__init__(self, key_type)
     self._params = params
 
 class AesKey(SymmetricKey):
@@ -376,18 +376,18 @@ class HmacKey(SymmetricKey):
 class PrivateKey(AsymmetricKey):
   """Represents private keys in Keyczar for asymmetric key pairs."""
 
-  def __init__(self, type, params, pub):
-    AsymmetricKey.__init__(self, type, params)
+  def __init__(self, key_type, params, pub):
+    AsymmetricKey.__init__(self, key_type, params)
     self.public_key = pub
 
   def _Hash(self):
-    return self.public_key.hash
+    return self.public_key.hash_id
 
 class PublicKey(AsymmetricKey):
   """Represents public keys in Keyczar for asymmetric key pairs."""
 
-  def __init__(self, type, params):
-    AsymmetricKey.__init__(self, type, params)
+  def __init__(self, key_type, params):
+    AsymmetricKey.__init__(self, key_type, params)
 
 class DsaPrivateKey(PrivateKey):
   """Represents DSA private keys in an asymmetric DSA key pair."""
@@ -513,7 +513,7 @@ class RsaPrivateKey(PrivateKey):
     label_hash = datablock[:util.HLEN]
     expected_label_hash = util.Hash(label)  # Debugging
     if label_hash != expected_label_hash:
-      raise errors.KeyczarError("OAEP Decoding Error - hash is invalid")
+      raise errors.KeyczarError("OAEP Decoding Error - hash_id is invalid")
 
     delimited_message = datablock[util.HLEN:].lstrip('\x00')
     if delimited_message[0] != '\x01':
@@ -606,7 +606,7 @@ class RsaPrivateKey(PrivateKey):
 
   def Sign(self, msg):
     """
-    Return raw byte string of signature on the SHA-1 hash of the message.
+    Return raw byte string of signature on the SHA-1 hash_id of the message.
 
     @param msg: message to be signed
     @type msg: string
@@ -775,7 +775,7 @@ class RsaPublicKey(PublicKey):
     @param sig: string representation of long int signature
     @type sig: string
 
-    @return: True if signature is valid for the message hash. False otherwise.
+    @return: True if signature is valid for the message hash_id. False otherwise.
     @rtype: boolean
     """
     try:

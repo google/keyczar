@@ -214,12 +214,11 @@ def BinToBytes(bits):
   """Convert bit string to byte string."""
   bits = _PadByte(bits)
   octets = [bits[8*i:8*(i+1)] for i in range(len(bits)/8)]
-  bytes = [chr(int(x, 2)) for x in octets]
-  return "".join(bytes)
+  return "".join([chr(int(x, 2)) for x in octets])
 
-def BytesToBin(bytes):
+def BytesToBin(byte_string):
   """Convert byte string to bit string."""
-  return "".join([_PadByte(IntToBin(ord(byte))) for byte in bytes])
+  return "".join([_PadByte(IntToBin(ord(byte))) for byte in byte_string])
 
 def _PadByte(bits):
   """Pad a string of bits with zeros to make its length a multiple of 8."""
@@ -244,13 +243,13 @@ def BigIntToBytes(n):
   return "".join(chars)
 
 def IntToBytes(n):
-  """Return byte string of 4 big-endian ordered bytes representing n."""
-  bytes = [m % 256 for m in [n >> 24, n >> 16, n >> 8, n]]
-  return "".join([chr(b) for b in bytes])  # byte array to byte string
+  """Return byte string of 4 big-endian ordered byte_array representing n."""
+  byte_array = [m % 256 for m in [n >> 24, n >> 16, n >> 8, n]]
+  return "".join([chr(b) for b in byte_array])  # byte array to byte string
 
-def BytesToLong(bytes):
-  l = len(bytes)
-  return long(sum([ord(bytes[i]) * 256**(l - 1 - i) for i in range(l)]))
+def BytesToLong(byte_string):
+  l = len(byte_string)
+  return long(sum([ord(byte_string[i]) * 256**(l - 1 - i) for i in range(l)]))
 
 def Xor(a, b):
   """Return a ^ b as a byte string where a and b are byte strings."""
@@ -265,14 +264,14 @@ def Xor(a, b):
   z = [chr(x[i] ^ y[i]) for i in range(m)]
   return "".join(z)
 
-def PadBytes(bytes, n):
+def PadBytes(byte_string, n):
   """Prepend a byte string with n zero bytes."""
-  return n * '\x00' + bytes
+  return n * '\x00' + byte_string
 
-def TrimBytes(bytes):
+def TrimBytes(byte_string):
   """Trim leading zero bytes."""
-  trimmed = bytes.lstrip(chr(0))
-  if trimmed == "":  # was a string of all zero bytes
+  trimmed = byte_string.lstrip(chr(0))
+  if trimmed == "":  # was a string of all zero byte_string
     return chr(0)
   else:
     return trimmed

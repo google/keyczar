@@ -81,8 +81,8 @@ class EncryptedReader(Reader):
 class MockReader(Reader):
   """Mock reader used for testing Keyczart."""
   
-  def __init__(self, name, purpose, type, encrypted=False):
-    self.kmd = keydata.KeyMetadata(name, purpose, type, encrypted)
+  def __init__(self, name, purpose, key_type, encrypted=False):
+    self.kmd = keydata.KeyMetadata(name, purpose, key_type, encrypted)
     self.pubkmd = None
     self.keys = {}
     self.pubkeys = {}

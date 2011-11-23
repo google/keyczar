@@ -159,27 +159,27 @@ def GenKeySet(loc):
   print "Generating private key sets..."
   for (name, purpose, asymmetric, crypter) in KEYSETS:
     print "."
-    dir = os.path.join(loc, name)
+    dir_path = os.path.join(loc, name)
     if crypter:
       crypter = keyczar.Crypter.Read(os.path.join(loc, crypter))
-    Clean(dir)
-    Create(dir, "Test", purpose, asymmetric)
-    AddKey(dir, keyinfo.PRIMARY, crypter)
-    UseKey(purpose, dir, os.path.join(dir, "1.out"), crypter)
-    AddKey(dir, keyinfo.PRIMARY, crypter)
-    UseKey(purpose, dir, os.path.join(dir, "2.out"), crypter)
+    Clean(dir_path)
+    Create(dir_path, "Test", purpose, asymmetric)
+    AddKey(dir_path, keyinfo.PRIMARY, crypter)
+    UseKey(purpose, dir_path, os.path.join(dir_path, "1.out"), crypter)
+    AddKey(dir_path, keyinfo.PRIMARY, crypter)
+    UseKey(purpose, dir_path, os.path.join(dir_path, "2.out"), crypter)
   
   print "Exporting public key sets..."
   for name in ('dsa', 'rsa-sign'):
     print "."
-    dir = os.path.join(loc, name)
+    dir_path = os.path.join(loc, name)
     dest = os.path.join(loc, name + '.public')
-    PubKey(dir, dest)
+    PubKey(dir_path, dest)
   print "Done!"
 
 def Clean(directory):
-  for file in os.listdir(directory):
-    path = os.path.join(directory, file)
+  for filename in os.listdir(directory):
+    path = os.path.join(directory, filename)
     if not os.path.isdir(path): 
       os.remove(path)
 
