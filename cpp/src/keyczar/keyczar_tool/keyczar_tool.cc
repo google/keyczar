@@ -506,11 +506,6 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
     std::string size_string;
     GetSwitchValue(cmdl, "size", &size_string, true);
 
-    if (!size_string.empty()) {
-      LOG(ERROR) << "Invalid null size ";
-      return false;
-    }
-
     char* enptr = NULL;
     int size = strto32(size_string.c_str(), &enptr, 10);
 
