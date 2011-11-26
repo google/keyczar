@@ -307,17 +307,6 @@ def Encode(s):
   Uses URL-safe alphabet: - replaces +, _ replaces /. Will convert s of type
   unicode to string type first.
 
-  *NOTE*: this implementation removes the padding '=' for compatibility with
-  other Keyczar implementations - this is *not* RFC2045 compliant (among others).
-
-  See http://www.ietf.org/rfc/rfc2045.txt and 
-  http://en.wikipedia.org/wiki/Base64#Variants_summary_table
-
-  The implication of this is that when streaming the line-breaks are *critical*
-  for determining when to check for removed padding in util.Decode() (below),
-  otherwise there is no way to determine what length was orginally encoded by
-  this function.
-
   @param s: string to encode as Base64
   @type s: string
 
@@ -343,23 +332,16 @@ def Decode(s):
   @raise Base64DecodingError: If length of string (ignoring whitespace) is one
     more than a multiple of four.
   """
-  b64s = str(s.replace(" ", ""))  # kill whitespace, make string (not unicode)
-  rslt = []
-  # handle streamed data in addition to unstreamed
-  for s in b64s.split('\n'):
-    try:
-      rslt.append(base64.urlsafe_b64decode(s))
-    except TypeError:
-      # handle base64 without padding!
-      d = len(s) % 4
-      if d == 1:
-        raise errors.Base64DecodingError()
-      elif d == 2:
-        s += "=="
-      elif d == 3:
-        s += "="
-      rslt.append(base64.urlsafe_b64decode(s))
-  return ''.join(rslt)
+  s = ''.join(s.splitlines())
+  s = str(s.replace(" ", ""))  # kill whitespace, make string (not unicode)
+  d = len(s) % 4
+  if d == 1:
+    raise errors.Base64DecodingError()
+  elif d == 2:
+    s += "=="
+  elif d == 3:
+    s += "="
+  return base64.urlsafe_b64decode(s)
 
 def WriteFile(data, loc):
   """

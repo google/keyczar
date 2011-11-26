@@ -867,6 +867,10 @@ class EncryptingStream(object):
     self.key = key
     self.output_stream = output_stream
     self.data = ''
+    # keep track of data that we've been asked to write, but was outside the
+    # 3-byte base64 boundary i.e. we don't want to output anything that would
+    # required '=' padding as it is removed.
+    self.unwritten_data = ''
 
     # NO PADDING on blocks to allow encrypting using a stream and decrypting
     # without a using a stream
@@ -912,17 +916,28 @@ class EncryptingStream(object):
     self.data = None
 
     # finally, add the signature to the output
-    self.__writeToStream(self.hm.Sign())
+    self.__writeToStream(self.hm.Sign(), force=True)
     self.output_stream.flush()
 
-  def __writeToStream(self, data):
+  def __writeToStream(self, data, force=False):
     """
     Helper to write bytes to output stream as a line
 
     @param data: data to be written.
     @type data: string
     """
-    self.output_stream.write(util.Encode(data) + '\n')
+    data_to_write = self.unwritten_data + data
+    if not force:
+      # only output exact multiples of 3-bytes => no padding
+      len_to_write = 3*int(len(data_to_write)/3)
+    else:
+      len_to_write = len(data_to_write)
+
+    # write all the data we are permitted to, preserve the rest
+    self.unwritten_data = data_to_write[len_to_write:]
+    out_data = data_to_write[:len_to_write]
+
+    self.output_stream.write(util.Encode(out_data))
 
   def __writeEncrypted(self, data):
     """
@@ -987,40 +1002,29 @@ class DecryptingStream(object):
 
       # once everything in place, we can start decoding and decrypting
       if self.cipher and self.data:
-        # can only base64 decode 4 bytes at a time as we can't guarantee that we
-        # have been given the full block yet
-        # However, given that we don't know the original encoding block size we
-        # *must* assume that a CR or LF or CR+LF => the end of a block
-        # We could trust that the callee *knows* what the encoding block size
-        # was, but is that a better trade-off than assuming CR => EOB?
-        chars_decoded = 0
-        block_data = self.data.splitlines(True)
-        for block in block_data[:-2]:
-          data, is_block, chars_decoded_cnt = self._handleLines(block)
-          chars_decoded += chars_decoded_cnt
-          # anything to process?
-          if len(data):
-            # if is a base64 encoded block then can decode it directly
-            # otherwise do it in chunks
-            if is_block:
-              self.decoded_data += util.Decode(data)
-              chars_decoded += len(data)
-            else:
-              ok, chars_decoded_cnt = self._decodeData(data)
-              chars_decoded += chars_decoded_cnt
+        # can only base64 decode multiples of 4 bytes at a time as we can't guarantee that we
+        # have been given the full data yet
 
-            # if it was a full block then we can actually decrypt it
-            if is_block:
-              # tell the signer
-              self.hm.Update(self.decoded_data)
-              # output the decrypted data
-              decrypted_data = self.cipher.decrypt(self.decoded_data)
-              self.output_stream.write(decrypted_data)
-              # must reset the captured decoded data
-              self.decoded_data = ''
+        # don't decode the full dataset so we can process the sig if it happens
+        # to be in the data
+        len_to_decode = 4*((int(len(self.data) - 2*util.HLEN)/4))
+        if len_to_decode > 0:
+          decoded_data = util.Decode(self.data[:len_to_decode])
+          self.data = self.data[len_to_decode:]
+          # include any unused decoded data
+          decoded_data = self.decoded_data + decoded_data
+          # output the decrypted data, but only multiples of the block size so
+          # there is no padding required
+          len_to_decrypt = self.key.block_size*(
+            int(len(decoded_data)/self.key.block_size))
+          data_to_decrypt = decoded_data[:len_to_decrypt]
+          decrypted_data = self.cipher.decrypt(data_to_decrypt)
+          self.output_stream.write(decrypted_data)
+          # tell the signer about the *used* decoded data
+          self.hm.Update(data_to_decrypt)
 
-        # throw away any data we've processed
-        self.data = self.data[chars_decoded:]
+          # save any decoded data we couldn't decrypt
+          self.decoded_data = decoded_data[len_to_decrypt:]
 
   def close(self):
     """
@@ -1030,37 +1034,18 @@ class DecryptingStream(object):
 
     # Decode *all* remaining coded data and *then* process the
     # remaining encrypted data and the signature
-    block = self.data
-    non_block_data = ''
-    chars_decoded = 0
+    decoded_data = self.decoded_data
+    decoded_data += util.Decode(self.data)
 
-    # handle line endings => a single base64 encoded entry
-    # NOTE: this is a tradeoff between preserving compatibility with other
-    # implementations and possibly receiving reflowed data 
-    # see util.Encode()
-    for b in block.splitlines(True):
-      data, is_block, chars_decoded_cnt = self._handleLines(b)
-      chars_decoded += chars_decoded_cnt
-      # if is a base64 encoded block then can decode it directly
-      # otherwise do it in 1 large chunk later
-      if is_block:
-        self.decoded_data += util.Decode(data)
-      else:
-        non_block_data += b
-
-    ok, chars_decoded = self._decodeData(non_block_data)
-
-    # sanity check!
-    assert chars_decoded == len(non_block_data)
-    if len(self.decoded_data) < util.HLEN:
-      raise errors.ShortCiphertextError(len(self.decoded_data))
+    if len(decoded_data) < util.HLEN:
+      raise errors.ShortCiphertextError(len(decoded_data))
 
     # extract the signature
-    sig_bytes = self.decoded_data[-util.HLEN:]  # last 20 bytes are sig
-    self.decoded_data = self.decoded_data[:-util.HLEN]
+    sig_bytes = decoded_data[-util.HLEN:]  # last 20 bytes are sig
+    decoded_data = decoded_data[:-util.HLEN]
 
     # tell the signer about all the decoded data
-    self.hm.Update(self.decoded_data)
+    self.hm.Update(decoded_data)
 
     # was all that data we've written valid????
     # due to the nature of streaming it isn't possible to validate up front as
@@ -1070,25 +1055,16 @@ class DecryptingStream(object):
       raise errors.InvalidSignatureError()
 
     # output the unpadded decrypted data
-    dec_data = self.cipher.decrypt(self.decoded_data)
+    dec_data = self.cipher.decrypt(decoded_data)
     unpad_data = self.key._UnPad(dec_data)
     self.output_stream.write(unpad_data)
 
-    # must reset the captured decoded data
+    # must reset the captured data
+    self.data = ''
     self.decoded_data = ''
 
     # finally, flush the output stream  
     self.output_stream.flush()
-
-  def _handleLines(self, data):
-    chars_decoded = 0
-    is_block = False
-    # strip off any line endings
-    while data.endswith(('\r', '\n')):
-      is_block = True
-      data = data[:-1]
-      chars_decoded += 1
-    return data, is_block, chars_decoded
 
   def _decodeData(self, data, stop_after=None):
     """

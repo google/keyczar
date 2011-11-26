@@ -29,7 +29,6 @@ from keyczar import errors
 from keyczar import keyczar
 from keyczar import readers
 from keyczar import util
-from keyczar import keys
 
 TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "testdata"))
 
@@ -73,6 +72,19 @@ class CrypterTest(unittest.TestCase):
       for c in map(None, *(iter(data),) * len_to_write):
         stream.write(''.join([x for x in c if x]))
 
+  def __simulateReflow(self, data):
+    """Helper to simulate reflowing of data"""
+    # add some CR, LF and CR+LF
+    endings = ['\n', '\r', '\r\n']
+    # split the data into small groups
+    reflowed_data = ''
+    for c in map(None, *(iter(data),) * 5):
+      # ignore any padding None's
+      d = ''.join([x for x in c if x])
+      # join them with a random ending
+      reflowed_data += '%s%s' %(random.choice(endings), d)
+    return reflowed_data
+
   def __testDecrypt(self, subdir, reader=None):
     path = os.path.join(TEST_DATA, subdir)
     if reader:
@@ -86,6 +98,24 @@ class CrypterTest(unittest.TestCase):
     primary_decrypted = crypter.Decrypt(primary_ciphertext)
     self.assertEquals(self.input_data, primary_decrypted)
   
+  def __testDecryptReflowed(self, subdir, reader=None):
+    path = os.path.join(TEST_DATA, subdir)
+    if reader:
+      crypter = keyczar.Crypter(reader)
+    else:
+      crypter = keyczar.Crypter.Read(path)
+    active_ciphertext = util.ReadFile(os.path.join(path, "1.out"))
+
+    # add some CR, LF and CR+LF
+    reflowed_active_ciphertext = self.__simulateReflow(active_ciphertext)
+    active_decrypted = crypter.Decrypt(reflowed_active_ciphertext)
+    self.assertEquals(self.input_data, active_decrypted)
+
+    primary_ciphertext = util.ReadFile(os.path.join(path, "2.out"))
+    reflowed_primary_ciphertext = self.__simulateReflow(primary_ciphertext)
+    primary_decrypted = crypter.Decrypt(reflowed_primary_ciphertext)
+    self.assertEquals(self.input_data, primary_decrypted)
+
   def __testDecryptStream(self, subdir, reader, input_data, buffer_size, write_mode):
     """NOTE: input_data ignored here as we don't have a valid ".out" for
     random data"""
@@ -120,6 +150,11 @@ class CrypterTest(unittest.TestCase):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, subdir))
     ciphertext = crypter.Encrypt(self.input_data)
     plaintext = crypter.Decrypt(ciphertext)
+    self.assertEquals(self.input_data, plaintext)
+
+    # test reflowed data as well
+    reflowed_ciphertext = self.__simulateReflow(ciphertext)
+    plaintext = crypter.Decrypt(reflowed_ciphertext)
     self.assertEquals(self.input_data, plaintext)
   
   def __testStandardEncryptAndStreamDecrypt(self, subdir, 
@@ -160,13 +195,12 @@ class CrypterTest(unittest.TestCase):
     self.assertEquals(input_data, plaintext,
                       'Not equals for buffer:%d, mode:%d' %(buffer_size,
                                                             write_mode))
-  
+
   def __testStreamEncryptAndStreamDecrypt(self, subdir,
                                           input_data,
                                           buffer_size,
                                           write_mode,
                                          ):
-    #input_data = self.input_data
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, subdir))
     ciphertext_stream = StringIO.StringIO()
     encryption_stream = crypter.CreateEncryptingStream(ciphertext_stream,
@@ -191,18 +225,21 @@ class CrypterTest(unittest.TestCase):
   def __testAllModesAndBufferSizes(self, fn, params):
     for buff_size in self.ALL_BUFFER_SIZES:
       for mode in self.ALL_MODES:
-        for data in [self.input_data, self.random_input_data]:
+        for data in [self.input_data, self.random_input_data,
+                     self.__simulateReflow(self.random_input_data)]:
           all_params = list(params) + [data, buff_size, mode]
           fn(*all_params)
 
   def testRsaDecrypt(self):
     self.__testDecrypt("rsa")
+    self.__testDecryptReflowed("rsa")
   
   def testRsaEncryptAndDecrypt(self):
     self.__testEncryptAndDecrypt("rsa")
   
   def testAesDecrypt(self):
     self.__testDecrypt("aes")
+    self.__testDecryptReflowed("aes")
 
     # test streaming decryption for all combinations
     self.__testAllModesAndBufferSizes(self.__testDecryptStream, ("aes",
@@ -213,6 +250,7 @@ class CrypterTest(unittest.TestCase):
     key_decrypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
     reader = readers.EncryptedReader(file_reader, key_decrypter)
     self.__testDecrypt("aes-crypted", reader)
+    self.__testDecryptReflowed("aes-crypted", reader)
 
     # test streaming decryption for all combinations
     self.__testAllModesAndBufferSizes(self.__testDecryptStream,
@@ -270,6 +308,9 @@ class CrypterTest(unittest.TestCase):
   
   def tearDown(self):
     self.input_data = None
+    self.random_input_data = None
+    self.random_input_data_len = 0
+    self.random_buff_size = 0
   
 def suite():
   alltests = unittest.TestSuite(
