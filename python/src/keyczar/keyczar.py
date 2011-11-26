@@ -321,6 +321,27 @@ class Encrypter(Keyczar):
       raise errors.NoPrimaryKeyError()
     return util.Encode(encrypting_key.Encrypt(data))
 
+  def CreateEncryptingStream(self, output_stream,
+                             buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
+    """
+    Create an encrypting stream capable of creating a ciphertext byte stream
+    containing Header|IV|Ciph|Sig.
+
+    @param output_stream: target stream for encrypted output
+    @type output_stream: 'file-like' object
+
+    @param buffer_size: Suggested buffer size for writing data (will be adjusted
+    to suit the underlying cipher.
+    @type buffer_size: integer
+
+    @return: an encrypting stream capable of creating a ciphertext byte stream
+    @rtype: EncryptingStream
+    """
+    encrypting_key = self.primary_key
+    if encrypting_key is None:
+      raise errors.NoPrimaryKeyError()
+    return keys.EncryptingStream(encrypting_key, output_stream, buffer_size)
+
 class Verifier(Keyczar):
   """Capable of verifying only."""
 
@@ -454,6 +475,25 @@ class Crypter(Encrypter):
     key = self._ParseHeader(data_bytes[:HEADER_SIZE])
     return key.Decrypt(data_bytes)
 
+  def CreateDecryptingStream(self, output_stream,
+                             buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
+    """
+    Create a decrypting stream capable of processing a ciphertext byte stream
+    containing Header|IV|Ciph|Sig into plain text.
+
+    @param output_stream: target stream for decrypted output
+    @type output_stream: 'file-like' object
+
+    @param buffer_size: Suggested buffer size for writing data (will be adjusted
+    to suit the underlying cipher.
+    @type buffer_size: integer
+
+    @return: a decrypting stream capable of processing a ciphertext byte stream
+    @rtype: DecryptingStream
+    """
+    return keys.DecryptingStream(self, output_stream, buffer_size)
+
+
 class Signer(Verifier):
   """Capable of both signing and verifying."""
 
@@ -534,3 +574,4 @@ class UnversionedSigner(UnversionedVerifier):
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
     return util.Encode(signing_key.Sign(data))
+
