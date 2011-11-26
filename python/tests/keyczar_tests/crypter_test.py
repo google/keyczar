@@ -27,10 +27,12 @@ from keyczar import errors
 from keyczar import keyczar
 from keyczar import readers
 from keyczar import util
+from keyczar import keys
+from keyczar import keyinfo
 
 TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "testdata"))
 
-class CrypterTest(unittest.TestCase):
+class BaseCrypterTest(unittest.TestCase):
   
   def setUp(self):
     self.input = "This is some test data"
@@ -84,5 +86,74 @@ class CrypterTest(unittest.TestCase):
   def tearDown(self):
     self.input = None
   
+class PyCryptoCrypterTest(BaseCrypterTest):
+    
+  def setUp(self):
+    keys.ACTIVE_CRYPT_LIB = 'pycrypto'
+    super(PyCryptoCrypterTest, self).setUp()
+
+class M2CryptoCrypterTest(BaseCrypterTest):
+    
+  def setUp(self):
+    keys.ACTIVE_CRYPT_LIB = 'm2crypto'
+    super(M2CryptoCrypterTest, self).setUp()
+
+class PyCryptoM2CryptoInteropTest(unittest.TestCase):
+    
+  def setUp(self):
+    self.input = "The quick brown fox was not quick enough and is now an UNFOX!"
+
+  def testKeysizeInterop(self):
+    s = self.input
+    # test for all valid sizes
+    for size in keyinfo.AES.sizes:
+      # generate a new key of this size
+      aeskey = keys.AesKey.Generate(size)
+
+      # ensure PyCrypto chosen
+      keys.ACTIVE_CRYPT_LIB = 'pycrypto'
+      self.assertEquals(
+        aeskey.Decrypt(aeskey.Encrypt(s)), s, 
+        'Cannot encrypt/decrypt with the same PyCrypto key! size:%s' %size
+      )
+      pycrypto_encrypted_str = aeskey.Encrypt(s)
+
+      # now switch to M2Crypto
+      keys.ACTIVE_CRYPT_LIB = 'm2crypto'
+      self.assertEquals(
+        aeskey.Decrypt(aeskey.Encrypt(s)), s,
+        'Cannot encrypt/decrypt with the same M2Crypto key! size:%s' %size
+      )
+      m2crypto_encrypted_str = aeskey.Encrypt(s)
+
+      self.assertEquals(
+        aeskey.Decrypt(pycrypto_encrypted_str), s, 
+        'Cannot decrypt PyCrypto with M2Crypto key! size:%s' %size
+      )
+      self.assertEquals(
+        aeskey.Decrypt(m2crypto_encrypted_str), s,
+        'Cannot decrypt M2Crypto with M2Crypto key! size:%s' %size
+      )
+
+      # now switch to PyCrypto
+      keys.ACTIVE_CRYPT_LIB = 'pycrypto'
+      self.assertEquals(
+        aeskey.Decrypt(pycrypto_encrypted_str), s, 
+        'Cannot decrypt PyCrypto with PyCrypto key! size:%s' %size
+      )
+      self.assertEquals(
+        aeskey.Decrypt(m2crypto_encrypted_str), s,
+        'Cannot decrypt M2Crypto with PyCrypto key! size:%s' %size
+      )
+
 def suite():
-  return unittest.makeSuite(CrypterTest, 'test')
+  alltests = unittest.TestSuite(
+    [unittest.TestLoader().loadTestsFromTestCase(PyCryptoCrypterTest),
+     unittest.TestLoader().loadTestsFromTestCase(M2CryptoCrypterTest),
+     unittest.TestLoader().loadTestsFromTestCase(PyCryptoM2CryptoInteropTest)
+    ])
+
+  return alltests
+
+if __name__ == "__main__":
+  unittest.main(defaultTest='suite')
