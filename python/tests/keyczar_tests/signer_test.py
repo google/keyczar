@@ -138,14 +138,14 @@ class SignerTest(unittest.TestCase):
   
   def testHmacBadSigs(self):
     (signer, sig) = self.__signInput("hmac")
-    sig_bytes = util.Decode(sig)
+    sig_bytes = util.Base64Decode(sig)
     self.assertRaises(errors.ShortSignatureError, signer.Verify, 
                       self.input, "AB")
-    bad_sig = util.Encode(chr(23) + sig_bytes[1:])
+    bad_sig = util.Base64Encode(chr(23) + sig_bytes[1:])
     self.assertRaises(errors.BadVersionError, signer.Verify, 
                       self.input, bad_sig)
     char = chr(ord(sig_bytes[1]) ^ 45)  # Munge key hash info in sig 
-    bad_sig = util.Encode(sig_bytes[0] + char + sig_bytes[2:])
+    bad_sig = util.Base64Encode(sig_bytes[0] + char + sig_bytes[2:])
     self.assertRaises(errors.KeyNotFoundError, signer.Verify, 
                       self.input, bad_sig)
     
@@ -153,4 +153,9 @@ class SignerTest(unittest.TestCase):
     self.input = None
 
 def suite():
-  return unittest.makeSuite(SignerTest, 'test')
+  suite = unittest.TestSuite()
+  suite.addTests(unittest.TestLoader().loadTestsFromTestCase(SignerTest))
+  return suite
+
+if __name__ == "__main__":
+  unittest.main(defaultTest='suite')
