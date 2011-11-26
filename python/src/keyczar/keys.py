@@ -175,7 +175,11 @@ class AesKey(SymmetricKey):
                mode=keyinfo.CBC):
     SymmetricKey.__init__(self, keyinfo.AES, key_string)
     self.hmac_key = hmac_key
-    self.block_size = 16  # pycrypto AES's block size is fixed to 16 bytes
+    # sanity check in case other code was dependant on this specific value,
+    # priot to it being changed to AES.block_size
+    # original comment - "PyCrypto AES's block size is fixed to 16 bytes"
+    assert AES.block_size == 16
+    self.block_size = AES.block_size
     self.size = size
     self.mode = mode
 
@@ -219,12 +223,12 @@ class AesKey(SymmetricKey):
     @rtype: L{AesKey}
     """
     aes = json.loads(key)
-    hmac = aes['hmacKey']
+    hmac_val = aes['hmacKey']
     return AesKey(aes['aesKeyString'],
-                  HmacKey(hmac['hmacKeyString'], hmac['size']),
+                  HmacKey(hmac_val['hmacKeyString'], hmac_val['size']),
                   aes['size'], keyinfo.GetMode(aes['mode']))
 
-  def __Pad(self, data):
+  def _Pad(self, data):
     """
     Returns the data padded using PKCS5.
 
@@ -240,7 +244,7 @@ class AesKey(SymmetricKey):
     pad = self.block_size - len(data) % self.block_size
     return data + pad * chr(pad)
 
-  def __UnPad(self, padded):
+  def _UnPad(self, padded):
     """
     Returns the unpadded version of a data padded using PKCS5.
 
@@ -253,6 +257,22 @@ class AesKey(SymmetricKey):
     pad = ord(padded[-1])
     return padded[:-pad]
 
+  def _NoPadBufferSize(self, buffer_size):
+    """
+    Return a buffer size that does not require padding that is closest to the
+    requested buffer size.
+
+    Returns a multiple of the cipher block size so there is NO PADDING required on
+    any blocks of this size
+
+    @param buffer_size: requested buffer size
+    @type data: int
+
+    @return: best buffer size
+    @rtype: int
+    """
+    return self.block_size*(buffer_size/self.block_size)
+
   def Encrypt(self, data):
     """
     Return ciphertext byte string containing Header|IV|Ciph|Sig.
@@ -263,7 +283,7 @@ class AesKey(SymmetricKey):
     @return: raw byte string ciphertext formatted to have Header|IV|Ciph|Sig.
     @rtype: string
     """
-    data = self.__Pad(data)
+    data = self._Pad(data)
     iv_bytes = util.RandBytes(self.block_size)
     ciph_bytes = AES.new(self.key_bytes, AES.MODE_CBC, iv_bytes).encrypt(data)
     msg_bytes = self.Header() + iv_bytes + ciph_bytes
@@ -295,7 +315,7 @@ class AesKey(SymmetricKey):
       raise errors.InvalidSignatureError()
 
     plain = AES.new(self.key_bytes, AES.MODE_CBC, iv_bytes).decrypt(ciph_bytes)
-    return self.__UnPad(plain)
+    return self._UnPad(plain)
 
 class HmacKey(SymmetricKey):
   """Represents HMAC-SHA1 symmetric private keys."""
@@ -310,6 +330,10 @@ class HmacKey(SymmetricKey):
   def _Hash(self):
     fullhash = util.Hash(self.key_bytes)
     return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+
+  def CreateStreamable(self):
+      """Return a streaming version of this key"""
+      return HmacKeyStream(self)
 
   @staticmethod
   def Generate(size=keyinfo.HMAC_SHA1.default_size):
@@ -356,6 +380,21 @@ class HmacKey(SymmetricKey):
     """
     Return True if the signature corresponds to the message.
 
+    @param msg: message to be signed
+    @type msg: string
+
+    @param sig_bytes: raw byte string of the signature
+    @type sig_bytes: string
+
+    @return: True if signature is valid for message. False otherwise.
+    @rtype: boolean
+    """
+    return self.VerifySignedData(self.Sign(msg), sig_bytes)
+
+  def VerifySignedData(self, mac_bytes, sig_bytes):
+    """
+    Return True if the signature corresponds to the signed message
+
     @param msg: message that has been signed
     @type msg: string
 
@@ -365,13 +404,35 @@ class HmacKey(SymmetricKey):
     @return: True if signature is valid for message. False otherwise.
     @rtype: boolean
     """
-    correctMac = self.Sign(msg)
-    if len(sig_bytes) != len(correctMac):
+    if len(sig_bytes) != len(mac_bytes):
       return False
     result = 0
-    for x, y in zip(correctMac, sig_bytes):
+    for x, y in zip(mac_bytes, sig_bytes):
       result |= ord(x) ^ ord(y)
     return result == 0
+
+class HmacKeyStream(object):
+  """Represents streamable HMAC-SHA1 symmetric private keys."""
+
+  def __init__(self, hmac_key):
+    self.hmac_key = hmac_key
+    self.__Init()
+
+  def __Init(self):
+    self.hmac = hmac.new(self.hmac_key.key_bytes, '', sha1)
+
+  def Update(self, data):
+      self.hmac.update(data)
+
+  def Sign(self):
+    """
+    Return raw byte string of signature on the streamed message.
+
+    @return: raw byte string signature
+    @rtype: string
+    """
+    return self.hmac.digest()
+
 
 class PrivateKey(AsymmetricKey):
   """Represents private keys in Keyczar for asymmetric key pairs."""
@@ -395,7 +456,6 @@ class DsaPrivateKey(PrivateKey):
   def __init__(self, params, pub, key,
                size=keyinfo.DSA_PRIV.default_size):
     PrivateKey.__init__(self, keyinfo.DSA_PRIV, params, pub)
-    #PrivateKey.__init__(self, keyinfo.DSA_PRIV, params, pub)
     self.key = key
     self.public_key = pub
     self.params = params
@@ -783,3 +843,283 @@ class RsaPublicKey(PublicKey):
     except ValueError:
       # if sig is not a long, it's invalid
       return False
+
+class EncryptingStream(object):
+  """
+  An encrypting stream capable of creating a ciphertext byte stream
+  containing Header|IV|Ciph|Sig.
+  """
+
+  def __init__(self, key, output_stream, buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
+    """
+    Constructor
+
+    @param key: instance of Keyczar - used for generation, signing, verification and padding
+    @type key: Encrypter
+
+    @param output_stream: target stream for encrypted output
+    @type output_stream: 'file-like' object
+
+    @param buffer_size: Suggested buffer size for writing data (will be adjusted
+    to suit the underlying cipher.
+    @type buffer_size: integer
+    """
+    self.key = key
+    self.output_stream = output_stream
+    self.data = ''
+    # keep track of data that we've been asked to write, but was outside the
+    # 3-byte base64 boundary i.e. we don't want to output anything that would
+    # required '=' padding as it is removed.
+    self.unwritten_data = ''
+
+    # NO PADDING on blocks to allow encrypting using a stream and decrypting
+    # without a using a stream
+    # i.e. EncryptingStream() => Decrypt() 
+    self.buffer_size = key._NoPadBufferSize(buffer_size)
+
+    # initialise HMAC and cipher
+    self.hm = key.hmac_key.CreateStreamable()
+    iv_bytes = util.RandBytes(key.block_size)
+    self.cipher = AES.new(key.key_bytes, AES.MODE_CBC, iv_bytes)
+
+    # write the header
+    hdr = key.Header()
+    self.hm.Update(hdr + iv_bytes)
+    self.__writeToStream(hdr + iv_bytes)
+
+  def write(self, data):
+    """
+    Write the data in encrypted form to the output stream
+
+    @param data: data to be encrypted.
+    @type data: string
+    """
+    # add this new data to any existing data
+    self.data += data
+
+    # process as much as we can, given the requested buffer size
+    i = 0
+    while (i+1)*self.buffer_size < len(self.data):
+      self.__writeEncrypted(self.data[i*self.buffer_size: (i+1)*self.buffer_size])
+      i += 1
+
+    # preserve the remaining unprocessed data for later
+    self.data = self.data[i*self.buffer_size:]
+
+  def close(self):
+    """
+    Close this stream. 
+    Will flush, but *not* close the associated output stream.
+    """
+    # write out any existing data
+    self.__writeEncrypted(self.data)
+    self.data = None
+
+    # finally, add the signature to the output
+    self.__writeToStream(self.hm.Sign(), force=True)
+    self.output_stream.flush()
+
+  def __writeToStream(self, data, force=False):
+    """
+    Helper to write bytes to output stream as a line
+
+    @param data: data to be written.
+    @type data: string
+    """
+    data_to_write = self.unwritten_data + data
+    if not force:
+      # only output exact multiples of 3-bytes => no padding
+      len_to_write = 3*int(len(data_to_write)/3)
+    else:
+      len_to_write = len(data_to_write)
+
+    # write all the data we are permitted to, preserve the rest
+    self.unwritten_data = data_to_write[len_to_write:]
+    out_data = data_to_write[:len_to_write]
+
+    self.output_stream.write(util.Encode(out_data))
+
+  def __writeEncrypted(self, data):
+    """
+    Helper to write encrypted bytes to output stream
+
+    @param data: data to be written.
+    @type data: string
+    """
+    # pad any blocks smaller than the optimal buffer size
+    if len(data) < self.buffer_size:
+      data = self.key._Pad(data)
+
+    # actually encrypt and write it
+    ciph_bytes = self.cipher.encrypt(data)
+    self.__writeToStream(ciph_bytes)
+
+    # and add it to signer
+    self.hm.Update(ciph_bytes)
+
+
+class DecryptingStream(object):
+  """
+  Create a decrypting stream capable of processing a ciphertext byte stream
+  containing Header|IV|Ciph|Sig into plain text.
+
+  @param output_stream: target stream for decrypted output
+  @type output_stream: 'file-like' object
+
+  @param buffer_size: Suggested buffer size for writing data (will be adjusted
+  to suit the underlying cipher.
+  @type buffer_size: integer
+
+  @return: a decrypting stream capable of processing a ciphertext byte stream
+  @rtype: DecryptingStream
+  """
+  def __init__(self, keyczar_obj, output_stream, buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
+    self.output_stream = output_stream
+    self.data = ''
+    self.decoded_data = ''
+    self.key = None
+    self.keyczar_obj = keyczar_obj
+    self.cipher = None
+    self.suggested_buffer_size = buffer_size
+
+  def write(self, data):
+    """
+    Write the data in encrypted form to the output stream
+
+    @param data: data to be encrypted.
+    @type data: string
+    """
+    # add this new data to any existing data
+    self.data += data
+
+    # have we received sufficient data to create the key yet?
+    if not self.key:
+      self._readKey()
+
+    # once we have a key we can setup for decryption
+    if self.key and self.data:
+      self._createCipher()
+
+      # once everything in place, we can start decoding and decrypting
+      if self.cipher and self.data:
+        # can only base64 decode multiples of 4 bytes at a time as we can't guarantee that we
+        # have been given the full data yet
+
+        # don't decode the full dataset so we can process the sig if it happens
+        # to be in the data
+        len_to_decode = 4*((int(len(self.data) - 2*util.HLEN)/4))
+        if len_to_decode > 0:
+          decoded_data = util.Decode(self.data[:len_to_decode])
+          self.data = self.data[len_to_decode:]
+          # include any unused decoded data
+          decoded_data = self.decoded_data + decoded_data
+          # output the decrypted data, but only multiples of the block size so
+          # there is no padding required
+          len_to_decrypt = self.key.block_size*(
+            int(len(decoded_data)/self.key.block_size))
+          data_to_decrypt = decoded_data[:len_to_decrypt]
+          decrypted_data = self.cipher.decrypt(data_to_decrypt)
+          self.output_stream.write(decrypted_data)
+          # tell the signer about the *used* decoded data
+          self.hm.Update(data_to_decrypt)
+
+          # save any decoded data we couldn't decrypt
+          self.decoded_data = decoded_data[len_to_decrypt:]
+
+  def close(self):
+    """
+    Close this stream. 
+    Will flush, but *not* close the associated output stream.
+    """
+
+    # Decode *all* remaining coded data and *then* process the
+    # remaining encrypted data and the signature
+    decoded_data = self.decoded_data
+    decoded_data += util.Decode(self.data)
+
+    if len(decoded_data) < util.HLEN:
+      raise errors.ShortCiphertextError(len(decoded_data))
+
+    # extract the signature
+    sig_bytes = decoded_data[-util.HLEN:]  # last 20 bytes are sig
+    decoded_data = decoded_data[:-util.HLEN]
+
+    # tell the signer about all the decoded data
+    self.hm.Update(decoded_data)
+
+    # was all that data we've written valid????
+    # due to the nature of streaming it isn't possible to validate up front as
+    # done by Decrypt(), but it has to validated!!
+    hm_sig_bytes = self.hm.Sign()
+    if not self.key.hmac_key.VerifySignedData(hm_sig_bytes, sig_bytes):
+      raise errors.InvalidSignatureError()
+
+    # output the unpadded decrypted data
+    dec_data = self.cipher.decrypt(decoded_data)
+    unpad_data = self.key._UnPad(dec_data)
+    self.output_stream.write(unpad_data)
+
+    # must reset the captured data
+    self.data = ''
+    self.decoded_data = ''
+
+    # finally, flush the output stream  
+    self.output_stream.flush()
+
+  def _decodeData(self, data, stop_after=None):
+    """
+    Helper to decode data in 4-byte chunks to match base64 encoding that
+    stops after a specified number of bytes, 
+
+    @return: True if reached limit, False otherwise
+    """
+    reached_limit = False or (stop_after is None)
+    chars_decoded = 0
+    i = 0
+    # decode all the data
+    while True:
+      data_to_decode = data[i*4:(i+1)*4]
+      # stop decoding when there is no more data
+      if not data_to_decode:
+        break
+      self.decoded_data += util.Decode(data_to_decode)
+      chars_decoded += len(data_to_decode)
+      i += 1
+      # if we've decoded enough data then let the callee know
+      if stop_after and len(self.decoded_data) >= stop_after:
+        reached_limit = True
+        break
+
+    return (reached_limit, chars_decoded)
+
+  def _readKey(self):
+    """Helper that manages creating the key from the captured data"""
+    # if we don't have the key yet then look for it
+    # otherwise do nothing
+    if not self.key:
+      # no, do we have it now?
+      if len(self.data) >= 4*(1 + (keyczar.HEADER_SIZE/4)):
+        ok, chars_decoded = self._decodeData(self.data, keyczar.HEADER_SIZE)
+        if ok:
+          self.hdr_bytes = self.decoded_data[:keyczar.HEADER_SIZE]
+          self.key = self.keyczar_obj._ParseHeader(self.hdr_bytes)
+          self.decoded_data = self.decoded_data[keyczar.HEADER_SIZE:]
+
+        # throw away any data we've processed
+        self.data = self.data[chars_decoded:]
+
+  def _createCipher(self):
+    """Helper that manages creating the cipher from the captured data"""
+    # we need a cipher, but only if have enough data for the IV
+    if not self.cipher and len(self.data) >= 4*(1 + (self.key.block_size/4)):
+      ok, chars_decoded = self._decodeData(self.data, self.key.block_size)
+      if ok:
+        # initialise HMAC and cipher
+        iv_bytes = self.decoded_data[:self.key.block_size]  # first block of bytes is the IV
+        self.decoded_data = self.decoded_data[self.key.block_size:]
+        self.hm = self.key.hmac_key.CreateStreamable()
+        self.hm.Update(self.hdr_bytes + iv_bytes)
+        self.cipher = AES.new(self.key.key_bytes, AES.MODE_CBC, iv_bytes)
+
+      # throw away any data we've processed
+      self.data = self.data[chars_decoded:]

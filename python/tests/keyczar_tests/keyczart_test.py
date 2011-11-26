@@ -85,4 +85,9 @@ class KeyczartTest(unittest.TestCase):
     keyczart.mock = None
 
 def suite():
-  return unittest.makeSuite(KeyczartTest, 'test')
+  suite = unittest.TestSuite()
+  suite.addTests(unittest.TestLoader().loadTestsFromTestCase(KeyczartTest))
+  return suite
+
+if __name__ == "__main__":
+  unittest.main(defaultTest='suite')

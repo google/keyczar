@@ -153,4 +153,9 @@ class SignerTest(unittest.TestCase):
     self.input = None
 
 def suite():
-  return unittest.makeSuite(SignerTest, 'test')
+  suite = unittest.TestSuite()
+  suite.addTests(unittest.TestLoader().loadTestsFromTestCase(SignerTest))
+  return suite
+
+if __name__ == "__main__":
+  unittest.main(defaultTest='suite')

@@ -56,6 +56,9 @@ DSA_PARAMS = ['p', 'q', 'g']  # only algorithm params, not public/private keys
 SHA1RSA_OID = univ.ObjectIdentifier('1.2.840.113549.1.1.5')
 SHA1_OID = univ.ObjectIdentifier('1.3.14.3.2.26')
 
+# the standard buffer size for streaming
+DEFAULT_STREAM_BUFF_SIZE = 4096
+
 def ASN1Sequence(*vals):
   seq = univ.Sequence()
   for i in range(len(vals)):
@@ -329,6 +332,7 @@ def Decode(s):
   @raise Base64DecodingError: If length of string (ignoring whitespace) is one
     more than a multiple of four.
   """
+  s = ''.join(s.splitlines())
   s = str(s.replace(" ", ""))  # kill whitespace, make string (not unicode)
   d = len(s) % 4
   if d == 1:
