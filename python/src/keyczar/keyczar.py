@@ -28,6 +28,7 @@ import keydata
 import keyinfo
 import keys
 import readers
+import writers # TEMP until refactored
 import util
 
 VERSION = 0
@@ -37,6 +38,8 @@ HEADER_SIZE = 1 + KEY_HASH_SIZE
 
 class Keyczar(object):
   """Abstract Keyczar base class."""
+
+  __metaclass__ = util.ABCMeta
 
   def __init__(self, reader):
     self.metadata = keydata.KeyMetadata.Read(reader.GetMetadata())
@@ -101,7 +104,7 @@ class Keyczar(object):
     @return: a Keyczar to manage the keys stored at the given location
     @rtype: L{Keyczar}
     """
-    return Keyczar(readers.FileReader(location))
+    return Keyczar(readers.CreateReader(location))
 
   def IsAcceptablePurpose(self, purpose):
     """Indicates whether purpose is valid. Abstract method."""
@@ -134,7 +137,7 @@ class GenericKeyczar(Keyczar):
   @staticmethod
   def Read(location):
     """Return a GenericKeyczar created from FileReader at given location."""
-    return GenericKeyczar(readers.FileReader(location))
+    return GenericKeyczar(readers.CreateReader(location))
 
   def IsAcceptablePurpose(self, purpose):
     """All purposes ok for Keyczart."""
@@ -273,15 +276,11 @@ class GenericKeyczar(Keyczar):
     else:
       util.WriteFile(str(pubkmd), os.path.join(dest, "meta"))
 
-  def Write(self, loc, encrypter=None):
-    if encrypter:
-      self.metadata.encrypted = True
-    util.WriteFile(str(self.metadata), os.path.join(loc, "meta"))  # just plain
+  def Write(self, writer, encrypter=None):
+    self.metadata.encrypted = (encrypter is not None)
+    writer.WriteMetadata(self.metadata)
     for v in self.versions:
-      key = str(self.GetKey(v))
-      if self.metadata.encrypted:
-        key = encrypter.Encrypt(key)  # encrypt key info before outputting
-      util.WriteFile(key, os.path.join(loc, str(v.version_number)))
+      writer.WriteKey(self.GetKey(v), v.version_number, encrypter)
 
 class Encrypter(Keyczar):
   """Capable of encrypting only."""
@@ -298,7 +297,7 @@ class Encrypter(Keyczar):
       perform encryption functions.
     @rtype: L{Encrypter}
     """
-    return Encrypter(readers.FileReader(location))
+    return Encrypter(readers.CreateReader(location))
 
   def IsAcceptablePurpose(self, purpose):
     """Only valid if purpose includes encrypting."""
@@ -336,7 +335,7 @@ class Verifier(Keyczar):
       perform verify functions.
     @rtype: L{Verifier}
     """
-    return Verifier(readers.FileReader(location))
+    return Verifier(readers.CreateReader(location))
 
   def IsAcceptablePurpose(self, purpose):
     """Only valid if purpose includes verifying."""
@@ -426,7 +425,7 @@ class Crypter(Encrypter):
       perform encryption and decryption functions.
     @rtype: L{Crypter}
     """
-    return Crypter(readers.FileReader(location))
+    return Crypter(readers.CreateReader(location))
 
   def IsAcceptablePurpose(self, purpose):
     """Only valid if purpose includes decrypting"""
@@ -469,7 +468,7 @@ class Signer(Verifier):
       perform sign and verify functions.
     @rtype: L{Signer}
     """
-    return Signer(readers.FileReader(location))
+    return Signer(readers.CreateReader(location))
 
   def IsAcceptablePurpose(self, purpose):
     """Only valid if purpose includes signing."""
