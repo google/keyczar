@@ -27,9 +27,27 @@ import keydata
 import keys
 import util
 
+def CreateReader(location):
+  """Factory function for Reader's
+  
+    @param location: where (file, uri, etc) the reader should read from
+    @type location: string
+  """
+  # make sure all readers are available
+  util.ImportBackends()
+  # return the first that accepts the location
+  for sc in Reader.__subclasses__():
+    reader = sc.CreateReader(location)
+    if reader:
+      return reader
+  raise errors.KeyczarError("Unable to create a reader for %s." % location)
+
 class Reader(object):
   """Interface providing supported methods (no implementation)."""
 
+  __metaclass__ = util.ABCMeta
+
+  @util.abstractmethod
   def GetMetadata(self):
     """
     Return the KeyMetadata for the key set being read.
@@ -39,7 +57,9 @@ class Reader(object):
     
     @raise KeyczarError: if unable to read metadata (e.g. IOError) 
     """
+    return
   
+  @util.abstractmethod
   def GetKey(self, version_number):
     """
     Return the key corresponding to the given version.
@@ -52,6 +72,26 @@ class Reader(object):
     
     @raise KeyczarError: if unable to read key info (e.g. IOError) 
     """
+    return
+
+  @util.abstractmethod
+  def Close(self):
+    """
+    Clean up this reader
+    
+    @raise KeyczarError: if error during close
+    """
+    return
+
+  @classmethod
+  def CreateReader(cls, location):
+    """
+    Return an instance of this class if it handles the location
+
+    @param location: where (file, uri, etc) the reader should read from
+    @type location: string
+    """
+    raise NotImplementedError('CreateReader() class method MUST be implemented for:%s' %cls)
 
 class FileReader(Reader):
   """Reader that reads key data from files."""
@@ -65,6 +105,17 @@ class FileReader(Reader):
   def GetKey(self, version_number):
     return util.ReadFile(os.path.join(self._location, str(version_number)))
 
+  def Close(self):
+    # Nothing to close - util.ReadFile() closes it
+    return
+
+  @classmethod
+  def CreateReader(cls, location):
+    result = None
+    if os.path.exists(location):
+      result = FileReader(location)
+    return result
+
 class EncryptedReader(Reader):
   """Reader that reads encrypted key data from files."""
   
@@ -77,6 +128,15 @@ class EncryptedReader(Reader):
   
   def GetKey(self, version_number):
     return self._crypter.Decrypt(self._reader.GetKey(version_number))
+
+  def Close(self):
+    # Nothing to close - util.ReadFile() closes it
+    return
+
+  @classmethod
+  def CreateReader(cls, location):
+    # cannot be instantiated
+    return
 
 class MockReader(Reader):
   """Mock reader used for testing Keyczart."""
@@ -103,6 +163,10 @@ class MockReader(Reader):
   def GetStatus(self, version_number):
     return self.kmd.GetVersion(version_number).status
   
+  def Close(self):
+    # Nothing to close
+    return
+
   def SetKey(self, version_number, key):
     self.keys[version_number] = key
   
@@ -131,3 +195,7 @@ class MockReader(Reader):
   def GetKeySize(self, version_number):
     return self.keys[version_number].size
   
+  @classmethod
+  def CreateReader(cls, location):
+    # cannot be instantiated
+    return
