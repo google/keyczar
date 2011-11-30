@@ -73,7 +73,7 @@ public class X509CertificateReader implements KeyczarReader {
         parseCertificate();
         constructMetadata();
       } catch (CertificateException e) {
-        throw new KeyczarException(Messages.getString("KeyczarTool.InvalidCertificate"));
+        throw new KeyczarException(Messages.getString("KeyczarTool.InvalidCertificate"), e);
       }
     }
   }

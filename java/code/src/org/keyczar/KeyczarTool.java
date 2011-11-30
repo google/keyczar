@@ -21,6 +21,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -79,7 +81,7 @@ public class KeyczarTool {
    *
    * @param args from the command line
    */
-  public static void main(String[] args){
+  public static void main(String[] args) {
     if (args.length == 0) {
       printUsage();
     } else {
@@ -143,22 +145,14 @@ public class KeyczarTool {
             }
             break;
           case IMPORT_KEY:
-            importKey(locationFlag, pemFileFlag, statusFlag, crypterFlag, paddingFlag);
+            importKey(locationFlag, pemFileFlag, statusFlag, crypterFlag, paddingFlag,
+                passphraseFlag);
             break;
           case EXPORT_KEY:
             exportKey(locationFlag, crypterFlag, Integer.parseInt(versionFlag),
                 pemFileFlag, passphraseFlag);
         }
-      } catch (NumberFormatException e) {
-        e.printStackTrace();
-        printUsage();
-      } catch (IllegalArgumentException e) {
-        e.printStackTrace();
-        printUsage();
-      } catch (NullPointerException e) {
-        e.printStackTrace();
-        printUsage();
-      } catch (KeyczarException e) {
+      } catch (Exception e) {
         e.printStackTrace();
         printUsage();
       }
@@ -189,31 +183,49 @@ public class KeyczarTool {
     }
   }
 
-  private static void importKey(String locationFlag, String pemFileFlag, KeyStatus statusFlag,
-      String crypterFlag, String paddingFlag) throws KeyczarException {
+  private static void importKey(String locationFlag, String pemFileFlag, KeyStatus keyStatus,
+      String crypterFlag, String paddingFlag, String passphraseFlag)
+      throws KeyczarException, IOException {
     final GenericKeyczar destinationKeyczar = createGenericKeyczar(locationFlag, crypterFlag);
-    final KeyPurpose purpose = destinationKeyczar.getMetadata().getPurpose();
-    final GenericKeyczar sourceKeyczar = importCertificate(pemFileFlag, purpose, paddingFlag);
+    final KeyMetadata destMetadata = destinationKeyczar.getMetadata();
+    final GenericKeyczar sourceKeyczar =
+        getImportingKeyczar(pemFileFlag, paddingFlag, passphraseFlag, destMetadata.getPurpose());
 
     // Change destination type if necessary, but only if there aren't any keys in it yet.
     final KeyType sourceKeyType = sourceKeyczar.getMetadata().getType();
-    if (destinationKeyczar.getMetadata().getType() != sourceKeyType
+    if (destMetadata.getType() != sourceKeyType
         && destinationKeyczar.getVersions().isEmpty()) {
-      destinationKeyczar.getMetadata().setType(sourceKeyType);
+      destMetadata.setType(sourceKeyType);
     }
-    destinationKeyczar.addVersion(statusFlag, sourceKeyczar.getPrimaryKey());
 
+    destinationKeyczar.addVersion(keyStatus, sourceKeyczar.getPrimaryKey());
     updateGenericKeyczar(destinationKeyczar, crypterFlag, locationFlag);
   }
 
-  private static GenericKeyczar importCertificate(String pemFileFlag, final KeyPurpose purpose,
-      String paddingFlag) throws KeyczarException {
+  private static GenericKeyczar getImportingKeyczar(String pemFileFlag, String paddingFlag,
+      String passphraseFlag, final KeyPurpose purpose) throws KeyczarException, IOException {
+    RsaPadding padding = getPadding(paddingFlag);
+    InputStream fileStream = getFileStream(pemFileFlag);
     try {
-      return new GenericKeyczar(
-        new X509CertificateReader(purpose, new FileInputStream(pemFileFlag),
-            getPadding(paddingFlag)));
+      return new GenericKeyczar(new X509CertificateReader(purpose, fileStream, padding));
+    } catch (KeyczarException e) {
+      if (e.getCause() instanceof CertificateException) {
+        // Must not have been a certificate file.  Try PKCS#8.
+        fileStream.close();
+        fileStream = getFileStream(pemFileFlag);
+        return new GenericKeyczar(new PkcsKeyReader(purpose, fileStream, padding, passphraseFlag));
+      }
+      throw e;
+    } finally {
+      fileStream.close();
+    }
+  }
+
+  private static InputStream getFileStream(final String filePath) throws KeyczarException {
+    try {
+      return new FileInputStream(filePath);
     } catch (FileNotFoundException e) {
-      throw new KeyczarException(Messages.getString("KeyczarTool.FileNotFound", pemFileFlag));
+      throw new KeyczarException(Messages.getString("KeyczarTool.FileNotFound", filePath));
     }
   }
 
