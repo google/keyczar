@@ -27,7 +27,7 @@ from keyczar import errors
 from keyczar import keyczar
 from keyczar import util
 
-TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "testdata"))
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 
 class SignerTest(unittest.TestCase):
   
