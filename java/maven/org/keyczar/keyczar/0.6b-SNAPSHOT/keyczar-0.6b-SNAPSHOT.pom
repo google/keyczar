@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <!--
+    * Licensed to the Apache Software Foundation (ASF) under one * or more
+    contributor license agreements. See the NOTICE file * distributed with this
+    work for additional information * regarding copyright ownership. The ASF
+    licenses this file * to you under the Apache License, Version 2.0 (the *
+    "License"); you may not use this file except in compliance * with the
+    License. You may obtain a copy of the License at * *
+    http://www.apache.org/licenses/LICENSE-2.0 * * Unless required by applicable
+    law or agreed to in writing, * software distributed under the License is
+    distributed on an * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY *
+    KIND, either express or implied. See the License for the * specific language
+    governing permissions and limitations * under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.keyczar</groupId>
+  <artifactId>keyczar</artifactId>
+  <name>Keyczar</name>
+  <version>0.6b-SNAPSHOT</version>
+  <developers>
+    <developer>
+      <id>arkajit.dey</id>
+      <name>Arkajit Dey</name>
+      <email>arkajit.dey@gmail.com</email>
+      <organization>MIT</organization>
+      <organizationUrl>http://www.mit.edu</organizationUrl>
+    </developer>
+    <developer>
+      <id>steveweis</id>
+      <name>Steve Weis</name>
+      <email>steveweis@gmail.com</email>
+      <organization>Google</organization>
+      <organizationUrl>http://www.google.com</organizationUrl>
+    </developer>
+  </developers>
+  <mailingLists>
+    <mailingList>
+      <name>Keyczar Discussion List</name>
+      <subscribe>http://groups.google.com/group/keyczar-discuss/subscribe</subscribe>
+      <unsubscribe>keyczar-discuss+unsubscribe@googlegroups.com</unsubscribe>
+      <archive>http://groups.google.com/group/keyczar-discuss/topics</archive>
+      <post>keyczar-discuss@googlegroups.com</post>
+    </mailingList>
+  </mailingLists>
+  <repositories>
+    <repository>
+      <id>Gson</id>
+      <url>http://google-gson.googlecode.com/svn/mavenrepo</url>
+    </repository>
+    <repository>
+      <id>maven2-repository.dev.java.net</id>
+      <name>Java.net Repository for Maven</name>
+      <url>http://download.java.net/maven/2</url>
+    </repository>
+  </repositories>
+  <build>
+    <finalName>${project.artifactId}-${project.version}</finalName>
+    <sourceDirectory>src</sourceDirectory>
+    <scriptSourceDirectory>scripts</scriptSourceDirectory>
+    <testSourceDirectory>tests</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>testdata</directory>
+      </testResource>
+    </testResources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.5</source>
+          <target>1.5</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.4.2</version>
+      </plugin>
+    </plugins>
+    <extensions>
+      <extension>
+        <groupId>org.jvnet.wagon-svn</groupId>
+        <artifactId>wagon-svn</artifactId>
+        <version>1.8</version>
+      </extension>
+    </extensions>
+  </build>
+  <scm>
+    <connection>scm:svn:svn://keyczar.googlecode.com/svn/trunk/java/code</connection>
+    <developerConnection>scm:svn:svn://keyczar.googlecode.com/svn/trunk/java/code</developerConnection>
+    <url>https://keyczar.googlecode.com/svn/trunk/java/code</url>
+  </scm>
+  <dependencies>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.14</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mozilla</groupId>
+      <artifactId>jss</artifactId>
+      <version>4</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+      <version>5.8</version>
+      <scope>test</scope>
+      <classifier>jdk15</classifier>
+    </dependency>
+  </dependencies>
+  <distributionManagement>
+    <repository>
+      <id>keyczar</id>
+      <name>Keyczar Repository</name>
+      <url>svn:https://keyczar.googlecode.com/svn/trunk/java/maven</url>
+      <uniqueVersion>false</uniqueVersion>
+    </repository>
+  </distributionManagement>
+</project>
