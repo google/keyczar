@@ -42,9 +42,9 @@ class InvalidSignatureError(KeyczarError):
 class KeyNotFoundError(KeyczarError):
   """Indicates a key with a certain hash id was not found."""
   
-  def __init__(self, hash):
+  def __init__(self, hash_val):
     KeyczarError.__init__(self, 
-                          "Key with hash identifier %s not found." % hash)
+                          "Key with hash_val identifier %s not found." % hash_val)
 
 class ShortCiphertextError(KeyczarError):
   """Indicates a ciphertext too short to be valid."""
