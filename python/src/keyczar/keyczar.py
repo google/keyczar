@@ -88,7 +88,7 @@ class Keyczar(object):
     version = ord(header[0])
     if version != VERSION:
       raise errors.BadVersionError(version)
-    return self.GetKey(util.Encode(header[1:]))
+    return self.GetKey(util.Base64Encode(header[1:]))
 
   @staticmethod
   def Read(location):
@@ -304,12 +304,16 @@ class Encrypter(Keyczar):
     """Only valid if purpose includes encrypting."""
     return purpose == keyinfo.ENCRYPT or purpose == keyinfo.DECRYPT_AND_ENCRYPT
 
-  def Encrypt(self, data):
+  def Encrypt(self, data, encoder=util.Base64Encode):
     """
     Encrypt the data and return the ciphertext.
 
     @param data: message to encrypt
     @type data: string
+
+    @param encoder: function to perform final encoding. Defaults to Base64. 
+    Use None for no encoding.
+    @type encoder: function
 
     @return: ciphertext encoded as a Base64 string
     @rtype: string
@@ -319,28 +323,39 @@ class Encrypter(Keyczar):
     encrypting_key = self.primary_key
     if encrypting_key is None:
       raise errors.NoPrimaryKeyError()
-    return util.Encode(encrypting_key.Encrypt(data))
+    ciphertext = encrypting_key.Encrypt(data)
+    return encoder(ciphertext) if encoder else ciphertext
 
-  def CreateEncryptingStream(self, output_stream,
-                             buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
+  def CreateEncryptingStreamWriter(self, output_stream,
+                                   encoder=util.IncrementalBase64StreamWriter,
+                                   buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
     """
-    Create an encrypting stream capable of creating a ciphertext byte stream
+    Create an encrypting stream capable of writing a ciphertext byte stream
     containing Header|IV|Ciph|Sig.
 
     @param output_stream: target stream for encrypted output
     @type output_stream: 'file-like' object
+
+    @param encoder: the encoding stream to use on the ciphertext stream.
+    Defaults to base64 encoding with no padding or line breaks. 
+    Use None for raw bytes.
+    @type encoder: 'file-like' object
 
     @param buffer_size: Suggested buffer size for writing data (will be adjusted
     to suit the underlying cipher.
     @type buffer_size: integer
 
     @return: an encrypting stream capable of creating a ciphertext byte stream
-    @rtype: EncryptingStream
+    @rtype: EncryptingStreamWriter
     """
     encrypting_key = self.primary_key
     if encrypting_key is None:
       raise errors.NoPrimaryKeyError()
-    return keys.EncryptingStream(encrypting_key, output_stream, buffer_size)
+    if encoder:
+      stream = encoder(output_stream)
+    else:
+      stream = output_stream
+    return keys.EncryptingStreamWriter(encrypting_key, stream, buffer_size)
 
 class Verifier(Keyczar):
   """Capable of verifying only."""
@@ -376,7 +391,7 @@ class Verifier(Keyczar):
     @return: True if sig corresponds to data, False otherwise.
     @rtype: boolean
     """
-    sig_bytes = util.Decode(sig)
+    sig_bytes = util.Base64Decode(sig)
     if len(sig_bytes) < HEADER_SIZE:
       raise errors.ShortSignatureError(len(sig_bytes))
     key = self._ParseHeader(sig_bytes[:HEADER_SIZE])
@@ -419,7 +434,7 @@ class UnversionedVerifier(Keyczar):
     @return: True if sig corresponds to data, False otherwise.
     @rtype: boolean
     """
-    sig_bytes = util.Decode(sig)
+    sig_bytes = util.Base64Decode(sig)
 
     for version in self.versions:
       key = self._keys[version]
@@ -453,12 +468,16 @@ class Crypter(Encrypter):
     """Only valid if purpose includes decrypting"""
     return purpose == keyinfo.DECRYPT_AND_ENCRYPT
 
-  def Decrypt(self, ciphertext):
+  def Decrypt(self, ciphertext, decoder=util.Base64Decode):
     """
     Decrypts the given ciphertext and returns the plaintext.
 
     @param ciphertext: Base64 encoded string ciphertext to be decrypted.
     @type ciphertext: string
+
+    @param decoder: function to perform initial decoding. Defaults to Base64. 
+    Use None for no decoding.
+    @type encoder: function
 
     @return: plaintext message
     @rtype: string
@@ -469,14 +488,15 @@ class Crypter(Encrypter):
     @raise KeyNotFoundError: if key specified in header doesn't exist
     @raise InvalidSignatureError: if the signature can't be verified
     """
-    data_bytes = util.Decode(ciphertext)
+    data_bytes = decoder(ciphertext) if decoder else ciphertext
     if len(data_bytes) < HEADER_SIZE:
       raise errors.ShortCiphertextError(len(data_bytes))
     key = self._ParseHeader(data_bytes[:HEADER_SIZE])
     return key.Decrypt(data_bytes)
 
-  def CreateDecryptingStream(self, output_stream,
-                             buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
+  def CreateDecryptingStreamReader(self, output_stream,
+                                   decoder=util.IncrementalBase64StreamReader,
+                                   buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
     """
     Create a decrypting stream capable of processing a ciphertext byte stream
     containing Header|IV|Ciph|Sig into plain text.
@@ -484,15 +504,24 @@ class Crypter(Encrypter):
     @param output_stream: target stream for decrypted output
     @type output_stream: 'file-like' object
 
+    @param decoder: the decoding stream to use on the incoming stream.
+    Defaults to base64 decoding with no padding or line breaks. 
+    Use None for handling raw bytes.
+    @type decoder: 'file-like' object
+
     @param buffer_size: Suggested buffer size for writing data (will be adjusted
     to suit the underlying cipher.
     @type buffer_size: integer
 
-    @return: a decrypting stream capable of processing a ciphertext byte stream
-    @rtype: DecryptingStream
+    @return: a decrypting stream capable of reading a ciphertext byte stream and
+    converting it to plaintext output
+    @rtype: DecryptingStreamReader
     """
-    return keys.DecryptingStream(self, output_stream, buffer_size)
-
+    if decoder:
+      stream = decoder(output_stream)
+    else:
+      stream = output_stream
+    return keys.DecryptingStreamReader(self, stream, buffer_size)
 
 class Signer(Verifier):
   """Capable of both signing and verifying."""
@@ -531,7 +560,7 @@ class Signer(Verifier):
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
     header = signing_key.Header()
-    return util.Encode(header + signing_key.Sign(data + VERSION_BYTE))
+    return util.Base64Encode(header + signing_key.Sign(data + VERSION_BYTE))
 
 class UnversionedSigner(UnversionedVerifier):
   """Capable of both signing and verifying. This outputs standard signatures
@@ -573,5 +602,5 @@ class UnversionedSigner(UnversionedVerifier):
     signing_key = self.primary_key
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
-    return util.Encode(signing_key.Sign(data))
+    return util.Base64Encode(signing_key.Sign(data))
 

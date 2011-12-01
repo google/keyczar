@@ -34,20 +34,20 @@ TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "testdata"))
 
 class CrypterTest(unittest.TestCase):
   
-  # write modes
-  WRITE_ALL = 0
-  WRITE_ONE = -1
-  WRITE_RANDOM = -2
+  # read/write sizes 
+  SIZE_ALL = 0
+  SIZE_ONE = -1
+  SIZE_RANDOM = -2
 
-  ALL_MODES = (WRITE_ALL,
-               WRITE_ONE,
-               WRITE_RANDOM)
+  ALL_SIZES = (SIZE_ALL,
+               SIZE_ONE,
+               SIZE_RANDOM)
 
   def setUp(self):
     self.input_data = "This is some test data"
     # generate some longer random data
     self.random_input_data = os.urandom(random.randrange(
-      util.DEFAULT_STREAM_BUFF_SIZE*2 + 1,
+      util.DEFAULT_STREAM_BUFF_SIZE * 2 + 1,
       50000))
     self.random_input_data_len = len(self.random_input_data)
     # use a random buffer size that is less than the input length
@@ -55,26 +55,47 @@ class CrypterTest(unittest.TestCase):
     self.ALL_BUFFER_SIZES = (util.DEFAULT_STREAM_BUFF_SIZE, # default
                              999, # smaller
                              self.random_buff_size, # er, random
+                             -1, # maximum possible
                             )
   
-  def __writeToStream(self, stream, data, write_mode=WRITE_ALL):
+  def __writeToStream(self, stream, data, size_mode=SIZE_ALL):
     """Helper to write to a stream with varying size writes"""
-    if write_mode == self.WRITE_ALL:
+    if size_mode == self.SIZE_ALL:
       stream.write(data)
     else:
-      if write_mode == self.WRITE_ONE:
+      if size_mode == self.SIZE_ONE:
         len_to_write = 1
-      elif write_mode == self.WRITE_RANDOM:
-        len_to_write = random.randrange(len(data)/3, (len(data) - 1))
+      elif size_mode == self.SIZE_RANDOM:
+        len_to_write = random.randrange(len(data) / 3, (len(data) - 1))
       else:
-        assert 0, 'Invalid write_mode:%d' %write_mode
+        assert 0, 'Invalid size_mode:%d' %size_mode
       # write out in groups of size len_to_write
       for c in map(None, *(iter(data),) * len_to_write):
         stream.write(''.join([x for x in c if x]))
 
+  def __readFromStream(self, stream, size_mode=SIZE_ALL):
+    """Helper to read from a stream in varying size chunks"""
+    result = ''
+    if size_mode == self.SIZE_ALL:
+      result = stream.read()
+    else:
+      if size_mode == self.SIZE_ONE:
+        len_to_read = 1
+      elif size_mode == self.SIZE_RANDOM:
+        len_to_read = random.randrange(1, 1000)
+      else:
+        assert 0, 'Invalid size_mode:%d' %size_mode
+      # read in groups of size len_to_read
+      read_data = True
+      while read_data:
+        read_data = stream.read(len_to_read)
+        result += read_data
+    result += stream.close()
+    return result
+
   def __simulateReflow(self, data):
     """Helper to simulate reflowing of data"""
-    # add some CR, LF and CR+LF
+    # use CR, LF and CR+LF variations
     endings = ['\n', '\r', '\r\n']
     # split the data into small groups
     reflowed_data = ''
@@ -116,7 +137,8 @@ class CrypterTest(unittest.TestCase):
     primary_decrypted = crypter.Decrypt(reflowed_primary_ciphertext)
     self.assertEquals(self.input_data, primary_decrypted)
 
-  def __testDecryptStream(self, subdir, reader, input_data, buffer_size, write_mode):
+  def __testDecryptStream(self, subdir, reader, input_data, buffer_size,
+                          size_mode, stream_source):
     """NOTE: input_data ignored here as we don't have a valid ".out" for
     random data"""
     path = os.path.join(TEST_DATA, subdir)
@@ -126,25 +148,32 @@ class CrypterTest(unittest.TestCase):
       crypter = keyczar.Crypter.Read(path)
     # check active key
     active_ciphertext = util.ReadFile(os.path.join(path, "1.out"))
-    active_decrypted_stream = StringIO.StringIO()
-    decryption_stream = crypter.CreateDecryptingStream(active_decrypted_stream,
-                                                      buffer_size=buffer_size)
-    self.__writeToStream(decryption_stream, active_ciphertext, write_mode)
-    decryption_stream.close()
-    self.assertEquals(self.input_data, active_decrypted_stream.getvalue(),
+    if stream_source is None:
+      decoder = None
+      active_ciphertext = util.Base64Decode(active_ciphertext)
+    else:
+      decoder = util.IncrementalBase64StreamReader
+    decryption_stream = crypter.CreateDecryptingStreamReader(
+      StringIO.StringIO(active_ciphertext), 
+      decoder=decoder,
+      buffer_size=buffer_size)
+    plaintext = self.__readFromStream(decryption_stream, size_mode)
+    self.assertEquals(self.input_data, plaintext,
                       'Not equals for buffer:%d, mode:%d' %(buffer_size,
-                                                            write_mode))
+                                                            size_mode))
 
     # check primary key
     primary_ciphertext = util.ReadFile(os.path.join(path, "2.out"))
-    primary_decrypted_stream = StringIO.StringIO()
-    decryption_stream = crypter.CreateDecryptingStream(primary_decrypted_stream,
-                                                      buffer_size=buffer_size)
-    self.__writeToStream(decryption_stream, primary_ciphertext, write_mode)
-    decryption_stream.close()
-    self.assertEquals(self.input_data, primary_decrypted_stream.getvalue(),
+    if stream_source is None:
+      primary_ciphertext = util.Base64Decode(primary_ciphertext)
+    decryption_stream = crypter.CreateDecryptingStreamReader(
+      StringIO.StringIO(primary_ciphertext), 
+      decoder=decoder,
+      buffer_size=buffer_size)
+    plaintext = self.__readFromStream(decryption_stream, size_mode)
+    self.assertEquals(self.input_data, plaintext,
                       'Not equals for buffer:%d, mode:%d' %(buffer_size,
-                                                            write_mode))
+                                                            size_mode))
 
   def __testEncryptAndDecrypt(self, subdir):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, subdir))
@@ -156,79 +185,124 @@ class CrypterTest(unittest.TestCase):
     reflowed_ciphertext = self.__simulateReflow(ciphertext)
     plaintext = crypter.Decrypt(reflowed_ciphertext)
     self.assertEquals(self.input_data, plaintext)
+
+    # test the unencoded version as well 
+    self.__testEncryptAndDecryptUnencoded(subdir)
   
+  def __testEncryptAndDecryptUnencoded(self, subdir):
+    crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, subdir))
+    ciphertext = crypter.Encrypt(self.input_data, encoder=None)
+    try:
+        # attempting to decrypt an unencoded ciphertext with the default base64
+        # decoder will die horribly!
+        plaintext = crypter.Decrypt(ciphertext)
+    except:
+        # expected
+        pass
+    plaintext = crypter.Decrypt(ciphertext, decoder=None)
+    self.assertEquals(self.input_data, plaintext)
+
   def __testStandardEncryptAndStreamDecrypt(self, subdir, 
                                             input_data,
                                             buffer_size,
-                                            write_mode):
+                                            size_mode,
+                                            stream_source
+                                           ):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, subdir))
     ciphertext = crypter.Encrypt(input_data)
-    plaintext_stream = StringIO.StringIO()
+    ciphertext_stream = StringIO.StringIO(ciphertext)
 
-    decryption_stream = crypter.CreateDecryptingStream(plaintext_stream,
-                                                       buffer_size=buffer_size)
-    self.__writeToStream(decryption_stream, ciphertext, write_mode)
-    decryption_stream.close()
-    plaintext = plaintext_stream.getvalue()
+    if stream_source is None:
+      decoder = None
+      ciphertext_stream = StringIO.StringIO(util.Base64Decode(ciphertext))
+    else:
+      decoder = util.IncrementalBase64StreamReader
+    decryption_stream = crypter.CreateDecryptingStreamReader(
+      ciphertext_stream, 
+      decoder=decoder,
+      buffer_size=buffer_size)
+    plaintext = self.__readFromStream(decryption_stream, size_mode)
     self.assertEquals(len(input_data), len(plaintext), 
                       'Wrong length for buffer:%d, mode:%d' %(buffer_size,
-                                                              write_mode))
+                                                              size_mode))
     self.assertEquals(input_data, plaintext,
                       'Not equals for buffer:%d, mode:%d' %(buffer_size,
-                                                            write_mode))
+                                                            size_mode))
 
   def __testStreamEncryptAndStandardDecrypt(self, subdir, 
                                             input_data,
                                             buffer_size,
-                                            write_mode):
+                                            size_mode,
+                                            stream_source
+                                           ):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, subdir))
     ciphertext_stream = StringIO.StringIO()
-    encryption_stream = crypter.CreateEncryptingStream(ciphertext_stream,
-                                                       buffer_size=buffer_size)
-    self.__writeToStream(encryption_stream, input_data, write_mode)
+    if stream_source is None:
+      encoder = None
+      decoder = None
+    else:
+      encoder = util.IncrementalBase64StreamWriter
+      decoder = util.Base64Decode
+    encryption_stream = crypter.CreateEncryptingStreamWriter(
+      ciphertext_stream, 
+      encoder=encoder,
+      buffer_size=buffer_size)
+    self.__writeToStream(encryption_stream, input_data, size_mode)
     encryption_stream.close()
     ciphertext = ciphertext_stream.getvalue()
-    plaintext = crypter.Decrypt(ciphertext)
+    plaintext = crypter.Decrypt(ciphertext, decoder=decoder)
     self.assertEquals(len(input_data), len(plaintext), 
                       'Wrong length for buffer:%d, mode:%d' %(buffer_size,
-                                                              write_mode))
+                                                              size_mode))
     self.assertEquals(input_data, plaintext,
                       'Not equals for buffer:%d, mode:%d' %(buffer_size,
-                                                            write_mode))
+                                                            size_mode))
 
   def __testStreamEncryptAndStreamDecrypt(self, subdir,
                                           input_data,
                                           buffer_size,
-                                          write_mode,
+                                          size_mode,
+                                          stream_source
                                          ):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, subdir))
     ciphertext_stream = StringIO.StringIO()
-    encryption_stream = crypter.CreateEncryptingStream(ciphertext_stream,
-                                                       buffer_size=buffer_size)
-    self.__writeToStream(encryption_stream, input_data, write_mode)
+    if stream_source is None:
+      encoder = None
+      decoder = None
+    else:
+      encoder = util.IncrementalBase64StreamWriter
+      decoder = util.IncrementalBase64StreamReader
+
+    encryption_stream = crypter.CreateEncryptingStreamWriter(
+      ciphertext_stream, 
+      encoder=encoder,
+      buffer_size=buffer_size)
+    self.__writeToStream(encryption_stream, input_data, size_mode)
     encryption_stream.close()
     ciphertext_stream.reset()
-    plaintext_stream = StringIO.StringIO()
 
-    decryption_stream = crypter.CreateDecryptingStream(plaintext_stream,
-                                                       buffer_size=buffer_size)
-    self.__writeToStream(decryption_stream, ciphertext_stream.getvalue(), write_mode)
-    decryption_stream.close()
-    plaintext = plaintext_stream.getvalue()
+    decryption_stream = crypter.CreateDecryptingStreamReader(
+      ciphertext_stream, 
+      decoder=decoder,
+      buffer_size=buffer_size)
+    plaintext = self.__readFromStream(decryption_stream, size_mode)
     self.assertEquals(len(input_data), len(plaintext), 
                       'Wrong length for buffer:%d, mode:%d' %(buffer_size,
-                                                              write_mode))
+                                                              size_mode))
     self.assertEquals(input_data, plaintext,
                       'Not equals for buffer:%d, mode:%d' %(buffer_size,
-                                                            write_mode))
+                                                            size_mode))
   
   def __testAllModesAndBufferSizes(self, fn, params):
     for buff_size in self.ALL_BUFFER_SIZES:
-      for mode in self.ALL_MODES:
-        for data in [self.input_data, self.random_input_data,
-                     self.__simulateReflow(self.random_input_data)]:
-          all_params = list(params) + [data, buff_size, mode]
-          fn(*all_params)
+      for mode in self.ALL_SIZES:
+        for data in [self.input_data, 
+                     self.random_input_data,
+                     self.__simulateReflow(self.random_input_data)
+                    ]:
+          for stream_source in ['default', None]:
+            all_params = list(params) + [data, buff_size, mode, stream_source]
+            fn(*all_params)
 
   def testRsaDecrypt(self):
     self.__testDecrypt("rsa")
@@ -261,47 +335,50 @@ class CrypterTest(unittest.TestCase):
 
   def testAesStandardEncryptAndStreamDecryptInterop(self):
     # test streaming decryption for all combinations
-    self.__testAllModesAndBufferSizes(self.__testStandardEncryptAndStreamDecrypt,
-                                      ("aes",))
+    self.__testAllModesAndBufferSizes(
+        self.__testStandardEncryptAndStreamDecrypt,
+        ("aes",))
 
   def testAesStreamEncryptAndStandardDecryptInterop(self):
     # test streaming encryption for all combinations
-    self.__testAllModesAndBufferSizes(self.__testStreamEncryptAndStandardDecrypt,
-                                      ("aes",))
+    self.__testAllModesAndBufferSizes(
+        self.__testStreamEncryptAndStandardDecrypt,
+        ("aes",))
 
   def testAesStreamEncryptAndStreamDecryptInterop(self):
     # test streaming encryption/decryption for all combinations
-    self.__testAllModesAndBufferSizes(self.__testStreamEncryptAndStreamDecrypt,
-                                      ("aes",))
+    self.__testAllModesAndBufferSizes(
+        self.__testStreamEncryptAndStreamDecrypt,
+        ("aes",))
 
   def testBadAesCiphertexts(self):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
-    ciphertext = util.Decode(crypter.Encrypt(self.input_data))  # in bytes
-    bad = util.Encode(chr(0))
+    ciphertext = util.Base64Decode(crypter.Encrypt(self.input_data))  # in bytes
+    bad = util.Base64Encode(chr(0))
     char = chr(ord(ciphertext[2]) ^ 44)  # Munge key hash info in ciphertext
-    ciphertext = util.Encode(ciphertext[:2]+char+ciphertext[3:])
+    ciphertext = util.Base64Encode(ciphertext[:2]+char+ciphertext[3:])
     self.assertRaises(errors.ShortCiphertextError, crypter.Decrypt, bad)
     self.assertRaises(errors.KeyNotFoundError, crypter.Decrypt, ciphertext)
   
   def testBadAesCiphertextsStream(self):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
-    ciphertext = util.Decode(crypter.Encrypt(self.input_data))  # in bytes
-    bad = util.Encode(chr(0))
+    ciphertext = util.Base64Decode(crypter.Encrypt(self.input_data))  # in bytes
+    bad = util.Base64Encode(chr(0))
     char = chr(ord(ciphertext[2]) ^ 44)  # Munge key hash info in ciphertext
-    ciphertext = util.Encode(ciphertext[:2]+char+ciphertext[3:])
+    ciphertext = util.Base64Encode(ciphertext[:2]+char+ciphertext[3:])
 
     try:
-      decryption_stream = crypter.CreateDecryptingStream(StringIO.StringIO())
-      self.__writeToStream(decryption_stream, bad)
-      decryption_stream.close()
+      stream = StringIO.StringIO(bad)
+      decryption_stream = crypter.CreateDecryptingStreamReader(stream)
+      self.__readFromStream(decryption_stream)
     except errors.ShortCiphertextError:
       # expected
       pass
 
     try:
-      decryption_stream = crypter.CreateDecryptingStream(StringIO.StringIO())
-      self.__writeToStream(decryption_stream, ciphertext)
-      decryption_stream.close()
+      stream = StringIO.StringIO(ciphertext)
+      decryption_stream = crypter.CreateDecryptingStreamReader(stream)
+      self.__readFromStream(decryption_stream)
     except errors.KeyNotFoundError:
       # expected
       pass
