@@ -177,10 +177,11 @@ class AesKey(SymmetricKey):
     self.hmac_key = hmac_key
     self.block_size = 16  # pycrypto AES's block size is fixed to 16 bytes
     self.size = size
-    self.mode = mode
+    # Only CBC mode is actually supported, in spite of what the signature leads you to believe.
+    assert mode == keyinfo.CBC
 
   def __str__(self):
-    return json.dumps({"mode": str(self.mode),
+    return json.dumps({"mode": str(keyinfo.CBC),
                        "size": self.size,
                        "aesKeyString": self.key_string,
                        "hmacKey": json.loads(str(self.hmac_key))})
