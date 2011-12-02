@@ -115,162 +115,6 @@ def ReadKey(key_type, key):
   except KeyError:
     raise errors.KeyczarError("Unsupported key key_type: %s" % key_type)
 
-def CreateCipher(key_bytes, iv_bytes, mode=AES.MODE_CBC):
-  """
-  Factory function for creating cipher of specified type using the active crypto
-  library
-
-  @param key_bytes: the key for this cipher
-  @type key: string
-
-  @param iv_bytes: the initialization vector for this cipher
-  @type iv_bytes: string
-
-  @param mode: the cipher mode
-  @type mode: integer (using AES values, e.g. AES.MODE_CBC)
-
-  @return: the cipher object
-  """
-  # can we use M2Crypto and was it requested?
-  if ACTIVE_CRYPT_LIB.lower() == 'm2crypto' and EVP:
-    # yes, so do so
-    return EVPAdaptor(key_bytes, iv_bytes, mode)
-  else:
-    # default to PyCrypto
-    return AESAdaptor(key_bytes, iv_bytes, mode)
-
-class AESAdaptor(object):
-
-  """Adaptor class to make PyCrypto's Cipher behave the same as M2Crypto's EVP.Cipher class"""
-
-  def __init__(self, key_bytes, iv_bytes, mode):
-    """
-    Constructor
-
-    @param key_bytes: the key for this cipher
-    @type key: string
-
-    @param iv_bytes: the initialization vector for this cipher
-    @type iv_bytes: string
-
-    @param mode: the cipher mode
-    @type mode: integer (using AES values, e.g. AES.MODE_CBC)
-    """
-    self.cipher = AES.new(key_bytes, mode, iv_bytes)
-
-  def __getattr__(self, name):
-    # defer everything to the actual cipher instance
-    return getattr(self.cipher, name)
-
-  def final(self):
-    """
-    Collect any remaining encrypted data i.e. non-block size conforming
-
-    @return: remaining encrypted data, if any
-    """
-    # except 'final' which is a no-op
-    return ''
-
-class EVPAdaptor(object):
-
-  """Adaptor class to make M2Crypto's EVP.Cipher behave the same as PyCrypto's Cipher class"""
-
-  # Operation mode - EVP needs a different cipher for each
-  OP_DECRYPT = 0
-  OP_ENCRYPT = 1
-  OP_TYPES = (OP_DECRYPT, OP_ENCRYPT)
-
-  def __init__(self, key_bytes, iv_bytes, mode):
-    """
-    Constructor
-
-    @param key_bytes: the key for this cipher
-    @type key: string
-
-    @param iv_bytes: the initialization vector for this cipher
-    @type iv_bytes: string
-
-    @param mode: the cipher mode
-    @type mode: integer (using AES values, e.g. AES.MODE_CBC)
-    """
-    # defer construction of cipher until encrypt/decrypt request made
-    self.cipher = None
-    # keep track of cipher operation mode (encrypt/decrypt)
-    self.operation = None
-    # preserve the data needed for cipher construction
-    self.key_bytes = key_bytes
-    self.IV = iv_bytes
-    self.mode = mode
-    self.block_size = AES.block_size
-    self.key_size = len(key_bytes)
-
-  def __cipher(self, operation):
-    """
-    Helper to get the cipher for this adaptor, creates if required
-
-    @param operation: type of cipher required (encrypt/decrypt)
-    @type operation: integer (one of OP_ENCRYPT, OP_DECRYPT)
-
-    @return: EVP.Cipher
-    """
-    assert operation in self.OP_TYPES, 'Invalid operation :%s' %operation
-    # have we been told the operation mode yet?
-    if not self.operation:
-      # no, so set it up as requested
-
-      # convert between AES and EVP modes
-      # NOTE: AES auto-selects based on key size using the same mode, but EVP
-      # requires different mode strings for each key size (in bits)
-      mode = 'aes_%s_cbc' %(self.key_size*8)
-      self.cipher = EVP.Cipher(alg=mode,
-                               key=self.key_bytes, 
-                               iv=self.IV,
-                               op=operation,
-                               padding=0
-                              )
-      self.operation = operation
-    else:
-      # because final() can return the remaining data i.e. not fitting a block
-      # then we can only support one operation per instance.
-      # we could change final() to take an operation param 
-      # but it feels a little clunky to require it everywhere final() is used
-      # especially as EVP is the only one requiring it.
-      assert self.operation == operation, \
-          'Cannot use same EVPAdaptor for both encryption and decryption'
-    return self.cipher
-
-  def decrypt(self, string):
-    """
-    Return decrypted byte string
-
-    @param string: bytes to be decrypted.
-    @type string: string
-
-    @return: plaintext string
-    @rtype: string
-    """
-    return self.__cipher(self.OP_DECRYPT).update(string)
-
-  def encrypt(self, string):
-    """
-    Return encrypted byte string
-
-    @param string: plaintext to be encrypted.
-    @type string: string
-
-    @return: raw byte encrypted string  
-    @rtype: string
-    """
-    return self.__cipher(self.OP_ENCRYPT).update(string)
-
-  def final(self):
-    """
-    Collect any remaining encrypted data i.e. non-block size conforming
-
-    @return: remaining encrypted data, if any
-    """
-    return self.cipher.final()
-
 class Key(object):
 
   """Parent class for Keyczar Keys."""
@@ -335,6 +179,146 @@ class AsymmetricKey(Key):
 
 class AesKey(SymmetricKey):
   """Represents AES symmetric private keys."""
+
+  class AESAdaptor(object):
+
+    """
+    Adaptor class to make PyCrypto's Cipher behave the same as M2Crypto's
+    EVP.Cipher class
+    """
+
+    def __init__(self, key_bytes, iv_bytes, mode):
+      """
+      Constructor
+
+      @param key_bytes: the key for this cipher
+      @type key: string
+
+      @param iv_bytes: the initialization vector for this cipher
+      @type iv_bytes: string
+
+      @param mode: the cipher mode
+      @type mode: integer (using AES values, e.g. AES.MODE_CBC)
+      """
+      self.cipher = AES.new(key_bytes, mode, iv_bytes)
+
+    def __getattr__(self, name):
+      # defer everything to the actual cipher instance
+      return getattr(self.cipher, name)
+
+    def final(self):
+      """
+      Collect any remaining encrypted data i.e. non-block size conforming
+
+      @return: remaining encrypted data, if any
+      """
+      # except 'final' which is a no-op
+      return ''
+
+  class EVPAdaptor(object):
+
+    """
+    Adaptor class to make M2Crypto's EVP.Cipher behave the same as PyCrypto's
+    Cipher class
+    """
+
+    # cipher selection mode - EVP needs a different cipher for each
+    OP_ACTIVE = -1 # indicator that the request is for an existing cipher
+    OP_DECRYPT = 0
+    OP_ENCRYPT = 1
+    OP_TYPES = (OP_ACTIVE, OP_DECRYPT, OP_ENCRYPT)
+
+    def __init__(self, key_bytes, iv_bytes, mode):
+      """
+      Constructor
+
+      @param key_bytes: the key for this cipher
+      @type key: string
+
+      @param iv_bytes: the initialization vector for this cipher
+      @type iv_bytes: string
+
+      @param mode: the cipher mode
+      @type mode: integer (using AES values, e.g. AES.MODE_CBC)
+      """
+      # defer construction of ciphers until encrypt/decrypt request made
+      self.ciphers = {}
+      # preserve the data needed for cipher construction
+      self.key_bytes = key_bytes
+      self.IV = iv_bytes
+      self.mode = mode
+      self.block_size = AES.block_size
+      self.key_size = len(key_bytes)
+
+    def __Cipher(self, selector):
+      """
+      Helper to get the cipher for this adaptor, creates if required
+
+      @param selector: type of cipher required (active/encrypt/decrypt)
+      @type selector: integer one of OP_TYPES
+
+      @return: EVP.Cipher
+      """
+      assert selector in self.OP_TYPES, 'Invalid selector :%s' %selector
+      if selector == self.OP_ACTIVE and (len(self.ciphers.keys()) > 1 or 
+                                         not len(self.ciphers.keys())):
+        assert 0, 'If both encryption and decryption used then selector must \
+            be OP_ENCRYPT or OP_DECRYPT and at least 1 must be active'
+
+      cipher = None
+      if selector == self.OP_ACTIVE:
+        # should only be one cipher active
+        cipher = self.ciphers.values()[0]
+      else:
+        cipher = self.ciphers.get(selector)
+        # have we been created a cipher for this selector yet?
+        if not cipher:
+          # no, so set it up as requested
+
+          # convert between AES and EVP modes
+          # NOTE: AES auto-selects based on key size using the same mode, but
+          # EVP requires different mode strings for each key size (in bits)
+          mode = 'aes_%s_cbc' %(self.key_size*8)
+          cipher = EVP.Cipher(alg=mode,
+                              key=self.key_bytes, 
+                              iv=self.IV,
+                              op=selector,
+                              padding=0
+                             )
+          self.ciphers[selector] = cipher
+      return cipher
+
+    def decrypt(self, string):
+      """
+      Return decrypted byte string
+
+      @param string: bytes to be decrypted.
+      @type string: string
+
+      @return: plaintext string
+      @rtype: string
+      """
+      return self.__Cipher(self.OP_DECRYPT).update(string)
+
+    def encrypt(self, string):
+      """
+      Return encrypted byte string
+
+      @param string: plaintext to be encrypted.
+      @type string: string
+
+      @return: raw byte encrypted string  
+      @rtype: string
+      """
+      return self.__Cipher(self.OP_ENCRYPT).update(string)
+
+    def final(self, selector=OP_ACTIVE):
+      """
+      Collect any remaining encrypted data i.e. non-block size conforming
+
+      @return: remaining encrypted data, if any
+      """
+      return self.__Cipher(selector).final()
 
   def __init__(self, key_string, hmac_key, size=keyinfo.AES.default_size,
                mode=keyinfo.CBC):
@@ -430,7 +414,7 @@ class AesKey(SymmetricKey):
     """
     data = self.__Pad(data)
     iv_bytes = util.RandBytes(self.block_size)
-    cipher = CreateCipher(self.key_bytes, iv_bytes)
+    cipher = self.__CreateCipher(self.key_bytes, iv_bytes)
     ciph_bytes = cipher.encrypt(data)
     ciph_bytes += cipher.final()
     msg_bytes = self.Header() + iv_bytes + ciph_bytes
@@ -461,11 +445,35 @@ class AesKey(SymmetricKey):
     if not self.hmac_key.Verify(input_bytes[:-util.HLEN], sig_bytes):
       raise errors.InvalidSignatureError()
 
-    cipher = CreateCipher(self.key_bytes, iv_bytes)
+    cipher = self.__CreateCipher(self.key_bytes, iv_bytes)
     plain = cipher.decrypt(ciph_bytes)
     plain += cipher.final()
 
     return self.__UnPad(plain)
+
+  def __CreateCipher(self, key_bytes, iv_bytes, mode=AES.MODE_CBC):
+    """
+    Factory function for creating cipher of specified type using the active
+    crypto library
+
+    @param key_bytes: the key for this cipher
+    @type key: string
+
+    @param iv_bytes: the initialization vector for this cipher
+    @type iv_bytes: string
+
+    @param mode: the cipher mode
+    @type mode: integer (using AES values, e.g. AES.MODE_CBC)
+
+    @return: the cipher object
+    """
+    # can we use M2Crypto and was it requested?
+    if ACTIVE_CRYPT_LIB.lower() == 'm2crypto' and EVP:
+      # yes, so do so
+      return self.EVPAdaptor(key_bytes, iv_bytes, mode)
+    else:
+      # default to PyCrypto
+      return self.AESAdaptor(key_bytes, iv_bytes, mode)
 
 class HmacKey(SymmetricKey):
   """Represents HMAC-SHA1 symmetric private keys."""
