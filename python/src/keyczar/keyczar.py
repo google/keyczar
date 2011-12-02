@@ -359,8 +359,12 @@ class Verifier(Keyczar):
     sig_bytes = util.Decode(sig)
     if len(sig_bytes) < HEADER_SIZE:
       raise errors.ShortSignatureError(len(sig_bytes))
-    key = self._ParseHeader(sig_bytes[:HEADER_SIZE])
-    return key.Verify(data + VERSION_BYTE, sig_bytes[HEADER_SIZE:])
+    return self.__InternalVerify(sig_bytes[:HEADER_SIZE], sig_bytes[HEADER_SIZE:], data)
+
+  def __InternalVerify(self, header,  signature, data, hidden = None):
+    key = self._ParseHeader(header)
+    return key.Verify(data + util.PackByteArray(hidden) + VERSION_BYTE, signature)
+
 
 class UnversionedVerifier(Keyczar):
   """Capable of verifying unversioned, standard signatures only."""
@@ -488,11 +492,14 @@ class Signer(Verifier):
     @return: signature on the data encoded as a Base64 string
     @rtype: string
     """
+    return util.Encode(self.primary_key.Header()
+                       + self.__InternalSign(data))
+
+  def __InternalSign(self, data, hidden = None):
     signing_key = self.primary_key
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
-    header = signing_key.Header()
-    return util.Encode(header + signing_key.Sign(data + VERSION_BYTE))
+    return signing_key.Sign(data + util.PackByteArray(hidden) + VERSION_BYTE)
 
 class UnversionedSigner(UnversionedVerifier):
   """Capable of both signing and verifying. This outputs standard signatures
