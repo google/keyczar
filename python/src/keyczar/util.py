@@ -21,8 +21,11 @@ Utility functions for keyczar package.
 """
 
 import base64
+import cPickle
+import functools
 import math
 import os
+import struct
 try:
   # Import hashlib if Python >= 2.5
   from hashlib import sha1
@@ -337,7 +340,36 @@ def Decode(s):
     s += "=="
   elif d == 3:
     s += "="
-  return base64.urlsafe_b64decode(s)
+  try:
+    return base64.urlsafe_b64decode(s)
+  except TypeError:
+    # Decoding raises TypeError if s contains invalid characters.
+    raise errors.Base64DecodingError()
+
+def PackByteArray(array):
+  if not array:
+    return ''
+  array_len = len(array)
+  return struct.pack(">i" + str(array_len) + "s", array_len, array)
+
+def PackMultipleByteArrays(*arrays):
+  return struct.pack(">i", len(arrays)) + ''.join([ PackByteArray(a) for a in arrays ])
+
+def UnpackByteArray(data, offset):
+  array_len = struct.unpack(">i", data[offset:offset + 4])[0]
+  offset += 4
+  return data[offset:offset + array_len], offset + array_len
+
+def UnpackMultipleByteArrays(data):
+  # The initial integer containing the number of byte arrays that follow is redundant.  We
+  # just skip it.
+  position = 4
+  result = []
+  while position < len(data):
+    array, position = UnpackByteArray(data, position)
+    result.append(array)
+  assert position == len(data)
+  return result
 
 def WriteFile(data, loc):
   """
@@ -396,3 +428,23 @@ def MGF(seed, mlen):
   for i in range(int(math.ceil(mlen / float(HLEN)))):
     output += Hash(seed, IntToBytes(i))
   return output[:mlen]
+
+def Memoize(func):
+  """
+  General-purpose memoization decorator.  Handles functions with any number of arguments,
+  including keyword arguments.
+  """
+  memory = {}
+
+  @functools.wraps(func)
+  def memo(*args,**kwargs):
+    pickled_args = cPickle.dumps((args, sorted(kwargs.iteritems())))
+
+    if pickled_args not in memory:
+      memory[pickled_args] = func(*args,**kwargs)
+
+    return memory[pickled_args]
+
+  if memo.__doc__:
+    memo.__doc__ = "\n".join([memo.__doc__,"This function is memoized."])
+  return memo

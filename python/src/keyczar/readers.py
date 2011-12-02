@@ -24,6 +24,7 @@ import os
 
 import errors
 import keydata
+import keyinfo
 import keys
 import util
 
@@ -64,6 +65,20 @@ class FileReader(Reader):
 
   def GetKey(self, version_number):
     return util.ReadFile(os.path.join(self._location, str(version_number)))
+
+class ImportReader(Reader):
+  """Reader that returns a static key"""
+
+  def __init__(self, key, purpose):
+    self._key = key
+    self._meta = keydata.KeyMetadata("Imported", purpose, key.type)
+    self._meta.AddVersion(keydata.KeyVersion(1, keyinfo.PRIMARY, False))
+
+  def GetMetadata(self):
+    return str(self._meta)
+
+  def GetKey(self, version_number):
+    return str(self._key)
 
 class EncryptedReader(Reader):
   """Reader that reads encrypted key data from files."""

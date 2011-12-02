@@ -24,6 +24,7 @@ encrypt, decrypt, sign and verify.
 import os
 
 import errors
+import json
 import keydata
 import keyinfo
 import keys
@@ -534,3 +535,96 @@ class UnversionedSigner(UnversionedVerifier):
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
     return util.Encode(signing_key.Sign(data))
+
+
+class _Session(object):
+  """
+  A utility object which holds a session key and, optionally, a nonce.  This class
+  is only for use by SessionEncrypter and SessionDecrypter.
+  """
+
+  @staticmethod
+  def New():
+    """
+    Constructs and returns a new _Session instance, containing a newly-generated
+    AES key.
+    """
+    return _Session(keys.AesKey.Generate())
+
+  @staticmethod
+  def LoadPackedKey(packed_key_data):
+    """
+    Constructs and returns a new _Session instance, initialized with the key data
+    extracted from the provided packed_key_data, which must have been produced by
+    _Session.packed_key.
+    """
+    unpacked = util.UnpackMultipleByteArrays(packed_key_data)
+    assert len(unpacked) == 2
+    aes_key_bytes = unpacked[0]
+    hmac_key_bytes = unpacked[1]
+    hmac_key = keys.HmacKey(util.Encode(hmac_key_bytes), len(hmac_key_bytes) * 8)
+    session_key = keys.AesKey(util.Encode(aes_key_bytes), hmac_key, len(aes_key_bytes) * 8,
+                                      keyinfo.CBC)
+    return _Session(session_key)
+
+  def __init__(self, session_key):
+    self._session_key = session_key
+
+  @property
+  @util.Memoize
+  def crypter(self):
+    """
+    Returns a Crypter which can be used to encrypt and decrypt data using the session key.
+    """
+    return Crypter(readers.ImportReader(self._session_key, keyinfo.DECRYPT_AND_ENCRYPT))
+
+  @property
+  def packed_key(self):
+    """
+    Returns the session key data in a compact binary format.
+    """
+    return util.PackMultipleByteArrays(self._session_key.key_bytes,
+                                       self._session_key.hmac_key.key_bytes)
+
+
+class SessionEncrypter(object):
+  """
+  An Encrypter that encrypts the data with a generated AES session key.  The session key
+  is in turn encrypted with a user-provided Encrypter, producing session_material, which
+  must be provided to the SessionDecrypter to be able to decypt session-encrypted data.
+  """
+
+  def __init__(self, encrypter):
+    self._session = _Session.New()
+    self._encrypted_session_material = encrypter.Encrypt(self._session.packed_key)
+
+  @property
+  def session_material(self):
+    """
+    Returns the base64-encoded, encrytped session blob that must be provided to the
+    SessionDecrypter in order to decrypt data encrypted by this object.
+    """
+    return self._encrypted_session_material
+
+  def Encrypt(self, plaintext):
+    """
+    Encrypts the given plaintext with the session key and returns the base 64-encoded result.
+    """
+    return self._session.crypter.Encrypt(plaintext)
+
+
+class SessionDecrypter(object):
+  """
+  A Decrypter that can decrypt data encrypted with a session key, which is obtained by
+  decrypting the provided session_material using the provided Crypter.
+  """
+
+  def __init__(self, crypter, session_material):
+    self._session = _Session.LoadPackedKey(crypter.Decrypt(session_material))
+
+  def Decrypt(self, ciphertext):
+    """
+    Decrypts the given base 64-encoded ciphertext with the session key and returns the
+    decrypted plaintext.
+    """
+    return self._session.crypter.Decrypt(ciphertext)
