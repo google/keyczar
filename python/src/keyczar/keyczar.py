@@ -22,13 +22,13 @@ encrypt, decrypt, sign and verify.
 """
 
 import os
+import warnings
 
 import errors
 import keydata
 import keyinfo
 import keys
 import readers
-import writers # TEMP until refactored
 import util
 
 VERSION = 0
@@ -277,6 +277,21 @@ class GenericKeyczar(Keyczar):
       util.WriteFile(str(pubkmd), os.path.join(dest, "meta"))
 
   def Write(self, writer, encrypter=None):
+    """
+    Write this key set to the specified location.
+
+    @param writer: where to write the key set
+    @type writer: Writer or file path (deprecated)
+
+    @param encrypter: which encryption to use for this key set. Use None to
+    write an unencrypted key set.
+    @type encrypter: Encrypter
+    """
+    if isinstance(writer, basestring):
+      writer = writers.CreateWriter(writer)
+      warnings.warn(
+        'Using a string as the writer is deprecated. Use writers.CreateWriter', 
+        DeprecationWarning)
     self.metadata.encrypted = (encrypter is not None)
     writer.WriteMetadata(self.metadata)
     for v in self.versions:

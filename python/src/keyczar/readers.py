@@ -37,7 +37,7 @@ def CreateReader(location):
   util.ImportBackends()
   # return the first that accepts the location
   for sc in Reader.__subclasses__():
-    reader = sc.CreateWriter(location)
+    reader = sc.CreateReader(location)
     if reader:
       return reader
   raise errors.KeyczarError("Unable to create a reader for %s." % location)
@@ -84,14 +84,14 @@ class Reader(object):
     return
 
   @classmethod
-  def CreateWriter(cls, location):
+  def CreateReader(cls, location):
     """
     Return an instance of this class if it handles the location
 
     @param location: where (file, uri, etc) the reader should read from
     @type location: string
     """
-    raise NotImplementedError('CreateWriter() class method MUST be implemented for:%s' %cls)
+    raise NotImplementedError('CreateReader() class method MUST be implemented for:%s' %cls)
 
 class FileReader(Reader):
   """Reader that reads key data from files."""
@@ -110,7 +110,7 @@ class FileReader(Reader):
     return
 
   @classmethod
-  def CreateWriter(cls, location):
+  def CreateReader(cls, location):
     result = None
     if os.path.exists(location):
       result = FileReader(location)
@@ -134,7 +134,7 @@ class EncryptedReader(Reader):
     return
 
   @classmethod
-  def CreateWriter(cls, location):
+  def CreateReader(cls, location):
     # cannot be instantiated
     return
 
@@ -196,6 +196,6 @@ class MockReader(Reader):
     return self.keys[version_number].size
   
   @classmethod
-  def CreateWriter(cls, location):
+  def CreateReader(cls, location):
     # cannot be instantiated
     return

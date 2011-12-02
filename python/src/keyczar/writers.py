@@ -1,6 +1,6 @@
 #!/usr/bin/python2.4
 #
-# Copyright 2008 Google Inc.
+# Copyright 2011 LightKeeper LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import errors
 import util
 
 def CreateWriter(location):
-  """Factory function for Writer's
+  """Factory function for Writers
   
     @param location: where (file, uri, etc) the writer should write to
     @type location: string
