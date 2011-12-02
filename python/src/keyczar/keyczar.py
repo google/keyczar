@@ -739,7 +739,7 @@ class SignedSessionEncrypter(object):
     return self._encrypted_session_material
 
   def Encrypt(self, plaintext):
-    ciphertext = self._session.crypter.Encrypt(plaintext)
+    ciphertext = self._session.crypter.Encrypt(plaintext, None)
     return self._signer.AttachedSign(ciphertext, self._session.nonce)
 
 
@@ -761,4 +761,4 @@ class SignedSessionDecrypter(object):
     ciphertext = self._verifier.AttachedVerify(signed_encrypted_blob, self._session.nonce)
     if not ciphertext:
       return None
-    return self._session.crypter.Decrypt(ciphertext)
+    return self._session.crypter.Decrypt(ciphertext, None)
