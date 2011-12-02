@@ -36,4 +36,4 @@ def suite():
   return alltests
 
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+  unittest.TextTestRunner().run(suite())
