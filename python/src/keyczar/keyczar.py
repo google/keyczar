@@ -361,6 +361,33 @@ class Verifier(Keyczar):
       raise errors.ShortSignatureError(len(sig_bytes))
     return self.__InternalVerify(sig_bytes[:HEADER_SIZE], sig_bytes[HEADER_SIZE:], data)
 
+  def AttachedVerify(self, signed_data, nonce):
+    """
+    Verifies the signature in the signed blob corresponds to the data
+    in the signed blob and the provided nonce, and returns the data.
+
+    @param signed_data: the blob, produced by AttachedSign, containing
+    data and signature.
+    @type signed_data: string
+
+    @param nonce: Nonce string that was used when the signature was
+    generated.  If the provided value doesn't match, verification will
+    fail.
+    @type sig: string
+
+    @return: If verification succeeds, the extracted data will be returned,
+    otherwise, None
+    @rtype: string
+    """
+    decoded_data = util.Decode(signed_data)
+
+    data, offset = util.UnpackByteArray(decoded_data, HEADER_SIZE)
+    signature = decoded_data[offset:]
+    if self.__InternalVerify(decoded_data[:HEADER_SIZE], signature, data, nonce):
+      return data
+    else:
+      return None
+
   def __InternalVerify(self, header,  signature, data, hidden = None):
     key = self._ParseHeader(header)
     return key.Verify(data + util.PackByteArray(hidden) + VERSION_BYTE, signature)
@@ -494,6 +521,27 @@ class Signer(Verifier):
     """
     return util.Encode(self.primary_key.Header()
                        + self.__InternalSign(data))
+
+  def AttachedSign(self, data, nonce):
+    """
+    Sign given data and nonce and return a blob containing both data and
+    signature
+
+    For message M, and nonce N, outputs Header|len(M)|M|Sig(Header|M|N).
+
+    @param data: message to be signed
+    @type data: string
+
+    @param nonce: nonce to be included in the signature
+    @type nonce: string
+
+    @return: signature on the data encoded as a Base64 string
+    @rtype: string
+    """
+    return util.Encode(self.primary_key.Header()
+                       + util.PackByteArray(data)
+                       + self.__InternalSign(data, nonce))
+
 
   def __InternalSign(self, data, hidden = None):
     signing_key = self.primary_key

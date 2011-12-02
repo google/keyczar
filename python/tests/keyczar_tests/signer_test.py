@@ -44,6 +44,11 @@ class SignerTest(unittest.TestCase):
     sig = unversioned_signer.Sign(self.input)
     return (unversioned_signer, sig)
   
+  def __attachedSignInput(self, subdir, nonce):
+    signer = keyczar.Signer.Read(os.path.join(TEST_DATA, subdir))
+    attached_sig = signer.AttachedSign(self.input, nonce)
+    return (signer, attached_sig)
+
   def __readGoldenOutput(self, subdir, verifier=False, public=False):
     path = os.path.join(TEST_DATA, subdir)
     if verifier and not public:
@@ -65,6 +70,26 @@ class SignerTest(unittest.TestCase):
     (unversioned_signer, sig) = self.__unversionedSignInput(subdir)
     self.assertTrue(unversioned_signer.Verify(self.input, sig))
     self.assertFalse(unversioned_signer.Verify("Wrong string", sig))
+    
+  def __testAttachedSignAndVerify(self, subdir):
+    (signer, attached_sig) = self.__attachedSignInput(subdir, "nonce")
+    self.assertEquals(self.input, signer.AttachedVerify(attached_sig, "nonce"))
+
+    # Changing nonce should make it fail.
+    self.assertFalse(signer.AttachedVerify(attached_sig, "dunce"))
+    
+    # Changing signature should make it fail.
+    bad_sig = self.__modifyByteString(attached_sig, -5)
+    self.assertFalse(signer.AttachedVerify(bad_sig, "nonce"))
+    
+    # Changing data should make it fail.
+    bad_data = self.__modifyByteString(attached_sig, keyczar.HEADER_SIZE + 4)
+    self.assertFalse(signer.AttachedVerify(bad_data, "nonce"))
+    
+  def __modifyByteString(self, string, offset):
+    decoded = util.Decode(string)
+    modified_char = chr(ord(decoded[offset]) ^ 0xFF)
+    return util.Encode(decoded[:offset] + modified_char + decoded[offset+1:])
   
   def __testSignerVerify(self, subdir):
     (signer, active_sig, primary_sig) = self.__readGoldenOutput(subdir)
@@ -90,6 +115,7 @@ class SignerTest(unittest.TestCase):
     
   def testHmacSignAndVerify(self):
     self.__testSignAndVerify("hmac")
+    self.__testAttachedSignAndVerify("hmac")
     
   def testHmacUnversionedSignAndVerify(self):
     self.__testUnversionedSignAndVerify("hmac")
@@ -102,6 +128,7 @@ class SignerTest(unittest.TestCase):
   
   def testDsaSignAndVerify(self):
     self.__testSignAndVerify("dsa")
+    self.__testAttachedSignAndVerify("dsa")
 
   def testDsaUnversionedSignAndVerify(self):
     self.__testUnversionedSignAndVerify("dsa")
@@ -120,6 +147,7 @@ class SignerTest(unittest.TestCase):
   
   def testRsaSignAndVerify(self):
     self.__testSignAndVerify("rsa-sign")
+    self.__testAttachedSignAndVerify("rsa-sign")
 
   def testRsaUnversionedSignAndVerify(self):
     self.__testUnversionedSignAndVerify("rsa-sign")
