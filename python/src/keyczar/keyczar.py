@@ -595,16 +595,17 @@ class UnversionedSigner(UnversionedVerifier):
 class _Session(object):
   """
   A utility object which holds a session key and, optionally, a nonce.  This class
-  is only for use by SessionEncrypter and SessionDecrypter.
+  is only for use by SessionEncrypter, SessionDecrypter, SignedSessionEncrypter, and
+  SignedSessionDecrypter.
   """
 
   @staticmethod
   def New():
     """
     Constructs and returns a new _Session instance, containing a newly-generated
-    AES key.
+    AES key and random nonce.
     """
-    return _Session(keys.AesKey.Generate())
+    return _Session(keys.AesKey.Generate(), util.RandBytes(16))
 
   @staticmethod
   def LoadPackedKey(packed_key_data):
@@ -620,10 +621,22 @@ class _Session(object):
     hmac_key = keys.HmacKey(util.Encode(hmac_key_bytes), len(hmac_key_bytes) * 8)
     session_key = keys.AesKey(util.Encode(aes_key_bytes), hmac_key, len(aes_key_bytes) * 8,
                                       keyinfo.CBC)
-    return _Session(session_key)
+    return _Session(session_key, None)
 
-  def __init__(self, session_key):
+  @staticmethod
+  def LoadJsonSession(json_session_data):
+    """
+    Constructs and returns a new _Session instance, initialized with the key and nonce
+    extracted from the provided json_session_data, which must have been produced by
+    _Session.__str__().
+    """
+    json_dict = json.loads(json_session_data)
+    aes_key_string = json.dumps(json_dict['key'])
+    return _Session(keys.AesKey.Read(aes_key_string), util.Decode(json_dict['nonce']))
+
+  def __init__(self, session_key, nonce):
     self._session_key = session_key
+    self._nonce = nonce
 
   @property
   @util.Memoize
@@ -634,12 +647,23 @@ class _Session(object):
     return Crypter(readers.ImportReader(self._session_key, keyinfo.DECRYPT_AND_ENCRYPT))
 
   @property
+  def nonce(self):
+    return self._nonce
+
+  @property
   def packed_key(self):
     """
     Returns the session key data in a compact binary format.
     """
     return util.PackMultipleByteArrays(self._session_key.key_bytes,
                                        self._session_key.hmac_key.key_bytes)
+
+  def __str__(self):
+    """
+    Returns the session key data and nonce in Json format.
+    """
+    aes_key_string = json.loads(str(self._session_key))
+    return json.dumps({ 'key' : aes_key_string, 'nonce' : util.Encode(self._nonce) })
 
 
 class SessionEncrypter(object):
@@ -682,4 +706,49 @@ class SessionDecrypter(object):
     Decrypts the given base 64-encoded ciphertext with the session key and returns the
     decrypted plaintext.
     """
+    return self._session.crypter.Decrypt(ciphertext)
+
+
+class SignedSessionEncrypter(object):
+  """
+  An object that encrypts data with a session key, which is in turn encrypted by the provided
+  encrypter, and signs the data with the provided signer.
+  """
+
+  def __init__(self, encrypter, signer):
+    self._session = _Session.New()
+    self._encrypted_session_material = encrypter.Encrypt(str(self._session))
+    self._signer = signer
+
+  @property
+  def session_material(self):
+    """
+    Returns the base64-encoded, encrypted session blob that must be provided to the
+    SignedSessionDecrypter in order to decrypt data encrypted by this object.
+    """
+    return self._encrypted_session_material
+
+  def Encrypt(self, plaintext):
+    ciphertext = self._session.crypter.Encrypt(plaintext)
+    return self._signer.AttachedSign(ciphertext, self._session.nonce)
+
+
+class SignedSessionDecrypter(object):
+  """
+  An object that verifies signatures on and decrypts data signed and encrypted by a
+  SignedSessionEncrypter
+  """
+
+  def __init__(self, crypter, verifier, session_material):
+    self._session = _Session.LoadJsonSession(crypter.Decrypt(session_material))
+    self._verifier = verifier
+
+  def Decrypt(self, signed_encrypted_blob):
+    """
+    Verifies the signature on the given ciphertext and, if successful, decrypts it and
+    returns the decrypted plaintext.  If verification fails, returns None.
+    """
+    ciphertext = self._verifier.AttachedVerify(signed_encrypted_blob, self._session.nonce)
+    if not ciphertext:
+      return None
     return self._session.crypter.Decrypt(ciphertext)

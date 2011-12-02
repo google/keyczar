@@ -58,6 +58,24 @@ class SessionEncrypterTest(unittest.TestCase):
     plaintext = session_decrypter.Decrypt(ciphertext)
     self.assertEqual(self.input, plaintext)
 
+  def testSignedSessionEncryptAndDecrypt(self):
+    encrypter = keyczar.Encrypter.Read(_get_test_dir("rsa"))
+    signer = keyczar.Signer.Read(_get_test_dir("dsa"))
+    session_encrypter = keyczar.SignedSessionEncrypter(encrypter, signer)
+    session_material = session_encrypter.session_material
+    ciphertext = session_encrypter.Encrypt(self.input)
+
+    # Verify that session_material and ciphertext are base64-encoded: Decoding will fail with
+    # high probability if they're not.
+    util.Decode(session_material)
+    util.Decode(ciphertext)
+
+    crypter = keyczar.Crypter.Read(_get_test_dir("rsa"))
+    verifier = keyczar.Verifier.Read(_get_test_dir("dsa"))
+    session_decrypter = keyczar.SignedSessionDecrypter(crypter, verifier, session_material)
+    plaintext = session_decrypter.Decrypt(ciphertext)
+    self.assertEqual(self.input, plaintext)
+
 
 def suite():
   return unittest.makeSuite(SessionEncrypterTest, 'test')
