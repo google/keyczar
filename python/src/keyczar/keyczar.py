@@ -305,14 +305,18 @@ class Encrypter(Keyczar):
     """Only valid if purpose includes encrypting."""
     return purpose == keyinfo.ENCRYPT or purpose == keyinfo.DECRYPT_AND_ENCRYPT
 
-  def Encrypt(self, data):
+  def Encrypt(self, data, encoder=util.Base64WSEncode):
     """
     Encrypt the data and return the ciphertext.
 
     @param data: message to encrypt
     @type data: string
 
-    @return: ciphertext encoded as a Base64 string
+    @param encoder: function to perform final encoding. Defaults to Base64, use
+    None for no encoding.
+    @type encoder: function
+
+    @return: Encoded ciphertext
     @rtype: string
 
     @raise NoPrimaryKeyError: if no primary key can be found to encrypt
@@ -320,7 +324,9 @@ class Encrypter(Keyczar):
     encrypting_key = self.primary_key
     if encrypting_key is None:
       raise errors.NoPrimaryKeyError()
-    return util.Base64WSEncode(encrypting_key.Encrypt(data))
+    ciphertext = encrypting_key.Encrypt(data)
+    return encoder(ciphertext) if encoder else ciphertext
+
 
 class Verifier(Keyczar):
   """Capable of verifying only."""
@@ -464,12 +470,16 @@ class Crypter(Encrypter):
     """Only valid if purpose includes decrypting"""
     return purpose == keyinfo.DECRYPT_AND_ENCRYPT
 
-  def Decrypt(self, ciphertext):
+  def Decrypt(self, ciphertext, decoder=util.Base64WSDecode):
     """
     Decrypts the given ciphertext and returns the plaintext.
 
     @param ciphertext: Base64 encoded string ciphertext to be decrypted.
     @type ciphertext: string
+
+    @param decoder: function to perform decoding. Defaults to Base64, use None
+    for no decoding.
+    @type encoder: function
 
     @return: plaintext message
     @rtype: string
@@ -480,7 +490,7 @@ class Crypter(Encrypter):
     @raise KeyNotFoundError: if key specified in header doesn't exist
     @raise InvalidSignatureError: if the signature can't be verified
     """
-    data_bytes = util.Base64WSDecode(ciphertext)
+    data_bytes = decoder(ciphertext) if decoder else ciphertext
     if len(data_bytes) < HEADER_SIZE:
       raise errors.ShortCiphertextError(len(data_bytes))
     key = self._ParseHeader(data_bytes[:HEADER_SIZE])
