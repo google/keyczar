@@ -87,9 +87,9 @@ class SignerTest(unittest.TestCase):
     self.assertFalse(signer.AttachedVerify(bad_data, "nonce"))
     
   def __modifyByteString(self, string, offset):
-    decoded = util.Decode(string)
+    decoded = util.Base64WSDecode(string)
     modified_char = chr(ord(decoded[offset]) ^ 0xFF)
-    return util.Encode(decoded[:offset] + modified_char + decoded[offset+1:])
+    return util.Base64WSEncode(decoded[:offset] + modified_char + decoded[offset+1:])
   
   def __testSignerVerify(self, subdir):
     (signer, active_sig, primary_sig) = self.__readGoldenOutput(subdir)
@@ -166,14 +166,14 @@ class SignerTest(unittest.TestCase):
   
   def testHmacBadSigs(self):
     (signer, sig) = self.__signInput("hmac")
-    sig_bytes = util.Decode(sig)
+    sig_bytes = util.Base64WSDecode(sig)
     self.assertRaises(errors.ShortSignatureError, signer.Verify, 
                       self.input, "AB")
-    bad_sig = util.Encode(chr(23) + sig_bytes[1:])
+    bad_sig = util.Base64WSEncode(chr(23) + sig_bytes[1:])
     self.assertRaises(errors.BadVersionError, signer.Verify, 
                       self.input, bad_sig)
     char = chr(ord(sig_bytes[1]) ^ 45)  # Munge key hash info in sig 
-    bad_sig = util.Encode(sig_bytes[0] + char + sig_bytes[2:])
+    bad_sig = util.Base64WSEncode(sig_bytes[0] + char + sig_bytes[2:])
     self.assertRaises(errors.KeyNotFoundError, signer.Verify, 
                       self.input, bad_sig)
     

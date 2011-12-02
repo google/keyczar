@@ -50,8 +50,8 @@ class SessionEncrypterTest(unittest.TestCase):
 
     # Verify that session_material and ciphertext are base64-encoded: Decoding will fail with
     # high probability if they're not.
-    util.Decode(session_material)
-    util.Decode(ciphertext)
+    util.Base64WSDecode(session_material)
+    util.Base64WSDecode(ciphertext)
 
     crypter = keyczar.Crypter.Read(_get_test_dir("rsa"))
     session_decrypter = keyczar.SessionDecrypter(crypter, session_material)
@@ -67,8 +67,8 @@ class SessionEncrypterTest(unittest.TestCase):
 
     # Verify that session_material and ciphertext are base64-encoded: Decoding will fail with
     # high probability if they're not.
-    util.Decode(session_material)
-    util.Decode(ciphertext)
+    util.Base64WSDecode(session_material)
+    util.Base64WSDecode(ciphertext)
 
     crypter = keyczar.Crypter.Read(_get_test_dir("rsa"))
     verifier = keyczar.Verifier.Read(_get_test_dir("dsa"))

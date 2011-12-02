@@ -89,7 +89,7 @@ class Keyczar(object):
     version = ord(header[0])
     if version != VERSION:
       raise errors.BadVersionError(version)
-    return self.GetKey(util.Encode(header[1:]))
+    return self.GetKey(util.Base64WSEncode(header[1:]))
 
   @staticmethod
   def Read(location):
@@ -320,7 +320,7 @@ class Encrypter(Keyczar):
     encrypting_key = self.primary_key
     if encrypting_key is None:
       raise errors.NoPrimaryKeyError()
-    return util.Encode(encrypting_key.Encrypt(data))
+    return util.Base64WSEncode(encrypting_key.Encrypt(data))
 
 class Verifier(Keyczar):
   """Capable of verifying only."""
@@ -356,7 +356,7 @@ class Verifier(Keyczar):
     @return: True if sig corresponds to data, False otherwise.
     @rtype: boolean
     """
-    sig_bytes = util.Decode(sig)
+    sig_bytes = util.Base64WSDecode(sig)
     if len(sig_bytes) < HEADER_SIZE:
       raise errors.ShortSignatureError(len(sig_bytes))
     return self.__InternalVerify(sig_bytes[:HEADER_SIZE], sig_bytes[HEADER_SIZE:], data)
@@ -379,7 +379,7 @@ class Verifier(Keyczar):
     otherwise, None
     @rtype: string
     """
-    decoded_data = util.Decode(signed_data)
+    decoded_data = util.Base64WSDecode(signed_data)
 
     data, offset = util.UnpackByteArray(decoded_data, HEADER_SIZE)
     signature = decoded_data[offset:]
@@ -430,7 +430,7 @@ class UnversionedVerifier(Keyczar):
     @return: True if sig corresponds to data, False otherwise.
     @rtype: boolean
     """
-    sig_bytes = util.Decode(sig)
+    sig_bytes = util.Base64WSDecode(sig)
 
     for version in self.versions:
       key = self._keys[version]
@@ -480,7 +480,7 @@ class Crypter(Encrypter):
     @raise KeyNotFoundError: if key specified in header doesn't exist
     @raise InvalidSignatureError: if the signature can't be verified
     """
-    data_bytes = util.Decode(ciphertext)
+    data_bytes = util.Base64WSDecode(ciphertext)
     if len(data_bytes) < HEADER_SIZE:
       raise errors.ShortCiphertextError(len(data_bytes))
     key = self._ParseHeader(data_bytes[:HEADER_SIZE])
@@ -519,8 +519,8 @@ class Signer(Verifier):
     @return: signature on the data encoded as a Base64 string
     @rtype: string
     """
-    return util.Encode(self.primary_key.Header()
-                       + self.__InternalSign(data))
+    return util.Base64WSEncode(self.primary_key.Header()
+                             + self.__InternalSign(data))
 
   def AttachedSign(self, data, nonce):
     """
@@ -538,7 +538,7 @@ class Signer(Verifier):
     @return: signature on the data encoded as a Base64 string
     @rtype: string
     """
-    return util.Encode(self.primary_key.Header()
+    return util.Base64WSEncode(self.primary_key.Header()
                        + util.PackByteArray(data)
                        + self.__InternalSign(data, nonce))
 
@@ -589,7 +589,7 @@ class UnversionedSigner(UnversionedVerifier):
     signing_key = self.primary_key
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
-    return util.Encode(signing_key.Sign(data))
+    return util.Base64WSEncode(signing_key.Sign(data))
 
 
 class _Session(object):
@@ -618,9 +618,9 @@ class _Session(object):
     assert len(unpacked) == 2
     aes_key_bytes = unpacked[0]
     hmac_key_bytes = unpacked[1]
-    hmac_key = keys.HmacKey(util.Encode(hmac_key_bytes), len(hmac_key_bytes) * 8)
-    session_key = keys.AesKey(util.Encode(aes_key_bytes), hmac_key, len(aes_key_bytes) * 8,
-                                      keyinfo.CBC)
+    hmac_key = keys.HmacKey(util.Base64WSEncode(hmac_key_bytes), len(hmac_key_bytes) * 8)
+    session_key = keys.AesKey(util.Base64WSEncode(aes_key_bytes), hmac_key, len(aes_key_bytes) * 8,
+                              keyinfo.CBC)
     return _Session(session_key, None)
 
   @staticmethod
@@ -632,7 +632,7 @@ class _Session(object):
     """
     json_dict = json.loads(json_session_data)
     aes_key_string = json.dumps(json_dict['key'])
-    return _Session(keys.AesKey.Read(aes_key_string), util.Decode(json_dict['nonce']))
+    return _Session(keys.AesKey.Read(aes_key_string), util.Base64WSDecode(json_dict['nonce']))
 
   def __init__(self, session_key, nonce):
     self._session_key = session_key
@@ -663,7 +663,7 @@ class _Session(object):
     Returns the session key data and nonce in Json format.
     """
     aes_key_string = json.loads(str(self._session_key))
-    return json.dumps({ 'key' : aes_key_string, 'nonce' : util.Encode(self._nonce) })
+    return json.dumps({ 'key' : aes_key_string, 'nonce' : util.Base64WSEncode(self._nonce) })
 
 
 class SessionEncrypter(object):

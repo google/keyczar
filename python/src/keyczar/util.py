@@ -26,6 +26,8 @@ import functools
 import math
 import os
 import struct
+import warnings
+
 try:
   # Import hashlib if Python >= 2.5
   from hashlib import sha1
@@ -83,7 +85,7 @@ def ParseASN1Sequence(seq):
 #
 #Attributes ::= SET OF Attribute
 def ParsePkcs8(pkcs8):
-  seq = ParseASN1Sequence(decoder.decode(Decode(pkcs8))[0])
+  seq = ParseASN1Sequence(decoder.decode(Base64WSDecode(pkcs8))[0])
   if len(seq) != 3:  # need three fields in PrivateKeyInfo
     raise errors.KeyczarError("Illegal PKCS8 String.")
   version = int(seq[0])
@@ -116,7 +118,7 @@ def ExportRsaPkcs8(params):
     key.setComponentByPosition(i+1, univ.Integer(params[RSA_PARAMS[i]]))
   octkey = encoder.encode(key)
   seq = ASN1Sequence(univ.Integer(0), oid, univ.OctetString(octkey))
-  return Encode(encoder.encode(seq))
+  return Base64WSEncode(encoder.encode(seq))
 
 def ExportDsaPkcs8(params):
   alg_params = univ.Sequence()
@@ -125,14 +127,14 @@ def ExportDsaPkcs8(params):
   oid = ASN1Sequence(DSA_OID, alg_params)
   octkey = encoder.encode(univ.Integer(params['x']))
   seq = ASN1Sequence(univ.Integer(0), oid, univ.OctetString(octkey))
-  return Encode(encoder.encode(seq))
+  return Base64WSEncode(encoder.encode(seq))
 
 #NOTE: not full X.509 certificate, just public key info
 #SubjectPublicKeyInfo  ::=  SEQUENCE  {
 #        algorithm            AlgorithmIdentifier,
 #        subjectPublicKey     BIT STRING  }
 def ParseX509(x509):
-  seq = ParseASN1Sequence(decoder.decode(Decode(x509))[0])
+  seq = ParseASN1Sequence(decoder.decode(Base64WSDecode(x509))[0])
   if len(seq) != 2:  # need two fields in SubjectPublicKeyInfo
     raise errors.KeyczarError("Illegal X.509 String.")
   [oid, alg_params] = ParseASN1Sequence(seq[0])
@@ -158,7 +160,7 @@ def ExportRsaX509(params):
   binkey = BytesToBin(encoder.encode(key))
   pubkey = univ.BitString("'%s'B" % binkey)  # needs to be a BIT STRING
   seq = ASN1Sequence(oid, pubkey)
-  return Encode(encoder.encode(seq))
+  return Base64WSEncode(encoder.encode(seq))
 
 def ExportDsaX509(params):
   alg_params = ASN1Sequence(univ.Integer(params['p']),
@@ -168,7 +170,7 @@ def ExportDsaX509(params):
   binkey = BytesToBin(encoder.encode(univ.Integer(params['y'])))
   pubkey = univ.BitString("'%s'B" % binkey)  # needs to be a BIT STRING
   seq = ASN1Sequence(oid, pubkey)
-  return Encode(encoder.encode(seq))
+  return Base64WSEncode(encoder.encode(seq))
 
 def MakeDsaSig(r, s):
   """
@@ -301,8 +303,13 @@ def PrefixHash(*inputs):
 
 
 def Encode(s):
+  warnings.warn('Encode() is deprecated, use Base64WSEncode() instead')
+  return Base64WSEncode(s)
+
+
+def Base64WSEncode(s):
   """
-  Return Base64 encoding of s. Suppress padding characters (=).
+  Return Base64 web safe encoding of s. Suppress padding characters (=).
 
   Uses URL-safe alphabet: - replaces +, _ replaces /. Will convert s of type
   unicode to string type first.
@@ -317,6 +324,11 @@ def Encode(s):
 
 
 def Decode(s):
+  warnings.warn('Decode() is deprecated, use Base64WSDecode() instead')
+  return Base64WSDecode(s)
+
+
+def Base64WSDecode(s):
   """
   Return decoded version of given Base64 string. Ignore whitespace.
 
