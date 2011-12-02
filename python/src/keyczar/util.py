@@ -39,17 +39,17 @@ from pyasn1.type import univ
 import errors
 
 try:
-    from abc import ABCMeta, abstractmethod, abstractproperty
+  from abc import ABCMeta, abstractmethod, abstractproperty
 except ImportError:
-    # to keep compatible with older Python versions.
-    class ABCMeta(type):
-        pass
+  # to keep compatible with older Python versions.
+  class ABCMeta(type):
+    pass
 
-    def abstractmethod(funcobj):
-        return funcobj
+  def abstractmethod(funcobj):
+    return funcobj
 
-    def abstractproperty(funcobj):
-        return property(funcobj)
+  def abstractproperty(funcobj):
+    return property(funcobj)
 
 HLEN = sha1().digest_size  # length of the hash output
 
