@@ -589,7 +589,7 @@ class BufferedIncrementalBase64Decoder(codecs.BufferedIncrementalDecoder):
     """
     result = super(BufferedIncrementalBase64Decoder, self).decode(input,
                                                                   final=final)
-    return (result, (4 * len(input) / 3) + len(self.buffer))
+    return (result, len(input))
 
   def flush(self):
     """

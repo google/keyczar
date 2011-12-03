@@ -327,8 +327,8 @@ class Encrypter(Keyczar):
     return encoder(ciphertext) if encoder else ciphertext
 
   def CreateEncryptingStreamWriter(self, output_stream,
-                                   encoder=util.IncrementalBase64StreamWriter,
-                                   buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
+                                   encoder=util.IncrementalBase64StreamWriter
+                                  ):
     """
     Create an encrypting stream capable of writing a ciphertext byte stream
     containing Header|IV|Ciph|Sig.
@@ -341,10 +341,6 @@ class Encrypter(Keyczar):
     Use None for raw bytes.
     @type encoder: 'file-like' object
 
-    @param buffer_size: Suggested buffer size for writing data (will be adjusted
-    to suit the underlying cipher.
-    @type buffer_size: integer
-
     @return: an encrypting stream capable of creating a ciphertext byte stream
     @rtype: EncryptingStreamWriter
     """
@@ -355,7 +351,7 @@ class Encrypter(Keyczar):
       stream = encoder(output_stream)
     else:
       stream = output_stream
-    return keys.EncryptingStreamWriter(encrypting_key, stream, buffer_size)
+    return keys.EncryptingStreamWriter(encrypting_key, stream)
 
 class Verifier(Keyczar):
   """Capable of verifying only."""
