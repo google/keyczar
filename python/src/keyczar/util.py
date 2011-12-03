@@ -457,8 +457,8 @@ class BufferedIncrementalBase64Encoder(codecs.BufferedIncrementalEncoder):
     @param final: force all data to be encoded, possibly resulting in padding
     #type final: boolean
 
-    @return: Base64 representation of input.
-    @rtype: string
+    @return: (Base64 representation of input, length consumed)
+    @rtype: tuple
     """
     result = super(BufferedIncrementalBase64Encoder, self).encode(input,
                                                                   final=final)
