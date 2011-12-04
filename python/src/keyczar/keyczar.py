@@ -644,7 +644,8 @@ class _Session(object):
     """
     json_dict = json.loads(json_session_data)
     aes_key_string = json.dumps(json_dict['key'])
-    return _Session.__Create(keys.AesKey.Read(aes_key_string), util.Base64WSDecode(json_dict['nonce']))
+    return _Session.__Create(keys.AesKey.Read(aes_key_string),
+                             util.Base64WSDecode(json_dict['nonce']))
 
   @staticmethod
   def __Create(session_key, nonce):
