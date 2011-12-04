@@ -66,7 +66,7 @@ class FileReader(Reader):
   def GetKey(self, version_number):
     return util.ReadFile(os.path.join(self._location, str(version_number)))
 
-class ImportReader(Reader):
+class StaticKeyReader(Reader):
   """Reader that returns a static key"""
 
   def __init__(self, key, purpose):

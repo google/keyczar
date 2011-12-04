@@ -358,21 +358,46 @@ def Base64WSDecode(s):
     # Decoding raises TypeError if s contains invalid characters.
     raise errors.Base64DecodingError()
 
+# Struct packed byte array format specifiers used below
+BIG_ENDIAN_INT_SPECIFIER = ">i"
+STRING_SPECIFIER = "s"
+
 def PackByteArray(array):
+  """
+  Packs the given array into a structure composed of a four-byte, big-endian
+  integer containing the array length, followed by the array contents.
+  """
   if not array:
     return ''
-  array_len = len(array)
-  return struct.pack(">i" + str(array_len) + "s", array_len, array)
+  array_length_header = struct.pack(BIG_ENDIAN_INT_SPECIFIER, len(array))
+  return array_length_header + array
 
 def PackMultipleByteArrays(*arrays):
-  return struct.pack(">i", len(arrays)) + ''.join([ PackByteArray(a) for a in arrays ])
+  """
+  Packs the provided variable number of byte arrays into one array.  The
+  returned array is prefixed with a count of the arrays contained, in a
+  four-byte big-endian integer, followed by the arrays in sequence, each
+  length-prefixed by PackByteArray().
+  """
+  array_count_header = struct.pack(BIG_ENDIAN_INT_SPECIFIER, len(arrays))
+  array_contents = ''.join([PackByteArray(a) for a in arrays])
+  return array_count_header + array_contents
 
 def UnpackByteArray(data, offset):
-  array_len = struct.unpack(">i", data[offset:offset + 4])[0]
+  """
+  Unpacks a length-prefixed byte array packed by PackByteArray() from 'data',
+  starting from position 'offset'.  Returns a tuple of the data array and the
+  offset of the first byte after the end of the extracted array.
+  """
+  array_len = struct.unpack(BIG_ENDIAN_INT_SPECIFIER, data[offset:offset + 4])[0]
   offset += 4
   return data[offset:offset + array_len], offset + array_len
 
 def UnpackMultipleByteArrays(data):
+  """
+  Extracts and returns a list of byte arrays that were packed by
+  PackMultipleByteArrays().
+  """
   # The initial integer containing the number of byte arrays that follow is redundant.  We
   # just skip it.
   position = 4
