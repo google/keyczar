@@ -30,7 +30,7 @@ from keyczar import keyczar
 from keyczar import readers
 from keyczar import util
 
-TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "testdata"))
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 
 class CrypterTest(unittest.TestCase):
   
@@ -144,9 +144,9 @@ class CrypterTest(unittest.TestCase):
     active_ciphertext = util.ReadFile(os.path.join(path, "1.out"))
     if stream_source is None:
       decoder = None
-      active_ciphertext = util.Base64Decode(active_ciphertext)
+      active_ciphertext = util.Base64WSDecode(active_ciphertext)
     else:
-      decoder = util.IncrementalBase64StreamReader
+      decoder = util.IncrementalBase64WSStreamReader
     decryption_stream = crypter.CreateDecryptingStreamReader(
       StringIO.StringIO(active_ciphertext), 
       decoder=decoder,
@@ -161,7 +161,7 @@ class CrypterTest(unittest.TestCase):
 
     primary_ciphertext = util.ReadFile(os.path.join(path, "2.out"))
     if stream_source is None:
-      primary_ciphertext = util.Base64Decode(primary_ciphertext)
+      primary_ciphertext = util.Base64WSDecode(primary_ciphertext)
     decryption_stream = crypter.CreateDecryptingStreamReader(
       StringIO.StringIO(primary_ciphertext), 
       decoder=decoder,
@@ -208,9 +208,9 @@ class CrypterTest(unittest.TestCase):
 
     if stream_source is None:
       decoder = None
-      ciphertext_stream = StringIO.StringIO(util.Base64Decode(ciphertext))
+      ciphertext_stream = StringIO.StringIO(util.Base64WSDecode(ciphertext))
     else:
-      decoder = util.IncrementalBase64StreamReader
+      decoder = util.IncrementalBase64WSStreamReader
     decryption_stream = crypter.CreateDecryptingStreamReader(
       ciphertext_stream, 
       decoder=decoder,
@@ -235,8 +235,8 @@ class CrypterTest(unittest.TestCase):
       encoder = None
       decoder = None
     else:
-      encoder = util.IncrementalBase64StreamWriter
-      decoder = util.Base64Decode
+      encoder = util.IncrementalBase64WSStreamWriter
+      decoder = util.Base64WSDecode
     encryption_stream = crypter.CreateEncryptingStreamWriter(
       ciphertext_stream, 
       encoder=encoder)
@@ -263,8 +263,8 @@ class CrypterTest(unittest.TestCase):
       encoder = None
       decoder = None
     else:
-      encoder = util.IncrementalBase64StreamWriter
-      decoder = util.IncrementalBase64StreamReader
+      encoder = util.IncrementalBase64WSStreamWriter
+      decoder = util.IncrementalBase64WSStreamReader
 
     encryption_stream = crypter.CreateEncryptingStreamWriter(
       ciphertext_stream, 
@@ -340,19 +340,19 @@ class CrypterTest(unittest.TestCase):
 
   def testBadAesCiphertexts(self):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
-    ciphertext = util.Base64Decode(crypter.Encrypt(self.input_data))  
-    bad = util.Base64Encode(chr(0))
-    char = chr(ord(ciphertext[2]) ^ 44)  
-    ciphertext = util.Base64Encode(ciphertext[:2]+char+ciphertext[3:])
+    ciphertext = util.Base64WSDecode(crypter.Encrypt(self.input_data))
+    bad = util.Base64WSEncode(chr(0))
+    char = chr(ord(ciphertext[2]) ^ 44) 
+    ciphertext = util.Base64WSEncode(ciphertext[:2]+char+ciphertext[3:])
     self.assertRaises(errors.ShortCiphertextError, crypter.Decrypt, bad)
     self.assertRaises(errors.KeyNotFoundError, crypter.Decrypt, ciphertext)
   
   def testBadAesCiphertextsStream(self):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
-    ciphertext = util.Base64Decode(crypter.Encrypt(self.input_data))  
-    bad = util.Base64Encode(chr(0))
+    ciphertext = util.Base64WSDecode(crypter.Encrypt(self.input_data))  
+    bad = util.Base64WSEncode(chr(0))
     char = chr(ord(ciphertext[2]) ^ 44)  
-    ciphertext = util.Base64Encode(ciphertext[:2]+char+ciphertext[3:])
+    ciphertext = util.Base64WSEncode(ciphertext[:2]+char+ciphertext[3:])
 
     try:
       stream = StringIO.StringIO(bad)

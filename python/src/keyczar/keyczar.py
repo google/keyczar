@@ -24,6 +24,7 @@ encrypt, decrypt, sign and verify.
 import os
 
 import errors
+import json
 import keydata
 import keyinfo
 import keys
@@ -88,7 +89,7 @@ class Keyczar(object):
     version = ord(header[0])
     if version != VERSION:
       raise errors.BadVersionError(version)
-    return self.GetKey(util.Base64Encode(header[1:]))
+    return self.GetKey(util.Base64WSEncode(header[1:]))
 
   @staticmethod
   def Read(location):
@@ -304,18 +305,18 @@ class Encrypter(Keyczar):
     """Only valid if purpose includes encrypting."""
     return purpose == keyinfo.ENCRYPT or purpose == keyinfo.DECRYPT_AND_ENCRYPT
 
-  def Encrypt(self, data, encoder=util.Base64Encode):
+  def Encrypt(self, data, encoder=util.Base64WSEncode):
     """
     Encrypt the data and return the ciphertext.
 
     @param data: message to encrypt
     @type data: string
 
-    @param encoder: function to perform final encoding. Defaults to Base64. 
-    Use None for no encoding.
+    @param encoder: function to perform final encoding. Defaults to Base64, use
+    None for no encoding.
     @type encoder: function
 
-    @return: ciphertext encoded as a Base64 string
+    @return: ciphertext, by default Base64 encoded
     @rtype: string
 
     @raise NoPrimaryKeyError: if no primary key can be found to encrypt
@@ -327,7 +328,7 @@ class Encrypter(Keyczar):
     return encoder(ciphertext) if encoder else ciphertext
 
   def CreateEncryptingStreamWriter(self, output_stream,
-                                   encoder=util.IncrementalBase64StreamWriter
+                                   encoder=util.IncrementalBase64WSStreamWriter
                                   ):
     """
     Create an encrypting stream capable of writing a ciphertext byte stream
@@ -387,11 +388,46 @@ class Verifier(Keyczar):
     @return: True if sig corresponds to data, False otherwise.
     @rtype: boolean
     """
-    sig_bytes = util.Base64Decode(sig)
+    sig_bytes = util.Base64WSDecode(sig)
     if len(sig_bytes) < HEADER_SIZE:
       raise errors.ShortSignatureError(len(sig_bytes))
-    key = self._ParseHeader(sig_bytes[:HEADER_SIZE])
-    return key.Verify(data + VERSION_BYTE, sig_bytes[HEADER_SIZE:])
+    return self.__InternalVerify(sig_bytes[:HEADER_SIZE], 
+                                 sig_bytes[HEADER_SIZE:], 
+                                 data)
+
+  def AttachedVerify(self, signed_data, nonce):
+    """
+    Verifies the signature in the signed blob corresponds to the data
+    in the signed blob and the provided nonce, and returns the data.
+
+    @param signed_data: the blob, produced by AttachedSign, containing
+    data and signature.
+    @type signed_data: string
+
+    @param nonce: Nonce string that was used when the signature was
+    generated.  If the provided value doesn't match, verification will
+    fail.
+    @type sig: string
+
+    @return: If verification succeeds, the extracted data will be returned,
+    otherwise, None
+    @rtype: string
+    """
+    decoded_data = util.Base64WSDecode(signed_data)
+
+    data, offset = util.UnpackByteArray(decoded_data, HEADER_SIZE)
+    signature = decoded_data[offset:]
+    if self.__InternalVerify(decoded_data[:HEADER_SIZE], 
+                             signature, data, nonce):
+      return data
+    else:
+      return None
+
+  def __InternalVerify(self, header,  signature, data, nonce = None):
+    key = self._ParseHeader(header)
+    return key.Verify(data + util.PackByteArray(nonce) + VERSION_BYTE,
+                      signature)
+
 
 class UnversionedVerifier(Keyczar):
   """Capable of verifying unversioned, standard signatures only."""
@@ -430,7 +466,7 @@ class UnversionedVerifier(Keyczar):
     @return: True if sig corresponds to data, False otherwise.
     @rtype: boolean
     """
-    sig_bytes = util.Base64Decode(sig)
+    sig_bytes = util.Base64WSDecode(sig)
 
     for version in self.versions:
       key = self._keys[version]
@@ -464,15 +500,15 @@ class Crypter(Encrypter):
     """Only valid if purpose includes decrypting"""
     return purpose == keyinfo.DECRYPT_AND_ENCRYPT
 
-  def Decrypt(self, ciphertext, decoder=util.Base64Decode):
+  def Decrypt(self, ciphertext, decoder=util.Base64WSDecode):
     """
     Decrypts the given ciphertext and returns the plaintext.
 
-    @param ciphertext: Base64 encoded string ciphertext to be decrypted.
+    @param ciphertext: ciphertext to be decrypted - by default is Base64 encoded
     @type ciphertext: string
 
-    @param decoder: function to perform initial decoding. Defaults to Base64. 
-    Use None for no decoding.
+    @param decoder: function to perform decoding. Defaults to Base64, use None
+    for no decoding.
     @type encoder: function
 
     @return: plaintext message
@@ -491,7 +527,7 @@ class Crypter(Encrypter):
     return key.Decrypt(data_bytes)
 
   def CreateDecryptingStreamReader(self, output_stream,
-                                   decoder=util.IncrementalBase64StreamReader,
+                                   decoder=util.IncrementalBase64WSStreamReader,
                                    buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
     """
     Create a decrypting stream capable of processing a ciphertext byte stream
@@ -552,11 +588,35 @@ class Signer(Verifier):
     @return: signature on the data encoded as a Base64 string
     @rtype: string
     """
+    return util.Base64WSEncode(self.primary_key.Header()
+                             + self.__InternalSign(data))
+
+  def AttachedSign(self, data, nonce):
+    """
+    Sign given data and nonce and return a blob containing both data and
+    signature
+
+    For message M, and nonce N, outputs Header|len(M)|M|Sig(Header|M|N).
+
+    @param data: message to be signed
+    @type data: string
+
+    @param nonce: nonce to be included in the signature
+    @type nonce: string
+
+    @return: signature on the data encoded as a Base64 string
+    @rtype: string
+    """
+    return util.Base64WSEncode(self.primary_key.Header()
+                       + util.PackByteArray(data)
+                       + self.__InternalSign(data, nonce))
+
+
+  def __InternalSign(self, data, nonce = None):
     signing_key = self.primary_key
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
-    header = signing_key.Header()
-    return util.Base64Encode(header + signing_key.Sign(data + VERSION_BYTE))
+    return signing_key.Sign(data + util.PackByteArray(nonce) + VERSION_BYTE)
 
 class UnversionedSigner(UnversionedVerifier):
   """Capable of both signing and verifying. This outputs standard signatures
@@ -598,5 +658,190 @@ class UnversionedSigner(UnversionedVerifier):
     signing_key = self.primary_key
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
-    return util.Base64Encode(signing_key.Sign(data))
+    return util.Base64WSEncode(signing_key.Sign(data))
 
+
+SESSION_NONCE_SIZE = 16
+
+class _Session(object):
+  """
+  A utility object which holds a session key and, optionally, a nonce.  This
+  class is only for use by SessionEncrypter, SessionDecrypter,
+  SignedSessionEncrypter, and SignedSessionDecrypter.
+  """
+
+  @staticmethod
+  def New():
+    """
+    Constructs and returns a new _Session instance, containing a newly-generated
+    AES key and random nonce.
+    """
+    return _Session.__Create(keys.AesKey.Generate(), 
+                             util.RandBytes(SESSION_NONCE_SIZE))
+
+  @staticmethod
+  def LoadPackedKey(packed_key_data):
+    """
+    Constructs and returns a new _Session instance, initialized with the key
+    data extracted from the provided packed_key_data, which must have been
+    produced by _Session.packed_key.
+    """
+    unpacked = util.UnpackMultipleByteArrays(packed_key_data)
+    assert len(unpacked) == 2
+    aes_key_bytes = unpacked[0]
+    hmac_key_bytes = unpacked[1]
+    hmac_key = keys.HmacKey(util.Base64WSEncode(hmac_key_bytes), 
+                            len(hmac_key_bytes) * 8)
+    session_key = keys.AesKey(util.Base64WSEncode(aes_key_bytes), 
+                              hmac_key, len(aes_key_bytes) * 8,
+                              keyinfo.CBC)
+    return _Session.__Create(session_key, None)
+
+  @staticmethod
+  def LoadJsonSession(json_session_data):
+    """
+    Constructs and returns a new _Session instance, initialized with the key and
+    nonce extracted from the provided json_session_data, which must have been
+    produced by _Session.json.
+    """
+    json_dict = json.loads(json_session_data)
+    aes_key_string = json.dumps(json_dict['key'])
+    return _Session.__Create(keys.AesKey.Read(aes_key_string),
+                             util.Base64WSDecode(json_dict['nonce']))
+
+  @staticmethod
+  def __Create(session_key, nonce):
+    """
+    Creates a new _Session instance, with the private fields initialized to the
+    provided values.
+    """
+    session = _Session()
+    session.__session_key = session_key
+    session.__nonce = nonce
+    return session
+
+  @property
+  @util.Memoize
+  def crypter(self):
+    """
+    Returns a Crypter which can be used to encrypt and decrypt data using the
+    session key.
+    """
+    return Crypter(readers.StaticKeyReader(self.__session_key, 
+                                           keyinfo.DECRYPT_AND_ENCRYPT))
+
+  @property
+  def nonce(self):
+    return self.__nonce
+
+  @property
+  def packed_key(self):
+    """
+    Returns the session key data in a compact binary format.
+    """
+    return util.PackMultipleByteArrays(self.__session_key.key_bytes,
+                                       self.__session_key.hmac_key.key_bytes)
+
+  @property
+  def json(self):
+    """
+    Returns the session key data and nonce in Json format.
+    """
+    aes_key_string = json.loads(str(self.__session_key))
+    return json.dumps({ 'key' : aes_key_string, 
+                       'nonce' : util.Base64WSEncode(self.__nonce) })
+
+
+class SessionEncrypter(object):
+  """
+  An Encrypter that encrypts the data with a generated AES session key.  The
+  session key is in turn encrypted with a user-provided Encrypter, producing
+  session_material, which must be provided to the SessionDecrypter to be able to
+  decrypt session-encrypted data.
+  """
+
+  def __init__(self, encrypter):
+    self._session = _Session.New()
+    self._encrypted_session_material = encrypter.Encrypt(
+        self._session.packed_key)
+
+  @property
+  def session_material(self):
+    """
+    Returns the base64-encoded, encrypted session blob that must be provided to
+    the SessionDecrypter in order to decrypt data encrypted by this object.
+    """
+    return self._encrypted_session_material
+
+  def Encrypt(self, plaintext):
+    """
+    Encrypts the given plaintext with the session key and returns the base
+    64-encoded result.
+    """
+    return self._session.crypter.Encrypt(plaintext)
+
+
+class SessionDecrypter(object):
+  """
+  A Decrypter that can decrypt data encrypted with a session key, which is
+  obtained by decrypting the provided session_material using the provided
+  Crypter.
+  """
+
+  def __init__(self, crypter, session_material):
+    self._session = _Session.LoadPackedKey(crypter.Decrypt(session_material))
+
+  def Decrypt(self, ciphertext):
+    """
+    Decrypts the given base 64-encoded ciphertext with the session key and
+    returns the decrypted plaintext.
+    """
+    return self._session.crypter.Decrypt(ciphertext)
+
+
+class SignedSessionEncrypter(object):
+  """
+  An object that encrypts data with a session key, which is in turn encrypted by
+  the provided encrypter, and signs the data with the provided signer.
+  """
+
+  def __init__(self, encrypter, signer):
+    self._session = _Session.New()
+    self._encrypted_session_material = encrypter.Encrypt(self._session.json)
+    self._signer = signer
+
+  @property
+  def session_material(self):
+    """
+    Returns the base64-encoded, encrypted session blob that must be provided to
+    the SignedSessionDecrypter in order to decrypt data encrypted by this
+    object.
+    """
+    return self._encrypted_session_material
+
+  def Encrypt(self, plaintext):
+    ciphertext = self._session.crypter.Encrypt(plaintext, None)
+    return self._signer.AttachedSign(ciphertext, self._session.nonce)
+
+
+class SignedSessionDecrypter(object):
+  """
+  An object that verifies signatures on and decrypts data signed and encrypted
+  by a SignedSessionEncrypter.
+  """
+
+  def __init__(self, crypter, verifier, session_material):
+    self._session = _Session.LoadJsonSession(crypter.Decrypt(session_material))
+    self._verifier = verifier
+
+  def Decrypt(self, signed_ciphertext):
+    """
+    Verifies the signature on the given ciphertext and, if successful, decrypts
+    it and returns the decrypted plaintext.  If verification fails, returns
+    None.
+    """
+    ciphertext = self._verifier.AttachedVerify(signed_ciphertext,
+                                               self._session.nonce)
+    if not ciphertext:
+      return None
+    return self._session.crypter.Decrypt(ciphertext, None)

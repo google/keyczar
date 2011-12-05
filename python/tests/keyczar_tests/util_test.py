@@ -28,7 +28,7 @@ import os
 
 from keyczar import util
 
-class Base64StreamingReadTest(unittest.TestCase):
+class Base64WSStreamingReadTest(unittest.TestCase):
 
   def __readStream(self, stream, size=None):
     result = ''
@@ -43,7 +43,7 @@ class Base64StreamingReadTest(unittest.TestCase):
 
   def __testRead(self, input_data, expected_result):
     for size in [1, 5, 4096, 99999, None]:
-      stream = util.IncrementalBase64StreamReader(StringIO.StringIO(input_data))
+      stream = util.IncrementalBase64WSStreamReader(StringIO.StringIO(input_data))
       self.assertEquals(self.__readStream(stream, size), expected_result)
 
   def testNoPadRead(self):
@@ -72,8 +72,8 @@ class Base64StreamingReadTest(unittest.TestCase):
     enc_data = \
     'AJehaFGwoOrkzpDCnF1zqIi721eCOMYWRmLyRyn3hxyhh_mYwpnDN6jKN057gr5lz' \
             'APFYhq9zoDwFMaGMEipEl__ECOZGeaxWw'
-    expected_result = util.Base64Decode(enc_data)
-    stream = util.IncrementalBase64StreamReader(StringIO.StringIO(enc_data))
+    expected_result = util.Base64WSDecode(enc_data)
+    stream = util.IncrementalBase64WSStreamReader(StringIO.StringIO(enc_data))
     result = stream.read(5)
     result += stream.read(15)
     read_data = True
@@ -82,7 +82,7 @@ class Base64StreamingReadTest(unittest.TestCase):
       result += read_data
     self.assertEquals(result, expected_result)
 
-class Base64StreamingWriteTest(unittest.TestCase):
+class Base64WSStreamingWriteTest(unittest.TestCase):
 
   def __testWrite(self, input_data):
 
@@ -92,7 +92,7 @@ class Base64StreamingWriteTest(unittest.TestCase):
 
     for size in [1, 5, 4096, random.randrange(1, 9999), None]:
       output_stream = StringIO.StringIO()
-      stream = util.IncrementalBase64StreamWriter(output_stream)
+      stream = util.IncrementalBase64WSStreamWriter(output_stream)
       i = 0
       if size:
         while (i * size) <= len(input_data):
@@ -130,8 +130,8 @@ class Base64StreamingWriteTest(unittest.TestCase):
 
 def suite():
   alltests = unittest.TestSuite(
-    [unittest.TestLoader().loadTestsFromTestCase(Base64StreamingReadTest),
-     unittest.TestLoader().loadTestsFromTestCase(Base64StreamingWriteTest),
+    [unittest.TestLoader().loadTestsFromTestCase(Base64WSStreamingReadTest),
+     unittest.TestLoader().loadTestsFromTestCase(Base64WSStreamingWriteTest),
     ])
 
   return alltests

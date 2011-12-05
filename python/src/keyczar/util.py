@@ -21,10 +21,14 @@ Utility functions for keyczar package.
 """
 
 import base64
+import cPickle
+import functools
 import math
 import os
 import warnings
 import codecs
+import struct
+
 try:
   # Import hashlib if Python >= 2.5
   from hashlib import sha1
@@ -85,7 +89,7 @@ def ParseASN1Sequence(seq):
 #
 #Attributes ::= SET OF Attribute
 def ParsePkcs8(pkcs8):
-  seq = ParseASN1Sequence(decoder.decode(Decode(pkcs8))[0])
+  seq = ParseASN1Sequence(decoder.decode(Base64WSDecode(pkcs8))[0])
   if len(seq) != 3:  # need three fields in PrivateKeyInfo
     raise errors.KeyczarError("Illegal PKCS8 String.")
   version = int(seq[0])
@@ -118,7 +122,7 @@ def ExportRsaPkcs8(params):
     key.setComponentByPosition(i+1, univ.Integer(params[RSA_PARAMS[i]]))
   octkey = encoder.encode(key)
   seq = ASN1Sequence(univ.Integer(0), oid, univ.OctetString(octkey))
-  return Encode(encoder.encode(seq))
+  return Base64WSEncode(encoder.encode(seq))
 
 def ExportDsaPkcs8(params):
   alg_params = univ.Sequence()
@@ -127,14 +131,14 @@ def ExportDsaPkcs8(params):
   oid = ASN1Sequence(DSA_OID, alg_params)
   octkey = encoder.encode(univ.Integer(params['x']))
   seq = ASN1Sequence(univ.Integer(0), oid, univ.OctetString(octkey))
-  return Encode(encoder.encode(seq))
+  return Base64WSEncode(encoder.encode(seq))
 
 #NOTE: not full X.509 certificate, just public key info
 #SubjectPublicKeyInfo  ::=  SEQUENCE  {
 #        algorithm            AlgorithmIdentifier,
 #        subjectPublicKey     BIT STRING  }
 def ParseX509(x509):
-  seq = ParseASN1Sequence(decoder.decode(Decode(x509))[0])
+  seq = ParseASN1Sequence(decoder.decode(Base64WSDecode(x509))[0])
   if len(seq) != 2:  # need two fields in SubjectPublicKeyInfo
     raise errors.KeyczarError("Illegal X.509 String.")
   [oid, alg_params] = ParseASN1Sequence(seq[0])
@@ -160,7 +164,7 @@ def ExportRsaX509(params):
   binkey = BytesToBin(encoder.encode(key))
   pubkey = univ.BitString("'%s'B" % binkey)  # needs to be a BIT STRING
   seq = ASN1Sequence(oid, pubkey)
-  return Encode(encoder.encode(seq))
+  return Base64WSEncode(encoder.encode(seq))
 
 def ExportDsaX509(params):
   alg_params = ASN1Sequence(univ.Integer(params['p']),
@@ -170,7 +174,7 @@ def ExportDsaX509(params):
   binkey = BytesToBin(encoder.encode(univ.Integer(params['y'])))
   pubkey = univ.BitString("'%s'B" % binkey)  # needs to be a BIT STRING
   seq = ASN1Sequence(oid, pubkey)
-  return Encode(encoder.encode(seq))
+  return Base64WSEncode(encoder.encode(seq))
 
 def MakeDsaSig(r, s):
   """
@@ -301,6 +305,57 @@ def PrefixHash(*inputs):
     md.update(i)
   return md.digest()
 
+# Struct packed byte array format specifiers used below
+BIG_ENDIAN_INT_SPECIFIER = ">i"
+STRING_SPECIFIER = "s"
+
+def PackByteArray(array):
+  """
+  Packs the given array into a structure composed of a four-byte, big-endian
+  integer containing the array length, followed by the array contents.
+  """
+  if not array:
+    return ''
+  array_length_header = struct.pack(BIG_ENDIAN_INT_SPECIFIER, len(array))
+  return array_length_header + array
+
+def PackMultipleByteArrays(*arrays):
+  """
+  Packs the provided variable number of byte arrays into one array.  The
+  returned array is prefixed with a count of the arrays contained, in a
+  four-byte big-endian integer, followed by the arrays in sequence, each
+  length-prefixed by PackByteArray().
+  """
+  array_count_header = struct.pack(BIG_ENDIAN_INT_SPECIFIER, len(arrays))
+  array_contents = ''.join([PackByteArray(a) for a in arrays])
+  return array_count_header + array_contents
+
+def UnpackByteArray(data, offset):
+  """
+  Unpacks a length-prefixed byte array packed by PackByteArray() from 'data',
+  starting from position 'offset'.  Returns a tuple of the data array and the
+  offset of the first byte after the end of the extracted array.
+  """
+  array_len = struct.unpack(BIG_ENDIAN_INT_SPECIFIER, 
+                            data[offset:offset + 4])[0]
+  offset += 4
+  return data[offset:offset + array_len], offset + array_len
+
+def UnpackMultipleByteArrays(data):
+  """
+  Extracts and returns a list of byte arrays that were packed by
+  PackMultipleByteArrays().
+  """
+  # The initial integer containing the number of byte arrays that follow is
+  # redundant.  We just skip it.
+  position = 4
+  result = []
+  while position < len(data):
+    array, position = UnpackByteArray(data, position)
+    result.append(array)
+  assert position == len(data)
+  return result
+
 def WriteFile(data, loc):
   """
   Writes data to file at given location.
@@ -359,9 +414,9 @@ def MGF(seed, mlen):
     output += Hash(seed, IntToBytes(i))
   return output[:mlen]
 
-def Base64Encode(s):
+def Base64WSEncode(s):
   """
-  Return Base64 encoding of s. Suppress padding characters (=).
+  Return Base64 web safe encoding of s. Suppress padding characters (=).
 
   Uses URL-safe alphabet: - replaces +, _ replaces /. Will convert s of type
   unicode to string type first.
@@ -375,10 +430,11 @@ def Base64Encode(s):
   return base64.urlsafe_b64encode(str(s)).replace("=", "")
 
 def Encode(s):
-    warnings.warn('Encode() is deprecated, use Base64Encode() instead')
-    return Base64Encode(s)
+  warnings.warn('Encode() is deprecated, use Base64WSEncode() instead',
+               DeprecationWarning)
+  return Base64WSEncode(s)
 
-def Base64Decode(s):
+def Base64WSDecode(s):
   """
   Return decoded version of given Base64 string. Ignore whitespace.
 
@@ -403,18 +459,23 @@ def Base64Decode(s):
     s += "=="
   elif d == 3:
     s += "="
-  return base64.urlsafe_b64decode(s)
+  try:
+    return base64.urlsafe_b64decode(s)
+  except TypeError:
+    # Decoding raises TypeError if s contains invalid characters.
+    raise errors.Base64DecodingError()
 
 def Decode(s):
-    warnings.warn('Decode() is deprecated, use Base64Decode() instead')
-    return Base64Decode(s)
+  warnings.warn('Decode() is deprecated, use Base64WSDecode() instead', 
+                DeprecationWarning)
+  return Base64WSDecode(s)
 
-class BufferedIncrementalBase64Encoder(codecs.BufferedIncrementalEncoder):
+class BufferedIncrementalBase64WSEncoder(codecs.BufferedIncrementalEncoder):
 
   """
-  Base64 encodes an input in multiple steps. Each step bar the final one will be
-  sized to ensure no Base64 padding is required. Any unencoded data outside this
-  optimal size will be buffered.
+  Web-safe Base64 encodes an input in multiple steps. Each step bar the final
+  one will be sized to ensure no Base64 padding is required. Any unencoded data
+  outside this optimal size will be buffered.
   """
 
   def _buffer_encode(self, input, errors, final):
@@ -427,7 +488,7 @@ class BufferedIncrementalBase64Encoder(codecs.BufferedIncrementalEncoder):
     @type input: string
 
     @param errors: required error handling scheme (see
-    IncrementalBase64StreamWriter)
+    IncrementalBase64WSStreamWriter)
 
     @param final: force all data to be encoded, possibly resulting in padding
     #type final: boolean
@@ -442,7 +503,7 @@ class BufferedIncrementalBase64Encoder(codecs.BufferedIncrementalEncoder):
       len_to_write = 3 * (len(input) / 3)
     else:
       len_to_write = len(input)
-    return (Base64Encode(input[:len_to_write]), len_to_write)
+    return (Base64WSEncode(input[:len_to_write]), len_to_write)
 
   def encode(self, input, final=False):
     """
@@ -460,7 +521,7 @@ class BufferedIncrementalBase64Encoder(codecs.BufferedIncrementalEncoder):
     @return: (Base64 representation of input, length consumed)
     @rtype: tuple
     """
-    result = super(BufferedIncrementalBase64Encoder, self).encode(input,
+    result = super(BufferedIncrementalBase64WSEncoder, self).encode(input,
                                                                   final=final)
     return (result, len(input) - len(self.buffer))
 
@@ -477,18 +538,18 @@ class BufferedIncrementalBase64Encoder(codecs.BufferedIncrementalEncoder):
       self.buffer = ''
     return result[0]
 
-class IncrementalBase64StreamWriter(codecs.StreamWriter, object):
+class IncrementalBase64WSStreamWriter(codecs.StreamWriter, object):
 
   """
-  Base64 encodes a stream in multiple steps to an output stream. Each step bar
-  the final one will be sized to ensure no Base64 padding is required. Any
-  unencoded data outside this optimal size will be buffered and output when
+  Web-safe Base64 encodes a stream in multiple steps to an output stream. Each
+  step bar the final one will be sized to ensure no Base64 padding is required.
+  Any unencoded data outside this optimal size will be buffered and output when
   flush() is called.
 
   """
   def __init__(self, stream, errors='strict'):
     """ 
-    Creates an IncrementalBase64StreamWriter instance.
+    Creates an IncrementalBase64WSStreamWriter instance.
 
     @param stream: a file-like object open for writing (binary) data.
 
@@ -507,13 +568,13 @@ class IncrementalBase64StreamWriter(codecs.StreamWriter, object):
                            sequences (only for encoding).
 
     """
-    super(IncrementalBase64StreamWriter, self).__init__(stream, errors)
-    self.encoder = BufferedIncrementalBase64Encoder(errors=errors)
+    super(IncrementalBase64WSStreamWriter, self).__init__(stream, errors)
+    self.encoder = BufferedIncrementalBase64WSEncoder(errors=errors)
 
   def close(self):
     """ Flushes and closes the stream """
     self.flush()
-    super(IncrementalBase64StreamWriter, self).close()
+    super(IncrementalBase64WSStreamWriter, self).close()
 
   def flush(self):
     """
@@ -538,12 +599,12 @@ class IncrementalBase64StreamWriter(codecs.StreamWriter, object):
     """
     return self.encoder.encode(input)
 
-class BufferedIncrementalBase64Decoder(codecs.BufferedIncrementalDecoder):
+class BufferedIncrementalBase64WSDecoder(codecs.BufferedIncrementalDecoder):
 
   """
-  Base64 decodes an input in multiple steps. Each step bar the final one will be
-  sized to a length so that no Base64 padding is required. Any undecoded data
-  outside this optimal size will be buffered.
+  Web-safe Base64 decodes an input in multiple steps. Each step bar the final
+  one will be sized to a length so that no Base64 padding is required. Any
+  undecoded data outside this optimal size will be buffered.
   """
 
   def _buffer_decode(self, input, errors, final):
@@ -556,7 +617,7 @@ class BufferedIncrementalBase64Decoder(codecs.BufferedIncrementalDecoder):
     @type input: string
 
     @param errors: required error handling scheme (see
-    IncrementalBase64StreamReader)
+    IncrementalBase64WSStreamReader)
 
     @param final: force all data to be decoded, possibly resulting in padding
     #type final: boolean
@@ -569,7 +630,7 @@ class BufferedIncrementalBase64Decoder(codecs.BufferedIncrementalDecoder):
       len_to_read = 4 * (len(input) / 4)
     else:
       len_to_read = len(input)
-    return (Base64Decode(input[:len_to_read]), len_to_read)
+    return (Base64WSDecode(input[:len_to_read]), len_to_read)
 
   def decode(self, input, final=False):
     """
@@ -587,7 +648,7 @@ class BufferedIncrementalBase64Decoder(codecs.BufferedIncrementalDecoder):
     @return: plaintext representation of input.
     @rtype: string
     """
-    result = super(BufferedIncrementalBase64Decoder, self).decode(input,
+    result = super(BufferedIncrementalBase64WSDecoder, self).decode(input,
                                                                   final=final)
     return (result, len(input))
 
@@ -604,18 +665,18 @@ class BufferedIncrementalBase64Decoder(codecs.BufferedIncrementalDecoder):
       self.buffer = ''
     return result[0]
 
-class IncrementalBase64StreamReader(codecs.StreamReader, object):
+class IncrementalBase64WSStreamReader(codecs.StreamReader, object):
 
   """
-  Base64 decodes a stream in multiple steps. Each step bar the final one will be
-  sized to a length so that no Base64 padding is required. Any undecoded data
-  outside this optimal size will be buffered and decoded on a final call to
-  read()
+  Web-safe Base64 decodes a stream in multiple steps. Each step bar the final
+  one will be sized to a length so that no Base64 padding is required. Any
+  undecoded data outside this optimal size will be buffered and decoded on a
+  final call to read().
   """
 
   def __init__(self, stream, errors='strict'):
     """ 
-    Creates an IncrementalBase64StreamReader instance.
+    Creates an IncrementalBase64WSStreamReader instance.
 
     @param stream: a file-like object open for reading (binary) data.
 
@@ -634,8 +695,8 @@ class IncrementalBase64StreamReader(codecs.StreamReader, object):
                            sequences (only for encoding).
 
     """
-    super(IncrementalBase64StreamReader, self).__init__(stream, errors)
-    self.decoder = BufferedIncrementalBase64Decoder(errors=errors)
+    super(IncrementalBase64WSStreamReader, self).__init__(stream, errors)
+    self.decoder = BufferedIncrementalBase64WSDecoder(errors=errors)
 
   def read(self, size=-1, chars=-1, firstline=False):
     """ 
@@ -662,7 +723,7 @@ class IncrementalBase64StreamReader(codecs.StreamReader, object):
     end of the input data has been reached.
     @rtype: string
     """
-    result = super(IncrementalBase64StreamReader, 
+    result = super(IncrementalBase64WSStreamReader, 
                    self).read(size=size,
                               chars=chars,
                               firstline=firstline)
@@ -684,4 +745,22 @@ class IncrementalBase64StreamReader(codecs.StreamReader, object):
     """
     return self.decoder.decode(input)
 
+def Memoize(func):
+  """
+  General-purpose memoization decorator.  Handles functions with any number of
+  arguments, including keyword arguments.
+  """
+  memory = {}
 
+  @functools.wraps(func)
+  def memo(*args,**kwargs):
+    pickled_args = cPickle.dumps((args, sorted(kwargs.iteritems())))
+
+    if pickled_args not in memory:
+      memory[pickled_args] = func(*args,**kwargs)
+
+    return memory[pickled_args]
+
+  if memo.__doc__:
+    memo.__doc__ = "\n".join([memo.__doc__,"This function is memoized."])
+  return memo

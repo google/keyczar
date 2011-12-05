@@ -27,7 +27,7 @@ from keyczar import errors
 from keyczar import keyczar
 from keyczar import util
 
-TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "testdata"))
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "..", "..", "testdata"))
 
 class SignerTest(unittest.TestCase):
   
@@ -40,10 +40,16 @@ class SignerTest(unittest.TestCase):
     return (signer, sig)
   
   def __unversionedSignInput(self, subdir):
-    unversioned_signer = keyczar.UnversionedSigner.Read(os.path.join(TEST_DATA, subdir))
+    unversioned_signer = keyczar.UnversionedSigner.Read(os.path.join(TEST_DATA,
+                                                                     subdir))
     sig = unversioned_signer.Sign(self.input)
     return (unversioned_signer, sig)
   
+  def __attachedSignInput(self, subdir, nonce):
+    signer = keyczar.Signer.Read(os.path.join(TEST_DATA, subdir))
+    attached_sig = signer.AttachedSign(self.input, nonce)
+    return (signer, attached_sig)
+
   def __readGoldenOutput(self, subdir, verifier=False, public=False):
     path = os.path.join(TEST_DATA, subdir)
     if verifier and not public:
@@ -65,6 +71,27 @@ class SignerTest(unittest.TestCase):
     (unversioned_signer, sig) = self.__unversionedSignInput(subdir)
     self.assertTrue(unversioned_signer.Verify(self.input, sig))
     self.assertFalse(unversioned_signer.Verify("Wrong string", sig))
+    
+  def __testAttachedSignAndVerify(self, subdir):
+    (signer, attached_sig) = self.__attachedSignInput(subdir, "nonce")
+    self.assertEquals(self.input, signer.AttachedVerify(attached_sig, "nonce"))
+
+    # Changing nonce should make it fail.
+    self.assertFalse(signer.AttachedVerify(attached_sig, "dunce"))
+    
+    # Changing signature should make it fail.
+    bad_sig = self.__modifyByteString(attached_sig, -5)
+    self.assertFalse(signer.AttachedVerify(bad_sig, "nonce"))
+    
+    # Changing data should make it fail.
+    bad_data = self.__modifyByteString(attached_sig, keyczar.HEADER_SIZE + 4)
+    self.assertFalse(signer.AttachedVerify(bad_data, "nonce"))
+    
+  def __modifyByteString(self, string, offset):
+    decoded = util.Base64WSDecode(string)
+    modified_char = chr(ord(decoded[offset]) ^ 0xFF)
+    return util.Base64WSEncode(decoded[:offset] + modified_char +
+                               decoded[offset+1:])
   
   def __testSignerVerify(self, subdir):
     (signer, active_sig, primary_sig) = self.__readGoldenOutput(subdir)
@@ -90,6 +117,7 @@ class SignerTest(unittest.TestCase):
     
   def testHmacSignAndVerify(self):
     self.__testSignAndVerify("hmac")
+    self.__testAttachedSignAndVerify("hmac")
     
   def testHmacUnversionedSignAndVerify(self):
     self.__testUnversionedSignAndVerify("hmac")
@@ -102,6 +130,7 @@ class SignerTest(unittest.TestCase):
   
   def testDsaSignAndVerify(self):
     self.__testSignAndVerify("dsa")
+    self.__testAttachedSignAndVerify("dsa")
 
   def testDsaUnversionedSignAndVerify(self):
     self.__testUnversionedSignAndVerify("dsa")
@@ -120,6 +149,7 @@ class SignerTest(unittest.TestCase):
   
   def testRsaSignAndVerify(self):
     self.__testSignAndVerify("rsa-sign")
+    self.__testAttachedSignAndVerify("rsa-sign")
 
   def testRsaUnversionedSignAndVerify(self):
     self.__testUnversionedSignAndVerify("rsa-sign")
@@ -138,14 +168,14 @@ class SignerTest(unittest.TestCase):
   
   def testHmacBadSigs(self):
     (signer, sig) = self.__signInput("hmac")
-    sig_bytes = util.Base64Decode(sig)
+    sig_bytes = util.Base64WSDecode(sig)
     self.assertRaises(errors.ShortSignatureError, signer.Verify, 
                       self.input, "AB")
-    bad_sig = util.Base64Encode(chr(23) + sig_bytes[1:])
+    bad_sig = util.Base64WSEncode(chr(23) + sig_bytes[1:])
     self.assertRaises(errors.BadVersionError, signer.Verify, 
                       self.input, bad_sig)
     char = chr(ord(sig_bytes[1]) ^ 45)  # Munge key hash info in sig 
-    bad_sig = util.Base64Encode(sig_bytes[0] + char + sig_bytes[2:])
+    bad_sig = util.Base64WSEncode(sig_bytes[0] + char + sig_bytes[2:])
     self.assertRaises(errors.KeyNotFoundError, signer.Verify, 
                       self.input, bad_sig)
     
