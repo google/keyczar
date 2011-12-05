@@ -45,17 +45,15 @@ class CrypterTest(unittest.TestCase):
 
   def setUp(self):
     self.input_data = "This is some test data"
-    # generate some longer random data
     self.random_input_data = os.urandom(random.randrange(
       util.DEFAULT_STREAM_BUFF_SIZE * 2 + 1,
       50000))
     self.random_input_data_len = len(self.random_input_data)
-    # use a random buffer size that is less than the input length
     self.random_buff_size = random.randrange(1, self.random_input_data_len)
-    self.ALL_BUFFER_SIZES = (util.DEFAULT_STREAM_BUFF_SIZE, # default
-                             999, # smaller
-                             self.random_buff_size, # er, random
-                             -1, # maximum possible
+    self.ALL_BUFFER_SIZES = (util.DEFAULT_STREAM_BUFF_SIZE, 
+                             999, 
+                             self.random_buff_size, 
+                             -1, 
                             )
   
   def __writeToStream(self, stream, data, size_mode=SIZE_ALL):
@@ -69,7 +67,6 @@ class CrypterTest(unittest.TestCase):
         len_to_write = random.randrange(len(data) / 3, (len(data) - 1))
       else:
         assert 0, 'Invalid size_mode:%d' %size_mode
-      # write out in groups of size len_to_write
       for c in map(None, *(iter(data),) * len_to_write):
         stream.write(''.join([x for x in c if x]))
     stream.flush()
@@ -89,7 +86,6 @@ class CrypterTest(unittest.TestCase):
         len_to_read = random.randrange(1, 1000)
       else:
         assert 0, 'Invalid size_mode:%d' %size_mode
-      # read in groups of size len_to_read
       read_data = True
       while read_data:
         read_data = stream.read(len_to_read)
@@ -99,14 +95,10 @@ class CrypterTest(unittest.TestCase):
 
   def __simulateReflow(self, data):
     """Helper to simulate reflowing of data"""
-    # use CR, LF and CR+LF variations
     endings = ['\n', '\r', '\r\n']
-    # split the data into small groups
     reflowed_data = ''
     for c in map(None, *(iter(data),) * 5):
-      # ignore any padding None's
       d = ''.join([x for x in c if x])
-      # join them with a random ending
       reflowed_data += '%s%s' %(random.choice(endings), d)
     return reflowed_data
 
@@ -131,7 +123,6 @@ class CrypterTest(unittest.TestCase):
       crypter = keyczar.Crypter.Read(path)
     active_ciphertext = util.ReadFile(os.path.join(path, "1.out"))
 
-    # add some CR, LF and CR+LF
     reflowed_active_ciphertext = self.__simulateReflow(active_ciphertext)
     active_decrypted = crypter.Decrypt(reflowed_active_ciphertext)
     self.assertEquals(self.input_data, active_decrypted)
@@ -150,7 +141,6 @@ class CrypterTest(unittest.TestCase):
       crypter = keyczar.Crypter(reader)
     else:
       crypter = keyczar.Crypter.Read(path)
-    # check active key
     active_ciphertext = util.ReadFile(os.path.join(path, "1.out"))
     if stream_source is None:
       decoder = None
@@ -169,7 +159,6 @@ class CrypterTest(unittest.TestCase):
                         stream_source
                       ))
 
-    # check primary key
     primary_ciphertext = util.ReadFile(os.path.join(path, "2.out"))
     if stream_source is None:
       primary_ciphertext = util.Base64Decode(primary_ciphertext)
@@ -191,23 +180,18 @@ class CrypterTest(unittest.TestCase):
     plaintext = crypter.Decrypt(ciphertext)
     self.assertEquals(self.input_data, plaintext)
 
-    # test reflowed data as well
     reflowed_ciphertext = self.__simulateReflow(ciphertext)
     plaintext = crypter.Decrypt(reflowed_ciphertext)
     self.assertEquals(self.input_data, plaintext)
 
-    # test the unencoded version as well 
     self.__testEncryptAndDecryptUnencoded(subdir)
   
   def __testEncryptAndDecryptUnencoded(self, subdir):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, subdir))
     ciphertext = crypter.Encrypt(self.input_data, encoder=None)
     try:
-        # attempting to decrypt an unencoded ciphertext with the default base64
-        # decoder will die horribly!
         plaintext = crypter.Decrypt(ciphertext)
     except:
-        # expected
         pass
     plaintext = crypter.Decrypt(ciphertext, decoder=None)
     self.assertEquals(self.input_data, plaintext)
@@ -320,10 +304,9 @@ class CrypterTest(unittest.TestCase):
     self.__testEncryptAndDecrypt("rsa")
   
   def testAesDecrypt(self):
-    #self.__testDecrypt("aes")
-    #self.__testDecryptReflowed("aes")
+    self.__testDecrypt("aes")
+    self.__testDecryptReflowed("aes")
 
-    # test streaming decryption for all combinations
     self.__testAllModesAndBufferSizes(self.__testDecryptStream, ("aes",
                                                                  None,)) 
   
@@ -334,7 +317,6 @@ class CrypterTest(unittest.TestCase):
     self.__testDecrypt("aes-crypted", reader)
     self.__testDecryptReflowed("aes-crypted", reader)
 
-    # test streaming decryption for all combinations
     self.__testAllModesAndBufferSizes(self.__testDecryptStream,
                                       ("aes-crypted", reader,))
     
@@ -342,37 +324,34 @@ class CrypterTest(unittest.TestCase):
     self.__testEncryptAndDecrypt("aes")
 
   def testAesStandardEncryptAndStreamDecryptInterop(self):
-    # test streaming decryption for all combinations
     self.__testAllModesAndBufferSizes(
         self.__testStandardEncryptAndStreamDecrypt,
         ("aes",))
 
   def testAesStreamEncryptAndStandardDecryptInterop(self):
-    # test streaming encryption for all combinations
     self.__testAllModesAndBufferSizes(
         self.__testStreamEncryptAndStandardDecrypt,
         ("aes",))
 
   def testAesStreamEncryptAndStreamDecryptInterop(self):
-    # test streaming encryption/decryption for all combinations
     self.__testAllModesAndBufferSizes(
         self.__testStreamEncryptAndStreamDecrypt,
         ("aes",))
 
   def testBadAesCiphertexts(self):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
-    ciphertext = util.Base64Decode(crypter.Encrypt(self.input_data))  # in bytes
+    ciphertext = util.Base64Decode(crypter.Encrypt(self.input_data))  
     bad = util.Base64Encode(chr(0))
-    char = chr(ord(ciphertext[2]) ^ 44)  # Munge key hash info in ciphertext
+    char = chr(ord(ciphertext[2]) ^ 44)  
     ciphertext = util.Base64Encode(ciphertext[:2]+char+ciphertext[3:])
     self.assertRaises(errors.ShortCiphertextError, crypter.Decrypt, bad)
     self.assertRaises(errors.KeyNotFoundError, crypter.Decrypt, ciphertext)
   
   def testBadAesCiphertextsStream(self):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
-    ciphertext = util.Base64Decode(crypter.Encrypt(self.input_data))  # in bytes
+    ciphertext = util.Base64Decode(crypter.Encrypt(self.input_data))  
     bad = util.Base64Encode(chr(0))
-    char = chr(ord(ciphertext[2]) ^ 44)  # Munge key hash info in ciphertext
+    char = chr(ord(ciphertext[2]) ^ 44)  
     ciphertext = util.Base64Encode(ciphertext[:2]+char+ciphertext[3:])
 
     try:
@@ -380,7 +359,6 @@ class CrypterTest(unittest.TestCase):
       decryption_stream = crypter.CreateDecryptingStreamReader(stream)
       self.__readFromStream(decryption_stream)
     except errors.ShortCiphertextError:
-      # expected
       pass
 
     try:
@@ -388,7 +366,6 @@ class CrypterTest(unittest.TestCase):
       decryption_stream = crypter.CreateDecryptingStreamReader(stream)
       self.__readFromStream(decryption_stream)
     except errors.KeyNotFoundError:
-      # expected
       pass
   
   def tearDown(self):

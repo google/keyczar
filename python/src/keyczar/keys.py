@@ -275,10 +275,7 @@ class AesKey(SymmetricKey):
     @rtype: int
     """
     no_pad_size = self.block_size * (buffer_size / self.block_size)
-    # minimum size is a single block
-    if not no_pad_size:
-      no_pad_size = self.block_size
-    return no_pad_size
+    return max(no_pad_size, self.block_size)
 
   def Encrypt(self, data):
     """
@@ -882,14 +879,12 @@ class EncryptingStreamWriter(object):
     self.__data = ''
     self.__closed = False
 
-    # initialise HMAC and cipher
-    self.__hm = key.hmac_key.CreateStreamable()
+    self.__hmac_stream = key.hmac_key.CreateStreamable()
     iv_bytes = util.RandBytes(key.block_size)
     self.__cipher = AES.new(key.key_bytes, AES.MODE_CBC, iv_bytes)
 
-    # write the header
     hdr = key.Header()
-    self.__hm.Update(hdr + iv_bytes)
+    self.__hmac_stream.Update(hdr + iv_bytes)
     self.__output_stream.write(hdr + iv_bytes)
 
   def write(self, data):
@@ -900,34 +895,25 @@ class EncryptingStreamWriter(object):
     @type data: string
     """
     self.__CheckOpen('write')
-    # add this new data to any existing data
     self.__data += data
+    encrypt_buffer_size = self.__key._NoPadBufferSize(len(self.__data))
 
-    # pick the largest buffer size we can encrypt with no padding 
-    buffer_size = self.__key._NoPadBufferSize(len(self.__data))
-
-    # do we have the minimum buffer size?
-    if len(self.__data) >= buffer_size:
-      self.__WriteEncrypted(self.__data[:buffer_size])
+    if len(self.__data) >= encrypt_buffer_size:
+      self.__WriteEncrypted(self.__data[:encrypt_buffer_size])
     else:
-      buffer_size = 0
+      encrypt_buffer_size = 0
 
-    # preserve the remaining unprocessed data for later
-    self.__data = self.__data[buffer_size:]
+    self.__data = self.__data[encrypt_buffer_size:]
 
   def flush(self):
     """
-    flush this stream. 
+    Flush this stream. 
     Writes all remaining encrypted data to the output stream.
     Will also flush the associated output stream.
     """
     self.__CheckOpen('flush')
-
-    # write out any existing data with padding as required
     self.__WriteEncrypted(self.__data, pad=True)
-
-    # finally, add the signature to the output
-    self.__output_stream.write(self.__hm.Sign())
+    self.__output_stream.write(self.__hmac_stream.Sign())
     self.__output_stream.flush()
 
   def close(self):
@@ -953,16 +939,12 @@ class EncryptingStreamWriter(object):
     @param pad: add padding to data
     @type pad: boolean
     """
-    # pad any blocks smaller than the optimal buffer size
     if pad:
       data = self.__key._Pad(data)
 
-    # actually encrypt and write it
-    ciph_bytes = self.__cipher.encrypt(data)
-    self.__output_stream.write(ciph_bytes)
-
-    # and add it to signer
-    self.__hm.Update(ciph_bytes)
+    encrypted_bytes = self.__cipher.encrypt(data)
+    self.__output_stream.write(encrypted_bytes)
+    self.__hmac_stream.Update(encrypted_bytes)
 
   def __CheckOpen(self, operation):
     """Helper to ensure this stream is open"""
@@ -975,12 +957,12 @@ class DecryptingStreamReader(object):
   containing Header|IV|Ciph|Sig into plain text.
   """
 
-  def __init__(self, key_factory, input_stream,
+  def __init__(self, key_set, input_stream,
                buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
     """
     Constructor
 
-    @param key_factory: Keyczar Key creator that turns the Header into a Key
+    @param key_set: Keyczar key set to source key specified in message header
     @type key: Keyczar
 
     @param input_stream: source of encrypted input
@@ -991,7 +973,7 @@ class DecryptingStreamReader(object):
     Use -1 to read as much data as possible from the source stream
     @type buffer_size: integer
     """
-    self.__key_factory = key_factory
+    self.__key_set = key_set
     self.__input_stream = input_stream
     self.__buffer_size = buffer_size
     self.__key = None
@@ -1018,44 +1000,32 @@ class DecryptingStreamReader(object):
     @raise ValueError: if stream closed
     """
     self.__CheckOpen('read')
-    # have we received sufficient data to create the key yet?
     if not self.__key:
       self.__CreateKey()
 
-    # once we have a key we can setup for decryption
     if self.__key and not self.__cipher:
       self.__CreateCipher()
 
-    # if everything is in place, we can start decoding and decrypting
     if self.__key and self.__cipher:
-      read_bytes = True
       data_to_decrypt = ''
-      # since returning an empty string is EOD we need to keep reading from
-      # the stream until we have sufficient data to decrypt (i.e. > 1 block) or
-      # we exhaust the input.
-      while (read_bytes and not data_to_decrypt):
-        # need to read what is requested
+      need_more_data = True
+      no_data_avail = False
+      while need_more_data:
         if self.__buffer_size < 0:
           read_bytes = self.__input_stream.read()
         else:
           read_bytes = self.__input_stream.read(self.__buffer_size)
+        no_data_avail = (not read_bytes)
 
-        # add this newly read data to the buffered read data
         self.__encrypted_buffer += read_bytes
 
-        # at a minimum we need to ignore the possible sig
-        preserved_data_len = util.HLEN
-        # but if we haven't read all the input we also need keep a block in
-        # reserve as it might be the padding block or part thereof
-        if read_bytes:
-          preserved_data_len += self.__key.block_size
+        reserved_data_len = util.HLEN
+        if not no_data_avail:
+          reserved_data_len += self.__key.block_size
 
-        # what does that leave us to play with?
-        available_data = self.__encrypted_buffer[:-preserved_data_len]
+        available_data = self.__encrypted_buffer[:-reserved_data_len]
 
-        # if not at EOD only decrypt in multiples of block size => no padding 
-        # otherwise decrypt it all (bar sig)
-        if read_bytes:
+        if not no_data_avail:
           no_decrypt_len = len(available_data) % self.__key.block_size
         else:
           no_decrypt_len = 0
@@ -1065,38 +1035,31 @@ class DecryptingStreamReader(object):
         else:
           data_to_decrypt = available_data
 
+        need_more_data = (not no_data_avail and not data_to_decrypt)
+
       if data_to_decrypt:
-        # tell the signer about the *used* encrypted data
-        self.__hm.Update(data_to_decrypt)
-        # remove *used* encrypted data from the buffer
+        self.__hmac_stream.Update(data_to_decrypt)
         self.__encrypted_buffer = self.__encrypted_buffer[len(data_to_decrypt):]
-        # now actually decrypt it
         decrypted_data = self.__cipher.decrypt(data_to_decrypt)
-        if not read_bytes:
-          # if no more data to read then must be last block
-          # so must unpad the decrypted data
+        if no_data_avail:
           decrypted_data = self.__key._UnPad(decrypted_data)
 
-        # and add it to the buffered decrypted data
         self.__decrypted_buffer += decrypted_data
 
-        # if no more data then we must have only the sig left!
-        if not read_bytes:
-          assert len(self.__encrypted_buffer) == util.HLEN, 'No sig'
-          # was all that data we've written actually valid????
-          hm_sig_bytes = self.__hm.Sign()
-          sig_bytes = self.__encrypted_buffer
+        if no_data_avail:
+          if len(self.__encrypted_buffer) != util.HLEN:
+            raise errors.ShortCiphertextError(len(self.__encrypted_buffer))
+          current_sig_bytes = self.__hmac_stream.Sign()
+          msg_sig_bytes = self.__encrypted_buffer
           self.__encrypted_buffer = ''
-          if not self.__key.hmac_key.VerifySignedData(hm_sig_bytes, sig_bytes):
+          if not self.__key.hmac_key.VerifySignedData(current_sig_bytes, 
+                                                      msg_sig_bytes):
             raise errors.InvalidSignatureError()
 
-    # return what we can up to the requested # of chars
     if chars < 0:
-      # Return everything we've got
       result = self.__decrypted_buffer
       self.__decrypted_buffer = ''
     else:
-      # Return the first chars characters
       result = self.__decrypted_buffer[:chars]
       self.__decrypted_buffer = self.__decrypted_buffer[chars:]
 
@@ -1108,7 +1071,6 @@ class DecryptingStreamReader(object):
     Assumes all data has been read or is thrown away as no signature validation
     is done until all the data is read.
     """
-    self.__CheckOpen('close')
     self.__closed = True
 
   def __CheckOpen(self, operation):
@@ -1117,34 +1079,37 @@ class DecryptingStreamReader(object):
       raise ValueError('%s() on a closed stream is not permitted' %operation)
 
   def __CreateKey(self):
-    """Helper to create the actual key from the Header"""
+    """
+    Helper to create the actual key from the Header
+    NOTE: The key determines what the optimal read buffer size will be. It is a
+    size that does not require any padding to allow allow encrypting without
+    using a stream anddecrypting with a stream 
+    i.e. Encrypt() => DecryptingStreamReader()
+    """
     if not self.__key:
-      # read sufficient data to create the key
       self.__encrypted_buffer += self.__input_stream.read(
         keyczar.HEADER_SIZE - len(self.__encrypted_buffer))
       if len(self.__encrypted_buffer) >= keyczar.HEADER_SIZE:
         hdr_bytes = self.__encrypted_buffer[:keyczar.HEADER_SIZE]
         self.__encrypted_buffer = self.__encrypted_buffer[keyczar.HEADER_SIZE:]
-        self.__key = self.__key_factory._ParseHeader(hdr_bytes)
-        self.__hm = self.__key.hmac_key.CreateStreamable()
-        self.__hm.Update(hdr_bytes)
-        # now we have a key we can set the buffer size to an appropriate value
-        # as we assume NO PADDING on blocks to allow encrypting without using a
-        # stream anddecrypting with a stream
-        # i.e. Encrypt() => DecryptingStreamReader() 
+        self.__key = self.__key_set._ParseHeader(hdr_bytes)
+        self.__hmac_stream = self.__key.hmac_key.CreateStreamable()
+        self.__hmac_stream.Update(hdr_bytes)
         if self.__buffer_size >= 0:
           self.__buffer_size = self.__key._NoPadBufferSize(self.__buffer_size)
 
   def __CreateCipher(self):
+    """
+    Helper to create the cipher using the IV from the message
+    """
     if not self.__cipher:
-      self.__encrypted_buffer += self.__input_stream.read(
-        self.__key.block_size - len(self.__encrypted_buffer))
-      if len(self.__encrypted_buffer) >= self.__key.block_size:
-        # initialise HMAC and cipher
-        # first block of bytes is the IV
-        iv_bytes = self.__encrypted_buffer[:self.__key.block_size]  
+      reqd_block_size = self.__key.block_size
+      new_bytes_reqd = reqd_block_size - len(self.__encrypted_buffer)
+      self.__encrypted_buffer += self.__input_stream.read(new_bytes_reqd)
+      if len(self.__encrypted_buffer) >= reqd_block_size:
+        iv_bytes = self.__encrypted_buffer[:reqd_block_size]  
         self.__encrypted_buffer = self.__encrypted_buffer[
-            self.__key.block_size:]
-        self.__hm.Update(iv_bytes)
+            reqd_block_size:]
+        self.__hmac_stream.Update(iv_bytes)
         self.__cipher = AES.new(self.__key.key_bytes, AES.MODE_CBC, iv_bytes)
 

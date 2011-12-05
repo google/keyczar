@@ -57,7 +57,6 @@ class Base64StreamingReadTest(unittest.TestCase):
     b64_data = base64.urlsafe_b64encode(single_pad_data)
     self.assertFalse(b64_data.endswith('=='))
     self.assertTrue(b64_data.endswith('='))
-    # test with and without padding
     self.__testRead(b64_data, single_pad_data)
     self.__testRead(b64_data[:-1], single_pad_data)
 
@@ -65,15 +64,14 @@ class Base64StreamingReadTest(unittest.TestCase):
     double_pad_data = 'All inspired test data'
     b64_data = base64.urlsafe_b64encode(double_pad_data)
     self.assertTrue(b64_data.endswith('=='))
-    # test with and without padding
     self.__testRead(b64_data, double_pad_data)
     self.__testRead(b64_data[:-1], double_pad_data)
     self.__testRead(b64_data[:-2], double_pad_data)
 
-  def testDifferentLengthRead(self):
-    # simulates what the decrypter does
+  def testSimulateDecrypter(self):
     enc_data = \
-    'AJehaFGwoOrkzpDCnF1zqIi721eCOMYWRmLyRyn3hxyhh_mYwpnDN6jKN057gr5lzAPFYhq9zoDwFMaGMEipEl__ECOZGeaxWw'
+    'AJehaFGwoOrkzpDCnF1zqIi721eCOMYWRmLyRyn3hxyhh_mYwpnDN6jKN057gr5lz' \
+            'APFYhq9zoDwFMaGMEipEl__ECOZGeaxWw'
     expected_result = util.Base64Decode(enc_data)
     stream = util.IncrementalBase64StreamReader(StringIO.StringIO(enc_data))
     result = stream.read(5)
@@ -89,11 +87,9 @@ class Base64StreamingWriteTest(unittest.TestCase):
   def __testWrite(self, input_data):
 
     expected_result = base64.urlsafe_b64encode(input_data)
-    # strip off any padding as the Keyczar encoder does
     while expected_result[-1] == '=':
       expected_result = expected_result[:-1]
 
-    # test incremental writes
     for size in [1, 5, 4096, random.randrange(1, 9999), None]:
       output_stream = StringIO.StringIO()
       stream = util.IncrementalBase64StreamWriter(output_stream)
@@ -127,7 +123,6 @@ class Base64StreamingWriteTest(unittest.TestCase):
     self.__testWrite(double_pad_data)
 
   def testRandomLongerWrite(self):
-    # generate some longer random data
     random_input_data = os.urandom(random.randrange(
       util.DEFAULT_STREAM_BUFF_SIZE * 2 + 1,
       50000))
