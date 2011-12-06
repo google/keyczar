@@ -30,19 +30,20 @@ from keyczar import util
 
 class Base64WSStreamingReadTest(unittest.TestCase):
 
-  def __readStream(self, stream, size=None):
+  def __readStream(self, stream, size=-1):
     result = ''
     read_data = True
-    while read_data:
-      if size:
+    while read_data != '':
+      if size >= 0:
         read_data = stream.read(size)
       else:
         read_data = stream.read()
-      result += read_data
+      if read_data:
+        result += read_data
     return result
 
   def __testRead(self, input_data, expected_result):
-    for size in [1, 5, 4096, 99999, None]:
+    for size in [1, 5, 4096, 99999, -1]:
       stream = util.IncrementalBase64WSStreamReader(StringIO.StringIO(input_data))
       self.assertEquals(self.__readStream(stream, size), expected_result)
 
@@ -90,11 +91,11 @@ class Base64WSStreamingWriteTest(unittest.TestCase):
     while expected_result[-1] == '=':
       expected_result = expected_result[:-1]
 
-    for size in [1, 5, 4096, random.randrange(1, 9999), None]:
+    for size in [1, 5, 4096, random.randrange(1, 9999), -1]:
       output_stream = StringIO.StringIO()
       stream = util.IncrementalBase64WSStreamWriter(output_stream)
       i = 0
-      if size:
+      if size >= 0:
         while (i * size) <= len(input_data):
           stream.write(input_data[i * size:(i + 1) * size])
           i += 1

@@ -1002,32 +1002,29 @@ class DecryptingStreamReader(object):
     @raise ValueError: if stream closed
     """
     self.__CheckOpen('read')
+    is_data_avail = True
     if not self.__key:
-      self.__CreateKey()
+      is_data_avail = self.__CreateKey()
 
-    if self.__key and not self.__cipher:
-      self.__CreateCipher()
+    if is_data_avail and self.__key and not self.__cipher:
+      is_data_avail = self.__CreateCipher()
 
-    if self.__key and self.__cipher:
+    if is_data_avail and self.__key and self.__cipher:
       data_to_decrypt = ''
       need_more_data = True
-      no_data_avail = False
       while need_more_data:
-        if self.__buffer_size < 0:
-          read_bytes = self.__input_stream.read()
-        else:
-          read_bytes = self.__input_stream.read(self.__buffer_size)
-        no_data_avail = (not read_bytes)
-
-        self.__encrypted_buffer += read_bytes
+        read_bytes, is_data_avail = self.__ReadBytes(self.__key.block_size,
+                                                     block=False)
+        if read_bytes:
+          self.__encrypted_buffer += read_bytes
 
         reserved_data_len = util.HLEN
-        if not no_data_avail:
+        if is_data_avail:
           reserved_data_len += self.__key.block_size
 
         available_data = self.__encrypted_buffer[:-reserved_data_len]
 
-        if not no_data_avail:
+        if is_data_avail:
           no_decrypt_len = len(available_data) % self.__key.block_size
         else:
           no_decrypt_len = 0
@@ -1037,18 +1034,18 @@ class DecryptingStreamReader(object):
         else:
           data_to_decrypt = available_data
 
-        need_more_data = (not no_data_avail and not data_to_decrypt)
+        need_more_data = (is_data_avail and not data_to_decrypt)
 
       if data_to_decrypt:
         self.__hmac_stream.Update(data_to_decrypt)
         self.__encrypted_buffer = self.__encrypted_buffer[len(data_to_decrypt):]
         decrypted_data = self.__cipher.decrypt(data_to_decrypt)
-        if no_data_avail:
+        if not is_data_avail:
           decrypted_data = self.__key._UnPad(decrypted_data)
 
         self.__decrypted_buffer += decrypted_data
 
-        if no_data_avail:
+        if not is_data_avail:
           if len(self.__encrypted_buffer) != util.HLEN:
             raise errors.ShortCiphertextError(len(self.__encrypted_buffer))
           current_sig_bytes = self.__hmac_stream.Sign()
@@ -1065,6 +1062,9 @@ class DecryptingStreamReader(object):
       result = self.__decrypted_buffer[:chars]
       self.__decrypted_buffer = self.__decrypted_buffer[chars:]
 
+    if not result and is_data_avail:
+      result = None
+
     return result
 
   def close(self):
@@ -1080,6 +1080,30 @@ class DecryptingStreamReader(object):
     if self.__closed:
       raise ValueError('%s() on a closed stream is not permitted' %operation)
 
+  def __ReadBytes(self, size, block=True):
+    """
+    Helper to read bytes from the input stream. If requested will block until
+    required number of bytes is read or input data is exhausted.
+    """
+    need_more_data = True
+    is_data_avail = True
+    result = ''
+    while need_more_data:
+      if size < 0:
+        read_bytes = self.__input_stream.read()
+      else:
+        read_bytes = self.__input_stream.read(size)
+      if read_bytes:
+        result += read_bytes
+      elif read_bytes is not None:
+        is_data_avail = False
+        break
+      elif not block:
+        break
+      need_more_data = (len(result) < size)
+
+    return (result, is_data_avail)
+
   def __CreateKey(self):
     """
     Helper to create the actual key from the Header
@@ -1088,9 +1112,12 @@ class DecryptingStreamReader(object):
     using a stream anddecrypting with a stream 
     i.e. Encrypt() => DecryptingStreamReader()
     """
+    is_data_avail = True
     if not self.__key:
-      self.__encrypted_buffer += self.__input_stream.read(
-        keyczar.HEADER_SIZE - len(self.__encrypted_buffer))
+      read_bytes, is_data_avail = self.__ReadBytes(keyczar.HEADER_SIZE -
+                                                   len(self.__encrypted_buffer))
+      if read_bytes:
+          self.__encrypted_buffer += read_bytes
       if len(self.__encrypted_buffer) >= keyczar.HEADER_SIZE:
         hdr_bytes = self.__encrypted_buffer[:keyczar.HEADER_SIZE]
         self.__encrypted_buffer = self.__encrypted_buffer[keyczar.HEADER_SIZE:]
@@ -1099,19 +1126,24 @@ class DecryptingStreamReader(object):
         self.__hmac_stream.Update(hdr_bytes)
         if self.__buffer_size >= 0:
           self.__buffer_size = self.__key._NoPadBufferSize(self.__buffer_size)
+    return is_data_avail
 
   def __CreateCipher(self):
     """
     Helper to create the cipher using the IV from the message
     """
+    is_data_avail = True
     if not self.__cipher:
       reqd_block_size = self.__key.block_size
       new_bytes_reqd = reqd_block_size - len(self.__encrypted_buffer)
-      self.__encrypted_buffer += self.__input_stream.read(new_bytes_reqd)
+      read_bytes, is_data_avail = self.__ReadBytes(new_bytes_reqd)
+      if read_bytes:
+          self.__encrypted_buffer += read_bytes
       if len(self.__encrypted_buffer) >= reqd_block_size:
         iv_bytes = self.__encrypted_buffer[:reqd_block_size]  
         self.__encrypted_buffer = self.__encrypted_buffer[
             reqd_block_size:]
         self.__hmac_stream.Update(iv_bytes)
         self.__cipher = AES.new(self.__key.key_bytes, AES.MODE_CBC, iv_bytes)
+    return is_data_avail
 

@@ -76,9 +76,10 @@ class CrypterTest(unittest.TestCase):
     result = ''
     if size_mode == self.SIZE_ALL:
       read_data = True
-      while read_data:
+      while read_data or read_data is None:
         read_data = stream.read()
-        result += read_data
+        if read_data:
+          result += read_data
     else:
       if size_mode == self.SIZE_ONE:
         len_to_read = 1
@@ -87,9 +88,10 @@ class CrypterTest(unittest.TestCase):
       else:
         assert 0, 'Invalid size_mode:%d' %size_mode
       read_data = True
-      while read_data:
+      while read_data or read_data is None:
         read_data = stream.read(len_to_read)
-        result += read_data
+        if read_data:
+          result += read_data
     stream.close()
     return result
 
@@ -368,6 +370,93 @@ class CrypterTest(unittest.TestCase):
     except errors.KeyNotFoundError:
       pass
   
+  def testStreamDecryptHandlesIOModuleBlockingNoneReturned(self):
+    """
+    Test for input streams that conform to the blocking I/O module spec, i.e.
+    read() returns None to indicate no data available, but not EOF
+    """
+    crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, 'aes'))
+    ciphertext = crypter.Encrypt(self.input_data)
+
+    class PseudoBlockingStream(object):
+      """
+      A 'stream' that blocks every 2nd call to read() to simultate blocking i/o
+      """
+
+      def __init__(self, string):
+        self.current_posn = 0
+        self.string = string
+        self.return_none = False
+
+      def read(self, size=-1):
+        result = None
+        start = self.current_posn
+        if not self.return_none:
+          if size < 0:
+            end = size 
+            self.current_posn = len(self.string)
+          else:
+            end = (start + size)
+            self.current_posn = end
+          result = self.string[start:end]
+        else:
+          if start > len(self.string):
+            result = ''
+
+        self.return_none = not self.return_none
+        return result
+
+    decryption_stream = crypter.CreateDecryptingStreamReader(
+      PseudoBlockingStream(ciphertext))
+    result = self.__readFromStream(decryption_stream, size_mode=self.SIZE_ALL)
+    self.assertEquals(self.input_data, result)
+
+  def testStreamDecryptHandlesIOModuleBlockingExceptionRaised(self):
+    """
+    Test for input streams that conform to the blocking I/O module spec wrt
+    buffered blocking, i.e. if the underlying raw stream is in non blocking-mode,
+    a BlockingIOError is raised indicate no data available, but not EOF
+    """
+    crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, 'aes'))
+    ciphertext = crypter.Encrypt(self.input_data)
+
+    class PseudoBlockingStream(object):
+      """
+      A 'stream' that raises BlockingIOError every 2nd call to read() to
+      simultate buffered blocking
+      """
+
+      def __init__(self, string):
+        self.current_posn = 0
+        self.string = string
+        self.raise_exception = True 
+
+      def read(self, size=-1):
+        result = None
+        start = self.current_posn
+        if not self.raise_exception:
+          if size < 0:
+            end = size 
+            self.current_posn = len(self.string)
+          else:
+            end = (start + size)
+            self.current_posn = end
+          result = self.string[start:end]
+        else:
+          if start > len(self.string):
+            result = ''
+          else:
+            self.raise_exception = False
+            raise util.BlockingIOError(1, 'Dummy error', self.current_posn)
+
+        self.raise_exception = not self.raise_exception
+        return result
+
+    decryption_stream = crypter.CreateDecryptingStreamReader(
+      PseudoBlockingStream(ciphertext))
+    result = self.__readFromStream(decryption_stream, size_mode=self.SIZE_ALL)
+    self.assertEquals(self.input_data, result)
+
   def tearDown(self):
     self.input_data = None
     self.random_input_data = None

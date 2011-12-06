@@ -38,4 +38,4 @@ def suite():
   return alltests
 
 if __name__ == '__main__':
-  unittest.TextTestRunner().run(suite())
+  unittest.main(defaultTest='suite')

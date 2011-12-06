@@ -35,6 +35,20 @@ try:
 except ImportError:
   from sha import sha as sha1
 
+try:
+  # check for presence of blocking I/O module
+  from io import BlockingIOError
+except ImportError:
+  class BlockingIOError(IOError):
+
+    """Exception raised when I/O would block on a non-blocking I/O stream."""
+
+    def __init__(self, errno, strerror, characters_written=0):
+      super(IOError, self).__init__(errno, strerror)
+      if not isinstance(characters_written, (int, long)):
+        raise TypeError("characters_written must be a integer")
+      self.characters_written = characters_written
+
 from pyasn1.codec.der import decoder
 from pyasn1.codec.der import encoder
 from pyasn1.type import univ
@@ -705,6 +719,8 @@ class IncrementalBase64WSStreamReader(codecs.StreamReader, object):
     @param chars: the number of characters to read from the stream. read() will
     never return more than chars characters, but it might return less, if there
     are not enough characters available.
+    Will return None if the underlying stream does i.e. is non-blocking and no
+    data is available.
     @type chars: integer
 
     @param size: indicates the approximate maximum number of bytes to read from
@@ -723,12 +739,79 @@ class IncrementalBase64WSStreamReader(codecs.StreamReader, object):
     end of the input data has been reached.
     @rtype: string
     """
-    result = super(IncrementalBase64WSStreamReader, 
-                   self).read(size=size,
-                              chars=chars,
-                              firstline=firstline)
-    if not result and chars != 0:
-      result = self.decoder.flush()
+    
+    # NOTE: this is a copy of the code from Python v2.7 codecs.py tweaked to
+    # handle non-blocking streams i.e. those that return None to indicate no
+    # data is available but is not at EOF - see read() in the Python I/O module
+    # documentation.
+
+    # === start of codecs.py code ===
+    # If we have lines cached, first merge them back into characters
+    if self.linebuffer:
+      self.charbuffer = "".join(self.linebuffer)
+      self.linebuffer = None
+
+    # read until we get the required number of characters (if available)
+    newdata = ''
+    while True:
+      # can the request can be satisfied from the character buffer?
+      if chars < 0:
+        if size < 0:
+          if self.charbuffer:
+            break
+        elif len(self.charbuffer) >= size:
+          break
+      else:
+        if len(self.charbuffer) >= chars:
+          break
+
+      # we need more data
+      try:
+        if size < 0:
+          newdata = self.stream.read()
+        else:
+          newdata = self.stream.read(size)
+      except BlockingIOError:
+        newdata = None
+
+      if newdata is not None:
+        # decode bytes (those remaining from the last call included)
+        data = self.bytebuffer + newdata
+        try:
+          newchars, decodedbytes = self.decode(data, self.errors)
+        except UnicodeDecodeError, exc:
+          if firstline:
+            newchars, decodedbytes = self.decode(data[:exc.start], self.errors)
+            lines = newchars.splitlines(True)
+            if len(lines)<=1:
+              raise
+          else:
+            raise
+        # keep undecoded bytes until the next call
+        self.bytebuffer = data[decodedbytes:]
+        # put new characters in the character buffer
+        self.charbuffer += newchars
+        # there was no data available
+        if not newdata:
+          break
+
+    if chars < 0:
+      # Return everything we've got
+      result = self.charbuffer
+      self.charbuffer = ""
+    else:
+      # Return the first chars characters
+      result = self.charbuffer[:chars]
+      self.charbuffer = self.charbuffer[chars:]
+
+    # === end of codecs.py code ===
+    if not result and newdata is None:
+      result = None
+
+    if not result and newdata == '':
+      if chars != 0:
+        result = self.decoder.flush()
+
     return result
 
   def decode(self, input, errors='strict'):
