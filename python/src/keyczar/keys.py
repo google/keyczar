@@ -133,7 +133,7 @@ class Key(object):
   def _Hash(self):
     """Compute and return the hash_id id of this key. Can override default hash_id."""
     fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)), self.key_bytes)
-    return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+    return util.Base64WSEncode(fullhash[:keyczar.KEY_HASH_SIZE])
 
   def __Hash(self):
     """Indirect getter for hash_id."""
@@ -143,12 +143,12 @@ class Key(object):
   size = property(lambda self: self.__size, __SetSize,
                   doc="""The size of the key in bits.""")
   key_string = property(__GetKeyString, doc="""The key as a Base64 string.""")
-  key_bytes = property(lambda self: util.Decode(self.key_string),
+  key_bytes = property(lambda self: util.Base64WSDecode(self.key_string),
                        doc="""The key as bytes.""")
 
   def Header(self):
     """Return the 5-byte header string including version byte, 4-byte hash_id."""
-    return chr(keyczar.VERSION) + util.Decode(self.hash_id)
+    return chr(keyczar.VERSION) + util.Base64WSDecode(self.hash_id)
 
 class SymmetricKey(Key):
   """Parent class for symmetric keys such as AES, HMAC-SHA1"""
@@ -177,10 +177,11 @@ class AesKey(SymmetricKey):
     self.hmac_key = hmac_key
     self.block_size = 16  # pycrypto AES's block size is fixed to 16 bytes
     self.size = size
-    self.mode = mode
+    # Only CBC mode is actually supported, in spite of what the signature leads you to believe.
+    assert mode == keyinfo.CBC
 
   def __str__(self):
-    return json.dumps({"mode": str(self.mode),
+    return json.dumps({"mode": str(keyinfo.CBC),
                        "size": self.size,
                        "aesKeyString": self.key_string,
                        "hmacKey": json.loads(str(self.hmac_key))})
@@ -189,7 +190,7 @@ class AesKey(SymmetricKey):
     fullhash = util.Hash(util.IntToBytes(len(self.key_bytes)),
                          self.key_bytes,
                          self.hmac_key.key_bytes)
-    return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+    return util.Base64WSEncode(fullhash[:keyczar.KEY_HASH_SIZE])
 
   @staticmethod
   def Generate(size=keyinfo.AES.default_size):
@@ -203,7 +204,7 @@ class AesKey(SymmetricKey):
     @rtype: L{AesKey}
     """
     key_bytes = util.RandBytes(size / 8)
-    key_string = util.Encode(key_bytes)
+    key_string = util.Base64WSEncode(key_bytes)
     hmac_key = HmacKey.Generate()  # use default HMAC-SHA1 key size
     return AesKey(key_string, hmac_key, size)
 
@@ -309,7 +310,7 @@ class HmacKey(SymmetricKey):
 
   def _Hash(self):
     fullhash = util.Hash(self.key_bytes)
-    return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+    return util.Base64WSEncode(fullhash[:keyczar.KEY_HASH_SIZE])
 
   @staticmethod
   def Generate(size=keyinfo.HMAC_SHA1.default_size):
@@ -323,7 +324,7 @@ class HmacKey(SymmetricKey):
     @rtype: L{HmacKey}
     """
     key_bytes = util.RandBytes(size / 8)
-    key_string = util.Encode(key_bytes)
+    key_string = util.Base64WSEncode(key_bytes)
     return HmacKey(key_string, size)
 
   @staticmethod
@@ -403,7 +404,7 @@ class DsaPrivateKey(PrivateKey):
 
   def __str__(self):
     return json.dumps({"publicKey": json.loads(str(self.public_key)),
-                       "x": util.Encode(self.params['x']),
+                       "x": util.Base64WSEncode(self.params['x']),
                        "size": self.size})
 
   @staticmethod
@@ -441,7 +442,7 @@ class DsaPrivateKey(PrivateKey):
     """
     dsa = json.loads(key)
     pub = DsaPublicKey.Read(json.dumps(dsa['publicKey']))
-    params = { 'x' : util.Decode(dsa['x']) }
+    params = { 'x' : util.Base64WSDecode(dsa['x']) }
     key = DSA.construct((util.BytesToLong(pub._params['y']),
                          util.BytesToLong(pub._params['g']),
                          util.BytesToLong(pub._params['p']),
@@ -486,7 +487,8 @@ class RsaPrivateKey(PrivateKey):
       # 2^61 = the input limit for SHA-1
       raise errors.KeyczarError("OAEP Decoding Error - label is too large %d" % len(label))
     if len(encoded_message) < 2 * util.HLEN + 2:
-      raise errors.KeyczarError("OAEP Decoding Error - encoded_message is too small: %d" % len(encoded_message))
+      raise errors.KeyczarError(
+        "OAEP Decoding Error - encoded_message is too small: %d" % len(encoded_message))
 
     # Step 3b  EM = Y || maskedSeed || maskedDB
     k = int(math.floor(math.log(self.key.n, 256)) + 1) # num bytes in n
@@ -521,14 +523,15 @@ class RsaPrivateKey(PrivateKey):
     return delimited_message[1:]  # The message
 
   def __str__(self):
-    return json.dumps({ "publicKey": json.loads(str(self.public_key)),
-                       "privateExponent" : util.Encode(self.params['privateExponent']),
-                       "primeP" : util.Encode(self.params['primeP']),
-                       "primeQ" : util.Encode(self.params['primeQ']),
-                       "primeExponentP" : util.Encode(self.params['primeExponentP']),
-                       "primeExponentQ" : util.Encode(self.params['primeExponentQ']),
-                       "crtCoefficient" : util.Encode(self.params['crtCoefficient']),
-                       "size": self.size})
+    return json.dumps({ 
+      "publicKey": json.loads(str(self.public_key)),
+      "privateExponent": util.Base64WSEncode(self.params['privateExponent']),
+      "primeP": util.Base64WSEncode(self.params['primeP']),
+      "primeQ": util.Base64WSEncode(self.params['primeQ']),
+      "primeExponentP": util.Base64WSEncode(self.params['primeExponentP']),
+      "primeExponentQ": util.Base64WSEncode(self.params['primeExponentQ']),
+      "crtCoefficient": util.Base64WSEncode(self.params['crtCoefficient']),
+      "size": self.size})
 
   @staticmethod
   def Generate(size=keyinfo.RSA_PRIV.default_size):
@@ -570,12 +573,12 @@ class RsaPrivateKey(PrivateKey):
     """
     rsa = json.loads(key)
     pub = RsaPublicKey.Read(json.dumps(rsa['publicKey']))
-    params = {'privateExponent': util.Decode(rsa['privateExponent']),
-              'primeP': util.Decode(rsa['primeP']),
-              'primeQ': util.Decode(rsa['primeQ']),
-              'primeExponentP': util.Decode(rsa['primeExponentP']),
-              'primeExponentQ': util.Decode(rsa['primeExponentQ']),
-              'crtCoefficient': util.Decode(rsa['crtCoefficient'])
+    params = {'privateExponent': util.Base64WSDecode(rsa['privateExponent']),
+              'primeP': util.Base64WSDecode(rsa['primeP']),
+              'primeQ': util.Base64WSDecode(rsa['primeQ']),
+              'primeExponentP': util.Base64WSDecode(rsa['primeExponentP']),
+              'primeExponentQ': util.Base64WSDecode(rsa['primeExponentQ']),
+              'crtCoefficient': util.Base64WSDecode(rsa['crtCoefficient'])
               }
 
     key = RSA.construct((util.BytesToLong(pub.params['modulus']),
@@ -632,10 +635,10 @@ class DsaPublicKey(PublicKey):
     self.size = size
 
   def __str__(self):
-    return json.dumps({"p": util.Encode(self.params['p']),
-                       "q": util.Encode(self.params['q']),
-                       "g": util.Encode(self.params['g']),
-                       "y": util.Encode(self.params['y']),
+    return json.dumps({"p": util.Base64WSEncode(self.params['p']),
+                       "q": util.Base64WSEncode(self.params['q']),
+                       "g": util.Base64WSEncode(self.params['g']),
+                       "y": util.Base64WSEncode(self.params['y']),
                        "size": self.size})
 
   def _Hash(self):
@@ -643,7 +646,7 @@ class DsaPublicKey(PublicKey):
                          util.TrimBytes(self._params['q']),
                          util.TrimBytes(self._params['g']),
                          util.TrimBytes(self._params['y']))
-    return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+    return util.Base64WSEncode(fullhash[:keyczar.KEY_HASH_SIZE])
 
   @staticmethod
   def Read(key):
@@ -658,10 +661,10 @@ class DsaPublicKey(PublicKey):
     """
 
     dsa = json.loads(key)
-    params = {'y' : util.Decode(dsa['y']),
-              'p' : util.Decode(dsa['p']),
-              'g' : util.Decode(dsa['g']),
-              'q' : util.Decode(dsa['q'])}
+    params = {'y': util.Base64WSDecode(dsa['y']),
+              'p': util.Base64WSDecode(dsa['p']),
+              'g': util.Base64WSDecode(dsa['g']),
+              'q': util.Base64WSDecode(dsa['q'])}
     pubkey = DSA.construct((util.BytesToLong(params['y']),
                             util.BytesToLong(params['g']),
                             util.BytesToLong(params['p']),
@@ -723,14 +726,15 @@ class RsaPublicKey(PublicKey):
     return '\x00' + masked_seed + masked_datablock
 
   def __str__(self):
-    return json.dumps({"modulus": util.Encode(self.params['modulus']),
-                       "publicExponent": util.Encode(self.params['publicExponent']),
-                       "size": self.size})
+    return json.dumps(
+      {"modulus": util.Base64WSEncode(self.params['modulus']),
+       "publicExponent": util.Base64WSEncode(self.params['publicExponent']),
+       "size": self.size})
 
   def _Hash(self):
     fullhash = util.PrefixHash(util.TrimBytes(self._params['modulus']),
                                util.TrimBytes(self._params['publicExponent']))
-    return util.Encode(fullhash[:keyczar.KEY_HASH_SIZE])
+    return util.Base64WSEncode(fullhash[:keyczar.KEY_HASH_SIZE])
 
   @staticmethod
   def Read(key):
@@ -744,8 +748,8 @@ class RsaPublicKey(PublicKey):
     @rtype: L{RsaPublicKey}
     """
     rsa = json.loads(key)
-    params = {'modulus' : util.Decode(rsa['modulus']),
-              'publicExponent' : util.Decode(rsa['publicExponent'])}
+    params = {'modulus': util.Base64WSDecode(rsa['modulus']),
+              'publicExponent': util.Base64WSDecode(rsa['publicExponent'])}
 
     pubkey = RSA.construct((util.BytesToLong(params['modulus']),
                             util.BytesToLong(params['publicExponent'])))

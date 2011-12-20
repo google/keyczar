@@ -74,10 +74,10 @@ class CrypterTest(unittest.TestCase):
   
   def testBadAesCiphertexts(self):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
-    ciphertext = util.Decode(crypter.Encrypt(self.input))  # in bytes
-    bad = util.Encode(chr(0))
+    ciphertext = util.Base64WSDecode(crypter.Encrypt(self.input))  # in bytes
+    bad = util.Base64WSEncode(chr(0))
     char = chr(ord(ciphertext[2]) ^ 44)  # Munge key hash info in ciphertext
-    ciphertext = util.Encode(ciphertext[:2]+char+ciphertext[3:])
+    ciphertext = util.Base64WSEncode(ciphertext[:2]+char+ciphertext[3:])
     self.assertRaises(errors.ShortCiphertextError, crypter.Decrypt, bad)
     self.assertRaises(errors.KeyNotFoundError, crypter.Decrypt, ciphertext)
   
