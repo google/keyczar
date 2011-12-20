@@ -187,6 +187,8 @@ public class PkcsKeyReader implements KeyczarReader {
       final Cipher pbeCipher = Cipher.getInstance(algName);
       pbeCipher.init(Cipher.DECRYPT_MODE, computeDecryptionKey(passphrase, algName), pbeParamSpec);
       return pbeCipher.doFinal(encryptedKeyInfo.getEncryptedData());
+    } catch (NullPointerException e) {
+      throw new KeyczarException(Messages.getString("KeyczarTool.UnknownKeyEncryption"));
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(Messages.getString("KeyczarTool.UnknownKeyEncryption"));
     } catch (IOException e) {
