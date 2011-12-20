@@ -25,5 +25,7 @@ package org.keyczar;
  *
  */
 abstract class KeyczarPublicKey extends KeyczarKey {
-  // Nothing here
+  protected KeyczarPublicKey(int size) {
+    super(size);
+  }
 }

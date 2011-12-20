@@ -7,10 +7,10 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.keyczar.RsaPublicKey.Padding;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.enums.KeyType;
+import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
@@ -124,7 +124,7 @@ public class GenericKeyczar extends Keyczar {
    * @param status KeyStatus desired for new key version
    * @param padding Encryption padding type for RSA keys.  Should be null for others.
    */
-  public void addVersion(KeyStatus status, Padding padding) throws KeyczarException {
+  public void addVersion(KeyStatus status, RsaPadding padding) throws KeyczarException {
     addVersion(status, padding, kmd.getType().defaultSize());
   }
 
@@ -140,7 +140,8 @@ public class GenericKeyczar extends Keyczar {
    * @param keySize desired key size in bits
    * @throws KeyczarException if key type is unsupported.
    */
-  public void addVersion(KeyStatus status, Padding padding, int keySize) throws KeyczarException {
+  public void addVersion(KeyStatus status, RsaPadding padding, int keySize)
+      throws KeyczarException {
     KeyczarKey key;
     if (keySize < kmd.getType().defaultSize()) { // print a warning statement
       LOG.warn(Messages.getString("Keyczar.SizeWarning",

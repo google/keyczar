@@ -18,9 +18,9 @@ package org.keyczar;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.security.Key;
 
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.keyczar.enums.KeyType;
@@ -43,33 +43,38 @@ import com.google.gson.annotations.Expose;
 class HmacKey extends KeyczarKey {
   private static final String MAC_ALGORITHM = "HMACSHA1";
 
-  @Expose private String hmacKeyString;
+  @Expose private final String hmacKeyString;
 
-  private Key hmacKey;
-  private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
+  private SecretKey hmacKey;
+  private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
+
+  public HmacKey(byte[] keyBytes) throws KeyczarException {
+    super(keyBytes.length * 8);
+    hmacKeyString = Base64Coder.encodeWebSafe(keyBytes);
+    initJceKey(keyBytes);
+  }
+
+  // Used by GSON, which will overwrite the values set here.
+  private HmacKey() {
+    super(0);
+    hmacKeyString = null;
+  }
 
   static HmacKey generate() throws KeyczarException {
     return generate(KeyType.HMAC_SHA1.defaultSize());
   }
 
   static HmacKey generate(int keySize) throws KeyczarException {
-    byte[] keyBytes = Util.rand(keySize / 8);
-    return fromBytes(keyBytes);
+    return new HmacKey(Util.rand(keySize / 8));
   }
 
-  static HmacKey fromBytes(byte[] keyBytes) throws KeyczarException {
-    HmacKey key = new HmacKey();
-    key.size = keyBytes.length * 8;
-    key.hmacKeyString = Base64Coder.encodeWebSafe(keyBytes);
-    key.init();
-    return key;
+  void initFromJson() throws KeyczarException {
+    initJceKey(Base64Coder.decodeWebSafe(hmacKeyString));
   }
-  
-  void init() throws KeyczarException {
-    byte[] keyBytes = Base64Coder.decodeWebSafe(hmacKeyString);
-    byte[] fullHash = Util.hash(keyBytes);
-    System.arraycopy(fullHash, 0, hash, 0, hash.length);
+
+  public void initJceKey(byte[] keyBytes) throws KeyczarException {
     hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
+    System.arraycopy(Util.hash(keyBytes), 0, hash, 0, hash.length);
   }
 
   /*
@@ -86,7 +91,7 @@ class HmacKey extends KeyczarKey {
   }
 
   @Override
-  KeyType getType() {
+  public KeyType getType() {
     return KeyType.HMAC_SHA1;
   }
 
@@ -97,17 +102,17 @@ class HmacKey extends KeyczarKey {
 
   static HmacKey read(String input) throws KeyczarException {
     HmacKey key = Util.gson().fromJson(input, HmacKey.class);
-    key.init();
+    key.initFromJson();
     return key;
   }
 
   @Override
-  protected Key getJceKey() {
+  protected SecretKey getJceKey() {
     return hmacKey;
   }
 
   private class HmacStream implements VerifyingStream, SigningStream {
-    private Mac hmac;
+    private final Mac hmac;
 
     public HmacStream() throws KeyczarException {
       try {

@@ -8,6 +8,9 @@
 # in testdata/certificates.  It is included here primarily for documentation
 # purposes, but could be used to regenerate the keys and certs if requited.
 
+KEYCZART=keyczart
+OPENSSL=openssl
+
 build_keys_and_cert() {
   local ALGO="$1"
   local PURP="$2"
@@ -20,23 +23,34 @@ build_keys_and_cert() {
   echo
   echo "Creating $KSET key pair"
   mkdir "$KSET"
-  keyczart create --location="$KSET" --purpose="$PURP" --asymmetric="$ALGO"
-  keyczart addkey --location="$KSET" --status=primary
+  $KEYCZART create --location="$KSET" --purpose="$PURP" --asymmetric="$ALGO"
+  $KEYCZART addkey --location="$KSET" --status=primary --size=1024
 
-  echo "Exporting $KSET key pair to PEM file"
-  keyczart exportkey --location="$KSET" --dest="$KSET".pem --passphrase="pass"
-
-  echo "Converting $KSET key pair PEM file to DER file"
-  openssl $ALGO -outform DER -in "$KSET".pem -out "$KSET".der \
-    -passin "pass:pass" -passout "pass:pass" >> /dev/null
+  echo "Exporting $KSET key pair to SSLEay PEM file"
+  $KEYCZART exportkey --location="$KSET" --dest="$KSET".pem --passphrase="pass"
 
   echo "Creating $KSET self-signed certificate (PEM format)"
-  openssl req -new -x509 -key "$KSET".pem -out "$KSET"-crt.pem -days 3650 \
-    -config cert.cfg
+  $OPENSSL req -new -x509 -key "$KSET".pem -out "$KSET"-crt.pem -days 3650 \
+      -config cert.cfg
 
   echo "Creating $KSET self-signed certificate (DER format)"
-  openssl req -new -x509 -key "$KSET".pem -out "$KSET"-crt.der -days 3650 \
-    -config cert.cfg -outform DER
+  $OPENSSL req -new -x509 -key "$KSET".pem -out "$KSET"-crt.der -days 3650 \
+      -config cert.cfg -outform DER
+
+  echo "Converting $KSET key pair to PKCS#8 (PEM format)"
+  $OPENSSL pkcs8 -topk8 -in "$KSET".pem -out "$KSET"-pkcs8.pem -passin pass:pass \
+      -passout pass:pass
+
+  echo "Converting $KSET key pair to PKCS#8 (DER format)"
+  $OPENSSL pkcs8 -topk8 -in "$KSET".pem -out "$KSET"-pkcs8.der -passin pass:pass \
+      -passout pass:pass -outform DER
+
+  echo "Deleting $KSET SSLEay PEM file"
+  rm "$KSET".pem
+
+  echo "Exporting $KSET public key to keyczar keyset $KSET-pub"
+  mkdir "$KSET"-pub
+  $KEYCZART pubkey --location="$KSET" --destination="$KSET"-pub
 }
 
 die() {
@@ -44,8 +58,8 @@ die() {
   exit 1
 }
 
-which keyczart > /dev/null || die "keyczart not found, aborting"
-which openssl > /dev/null || die "openssl not found, aborting"
+which $KEYCZART > /dev/null || die "keyczart not found, aborting"
+which $OPENSSL > /dev/null || die "openssl not found, aborting"
 
 rm -rf rsa* dsa* cert.cfg
 

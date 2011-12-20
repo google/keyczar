@@ -1,4 +1,18 @@
-// Copyright 2011 Google Inc. All Rights Reserved.
+/*
+ * Copyright 2011 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.keyczar;
 
@@ -6,29 +20,69 @@ import junit.framework.TestCase;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keyczar.RsaPublicKey.Padding;
+import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyNotFoundException;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyczarReader;
-import org.keyczar.util.Util;
+
+import com.google.gson.JsonParseException;
 
 /**
  * This test case verifies that OAEP and PKCS1 v1.5 padding are both supported for RSA keys.
- * 
+ *
  * @author swillden@google.com (Shawn Willden)
  */
 public class RsaPaddingTest extends TestCase {
   private static final String TEST_DATA = "./testdata";
-  private KeyczarReader fileReader;
+  private KeyczarReader defaultReader;
   private KeyczarReader oaepReader;
   private KeyczarReader pkcsReader;
-  
+  private KeyczarReader invalidReader;
+
+  private static final String metadataString =
+      "{\"name\":\"\",\"purpose\":\"DECRYPT_AND_ENCRYPT\",\"type\":\"RSA_PRIV\",\"version"
+          + "s\":[{\"exportable\":false,\"status\":\"PRIMARY\",\"versionNumber\":1}],\"en"
+          + "crypted\":false}";
+
+  private static final String pubKeyStringPrefix =
+      "{\"modulus\":\"ANRvrByiiuvqU53_8EdhXR_ieDX7gsMpnHTRZn8vuPRlooLcVg_TP_6DrkHDT1kSfso"
+          + "OMkpCw6dv7qJEqHS8kO7qUwBh3ZtM02-9jc0VY--Pjp8uFeq6SMkCa8EpzSyBSjucOoUi-yqs0-g"
+          + "KGGgd_0N88A37aGNedtCWqyePYsi7\",\"publicExponent\":\"AQAB\",\"size\":1024";
+  private static final String pubKeyStringSuffix = "}";
+
+  private static final String oaepPaddingString = ",\"padding\":\"OAEP\"";
+  private static final String pkcsPaddingString = ",\"padding\":\"PKCS\"";
+  private static final String invalidPaddingString = ",\"padding\":\"INVALID\"";
+
+  private static final String privKeyStringPrefix = "{\"publicKey\":";
+  private static final String privKeyStringSuffix =
+      ",\"privateExponent\":\"KAq4lVkp-Ffd1P1GDB5VEEp-wCYdOq4gOICz4itboG172VCwxCDcghvN_8V"
+          + "Rsodi8LEGV6sH-AqIH3vziLV2V8pXV6E4ZxpmKQVM4vtK0P-cHz3IExXzQaM5q-BrYNuzhl-Qzs9"
+          + "lsD5IxNPQYwGgDAL5yl_e1z41VDyfOCqQZIE\",\"primeP\":\"AOlnBr4i8vKddjvRr2upGTcl"
+          + "gRxQbqOwvXdcif6hFk_7iBxwAfltDzSlDR1Zx2i2IaSJJOQEilvBPcYx8Lq9_0E\",\"primeQ\""
+          + ":\"AOkA_VZjN7PQkJgDxcpvn_ptFCpdKhA0NPBu9PmocaUKmfyF-KQK6bZf5-gOgCvy01KdIx_xy"
+          + "DPf8bres9x8hPs\",\"primeExponentP\":\"ANfFINyhnotfui_u1wbmWqM6jrNIQCAfgehYql"
+          + "G1RdVHKTtw6MJXahk3BHq_xrMsvMlI58vLzsSoTp1tCaj5gIE\",\"primeExponentQ\":\"ALl"
+          + "66jB8pvjjTFdWmXr-xPELKARZSYTAqmvDSAv9hQoGmHInC7k6XrWpPujBslJJ6ONY538kb2SsHrf"
+          + "NVIxuK0U\",\"crtCoefficient\":\"AM-mryy-gC1CHOpA-Mtqfe3pM6IIcsQfiLRswtez5mid"
+          + "jb4Gy7juZKHIuPz_t7y0s2C4mSXsqwi2W5gj9MqbXUw\",\"size\":1024}";
+
+  private String buildKey(String paddingString) {
+    return privKeyStringPrefix
+        + pubKeyStringPrefix
+        + paddingString
+        + pubKeyStringSuffix
+        + privKeyStringSuffix;
+  }
+
   @Before
   @Override
   public void setUp() {
-    fileReader = new KeyczarFileReader(TEST_DATA + "/rsa");
-    oaepReader = new AddPaddingKeyczarReader(fileReader, "OAEP");
-    pkcsReader = new AddPaddingKeyczarReader(fileReader, "PKCS");
+
+    defaultReader = new StaticKeyczarReader(metadataString, buildKey(""));
+    oaepReader = new StaticKeyczarReader(metadataString, buildKey(oaepPaddingString));
+    pkcsReader = new StaticKeyczarReader(metadataString, buildKey(pkcsPaddingString));
+    invalidReader = new StaticKeyczarReader(metadataString, buildKey(invalidPaddingString));
   }
 
   /**
@@ -38,12 +92,12 @@ public class RsaPaddingTest extends TestCase {
   public void testPaddingDefault() throws KeyczarException {
     // First ensure the primary key doesn't contain explicit padding info, in case
     // someone changed the key in the test data.
-    final String keyData = fileReader.getKey();
+    final String keyData = buildKey("");
     assertFalse("Key should not contain padding field", keyData.toLowerCase().contains("padding"));
 
     // Now check that the padding is defaulted to OAEP
-    final RsaPublicKey pubKey = getPublicKey(new Encrypter(fileReader));
-    assertEquals(RsaPublicKey.Padding.OAEP, pubKey.getPadding());
+    final RsaPublicKey pubKey = getPublicKey(new Encrypter(defaultReader));
+    assertEquals(RsaPadding.OAEP, pubKey.getPadding());
   }
 
   /**
@@ -52,7 +106,7 @@ public class RsaPaddingTest extends TestCase {
   @Test
   public void testPaddingPkcs() throws KeyczarException {
     final RsaPublicKey pubKey = getPublicKey(new Encrypter(pkcsReader));
-    assertEquals(RsaPublicKey.Padding.PKCS, pubKey.getPadding());
+    assertEquals(RsaPadding.PKCS, pubKey.getPadding());
   }
 
   /**
@@ -61,9 +115,9 @@ public class RsaPaddingTest extends TestCase {
   @Test
   public void testLoadInvalidPadding() throws KeyczarException {
     try {
-      new Encrypter(new AddPaddingKeyczarReader(fileReader, "INVALID"));
+      new Encrypter(invalidReader);
       fail("Should throw");
-    } catch (IllegalArgumentException e) {
+    } catch (JsonParseException e) {
       assertTrue(e.getMessage().contains("INVALID"));
     }
   }
@@ -74,11 +128,11 @@ public class RsaPaddingTest extends TestCase {
   @Test
   public void testIncompatibility() throws KeyczarException {
     final Encrypter encrypter = new Encrypter(oaepReader);
-    assertEquals(Padding.OAEP, getPublicKey(encrypter).getPadding());
+    assertEquals(RsaPadding.OAEP, getPublicKey(encrypter).getPadding());
     final String ciphertext = encrypter.encrypt(TEST_DATA);
 
     final Crypter crypter = new Crypter(pkcsReader);
-    assertEquals(Padding.PKCS, getPublicKey(crypter).getPadding());
+    assertEquals(RsaPadding.PKCS, getPublicKey(crypter).getPadding());
     try {
       crypter.decrypt(ciphertext);
       fail("Should throw");
@@ -100,7 +154,7 @@ public class RsaPaddingTest extends TestCase {
     final String plaintext = new Crypter(pkcsReader).decrypt(ciphertext);
     assertEquals(TEST_DATA, plaintext);
   }
-  
+
   /**
    * Verifies that OAEP and PKCS padding keys have different hashes.
    */
@@ -108,63 +162,37 @@ public class RsaPaddingTest extends TestCase {
   public void testHashMismatch() throws KeyczarException {
     final RsaPublicKey oaepPaddingKey = getPublicKey(new Encrypter(oaepReader));
     final RsaPublicKey pkcsPaddingKey = getPublicKey(new Encrypter(pkcsReader));
-    
+
     assertFalse(oaepPaddingKey.hash().equals(pkcsPaddingKey.hash()));
   }
-  
+
   /**
-   * A KeyczarReader wrapper that alters the returned keys to specify a caller-selected
-   * padding type in place of the original padding (if any).
-   * 
+   * A KeyczarReader that retrurns static data.
+   *
    * @author swillden@google.com (Shawn Willden)
    */
-  private class AddPaddingKeyczarReader implements KeyczarReader {
-    private final KeyczarReader wrappedReader;
-    private final String paddingString;
+  private class StaticKeyczarReader implements KeyczarReader {
+    private final String metadata;
+    private final String key;
 
-    public AddPaddingKeyczarReader(KeyczarReader wrappedReader, String paddingString) {
-      this.paddingString = paddingString;
-      this.wrappedReader = wrappedReader;
+    public StaticKeyczarReader(String metadata, String key) {
+      this.metadata = metadata;
+      this.key = key;
     }
 
     @Override
     public String getKey(int version) throws KeyczarException {
-      return setPadding(wrappedReader.getKey(version));
+      return key;
     }
 
     @Override
     public String getKey() throws KeyczarException {
-      return setPadding(wrappedReader.getKey());
+      return key;
     }
 
     @Override
     public String getMetadata() throws KeyczarException {
-      return wrappedReader.getMetadata();
-    }
-
-    /**
-     * Sets the padding field in the key string, which must be an RSA private key string.
-     * 
-     * The input string may not have a padding field at all, so we covert it to and
-     * from a key object before doing the field replacement, which will add a default
-     * padding value if none is present.
-     */
-    private String setPadding(String jsonString) {
-      RsaPrivateKey privKey = Util.gson().fromJson(jsonString, RsaPrivateKey.class);
-      RsaPublicKey pubKey = (RsaPublicKey) privKey.getPublic();
-      String publicKeyString = Util.gson().toJson(pubKey);
-      
-      // check invalid padding
-      Padding localPadding = Padding.valueOf(paddingString);
-      
-      if (localPadding == Padding.PKCS) {
-        pubKey.setPadding(Padding.PKCS);
-        String jsonPubStringWithPadding = Util.gson().toJson(pubKey);
-        // replace public key in private key.
-        return jsonString.replace(publicKeyString, jsonPubStringWithPadding);
-      }
-      
-      return jsonString;
+      return metadata;
     }
   }
 }
