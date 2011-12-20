@@ -42,7 +42,7 @@ build_keys_and_cert() {
       -passout pass:pass
 
   echo "Converting $KSET key pair to PKCS#8 (DER format)"
-  $OPENSSL pkcs8 -topk8 -in "$KSET".pem -out "$KSET"-pkcs8.pem -passin pass:pass \
+  $OPENSSL pkcs8 -topk8 -in "$KSET".pem -out "$KSET"-pkcs8.der -passin pass:pass \
       -passout pass:pass -outform DER
 
   echo "Deleting $KSET SSLEay PEM file"
