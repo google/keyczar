@@ -126,7 +126,7 @@ class CipherMode(_NameId):
     self.use_iv = use_iv
     self.GetOutputSize = OutputSizeFn
 
-CBC = CipherMode("CBC", 0, True, lambda b, i: (i/b + 2) * b)
+CBC = CipherMode("CBC", 0, True, lambda b, i: (i / b + 2) * b)
 CTR = CipherMode("CTR", 1, True, lambda b, i: i + b / 2)
 ECB = CipherMode("ECB", 2, False, lambda b, i: b)
 DET_CBC = CipherMode("DET_CBC", 3, False, lambda b, i: (i / b + 1) * b)

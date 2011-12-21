@@ -330,7 +330,7 @@ class Encrypter(Keyczar):
     None for no encoding.
     @type encoder: function
 
-    @return: Encoded ciphertext
+    @return: ciphertext, by default Base64 encoded
     @rtype: string
 
     @raise NoPrimaryKeyError: if no primary key can be found to encrypt
@@ -341,6 +341,32 @@ class Encrypter(Keyczar):
     ciphertext = encrypting_key.Encrypt(data)
     return encoder(ciphertext) if encoder else ciphertext
 
+  def CreateEncryptingStreamWriter(self, output_stream,
+                                   encoder=util.IncrementalBase64WSStreamWriter
+                                  ):
+    """
+    Create an encrypting stream capable of writing a ciphertext byte stream
+    containing Header|IV|Ciph|Sig.
+
+    @param output_stream: target stream for encrypted output
+    @type output_stream: 'file-like' object
+
+    @param encoder: the encoding stream to use on the ciphertext stream.
+    Defaults to base64 encoding with no padding or line breaks. 
+    Use None for raw bytes.
+    @type encoder: 'file-like' object
+
+    @return: an encrypting stream capable of creating a ciphertext byte stream
+    @rtype: EncryptingStreamWriter
+    """
+    encrypting_key = self.primary_key
+    if encrypting_key is None:
+      raise errors.NoPrimaryKeyError()
+    if encoder:
+      stream = encoder(output_stream)
+    else:
+      stream = output_stream
+    return keys.EncryptingStreamWriter(encrypting_key, stream)
 
 class Verifier(Keyczar):
   """Capable of verifying only."""
@@ -488,7 +514,7 @@ class Crypter(Encrypter):
     """
     Decrypts the given ciphertext and returns the plaintext.
 
-    @param ciphertext: Base64 encoded string ciphertext to be decrypted.
+    @param ciphertext: ciphertext to be decrypted - by default is Base64 encoded
     @type ciphertext: string
 
     @param decoder: function to perform decoding. Defaults to Base64, use None
@@ -509,6 +535,35 @@ class Crypter(Encrypter):
       raise errors.ShortCiphertextError(len(data_bytes))
     key = self._ParseHeader(data_bytes[:HEADER_SIZE])
     return key.Decrypt(data_bytes)
+
+  def CreateDecryptingStreamReader(self, output_stream,
+                                   decoder=util.IncrementalBase64WSStreamReader,
+                                   buffer_size=util.DEFAULT_STREAM_BUFF_SIZE):
+    """
+    Create a decrypting stream capable of processing a ciphertext byte stream
+    containing Header|IV|Ciph|Sig into plain text.
+
+    @param output_stream: target stream for decrypted output
+    @type output_stream: 'file-like' object
+
+    @param decoder: the decoding stream to use on the incoming stream.
+    Defaults to base64 decoding with no padding or line breaks. 
+    Use None for handling raw bytes.
+    @type decoder: 'file-like' object
+
+    @param buffer_size: Suggested buffer size for writing data (will be adjusted
+    to suit the underlying cipher.
+    @type buffer_size: integer
+
+    @return: a decrypting stream capable of reading a ciphertext byte stream and
+    converting it to plaintext output
+    @rtype: DecryptingStreamReader
+    """
+    if decoder:
+      stream = decoder(output_stream)
+    else:
+      stream = output_stream
+    return keys.DecryptingStreamReader(self, stream, buffer_size)
 
 class Signer(Verifier):
   """Capable of both signing and verifying."""
