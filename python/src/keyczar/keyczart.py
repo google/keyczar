@@ -28,6 +28,7 @@ import keyczar
 import keydata
 import keyinfo
 import readers
+import writers
 import util
 
 KEYSETS = [('aes', keyinfo.DECRYPT_AND_ENCRYPT, None, None),
@@ -112,10 +113,11 @@ def Create(loc, name, purpose, asymmetric=None):
   if mock is not None:  # just testing, update mock object
     mock.kmd = kmd
   else:
-    fname = os.path.join(loc, "meta")
-    if os.path.exists(fname):
-      raise errors.KeyczarError("File already exists")
-    util.WriteFile(str(kmd), fname)
+    writer = writers.CreateWriter(loc)
+    try:
+      writer.WriteMetadata(kmd, overwrite=False)
+    finally:
+      writer.Close()
 
 def AddKey(loc, status, crypter=None, size=None):
   czar = CreateGenericKeyczar(loc, crypter)
@@ -153,7 +155,11 @@ def Revoke(loc, num):
   if mock is not None:  # testing, update mock
     mock.RemoveKey(num)
   else:
-    os.remove(os.path.join(loc, str(num)))  # remove key file
+    writer = writers.CreateWriter(loc)
+    try:
+      writer.Remove(num)
+    finally:
+      writer.Close()
 
 def GenKeySet(loc):
   print "Generating private key sets..."
@@ -184,15 +190,18 @@ def Clean(directory):
       os.remove(path)
 
 def UseKey(purpose, loc, dest, crypter=None, msg="This is some test data"):
-  reader = readers.FileReader(loc)
-  answer = ""
-  if crypter:
-    reader = readers.EncryptedReader(reader, crypter)
-  if purpose == keyinfo.DECRYPT_AND_ENCRYPT:
-    answer = keyczar.Crypter(reader).Encrypt(msg)
-  elif purpose == keyinfo.SIGN_AND_VERIFY:
-    answer = keyczar.Signer(reader).Sign(msg)
-  util.WriteFile(answer, dest)
+  reader = readers.CreateReader(loc)
+  try:
+    answer = ""
+    if crypter:
+      reader = readers.EncryptedReader(reader, crypter)
+    if purpose == keyinfo.DECRYPT_AND_ENCRYPT:
+      answer = keyczar.Crypter(reader).Encrypt(msg)
+    elif purpose == keyinfo.SIGN_AND_VERIFY:
+      answer = keyczar.Signer(reader).Sign(msg)
+    util.WriteFile(answer, dest)
+  finally:
+    reader.Close()
 
 def Usage():
   print '''Usage: "Keyczart command flags"
@@ -239,10 +248,15 @@ def CreateGenericKeyczar(loc, crypter=None):
   if loc is None:
     raise errors.KeyczarError("Need location")
   else:
-    reader = readers.FileReader(loc)
-    if crypter:
-      reader = readers.EncryptedReader(reader, crypter)
-    return keyczar.GenericKeyczar(reader)
+    generic = None
+    reader = readers.CreateReader(loc)
+    try:
+      if crypter:
+        reader = readers.EncryptedReader(reader, crypter)
+      generic = keyczar.GenericKeyczar(reader)
+    finally:
+      reader.Close()
+    return generic
 
 def UpdateGenericKeyczar(czar, loc, encrypter=None):
   if mock is not None:  # update key data
@@ -250,7 +264,11 @@ def UpdateGenericKeyczar(czar, loc, encrypter=None):
     for v in czar.versions:
       mock.SetKey(v.version_number, czar.GetKey(v))
   else:
-    czar.Write(loc, encrypter)
+    writer = writers.CreateWriter(loc)
+    try:
+      czar.Write(writer, encrypter)
+    finally:
+      writer.Close()
 
 def main(argv):
   if len(argv) == 0:

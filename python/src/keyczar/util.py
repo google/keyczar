@@ -34,11 +34,27 @@ try:
 except ImportError:
   from sha import sha as sha1
 
+import os.path
+import sys
+
 from pyasn1.codec.der import decoder
 from pyasn1.codec.der import encoder
 from pyasn1.type import univ
 
 import errors
+
+try:
+  from abc import ABCMeta, abstractmethod, abstractproperty
+except ImportError:
+  # to keep compatible with older Python versions.
+  class ABCMeta(type):
+    pass
+
+  def abstractmethod(funcobj):
+    return funcobj
+
+  def abstractproperty(funcobj):
+    return property(funcobj)
 
 HLEN = sha1().digest_size  # length of the hash output
 
@@ -485,3 +501,25 @@ def Memoize(func):
   if memo.__doc__:
     memo.__doc__ = "\n".join([memo.__doc__,"This function is memoized."])
   return memo
+
+def ImportAll(subdir):
+  """
+  Simple plugin importer - imports from the specified subdirectory under the
+  util.py directory
+
+  @param subdir: the subdirectory to load from
+  @type subdir: string
+  """
+  pluginpath = os.path.join(os.path.dirname(__file__), subdir)
+  if os.path.exists(pluginpath):
+    pluginfiles = [fname[:-3] for fname in os.listdir(pluginpath) if
+                   fname.endswith(".py")]
+    if not pluginpath in sys.path:
+      sys.path.append(pluginpath)
+    imported_modules = [__import__('%s' %(fname)) for fname in pluginfiles]
+
+def ImportBackends():
+  """
+  Simple backend importer
+  """
+  ImportAll('backends')
