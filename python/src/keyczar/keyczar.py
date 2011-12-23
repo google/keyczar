@@ -30,6 +30,7 @@ import keydata
 import keyinfo
 import keys
 import readers
+import writers
 import util
 
 VERSION = 0

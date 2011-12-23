@@ -23,7 +23,9 @@ Testcases to test behavior of Keyczart.
 import unittest
 
 from keyczar import readers
+from keyczar import writers
 from keyczar import keyczart
+from keyczar import keyczar
 from keyczar import keyinfo
 
 class KeyczartTest(unittest.TestCase):
@@ -80,6 +82,33 @@ class KeyczartTest(unittest.TestCase):
     self.assertTrue(self.mock.ExistsVersion(99))
     keyczart.main(['revoke', '--version=99'])
     self.assertFalse(self.mock.ExistsVersion(99))
+
+  def testWriteIsBackwardCompatible(self):
+    class MockWriter(writers.Writer):
+
+      num_created = 0
+
+      def WriteMetadata(self, metadata, overwrite=True):
+        return
+      
+      def WriteKey(self, key, version_number, encrypter=None):
+        return
+
+      def Remove(self, version_number):
+        return
+
+      def Close(self):
+        return
+
+      @classmethod
+      def CreateWriter(cls, location):
+        MockWriter.num_created += 1
+        return MockWriter()
+
+    generic_keyczar = keyczar.GenericKeyczar(self.mock)
+    generic_keyczar.Write('foo')
+    self.assertEquals(1, MockWriter.num_created, 
+                      'Write("string") should have created a new writer')
 
   def tearDown(self):
     keyczart.mock = None
