@@ -28,6 +28,7 @@ import unittest
 from keyczar import errors
 from keyczar import keyczar
 from keyczar import readers
+from keyczar import writers
 from keyczar import util
 from keyczar import keys
 from keyczar import keyinfo
@@ -525,11 +526,120 @@ class PyCryptoM2CryptoInteropTest(unittest.TestCase):
         'Cannot decrypt M2Crypto with PyCrypto key! size:%s' %size
       )
 
+class CreateReaderTest(unittest.TestCase):
+
+  def testDefaultCreateReaderIgnoresUnsupported(self):
+    self.assertRaises(errors.KeyczarError, readers.CreateReader, 
+                      'foo://this.is.unsupported')
+
+  def testFileReaderDoesNotOpenNonExistantLocation(self):
+    location = '/tmp/12312j3l'
+    self.assertFalse(os.path.isdir(location))
+    self.assertRaises(errors.KeyczarError, readers.CreateReader, 
+                      location)
+
+  def testFileReaderOpensExistingLocation(self):
+    location = os.path.join(TEST_DATA, 'aes')
+    self.assertTrue(os.path.isdir(location))
+    rdr = readers.CreateReader(location)
+    self.assertIsNotNone(rdr)
+    self.assertTrue(isinstance(rdr, readers.FileReader))
+
+  def testCreateReaderDirectInstantiation(self):
+    """
+    Only FileReader can be instantiated by CreateReader. 
+    All others in readers.py must be instantiated via their constructor.
+    """
+    location = os.path.join(TEST_DATA, 'aes')
+    self.assertTrue(os.path.isdir(location))
+    # make sure all readers are available
+    util.ImportBackends()
+    # Check all non-FileReaders
+    for sc in readers.Reader.__subclasses__():
+      if not issubclass(sc, readers.FileReader):
+        self.assertIsNone(sc.CreateReader(location))
+
+  def testNewLocationTypeSupported(self):
+    class BarReader(readers.Reader):
+      def GetMetadata(self):
+        return
+      
+      def GetKey(self, version_number):
+        return
+
+      def Close(self):
+        return
+
+      @classmethod
+      def CreateReader(cls, location):
+        if location.startswith('bar:'):
+          return BarReader()
+
+    rdr = readers.CreateReader('bar://this.should.be.created')
+    self.assertTrue(isinstance(rdr, BarReader))
+
+class CreateWriterTest(unittest.TestCase):
+
+  def testDefaultCreateWriterIgnoresUnsupported(self):
+    self.assertRaises(errors.KeyczarError, writers.CreateWriter, 
+                      'foo://this.is.unsupported')
+
+  def testFileWriterDoesNotOpenNonExistantLocation(self):
+    location = '/tmp/12312j3l'
+    self.assertFalse(os.path.isdir(location))
+    self.assertRaises(errors.KeyczarError, writers.CreateWriter, 
+                      location)
+
+  def testFileWriterOpensExistingLocation(self):
+    location = os.path.join(TEST_DATA, 'aes')
+    self.assertTrue(os.path.isdir(location))
+    wrtr = writers.CreateWriter(location)
+    self.assertIsNotNone(wrtr)
+    self.assertTrue(isinstance(wrtr, writers.FileWriter))
+
+  def testCreateWriterDirectInstantiation(self):
+    """
+    Only FileWriter can be instantiated by CreateWriter. 
+    All others in writers.py must be instantiated via their constructor.
+    """
+    location = os.path.join(TEST_DATA, 'aes')
+    self.assertTrue(os.path.isdir(location))
+    # make sure all writers are available
+    util.ImportBackends()
+    # Check all non-FileWriters
+    for sc in writers.Writer.__subclasses__():
+      if not issubclass(sc, writers.FileWriter):
+        self.assertIsNone(sc.CreateWriter(location))
+
+  def testNewLocationTypeSupported(self):
+    class BarWriter(writers.Writer):
+      def WriteMetadata(self, metadata, overwrite=True):
+        return
+      
+      def WriteKey(self, key, version_number, encrypter=None):
+        return
+
+      def Remove(self, version_number):
+        return
+      
+      def Close(self):
+        return
+
+      @classmethod
+      def CreateWriter(cls, location):
+        if location.startswith('bar:'):
+          return BarWriter()
+
+    wrtr = writers.CreateWriter('bar://this.should.be.created')
+    self.assertTrue(isinstance(wrtr, BarWriter))
+
 def suite():
   alltests = unittest.TestSuite(
     [unittest.TestLoader().loadTestsFromTestCase(PyCryptoCrypterTest),
      unittest.TestLoader().loadTestsFromTestCase(M2CryptoCrypterTest),
-     unittest.TestLoader().loadTestsFromTestCase(PyCryptoM2CryptoInteropTest)
+     unittest.TestLoader().loadTestsFromTestCase(PyCryptoM2CryptoInteropTest),
+     unittest.TestLoader().loadTestsFromTestCase(CreateReaderTest),
+     unittest.TestLoader().loadTestsFromTestCase(CreateWriterTest)
     ])
 
   return alltests
