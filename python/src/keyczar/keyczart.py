@@ -161,13 +161,17 @@ def Revoke(loc, num):
     finally:
       writer.Close()
 
+def _CreateCrypter(location):
+  """Helper to create a Crypter for the location."""
+  return keyczar.Crypter.Read(location)
+
 def GenKeySet(loc):
   print "Generating private key sets..."
   for (name, purpose, asymmetric, crypter) in KEYSETS:
     print "."
     dir_path = os.path.join(loc, name)
     if crypter:
-      crypter = keyczar.Crypter.Read(os.path.join(loc, crypter))
+      crypter = _CreateCrypter(os.path.join(loc, crypter))
     Clean(dir_path)
     Create(dir_path, "Test", purpose, asymmetric)
     AddKey(dir_path, keyinfo.PRIMARY, crypter)
@@ -303,7 +307,7 @@ def main(argv):
     elif cmd == ADDKEY:
       status = keyinfo.GetStatus(flags.get(STATUS, 'ACTIVE').upper())
       if CRYPTER in flags:
-        crypter = keyczar.Encrypter.Read(flags[CRYPTER])
+        crypter = _CreateCrypter(flags[CRYPTER])
       else:
         crypter = None
       AddKey(loc, status, crypter, size)
