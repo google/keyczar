@@ -28,6 +28,7 @@ import math
 import os
 import struct
 import warnings
+import sys
 
 try:
   # Import hashlib if Python >= 2.5
@@ -91,6 +92,9 @@ SHA1_OID = univ.ObjectIdentifier('1.3.14.3.2.26')
 
 # the standard buffer size for streaming
 DEFAULT_STREAM_BUFF_SIZE = 4096
+
+# environment variable that holds a list of additional plugin backend paths
+BACKEND_PATHS_ENV_VAR = 'KZ_BACKEND_PATHS'
 
 def ASN1Sequence(*vals):
   seq = univ.Sequence()
@@ -863,7 +867,7 @@ def Memoize(func):
     memo.__doc__ = "\n".join([memo.__doc__,"This function is memoized."])
   return memo
 
-def ImportAll(subdir):
+def ImportAll(pluginpath):
   """
   Simple plugin importer - imports from the specified subdirectory under the
   util.py directory
@@ -871,7 +875,6 @@ def ImportAll(subdir):
   @param subdir: the subdirectory to load from
   @type subdir: string
   """
-  pluginpath = os.path.join(os.path.dirname(__file__), subdir)
   if os.path.exists(pluginpath):
     pluginfiles = [fname[:-3] for fname in os.listdir(pluginpath) if
                    fname.endswith(".py")]
@@ -881,6 +884,14 @@ def ImportAll(subdir):
 
 def ImportBackends():
   """
-  Simple backend importer
+  Simple backend plugin importer - imports from the 'backends' subdirectory 
+  under the util.py directory and any directories in the environment variable
+  'KZ_BACKEND_PATHS', which can contain >=1 paths joined using the o/s 
   """
-  ImportAll('backends')
+  pluginpath = os.path.join(os.path.dirname(__file__), 'backends')
+  ImportAll(pluginpath)
+  xtra_paths = os.environ.get(BACKEND_PATHS_ENV_VAR, '')
+  if xtra_paths:
+    for path in xtra_paths.split(os.pathsep):
+      ImportAll(path)
+
