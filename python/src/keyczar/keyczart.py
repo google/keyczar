@@ -303,7 +303,7 @@ def main(argv):
     elif cmd == ADDKEY:
       status = keyinfo.GetStatus(flags.get(STATUS, 'ACTIVE').upper())
       if CRYPTER in flags:
-        crypter = keyczar.Encrypter.Read(flags[CRYPTER])
+        crypter = keyczar.Crypter.Read(flags[CRYPTER])
       else:
         crypter = None
       AddKey(loc, status, crypter, size)
