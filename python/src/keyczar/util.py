@@ -94,7 +94,7 @@ SHA1_OID = univ.ObjectIdentifier('1.3.14.3.2.26')
 DEFAULT_STREAM_BUFF_SIZE = 4096
 
 # environment variable that holds a list of additional plugin backend paths
-BACKEND_PATHS_ENV_VAR = 'KZ_BACKEND_PATHS'
+BACKEND_PATHS_ENV_VAR = 'KEYCZAR_BACKEND_PATHS'
 
 def ASN1Sequence(*vals):
   seq = univ.Sequence()
@@ -886,7 +886,7 @@ def ImportBackends():
   """
   Simple backend plugin importer - imports from the 'backends' subdirectory 
   under the util.py directory and any directories in the environment variable
-  'KZ_BACKEND_PATHS', which can contain >=1 paths joined using the o/s 
+  'KEYCZAR_BACKEND_PATHS', which can contain >=1 paths joined using the o/s
   """
   pluginpath = os.path.join(os.path.dirname(__file__), 'backends')
   ImportAll(pluginpath)
