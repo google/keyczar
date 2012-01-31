@@ -36,7 +36,8 @@ def CreateWriter(location):
     writer = sc.CreateWriter(location)
     if writer:
       return writer
-  raise errors.KeyczarError("Unable to create a writer for %s." % location)
+  raise errors.KeyczarError(
+    "Unable to create a writer for %s. Does the location exist?" % location)
 
 class Writer(object):
   """Abstract class/interface providing supported methods for writing key sets."""

@@ -41,7 +41,8 @@ def CreateReader(location):
     reader = sc.CreateReader(location)
     if reader:
       return reader
-  raise errors.KeyczarError("Unable to create a reader for %s." % location)
+  raise errors.KeyczarError(
+    "Unable to create a reader for %s. Does the location exist?" % location)
 
 class Reader(object):
   """Interface providing supported methods (no implementation)."""
@@ -112,7 +113,10 @@ class FileReader(Reader):
   
   @classmethod
   def CreateReader(cls, location):
-    return FileReader(location)
+    result = None
+    if os.path.exists(location):
+      result = FileReader(location)
+    return result
 
 class StaticKeyReader(Reader):
   """Reader that returns a static key"""
@@ -134,10 +138,8 @@ class StaticKeyReader(Reader):
 
   @classmethod
   def CreateReader(cls, location):
-    result = None
-    if os.path.exists(location):
-      result = FileReader(location)
-    return result
+    # cannot be instantiated indirectly
+    return
 
 class EncryptedReader(Reader):
   """Reader that reads encrypted key data from files."""
