@@ -56,6 +56,15 @@ class KeyczartTest(unittest.TestCase):
     keyczart.main(['addkey', '--size=256'])
     self.assertEquals(256, self.mock.GetKeySize(100))
 
+  def testAddKeyCrypterCreatesCrypter(self):
+    self.dummy_location = None
+    def dummyCreateCrypter(location):
+      self.dummy_location = location
+      return self.mock
+    keyczart._CreateCrypter = dummyCreateCrypter
+    keyczart.main(['addkey', '--crypter=foo'])
+    self.assertEquals(self.dummy_location, 'foo')
+
   def testPubKey(self):
     pubmock = readers.MockReader('PUBTEST', keyinfo.DECRYPT_AND_ENCRYPT,
                                  keyinfo.RSA_PRIV)
