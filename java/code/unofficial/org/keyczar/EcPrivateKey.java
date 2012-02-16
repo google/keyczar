@@ -52,8 +52,9 @@ class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
   private PrivateKey jcePrivateKey;
 
-  private EcPrivateKey() {
-    publicKey = new EcPublicKey();
+  private EcPrivateKey(int keySize) {
+    super(keySize);
+    publicKey = new EcPublicKey(keySize);
   }
 
   public String getKeyGenAlgorithm() {
@@ -76,7 +77,7 @@ class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   @Override
-  KeyType getType() {
+  public KeyType getType() {
     return KeyType.EC_PRIV;
   }
 
@@ -106,12 +107,11 @@ class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
   
   static EcPrivateKey generate(int keySize) throws KeyczarException {
-    EcPrivateKey key = new EcPrivateKey();
+    EcPrivateKey key = new EcPrivateKey(keySize);
     try {
       // Make sure we use our own impl; there may be other EC key generators...
       KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_GEN_ALGORITHM,
           EcCore.NAME);
-      key.size = keySize;
       kpg.initialize(key.size());
       KeyPair pair = kpg.generateKeyPair();
       key.jcePrivateKey = pair.getPrivate();

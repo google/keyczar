@@ -49,6 +49,10 @@ class EcPublicKey extends KeyczarPublicKey {
 
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   
+  public EcPublicKey(int keySize) {
+    super(keySize);
+  }
+
   void init() throws KeyczarException {
     byte[] x509Bytes = Base64Coder.decodeWebSafe(x509);
     try {
@@ -79,7 +83,7 @@ class EcPublicKey extends KeyczarPublicKey {
   }
 
   @Override
-  KeyType getType() {
+  public KeyType getType() {
     return KeyType.EC_PUB;
   }
 
