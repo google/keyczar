@@ -1,4 +1,5 @@
 include README
+include ChangeLog
 recursive-include doc *
 recursive-include jtestdata *
 recursive-include testdata *
