@@ -180,7 +180,7 @@ public class KeyczarToolTest extends TestCase {
   }
 
   @Test
-  public final void testImportPkcsRsaKeyNoPassphrase() throws KeyczarException {
+  public final void testImportPkcsRsaKeyNoPassphrase() {
     String[] args = {"importkey",
                      "--pemfile=" + TEST_DATA + "rsa-crypt-pkcs8.pem" };
 
@@ -203,7 +203,7 @@ public class KeyczarToolTest extends TestCase {
   }
 
   @Test
-  public final void testImportPkcsDsaKeyNoPassphrase() throws KeyczarException {
+  public final void testImportPkcsDsaKeyNoPassphrase() {
     String[] args = {"importkey",
                      "--pemfile=" + TEST_DATA + "dsa-sign-pkcs8.pem" };
 

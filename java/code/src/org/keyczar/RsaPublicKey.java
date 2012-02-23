@@ -104,8 +104,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
     padding = null;
   }
 
-  private RsaPublicKey(BigInteger mod, BigInteger exp, RsaPadding padding)
-      throws KeyczarException {
+  private RsaPublicKey(BigInteger mod, BigInteger exp, RsaPadding padding) {
     super(mod.bitLength());
     this.modulus = Util.encodeBigInteger(mod);
     this.publicExponent = Util.encodeBigInteger(exp);
