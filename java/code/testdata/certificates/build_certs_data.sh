@@ -8,7 +8,7 @@
 # in testdata/certificates.  It is included here primarily for documentation
 # purposes, but could be used to regenerate the keys and certs if requited.
 
-KEYCZART=keyczart
+KEYCZART=../../../../cpp/src/scons-out/dbg-linux/staging/keyczart
 OPENSSL=openssl
 
 build_keys_and_cert() {
