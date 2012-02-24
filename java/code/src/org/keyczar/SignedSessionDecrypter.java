@@ -51,7 +51,7 @@ public class SignedSessionDecrypter {
   }
   
   /**
-   * Verify and decypt the signed blob.
+   * Verify and decrypt the signed blob.
    * 
    * @param signedBlob byte[] to decrypt
    * @return unencrypted/unencoded payload.
@@ -64,11 +64,23 @@ public class SignedSessionDecrypter {
     
     AesKey aesKey = session.getKey();
     ImportedKeyReader importedKeyReader = new ImportedKeyReader(aesKey);
-    Crypter symmetricCrypter = new Crypter(importedKeyReader);
+    Crypter symmetricCrypter1 = new Crypter(importedKeyReader);
+    Crypter symmetricCrypter = symmetricCrypter1;
 
     byte[] ciphertext =
       verifier.getAttachedData(signedBlob, Base64Coder.decodeWebSafe(session.getNonce()));
         
     return symmetricCrypter.decrypt(ciphertext);
+  }
+
+  /**
+   * Verify and decrypt the signed blob, returning it as a string.
+   * 
+   * @param signedBlob byte[] to decrypt
+   * @return unencrypted/unencoded payload.
+   * @throws KeyczarException
+   */
+  public String decrypt(final String signedBlob) throws KeyczarException {
+    return new String(decrypt(Base64Coder.decodeWebSafe(signedBlob)));
   }
 }

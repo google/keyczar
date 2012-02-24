@@ -17,7 +17,9 @@
 package org.keyczar;
 
 import org.keyczar.annotations.Experimental;
+import org.keyczar.exceptions.Base64DecodingException;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.util.Base64Coder;
 
 /**
  * A SessionDecrypter will be instantiated with session material containing an
@@ -30,6 +32,17 @@ import org.keyczar.exceptions.KeyczarException;
 @Experimental
 public class SessionDecrypter {
   private final Crypter symmetricCrypter;
+  
+  /**
+   * @param crypter The crypter to decrypt session material with
+   * @param sessionString An encrypted symmetric key to decrypt
+   * @throws KeyczarException If there is an error during decryption
+   * @throws Base64DecodingException If there is an error decoding the session string. 
+   */
+  public SessionDecrypter(Crypter crypter, String sessionString)
+      throws Base64DecodingException, KeyczarException {
+    this(crypter, Base64Coder.decodeWebSafe(sessionString));
+  }
 
   /**
    * @param crypter The crypter to decrypt session material with
@@ -45,11 +58,16 @@ public class SessionDecrypter {
   }
 
   /**
-   * @param ciphertext Session ciphertext to encrypt
-   * @return The decrypted plaintext
-   * @throws KeyczarException If there is an error during decryption
+   * Decrypts a ciphertext byte array using the session key.
    */
   public byte[] decrypt(byte[] ciphertext) throws KeyczarException {
+    return symmetricCrypter.decrypt(ciphertext);
+  }
+  
+  /**
+   * Decrypts a ciphertext string using the session key.
+   */
+  public String decrypt(String ciphertext) throws KeyczarException {
     return symmetricCrypter.decrypt(ciphertext);
   }
 }
