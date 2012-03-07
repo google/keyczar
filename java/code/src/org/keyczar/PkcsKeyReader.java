@@ -175,7 +175,7 @@ public class PkcsKeyReader implements KeyczarReader {
 
   private static byte[] decryptPbeEncryptedKey(final byte[] pkcs8Data, final String passphrase)
       throws KeyczarException {
-    if (passphrase == null || passphrase.isEmpty()) {
+    if (passphrase == null || passphrase.length() == 0) {
       return pkcs8Data;
     }
 
