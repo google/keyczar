@@ -169,9 +169,8 @@ is an existing primary key it will be demoted to {\it active}.
 
 Similarly, {\tt demote} will lower a {\it primary} key to {\it
   active}, and an {\it active} key to {\it inactive}. The {\tt revoke}
-command will only work for {\it inactive} status values.  The {\tt
-  revoke} command will permenantly delete key material, so should be
-used with caution.
+command operates only on {\it inactive} keys, and permenantly deletes
+key material, so it should be used with caution.
 
 An {\it active} key version will be used by Keyczar if it is asked to
 decrypt or verify a message encrypted or signed, respectively, by that
@@ -287,12 +286,12 @@ appropriate {\tt Keyczar}-derived class instances which provide the
 basic cryptographic operations:
 
 \begin{itemize}
-  \item Constructor: SessionEncrypter(Encrypter encrypter)
-  \item Constructor: SessionDecrypter(Crypter crypter)
-  \item Constructor: SignedSessionEncrypter(Encrypter encrypter,
-    Signer signer)
-  \item Constructor: SignedSessionDecrypter(Crypter crypter,
-    Verifier verifier)
+  \item Constructor: {\tt SessionEncrypter(Encrypter encrypter)}
+  \item Constructor: {\tt SessionDecrypter(Crypter crypter)}
+  \item Constructor: {\tt SignedSessionEncrypter(Encrypter encrypter,
+    Signer signer)}
+  \item Constructor: {\tt SignedSessionDecrypter(Crypter crypter,
+    Verifier verifier)}
 \end{itemize}
 
 Session encrypters and decrypters differ from Encrypters and Crypters
@@ -489,7 +488,8 @@ In Java:
 \begin{verbatim}
 Signer signer = new Signer(``/hmackeys'');
 String signature = signer.sign(``Some data to sign'');
-boolean verified = signer.verify(``Some data to sign'', signature);
+boolean verified = signer.verify(``Some data to sign'',
+ signature);
 \end{verbatim}
 
 See section \ref{walkthrough} for a more detailed walkthrough and
