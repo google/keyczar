@@ -64,6 +64,9 @@ public class SessionEncrypter {
     return this.sessionMaterial;
   }
 
+  /**
+   * @return the embedded symmetric crypter for extending classes
+   */
   protected Crypter getSymmetricCrypter() {
     return symmetricCrypter;
   }
