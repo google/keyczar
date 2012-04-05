@@ -16,16 +16,6 @@
 
 package org.keyczar;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.cert.CertificateException;
-import java.util.ArrayList;
-import java.util.HashMap;
-
 import org.keyczar.enums.Command;
 import org.keyczar.enums.Flag;
 import org.keyczar.enums.KeyPurpose;
@@ -35,6 +25,16 @@ import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Command line tool for generating Keyczar key files. The following commands

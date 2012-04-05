@@ -16,15 +16,7 @@
 
 package org.keyczar;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.interfaces.DSAPrivateKey;
-import java.security.spec.DSAPrivateKeySpec;
+import com.google.gson.annotations.Expose;
 
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
@@ -34,7 +26,15 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import com.google.gson.annotations.Expose;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.interfaces.DSAPrivateKey;
+import java.security.spec.DSAPrivateKeySpec;
 
 /**
  * Wrapping class for DSA Private Keys

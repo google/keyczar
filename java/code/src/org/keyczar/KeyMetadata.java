@@ -16,10 +16,7 @@
 
 package org.keyczar;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.gson.annotations.Expose;
 
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
@@ -27,7 +24,10 @@ import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.NoPrimaryKeyException;
 import org.keyczar.util.Util;
 
-import com.google.gson.annotations.Expose;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Encodes metadata for a set of keys which consists of the following:

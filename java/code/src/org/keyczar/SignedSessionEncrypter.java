@@ -18,12 +18,12 @@ package org.keyczar;
 
 import static org.keyczar.util.Util.rand;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.keyczar.annotations.Experimental;
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A session based encryption strategy with signing.

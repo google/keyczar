@@ -16,6 +16,16 @@
 
 package org.keyczar;
 
+import org.keyczar.enums.KeyPurpose;
+import org.keyczar.enums.KeyStatus;
+import org.keyczar.enums.KeyType;
+import org.keyczar.enums.RsaPadding;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.i18n.Messages;
+import org.keyczar.interfaces.KeyczarReader;
+import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,16 +49,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
-
-import org.keyczar.enums.KeyPurpose;
-import org.keyczar.enums.KeyStatus;
-import org.keyczar.enums.KeyType;
-import org.keyczar.enums.RsaPadding;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.i18n.Messages;
-import org.keyczar.interfaces.KeyczarReader;
-import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
 
 /**
  * Keyczar Reader that reads from a PKCS#8 private key file, optionally

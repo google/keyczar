@@ -17,6 +17,17 @@
 package org.keyczar;
 
 
+import com.google.gson.annotations.Expose;
+
+import org.keyczar.enums.KeyType;
+import org.keyczar.enums.RsaPadding;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.exceptions.UnsupportedTypeException;
+import org.keyczar.i18n.Messages;
+import org.keyczar.interfaces.Stream;
+import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -28,17 +39,6 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
-
-import org.keyczar.enums.KeyType;
-import org.keyczar.enums.RsaPadding;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.exceptions.UnsupportedTypeException;
-import org.keyczar.i18n.Messages;
-import org.keyczar.interfaces.Stream;
-import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
-
-import com.google.gson.annotations.Expose;
 
 /**
  * Common base wrapper class for different types of KeyczarKeys (e.g. AesKey).

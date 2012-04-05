@@ -16,12 +16,7 @@
 
 package org.keyczar;
 
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
+import com.google.gson.annotations.Expose;
 
 import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
@@ -31,7 +26,12 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import com.google.gson.annotations.Expose;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Wrapping class for HMAC-SHA1 keys

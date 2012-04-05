@@ -16,8 +16,6 @@
 
 package org.keyczar;
 
-import java.util.HashMap;
-
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
@@ -26,6 +24,8 @@ import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.EncryptedReader;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.util.Util;
+
+import java.util.HashMap;
 
 /**
  * Manages a Keyczar key set.

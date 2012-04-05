@@ -19,6 +19,18 @@ package org.keyczar;
 import static org.keyczar.util.Util.decodeBigInteger;
 import static org.keyczar.util.Util.encodeBigInteger;
 
+import com.google.gson.annotations.Expose;
+
+import org.keyczar.enums.KeyType;
+import org.keyczar.enums.RsaPadding;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.DecryptingStream;
+import org.keyczar.interfaces.EncryptingStream;
+import org.keyczar.interfaces.SigningStream;
+import org.keyczar.interfaces.Stream;
+import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.util.Util;
+
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -31,18 +43,6 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
-
-import org.keyczar.enums.KeyType;
-import org.keyczar.enums.RsaPadding;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.interfaces.DecryptingStream;
-import org.keyczar.interfaces.EncryptingStream;
-import org.keyczar.interfaces.SigningStream;
-import org.keyczar.interfaces.Stream;
-import org.keyczar.interfaces.VerifyingStream;
-import org.keyczar.util.Util;
-
-import com.google.gson.annotations.Expose;
 
 /**
  * Wrapping class for RSA Private Keys

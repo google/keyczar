@@ -16,11 +16,11 @@
 
 package org.keyczar;
 
+import com.google.gson.annotations.Expose;
+
 import org.keyczar.annotations.Experimental;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Util;
-
-import com.google.gson.annotations.Expose;
 
 /**
  * Data used for session based encryption. This consists of 

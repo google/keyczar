@@ -16,6 +16,15 @@
 
 package org.keyczar;
 
+import com.google.gson.annotations.Expose;
+
+import org.keyczar.enums.KeyType;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.Stream;
+import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -27,15 +36,6 @@ import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPublicKeySpec;
-
-import org.keyczar.enums.KeyType;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.interfaces.Stream;
-import org.keyczar.interfaces.VerifyingStream;
-import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
-
-import com.google.gson.annotations.Expose;
 
 /**
  * Wrapping class for DSA Public Keys. These must be exported from existing DSA
