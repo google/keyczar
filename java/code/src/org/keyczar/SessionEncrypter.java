@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,10 +38,10 @@ public class SessionEncrypter {
    * arbitrary data.
    *
    * @param encrypter The encrypter used to encrypt session keys
-   * @throws KeyczarException If there is an error instantiating a Crypter 
+   * @throws KeyczarException If there is an error instantiating a Crypter
    */
   public SessionEncrypter(Encrypter encrypter) throws KeyczarException {
-    // Using minimum acceptable AES key size, which is 128 bits 
+    // Using minimum acceptable AES key size, which is 128 bits
     AesKey aesKey = AesKey.generate(KeyType.AES.getAcceptableSizes().get(0));
     ImportedKeyReader importedKeyReader = new ImportedKeyReader(aesKey);
     this.symmetricCrypter = new Crypter(importedKeyReader);
@@ -62,5 +62,12 @@ public class SessionEncrypter {
    */
   public byte[] getSessionMaterial() {
     return this.sessionMaterial;
+  }
+
+  /**
+   * @return the embedded symmetric crypter for extending classes
+   */
+  protected Crypter getSymmetricCrypter() {
+    return symmetricCrypter;
   }
 }
