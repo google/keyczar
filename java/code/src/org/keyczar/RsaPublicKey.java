@@ -179,7 +179,28 @@ public class RsaPublicKey extends KeyczarPublicKey {
     public int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
       try {
-        return cipher.doFinal(input, output);
+        final int ciphertextSize = cipher.getOutputSize(input.limit());
+        final int outputCapacity = output.limit() - output.position();
+
+        ByteBuffer tmpOutput = ByteBuffer.allocate(ciphertextSize);
+        cipher.doFinal(input, tmpOutput);
+
+        if (ciphertextSize == outputCapacity) {
+          output.put(tmpOutput.array());
+
+        } else if (ciphertextSize == (outputCapacity + 1)
+            && tmpOutput.array()[ciphertextSize - 1] == 0) {
+          // There exists at least one JCE (the one IBM ships with some versions of
+          // Websphere) which outputs ciphertext that's one byte too long, appending
+          // a trailing zero.  We need to trim this byte.
+          output.put(tmpOutput.array(), 0, outputCapacity);
+
+        } else {
+          throw new KeyczarException("Expected " + outputCapacity + " bytes from encryption "
+              + "operation but got " + ciphertextSize);
+        }
+
+        return outputCapacity;
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
