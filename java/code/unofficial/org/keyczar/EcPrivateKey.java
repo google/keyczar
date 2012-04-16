@@ -43,7 +43,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
  * @author martclau@gmail.com
  * 
  */
-class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
+public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String KEY_GEN_ALGORITHM = "EC";
   private static final String SIG_ALGORITHM = "SHA256withECDSA";
 

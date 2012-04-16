@@ -40,7 +40,7 @@ import java.security.spec.X509EncodedKeySpec;
  * @author martclau@gmail.com
  * 
  */
-class EcPublicKey extends KeyczarPublicKey {
+public class EcPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "EC";
   private static final String SIG_ALGORITHM = "SHA256withECDSA";
 

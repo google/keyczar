@@ -24,7 +24,7 @@ package org.keyczar;
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-abstract class KeyczarPublicKey extends KeyczarKey {
+public abstract class KeyczarPublicKey extends KeyczarKey {
   protected KeyczarPublicKey(int size) {
     super(size);
   }

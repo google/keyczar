@@ -40,7 +40,7 @@ import javax.crypto.spec.SecretKeySpec;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-class HmacKey extends KeyczarKey {
+public class HmacKey extends KeyczarKey {
   private static final String MAC_ALGORITHM = "HMACSHA1";
 
   @Expose private final String hmacKeyString;

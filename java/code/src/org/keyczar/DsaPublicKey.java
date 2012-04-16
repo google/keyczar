@@ -43,7 +43,7 @@ import java.security.spec.DSAPublicKeySpec;
  *
  * @author steveweis@gmail.com (Steve Weis)
  */
-class DsaPublicKey extends KeyczarPublicKey {
+public class DsaPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "DSA";
   private static final String SIG_ALGORITHM = "SHA1withDSA";
 
