@@ -78,7 +78,7 @@ public class EcPublicKey extends KeyczarPublicKey {
   }
   
   @Override
-  public Stream getStream() throws KeyczarException {
+  Stream getStream() throws KeyczarException {
     return new EcVerifyingStream();
   }
 
