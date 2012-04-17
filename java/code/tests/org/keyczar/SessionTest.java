@@ -165,8 +165,8 @@ public class SessionTest extends TestCase {
      byte[] decrypted = remoteCrypter.decrypt(encrypted);
      assertTrue(Arrays.equals(input.getBytes(), decrypted));
 
-     encrypted = localCrypter.encrypt(bigInput);
-     decrypted = remoteCrypter.decrypt(encrypted);
+     encrypted = remoteCrypter.encrypt(bigInput);
+     decrypted = localCrypter.decrypt(encrypted);
      assertTrue(Arrays.equals(bigInput, decrypted));
   }
 }
