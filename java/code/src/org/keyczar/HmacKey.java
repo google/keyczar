@@ -72,7 +72,7 @@ public class HmacKey extends KeyczarKey {
     initJceKey(Base64Coder.decodeWebSafe(hmacKeyString));
   }
 
-  public void initJceKey(byte[] keyBytes) throws KeyczarException {
+  private void initJceKey(byte[] keyBytes) throws KeyczarException {
     hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
     System.arraycopy(Util.hash(keyBytes), 0, hash, 0, hash.length);
   }

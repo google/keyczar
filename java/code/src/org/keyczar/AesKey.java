@@ -114,7 +114,7 @@ public class AesKey extends KeyczarKey {
     return key;
   }
 
-  public void initJceKey(byte[] aesBytes) throws KeyczarException {
+  private void initJceKey(byte[] aesBytes) throws KeyczarException {
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
     byte[] fullHash = Util.hash(Util.fromInt(BLOCK_SIZE), aesBytes, hmacKey.getEncoded());
     System.arraycopy(fullHash, 0, hash, 0, hash.length);

@@ -102,7 +102,7 @@ public class DsaPublicKey extends KeyczarPublicKey {
   }
 
   @Override
-  public Stream getStream() throws KeyczarException {
+  Stream getStream() throws KeyczarException {
     return new DsaVerifyingStream();
   }
 
