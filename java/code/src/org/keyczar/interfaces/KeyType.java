@@ -16,11 +16,24 @@
 
 package org.keyczar.interfaces;
 
+import com.google.gson.InstanceCreator;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+
+import org.keyczar.DefaultKeyType;
 import org.keyczar.KeyczarKey;
 
 import org.keyczar.exceptions.KeyczarException;
 
+import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The type of key, along with a list of acceptable (secure) key sizes.
@@ -97,4 +110,84 @@ public interface KeyType {
    * @return a reader for this key type
    */
   public Builder getBuilder();
+
+  /**
+   * Serializer based on the key type's value.
+   */
+  public static class KeyTypeSerializer implements JsonSerializer<KeyType> {
+    @Override
+    public JsonElement serialize(KeyType src,
+        Type type, JsonSerializationContext context) {
+      return new JsonPrimitive(src.getValue());
+    }
+  }
+
+  /**
+   * Trivial deserialization based on the key value.
+   *
+   * TODO(jmscheiner): This could alternately be written as a switch that
+   * forwards deserialization to the default for the actual class.
+   */
+  public static class KeyTypeDeserializer implements JsonDeserializer<KeyType> {
+    private static Map<String, Class<? extends KeyType>> typeMap
+        = new HashMap<String, Class<? extends KeyType>>();
+
+    static {
+      for (DefaultKeyType key : DefaultKeyType.values()) {
+        // Register default key types.
+        registerType(key.name(), key.getClass());
+      }
+      System.out.println(typeMap);
+    }
+
+    public static void registerType(String name,
+        Class<? extends KeyType> keyType) {
+      if (typeMap.containsKey(name)) {
+        throw new IllegalArgumentException(
+            "Attempt to map two key types to the same name " + name);
+      }
+      typeMap.put(name, keyType);
+    }
+
+    @Override
+    public KeyType deserialize(JsonElement json, Type type,
+        JsonDeserializationContext context) throws JsonParseException {
+      String keyName = json.getAsJsonPrimitive().getAsString();
+      if (!typeMap.containsKey(keyName)) {
+        throw new IllegalArgumentException("Cannot deserialize "
+            + keyName + " no such key has been registered.");
+      }
+
+      try {
+        // Since the default key types do not have a default constructor,
+        // create them explicitly.
+        KeyType defaultKey = DefaultKeyType.getTypeByName(keyName);
+        if (defaultKey != null) {
+          return defaultKey;
+        } else {
+          System.out.println(
+              "Found " + keyName + " is not a key in the mapping.");
+        }
+
+        // Otherwise create the key from its required default constructor.
+        return typeMap.get(keyName).newInstance();
+      } catch (InstantiationException e) {
+        throw new JsonParseException(e);
+      } catch (IllegalAccessException e) {
+        throw new JsonParseException(e);
+      }
+    }
+  }
+
+  /**
+   * The {@link InstanceCreator} is a stub, creation happens as part of
+   * deserialization.
+   */
+  public static class KeyTypeInstanceCreator
+      implements InstanceCreator<KeyType> {
+    @Override
+    public KeyType createInstance(Type type) {
+      return null;
+    }
+  }
 }

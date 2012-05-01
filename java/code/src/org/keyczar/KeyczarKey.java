@@ -117,6 +117,11 @@ public abstract class KeyczarKey {
     return genKey(type, type.defaultSize());
   }
 
+  public static void registerType(String name,
+      Class<? extends KeyType> keyType) {
+    KeyType.KeyTypeDeserializer.registerType(name, keyType);
+  }
+
   @Override
   public String toString() {
     return Util.gson().toJson(this);

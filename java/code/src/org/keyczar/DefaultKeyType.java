@@ -82,6 +82,7 @@ public enum DefaultKeyType implements KeyType {
   EC_PUB("EC Public", 7, Arrays.asList(256, 384, 521, 192), 70),
   TEST("Test", 127, Arrays.asList(1), 0);
 
+  private static Map<String, KeyType> typeMapping;
   private final Map<Integer, Integer> outputSizeMap = new HashMap<Integer, Integer>();
   private final List<Integer> acceptableSizes;
   private final String name;
@@ -103,6 +104,7 @@ public enum DefaultKeyType implements KeyType {
         // All keys have the same default output size
         outputSizeMap.put(size, outputSize);
     }
+    addToMapping(this.name(), this);
   }
 
   /**
@@ -121,6 +123,18 @@ public enum DefaultKeyType implements KeyType {
     for (int i = 0; i < sizes.size(); i++) {
         outputSizeMap.put(acceptableSizes.get(i), outputSizeList.get(i));
     }
+    addToMapping(this.name(), this);
+  }
+
+  private static void addToMapping(String s, KeyType type) {
+    if (typeMapping == null) {
+      typeMapping = new HashMap<String, KeyType>();
+    }
+    typeMapping.put(s, type);
+  }
+
+  public static KeyType getTypeByName(String s) {
+    return typeMapping.get(s);
   }
 
   /**
@@ -223,7 +237,6 @@ public enum DefaultKeyType implements KeyType {
     private DefaultKeyBuilder() {
       this.padding = null;
     }
-
 
     @Override
     public KeyczarKey read(String key) throws KeyczarException {

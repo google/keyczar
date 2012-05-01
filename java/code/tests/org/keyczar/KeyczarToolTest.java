@@ -16,7 +16,6 @@
 
 package org.keyczar;
 
-
 import junit.framework.TestCase;
 
 import org.junit.Test;
