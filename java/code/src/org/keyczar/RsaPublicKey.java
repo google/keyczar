@@ -19,11 +19,11 @@ package org.keyczar;
 
 import com.google.gson.annotations.Expose;
 
-import org.keyczar.enums.KeyType;
 import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
 import org.keyczar.interfaces.EncryptingStream;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
@@ -64,7 +64,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
   static RsaPublicKey read(String input) throws KeyczarException {
     RsaPublicKey key = Util.gson().fromJson(input, RsaPublicKey.class);
 
-    if (key.getType() != KeyType.RSA_PUB) {
+    if (key.getType() != DefaultKeyType.RSA_PUB) {
       throw new UnsupportedTypeException(key.getType());
     }
     return key.initFromJson();
@@ -82,7 +82,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
 
   @Override
   public KeyType getType() {
-    return KeyType.RSA_PUB;
+    return DefaultKeyType.RSA_PUB;
   }
 
   RsaPublicKey(RSAPrivateCrtKey privateKey, RsaPadding padding) throws KeyczarException {

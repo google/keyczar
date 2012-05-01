@@ -20,10 +20,10 @@ import org.keyczar.enums.Command;
 import org.keyczar.enums.Flag;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
-import org.keyczar.enums.KeyType;
 import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.KeyczarReader;
 
 import java.io.File;
@@ -315,32 +315,32 @@ public class KeyczarTool {
     }
     switch (purposeFlag) {
       case TEST:
-        kmd = new KeyMetadata(nameFlag, KeyPurpose.TEST, KeyType.TEST);
+        kmd = new KeyMetadata(nameFlag, KeyPurpose.TEST, DefaultKeyType.TEST);
         break;
       case SIGN_AND_VERIFY:
         if (asymmetricFlag != null) {
           if (asymmetricFlag.equalsIgnoreCase("rsa")) {
             kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
-                KeyType.RSA_PRIV);
+                DefaultKeyType.RSA_PRIV);
           } else if (asymmetricFlag.equalsIgnoreCase("ec")) {
                 kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
-                    KeyType.EC_PRIV);
+                    DefaultKeyType.EC_PRIV);
           } else { // Default to DSA
             kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
-                KeyType.DSA_PRIV);
+                DefaultKeyType.DSA_PRIV);
           }
         } else { // HMAC-SHA1
           kmd = new KeyMetadata(nameFlag, KeyPurpose.SIGN_AND_VERIFY,
-              KeyType.HMAC_SHA1);
+              DefaultKeyType.HMAC_SHA1);
         }
         break;
       case DECRYPT_AND_ENCRYPT:
         if (asymmetricFlag != null) { // Default to RSA
           kmd = new KeyMetadata(nameFlag, KeyPurpose.DECRYPT_AND_ENCRYPT,
-              KeyType.RSA_PRIV);
+              DefaultKeyType.RSA_PRIV);
         } else { // AES
           kmd = new KeyMetadata(nameFlag, KeyPurpose.DECRYPT_AND_ENCRYPT,
-              KeyType.AES);
+              DefaultKeyType.AES);
         }
         break;
     }

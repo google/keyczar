@@ -14,7 +14,21 @@
  * limitations under the License.
  */
 
-package org.keyczar.enums;
+package org.keyczar;
+
+import org.keyczar.AesKey;
+import org.keyczar.DsaPrivateKey;
+import org.keyczar.DsaPublicKey;
+import org.keyczar.HmacKey;
+import org.keyczar.RsaPrivateKey;
+import org.keyczar.RsaPublicKey;
+
+import org.keyczar.enums.RsaPadding;
+
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.exceptions.UnsupportedTypeException;
+
+import org.keyczar.i18n.Messages;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +37,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.annotations.Expose;
+
+import org.keyczar.KeyczarKey;
+import org.keyczar.interfaces.KeyType;
 
 /**
  * Encodes different types of keys each with (default size, output size). Some
@@ -47,11 +64,13 @@ import com.google.gson.annotations.Expose;
  *   <li>"DSA_PUB"
  * </ul>
  *
- *  @author steveweis@gmail.com (Steve Weis)
- *  @author arkajit.dey@gmail.com (Arkajit Dey)
+ * Using the default key types is strongly encouraged.
+ *
+ * @author steveweis@gmail.com (Steve Weis)
+ * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-public enum KeyType {
+public enum DefaultKeyType implements KeyType {
   AES("AES", 0, Arrays.asList(128, 192, 256), 0),
   HMAC_SHA1("HMAC-SHA1",1, Arrays.asList(256), 20),
   DSA_PRIV("DSA Private", 2, Arrays.asList(1024), 48),
@@ -59,7 +78,7 @@ public enum KeyType {
   RSA_PRIV("RSA Private", 4, Arrays.asList(4096, 2048, 1024), Arrays.asList(512, 256, 128)),
   RSA_PUB("RSA Public", 5, Arrays.asList(4096, 2048, 1024), Arrays.asList(512, 256, 128)),
   // TODO(sweis): The ECC output size is not correct. Fix this.
-  EC_PRIV("EC Private", 6, Arrays.asList(256, 384, 521, 192), 70),  
+  EC_PRIV("EC Private", 6, Arrays.asList(256, 384, 521, 192), 70),
   EC_PUB("EC Public", 7, Arrays.asList(256, 384, 521, 192), 70),
   TEST("Test", 127, Arrays.asList(1), 0);
 
@@ -76,16 +95,16 @@ public enum KeyType {
    * @param sizes
    * @param outputSize
    */
-  private KeyType(String n, int v, List<Integer> sizes, int outputSize) {
+  private DefaultKeyType(String n, int v, List<Integer> sizes, int outputSize) {
     name = n;
     value = v;
     this.acceptableSizes = sizes;
     for (int size : acceptableSizes) {
-    	// All keys have the same default output size
-    	outputSizeMap.put(size, outputSize);
+        // All keys have the same default output size
+        outputSizeMap.put(size, outputSize);
     }
   }
-  
+
   /**
    * Takes a list of acceptable sizes for key lengths. The first one is assumed
    * to be the default size.
@@ -94,12 +113,13 @@ public enum KeyType {
    * @param sizes
    * @param outputSizeList
    */
-  private KeyType(String n, int v, List<Integer> sizes, List<Integer> outputSizeList) {
+  private DefaultKeyType(String n,
+      int v, List<Integer> sizes, List<Integer> outputSizeList) {
     name = n;
     value = v;
     this.acceptableSizes = sizes;
     for (int i = 0; i < sizes.size(); i++) {
-    	outputSizeMap.put(acceptableSizes.get(i), outputSizeList.get(i));
+        outputSizeMap.put(acceptableSizes.get(i), outputSizeList.get(i));
     }
   }
 
@@ -108,14 +128,17 @@ public enum KeyType {
    *
    * @return default key size in bits
    */
+  @Override
   public int defaultSize() {
     return acceptableSizes.get(0);
   }
 
+  @Override
   public int getOutputSize(int keySize) {
-	    return outputSizeMap.get(keySize);
+    return outputSizeMap.get(keySize);
   }
-  
+
+  @Override
   public int getOutputSize() {
     return getOutputSize(defaultSize());
   }
@@ -126,19 +149,22 @@ public enum KeyType {
    * @param size integer key size
    * @return True if size is acceptable, False otherwise.
    */
+  @Override
   public boolean isAcceptableSize(int size) {
     return acceptableSizes.contains(size);
   }
 
+  @Override
   public List<Integer> getAcceptableSizes() {
     return Collections.unmodifiableList(acceptableSizes);
   }
 
-  int getValue() {
+  @Override
+  public int getValue() {
     return value;
   }
 
-  static KeyType getType(int value) {
+  static DefaultKeyType getType(int value) {
     switch (value) {
       case 0:
         return AES;
@@ -153,7 +179,7 @@ public enum KeyType {
       case 5:
         return RSA_PUB;
       case 6:
-    	return EC_PRIV;
+        return EC_PRIV;
       case 7:
         return EC_PUB;
       case 127:
@@ -165,5 +191,83 @@ public enum KeyType {
   @Override
   public String toString() {
     return name;
+  }
+
+  @Override
+  public Builder getBuilder() {
+    return new DefaultKeyBuilder();
+  }
+
+  Builder getRsaBuilder(RsaPadding padding) throws KeyczarException {
+    if (DefaultKeyType.this != RSA_PRIV) {
+      throw new KeyczarException(Messages.getString(
+          "InvalidKeyType", DefaultKeyType.this));
+    }
+    return new DefaultKeyBuilder(padding);
+  }
+
+  /**
+   * Default key builder that switches on type to use existing reading and
+   * generation methods.
+   */
+  private class DefaultKeyBuilder implements Builder {
+    private final RsaPadding padding;
+
+    /**
+     * TODO(jmscheiner): temporarily hacked in to support RsaPadding.
+     */
+    private DefaultKeyBuilder(RsaPadding padding) {
+      this.padding = padding;
+    }
+
+    private DefaultKeyBuilder() {
+      this.padding = null;
+    }
+
+
+    @Override
+    public KeyczarKey read(String key) throws KeyczarException {
+      switch (DefaultKeyType.this) {
+        case AES:
+          return AesKey.read(key);
+        case HMAC_SHA1:
+          return HmacKey.read(key);
+        case DSA_PRIV:
+          return DsaPrivateKey.read(key);
+        case DSA_PUB:
+          return DsaPublicKey.read(key);
+        case RSA_PRIV:
+          return RsaPrivateKey.read(key);
+        case RSA_PUB:
+          return RsaPublicKey.read(key);
+        // Currently unsupported. See "unofficial" directory.
+        //case EC_PRIV:
+        //    return EcPrivateKey.read(key);
+        //case EC_PUB:
+        //    return EcPublicKey.read(key);
+      }
+      throw new UnsupportedTypeException(DefaultKeyType.this);
+    }
+
+    @Override
+    public KeyczarKey generate(int keySize) throws KeyczarException {
+      switch (DefaultKeyType.this) {
+        case AES:
+          return AesKey.generate(keySize);
+        case HMAC_SHA1:
+          return HmacKey.generate(keySize);
+        case DSA_PRIV:
+          return DsaPrivateKey.generate(keySize);
+        case RSA_PRIV:
+          return RsaPrivateKey.generate(keySize, padding);
+        // Currently unsupported. See "unofficial" directory.
+        //case EC_PRIV:
+        //    return EcPrivateKey.generate(keySize);
+        case RSA_PUB: case DSA_PUB:
+          throw new KeyczarException(Messages.getString(
+              "KeyczarKey.PublicKeyExport", DefaultKeyType.this));
+      }
+      throw new UnsupportedTypeException(DefaultKeyType.this);
+    }
   }
 }

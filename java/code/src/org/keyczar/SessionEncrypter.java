@@ -17,7 +17,6 @@
 package org.keyczar;
 
 import org.keyczar.annotations.Experimental;
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 
 /**
@@ -42,7 +41,8 @@ public class SessionEncrypter {
    */
   public SessionEncrypter(Encrypter encrypter) throws KeyczarException {
     // Using minimum acceptable AES key size, which is 128 bits
-    AesKey aesKey = AesKey.generate(KeyType.AES.getAcceptableSizes().get(0));
+    AesKey aesKey =
+        AesKey.generate(DefaultKeyType.AES.getAcceptableSizes().get(0));
     ImportedKeyReader importedKeyReader = new ImportedKeyReader(aesKey);
     this.symmetricCrypter = new Crypter(importedKeyReader);
     this.sessionMaterial = encrypter.encrypt(aesKey.getEncoded());

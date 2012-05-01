@@ -18,8 +18,8 @@ package org.keyczar;
 
 import com.google.gson.annotations.Expose;
 
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
@@ -61,7 +61,7 @@ public class HmacKey extends KeyczarKey {
   }
 
   static HmacKey generate() throws KeyczarException {
-    return generate(KeyType.HMAC_SHA1.defaultSize());
+    return generate(DefaultKeyType.HMAC_SHA1.defaultSize());
   }
 
   static HmacKey generate(int keySize) throws KeyczarException {
@@ -92,7 +92,7 @@ public class HmacKey extends KeyczarKey {
 
   @Override
   public KeyType getType() {
-    return KeyType.HMAC_SHA1;
+    return DefaultKeyType.HMAC_SHA1;
   }
 
   @Override
