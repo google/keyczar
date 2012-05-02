@@ -128,10 +128,9 @@ public abstract class KeyczarKey {
    * {@link KeyType.KeyTypeDeserializer#registerType}
    *
    * @param name a name that must be unique among all key types
-   * @param keyType the class for the key type to register
+   * @param keyType a singleton immutable key type to register for the name
    */
-  public static void registerType(String name,
-      Class<? extends KeyType> keyType) {
+  public static void registerType(String name, KeyType keyType) {
     KeyType.KeyTypeDeserializer.registerType(name, keyType);
   }
 

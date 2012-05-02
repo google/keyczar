@@ -117,15 +117,15 @@ public interface KeyType {
    * Trivial deserialization based on the key value.
    */
   public static class KeyTypeDeserializer implements JsonDeserializer<KeyType> {
-    private static Map<String, Class<? extends KeyType>> typeMap
-        = new HashMap<String, Class<? extends KeyType>>();
+    private static Map<String, KeyType> typeMap =
+        new HashMap<String, KeyType>();
 
     /**
      * Register default key types.
      */
     static {
       for (DefaultKeyType key : DefaultKeyType.values()) {
-        registerType(key.name(), key.getClass());
+        registerType(key.name(), key);
       }
     }
 
@@ -137,10 +137,9 @@ public interface KeyType {
      * discouraged for most practical applications.
      *
      * @param name a name that must be unique among all key types
-     * @param keyType the class for the key type to register
+     * @param keyType a singleton immutable key type to register for the name
      */
-    public static void registerType(String name,
-        Class<? extends KeyType> keyType) {
+    public static void registerType(String name, KeyType keyType) {
       if (typeMap.containsKey(name)) {
         throw new IllegalArgumentException(
             "Attempt to map two key types to the same name " + name);
@@ -156,22 +155,7 @@ public interface KeyType {
         throw new IllegalArgumentException("Cannot deserialize "
             + keyName + " no such key has been registered.");
       }
-
-      try {
-        // Since the default key types do not have a default constructor,
-        // create them explicitly.
-        KeyType defaultKey = DefaultKeyType.getTypeByName(keyName);
-        if (defaultKey != null) {
-          return defaultKey;
-        }
-
-        // Otherwise create the key from its required default constructor.
-        return typeMap.get(keyName).newInstance();
-      } catch (InstantiationException e) {
-        throw new JsonParseException(e);
-      } catch (IllegalAccessException e) {
-        throw new JsonParseException(e);
-      }
+      return typeMap.get(keyName);
     }
   }
 }
