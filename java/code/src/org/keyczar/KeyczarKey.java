@@ -120,18 +120,16 @@ public abstract class KeyczarKey {
   /**
    * Register a new key type.
    *
-   * Custom {@link KeyType}s must contain a default constructor to support
-   * serialization. Note that defining custom key types is strongly
-   * discouraged for most practical applications.
+   * Custom {@link KeyType}s should be immutable singletons, Note that
+   * defining custom key types is strongly discouraged for most applications.
    *
    * This method is just a proxy to
    * {@link KeyType.KeyTypeDeserializer#registerType}
    *
-   * @param name a name that must be unique among all key types
    * @param keyType a singleton immutable key type to register for the name
    */
-  public static void registerType(String name, KeyType keyType) {
-    KeyType.KeyTypeDeserializer.registerType(name, keyType);
+  public static void registerType(KeyType keyType) {
+    KeyType.KeyTypeDeserializer.registerType(keyType);
   }
 
   @Override

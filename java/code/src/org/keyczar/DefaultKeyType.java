@@ -187,7 +187,7 @@ public enum DefaultKeyType implements KeyType {
   }
 
   @Override
-  public String toString() {
+  public String getName() {
     return this.name();
   }
 

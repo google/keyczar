@@ -73,6 +73,13 @@ public interface KeyType {
   public List<Integer> getAcceptableSizes();
 
   /**
+   * Returns a unique name used for JSON serialization.
+   *
+   * @return a name that is unique among key types
+   */
+  public String getName();
+
+  /**
    * Creates {@link KeyczarKey}s from their serialized form or from scratch.
    *
    * TODO(jmscheiner): This bit of misdirection isn't strictly necessary, but
@@ -109,7 +116,7 @@ public interface KeyType {
     @Override
     public JsonElement serialize(KeyType src,
         Type type, JsonSerializationContext context) {
-      return new JsonPrimitive(src.toString());
+      return new JsonPrimitive(src.getName());
     }
   }
 
@@ -125,21 +132,20 @@ public interface KeyType {
      */
     static {
       for (DefaultKeyType key : DefaultKeyType.values()) {
-        registerType(key.name(), key);
+        registerType(key);
       }
     }
 
     /**
      * Register a new key type.
      *
-     * Custom {@link KeyType}s must contain a default constructor to support
-     * serialization. Note that defining custom key types is strongly
-     * discouraged for most practical applications.
+     * Custom {@link KeyType}s should be immutable singletons, Note that
+     * defining custom key types is strongly discouraged for most applications.
      *
-     * @param name a name that must be unique among all key types
      * @param keyType a singleton immutable key type to register for the name
      */
-    public static void registerType(String name, KeyType keyType) {
+    public static void registerType(KeyType keyType) {
+      String name = keyType.getName();
       if (typeMap.containsKey(name)) {
         throw new IllegalArgumentException(
             "Attempt to map two key types to the same name " + name);
