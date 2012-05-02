@@ -16,7 +16,6 @@
 
 package org.keyczar.interfaces;
 
-import com.google.gson.InstanceCreator;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -84,8 +83,8 @@ public interface KeyType {
   /**
    * Creates {@link KeyczarKey}s from their serialized form or from scratch.
    *
-   * TODO(jmscheiner): This bit of misdirection isn't necessary, but makes
-   * backwards compatibility with the existing keys more straightforward.
+   * TODO(jmscheiner): This bit of misdirection isn't strictly necessary, but
+   * makes backwards compatibility with the existing keys more straightforward.
    */
   public interface Builder {
     /**
@@ -124,22 +123,30 @@ public interface KeyType {
 
   /**
    * Trivial deserialization based on the key value.
-   *
-   * TODO(jmscheiner): This could alternately be written as a switch that
-   * forwards deserialization to the default for the actual class.
    */
   public static class KeyTypeDeserializer implements JsonDeserializer<KeyType> {
     private static Map<String, Class<? extends KeyType>> typeMap
         = new HashMap<String, Class<? extends KeyType>>();
 
+    /**
+     * Register default key types.
+     */
     static {
       for (DefaultKeyType key : DefaultKeyType.values()) {
-        // Register default key types.
         registerType(key.name(), key.getClass());
       }
-      System.out.println(typeMap);
     }
 
+    /**
+     * Register a new key type.
+     *
+     * Custom {@link KeyType}s must contain a default constructor to support
+     * serialization. Note that defining custom key types is strongly
+     * discouraged for most practical applications.
+     *
+     * @param name a name that must be unique among all key types
+     * @param keyType the class for the key type to register
+     */
     public static void registerType(String name,
         Class<? extends KeyType> keyType) {
       if (typeMap.containsKey(name)) {
@@ -164,9 +171,6 @@ public interface KeyType {
         KeyType defaultKey = DefaultKeyType.getTypeByName(keyName);
         if (defaultKey != null) {
           return defaultKey;
-        } else {
-          System.out.println(
-              "Found " + keyName + " is not a key in the mapping.");
         }
 
         // Otherwise create the key from its required default constructor.
@@ -176,18 +180,6 @@ public interface KeyType {
       } catch (IllegalAccessException e) {
         throw new JsonParseException(e);
       }
-    }
-  }
-
-  /**
-   * The {@link InstanceCreator} is a stub, creation happens as part of
-   * deserialization.
-   */
-  public static class KeyTypeInstanceCreator
-      implements InstanceCreator<KeyType> {
-    @Override
-    public KeyType createInstance(Type type) {
-      return null;
     }
   }
 }

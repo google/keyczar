@@ -117,6 +117,19 @@ public abstract class KeyczarKey {
     return genKey(type, type.defaultSize());
   }
 
+  /**
+   * Register a new key type.
+   *
+   * Custom {@link KeyType}s must contain a default constructor to support
+   * serialization. Note that defining custom key types is strongly
+   * discouraged for most practical applications.
+   *
+   * This method is just a proxy to
+   * {@link KeyType.KeyTypeDeserializer#registerType}
+   *
+   * @param name a name that must be unique among all key types
+   * @param keyType the class for the key type to register
+   */
   public static void registerType(String name,
       Class<? extends KeyType> keyType) {
     KeyType.KeyTypeDeserializer.registerType(name, keyType);
