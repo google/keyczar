@@ -36,7 +36,6 @@ import java.util.Map;
 
 /**
  * The type of key, along with a list of acceptable (secure) key sizes.
- * 1
  *
  * @author jmscheiner@google.com (Justin Scheiner)
  */
@@ -72,13 +71,6 @@ public interface KeyType {
    * @return a list of acceptable sizes for this key type
    */
   public List<Integer> getAcceptableSizes();
-
-  /**
-   * The value representing the key type when serialized.
-   *
-   * @return the integer value representing
-   */
-  public int getValue();
 
   /**
    * Creates {@link KeyczarKey}s from their serialized form or from scratch.
@@ -117,7 +109,7 @@ public interface KeyType {
     @Override
     public JsonElement serialize(KeyType src,
         Type type, JsonSerializationContext context) {
-      return new JsonPrimitive(src.getValue());
+      return new JsonPrimitive(src.toString());
     }
   }
 
