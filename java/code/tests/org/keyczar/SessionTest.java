@@ -151,4 +151,22 @@ public class SessionTest extends TestCase {
     byte[] bigPlaintext = sessionCrypter.decrypt(bigCiphertext);
     assertTrue(Arrays.equals(bigInput, bigPlaintext));
   }
+
+  @Test
+  public final void testCrypterPair() throws KeyczarException {
+     SessionCrypter localCrypter = new SessionCrypter(publicKeyEncrypter);
+
+     byte[] encrypted = localCrypter.encrypt(input.getBytes());
+     byte[] sessionMaterial = localCrypter.getSessionMaterial();
+
+     SessionCrypter remoteCrypter =
+         new SessionCrypter(privateKeyDecrypter, sessionMaterial);
+
+     byte[] decrypted = remoteCrypter.decrypt(encrypted);
+     assertTrue(Arrays.equals(input.getBytes(), decrypted));
+
+     encrypted = remoteCrypter.encrypt(bigInput);
+     decrypted = localCrypter.decrypt(encrypted);
+     assertTrue(Arrays.equals(bigInput, decrypted));
+  }
 }

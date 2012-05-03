@@ -24,10 +24,13 @@ import org.keyczar.exceptions.KeyczarException;
  * encrypted symmetric key. That key will be decrypted with the given
  * {@link Crypter} and used to instantiate another {@link Crypter}.
  *
+ * This class and {@link SessionEncrypter} have been deprecated in favor of
+ * {@link SessionCrypter}.
+ *
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-@Experimental
+@Deprecated
 public class SessionDecrypter {
   private final Crypter symmetricCrypter;
 
