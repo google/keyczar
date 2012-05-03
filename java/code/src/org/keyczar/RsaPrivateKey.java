@@ -91,6 +91,18 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     jcePrivateKey = privateKey;
   }
 
+  private RsaPrivateKey() {
+    super(0);
+    publicKey = null;
+    privateExponent = null;
+    primeP = null;
+    primeQ = null;
+    primeExponentP = null;
+    primeExponentQ = null;
+    crtCoefficient = null;
+    jcePrivateKey = null;
+  }
+
   @Override
   Stream getStream() throws KeyczarException {
     return new RsaPrivateStream();

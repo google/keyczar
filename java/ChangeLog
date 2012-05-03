@@ -1,3 +1,12 @@
+Keyzcar Java release 0.71d
+==========================
+
+2012-04-05  Shawn Willden  <swillden@google.com>
+
+	* Added a no-argument, private constructor to RsaPrivateKey.
+	Apparently there are some configurations in which Guice demands
+	this, even though, it works fine most places.
+
 Keyzcar Java release 0.71c
 ==========================
 
