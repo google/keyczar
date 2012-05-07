@@ -16,6 +16,8 @@
 
 package org.keyczar.util;
 
+import org.keyczar.interfaces.KeyType;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +58,11 @@ public class Util {
   }
 
   private static final Gson GSON =
-    new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+    new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .registerTypeAdapter(KeyType.class, new KeyType.KeyTypeSerializer())
+        .registerTypeAdapter(KeyType.class, new KeyType.KeyTypeDeserializer())
+        .create();
 
   public static Gson gson() {
     return GSON;

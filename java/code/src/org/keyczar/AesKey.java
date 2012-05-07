@@ -19,12 +19,12 @@ package org.keyczar;
 import com.google.gson.annotations.Expose;
 
 import org.keyczar.enums.CipherMode;
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.ShortBufferException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.DecryptingStream;
 import org.keyczar.interfaces.EncryptingStream;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
@@ -79,7 +79,7 @@ public class AesKey extends KeyczarKey {
   }
 
   static AesKey generate() throws KeyczarException {
-    return generate(KeyType.AES.defaultSize());
+    return generate(DefaultKeyType.AES.defaultSize());
   }
 
   static AesKey generate(int keySize) throws KeyczarException {
@@ -99,7 +99,7 @@ public class AesKey extends KeyczarKey {
 
   @Override
   public KeyType getType() {
-    return KeyType.AES;
+    return DefaultKeyType.AES;
   }
 
   @Override

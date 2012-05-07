@@ -21,8 +21,8 @@ import static org.keyczar.util.Util.encodeBigInteger;
 
 import com.google.gson.annotations.Expose;
 
-import org.keyczar.enums.KeyType;
 import org.keyczar.enums.RsaPadding;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.DecryptingStream;
 import org.keyczar.interfaces.EncryptingStream;
@@ -66,7 +66,7 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private RSAPrivateCrtKey jcePrivateKey;
 
   static RsaPrivateKey generate(RsaPadding padding) throws KeyczarException {
-    return generate(KeyType.RSA_PRIV.defaultSize(), padding);
+    return generate(DefaultKeyType.RSA_PRIV.defaultSize(), padding);
   }
 
   static RsaPrivateKey generate(int keySize, RsaPadding padding) throws KeyczarException {
@@ -110,7 +110,7 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
   @Override
   public KeyType getType() {
-    return KeyType.RSA_PRIV;
+    return DefaultKeyType.RSA_PRIV;
   }
 
   @Override

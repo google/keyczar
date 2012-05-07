@@ -18,7 +18,7 @@ package org.keyczar;
 
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
-import org.keyczar.enums.KeyType;
+import org.keyczar.DefaultKeyType;
 import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
@@ -93,7 +93,7 @@ public class X509CertificateReader implements KeyczarReader {
   }
 
   private void constructMetadata() throws KeyczarException {
-    if (purpose == KeyPurpose.ENCRYPT && key.getType() == KeyType.DSA_PUB) {
+    if (purpose == KeyPurpose.ENCRYPT && key.getType() == DefaultKeyType.DSA_PUB) {
       throw new KeyczarException(Messages.getString("Keyczartool.InvalidUseOfDsaKey"));
     }
     meta = new KeyMetadata("imported from certificate", purpose, key.getType());

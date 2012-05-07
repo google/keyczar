@@ -18,7 +18,6 @@ package org.keyczar;
 
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
-import org.keyczar.enums.KeyType;
 import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
@@ -129,7 +128,7 @@ public class PkcsKeyReader implements KeyczarReader {
   }
 
   private static void validatePurpose(KeyczarKey key, KeyPurpose purpose) throws KeyczarException {
-    if (purpose == KeyPurpose.ENCRYPT && key.getType() == KeyType.DSA_PUB) {
+    if (purpose == KeyPurpose.ENCRYPT && key.getType() == DefaultKeyType.DSA_PUB) {
       throw new KeyczarException(Messages.getString("Keyczartool.InvalidUseOfDsaKey"));
     }
   }
