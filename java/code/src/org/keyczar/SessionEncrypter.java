@@ -24,10 +24,13 @@ import org.keyczar.exceptions.KeyczarException;
  * A session encrypter will generate and encrypt a session key with a given
  * {@link Encrypter}. That session key will be used to encrypt arbitrary data.
  *
+ * This class and {@link SessionDecrypter} have been deprecated in favor of
+ * {@link SessionCrypter}.
+ *
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-@Experimental
+@Deprecated
 public class SessionEncrypter {
   private final Crypter symmetricCrypter;
   private final byte[] sessionMaterial;
