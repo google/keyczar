@@ -162,30 +162,6 @@ public enum DefaultKeyType implements KeyType {
     return Collections.unmodifiableList(acceptableSizes);
   }
 
-  static DefaultKeyType getType(int value) {
-    switch (value) {
-      case 0:
-        return AES;
-      case 1:
-        return HMAC_SHA1;
-      case 2:
-        return DSA_PRIV;
-      case 3:
-        return DSA_PUB;
-      case 4:
-        return RSA_PRIV;
-      case 5:
-        return RSA_PUB;
-      case 6:
-        return EC_PRIV;
-      case 7:
-        return EC_PUB;
-      case 127:
-        return TEST;
-    }
-    return null;
-  }
-
   @Override
   public String getName() {
     return this.name();
