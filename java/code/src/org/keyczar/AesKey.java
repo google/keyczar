@@ -103,7 +103,7 @@ public class AesKey extends KeyczarKey {
   }
 
   @Override
-  byte[] hash() {
+  protected byte[] hash() {
     return hash;
   }
 
@@ -129,7 +129,7 @@ public class AesKey extends KeyczarKey {
   }
 
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new AesStream();
   }
 
