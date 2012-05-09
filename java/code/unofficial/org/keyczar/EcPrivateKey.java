@@ -18,8 +18,8 @@ package org.keyczar;
 
 import com.google.gson.annotations.Expose;
 
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
@@ -78,7 +78,7 @@ public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
   @Override
   public KeyType getType() {
-    return KeyType.EC_PRIV;
+    return DefaultKeyType.EC_PRIV;
   }
 
   public void setPublic(KeyczarPublicKey pub) throws KeyczarException {
@@ -92,7 +92,7 @@ public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   static EcPrivateKey generate() throws KeyczarException {
-    return generate(KeyType.EC_PRIV.defaultSize());
+    return generate(DefaultKeyType.EC_PRIV.defaultSize());
   }
 
   void init() throws KeyczarException {
