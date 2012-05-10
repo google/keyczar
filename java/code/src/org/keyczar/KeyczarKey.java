@@ -86,7 +86,7 @@ public abstract class KeyczarKey {
     return Util.toInt(this.hash());
   }
 
-  abstract Stream getStream() throws KeyczarException;
+  protected abstract Stream getStream() throws KeyczarException;
 
   /**
    * Return this key's type
@@ -100,7 +100,7 @@ public abstract class KeyczarKey {
    *
    * @return A byte array hash of this key material
    */
-  abstract byte[] hash();
+  protected abstract byte[] hash();
 
   int size() {
     return size;

@@ -80,7 +80,7 @@ public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   @Override
-  byte[] hash() {
+  protected byte[] hash() {
     return getPublic().hash();
   }
 
@@ -94,7 +94,7 @@ public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new DsaSigningStream();
   }
 

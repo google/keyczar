@@ -17,6 +17,7 @@
 package org.keyczar;
 
 import org.keyczar.annotations.Experimental;
+import org.keyczar.DefaultKeyType;
 import org.keyczar.exceptions.KeyczarException;
 
 /**

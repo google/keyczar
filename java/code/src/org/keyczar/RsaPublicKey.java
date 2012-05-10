@@ -76,7 +76,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
   }
 
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new RsaStream();
   }
 
