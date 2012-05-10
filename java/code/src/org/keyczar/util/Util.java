@@ -16,6 +16,12 @@
 
 package org.keyczar.util;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import org.keyczar.exceptions.Base64DecodingException;
+import org.keyczar.exceptions.KeyczarException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,12 +36,6 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
-import org.keyczar.exceptions.Base64DecodingException;
-import org.keyczar.exceptions.KeyczarException;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 /**
  * A miscellaneous utility class. Includes random number generation, int-to-byte
@@ -55,11 +55,17 @@ public class Util {
     // Don't new me.
   }
 
-  private static final Gson GSON =
-    new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+  private static final ThreadLocal<Gson> GSON_THREAD_LOCAL = new ThreadLocal<Gson>() {
+    @Override
+    protected Gson initialValue() {
+      return new GsonBuilder()
+        .excludeFieldsWithoutExposeAnnotation()
+        .create();
+    }
+  };
 
   public static Gson gson() {
-    return GSON;
+    return GSON_THREAD_LOCAL.get();
   }
 
   public static byte[] stripLeadingZeros(byte[] input) {
