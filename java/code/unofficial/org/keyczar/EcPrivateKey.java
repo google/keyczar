@@ -67,12 +67,12 @@ public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
   
   @Override
-  byte[] hash() {
+  protected byte[] hash() {
     return getPublic().hash();
   }
 
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new EcSigningStream();
   }
 

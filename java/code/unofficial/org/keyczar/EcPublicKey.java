@@ -73,12 +73,12 @@ public class EcPublicKey extends KeyczarPublicKey {
   }
   
   @Override
-  byte[] hash() {
+  protected byte[] hash() {
     return hash;
   }
   
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new EcVerifyingStream();
   }
 
