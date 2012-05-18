@@ -41,7 +41,7 @@ import java.nio.ByteBuffer;
 public class Crypter extends Encrypter {
   private static final int DECRYPT_CHUNK_SIZE = 1024;
   private static final Logger LOG = Logger.getLogger(Crypter.class);
-  private static final StreamCache<DecryptingStream> CRYPT_CACHE
+  private final StreamCache<DecryptingStream> CRYPT_CACHE
     = new StreamCache<DecryptingStream>();
 
   /**

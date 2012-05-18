@@ -46,7 +46,7 @@ import java.nio.ByteBuffer;
 */
 public class Verifier extends Keyczar {
   private static final Logger LOG = Logger.getLogger(Verifier.class);
-  private static final StreamCache<VerifyingStream> VERIFY_CACHE
+  private final StreamCache<VerifyingStream> VERIFY_CACHE
     = new StreamCache<VerifyingStream>();
 
   /**
