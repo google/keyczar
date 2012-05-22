@@ -6,6 +6,7 @@ Keyzcar Java release 0.71e
 	* Removed static modifiers from StreamCache in Java Crypter and
 	Verifier. Having them static could lead to collisions between keys in
 	unrelated key sets.
+	* Modified Java Keyczar to make Gson instance thread-local.
 
 Keyzcar Java release 0.71d
 ==========================
