@@ -1,3 +1,15 @@
+Keyzcar Java release 0.71f
+==========================
+
+2012-05-22  Justin Scheiner <jmscheiner@google.com>
+
+	* Make KeyType extensible. KeyTypes are immutable singletons (similar
+	to the enum before). Existing KeyTypes were moved to
+	enums.DefaultKeyType. Unsupported KeyTypes are registered at
+	initialization.
+	* Make it possible for third parties to extend KeyczarKey
+	(visibility change).
+
 Keyzcar Java release 0.71e
 ==========================
 
