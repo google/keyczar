@@ -21,6 +21,7 @@ import com.google.gson.GsonBuilder;
 
 import org.keyczar.exceptions.Base64DecodingException;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyType;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -60,6 +61,8 @@ public class Util {
     protected Gson initialValue() {
       return new GsonBuilder()
         .excludeFieldsWithoutExposeAnnotation()
+        .registerTypeAdapter(KeyType.class, new KeyType.KeyTypeSerializer())
+        .registerTypeAdapter(KeyType.class, new KeyType.KeyTypeDeserializer())
         .create();
     }
   };

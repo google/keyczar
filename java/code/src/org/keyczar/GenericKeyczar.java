@@ -3,7 +3,6 @@ package org.keyczar;
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
-import org.keyczar.enums.KeyType;
 import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
@@ -227,25 +226,22 @@ public class GenericKeyczar extends Keyczar {
     KeyMetadata kmd = getMetadata();
     // Can only export if type is DSA_PRIV and purpose is SIGN_AND_VERIFY
     KeyMetadata publicKmd = null;
-    switch(kmd.getType()) {
-      case DSA_PRIV: // DSA Private Key
-        if (kmd.getPurpose() == KeyPurpose.SIGN_AND_VERIFY) {
+    if (kmd.getType() == DefaultKeyType.DSA_PRIV) {
+      if (kmd.getPurpose() == KeyPurpose.SIGN_AND_VERIFY) {
+        publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY,
+            DefaultKeyType.DSA_PUB);
+      }
+    } else if (kmd.getType() == DefaultKeyType.RSA_PRIV) {
+      switch(kmd.getPurpose()) {
+        case DECRYPT_AND_ENCRYPT:
+          publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.ENCRYPT,
+              DefaultKeyType.RSA_PUB);
+          break;
+        case SIGN_AND_VERIFY:
           publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY,
-              KeyType.DSA_PUB);
-        }
-        break;
-      case RSA_PRIV: // RSA Private Key
-        switch(kmd.getPurpose()) {
-          case DECRYPT_AND_ENCRYPT:
-            publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.ENCRYPT,
-                KeyType.RSA_PUB);
-            break;
-          case SIGN_AND_VERIFY:
-            publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY,
-                KeyType.RSA_PUB);
-            break;
-        }
-        break;
+              DefaultKeyType.RSA_PUB);
+          break;
+      }
     }
     if (publicKmd == null) {
       throw new KeyczarException(

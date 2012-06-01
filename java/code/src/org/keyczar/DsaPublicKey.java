@@ -18,8 +18,8 @@ package org.keyczar;
 
 import com.google.gson.annotations.Expose;
 
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
@@ -102,13 +102,13 @@ public class DsaPublicKey extends KeyczarPublicKey {
   }
 
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new DsaVerifyingStream();
   }
 
   @Override
   public KeyType getType() {
-    return KeyType.DSA_PUB;
+    return DefaultKeyType.DSA_PUB;
   }
 
   @Override
