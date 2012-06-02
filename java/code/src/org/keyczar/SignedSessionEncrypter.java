@@ -20,7 +20,7 @@ import static org.keyczar.util.Util.rand;
 
 import org.keyczar.annotations.Experimental;
 import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.interfaces.KeyType;
+import org.keyczar.keyparams.AesKeyParameters;
 import org.keyczar.util.Base64Coder;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -49,7 +49,7 @@ public class SignedSessionEncrypter {
   private final Encrypter encrypter;
   private final Signer signer;
 
-  private AtomicReference<SessionMaterial> session =
+  private final AtomicReference<SessionMaterial> session =
       new AtomicReference<SessionMaterial>();
 
   public SignedSessionEncrypter(Encrypter encrypter, Signer signer) {
@@ -64,7 +64,7 @@ public class SignedSessionEncrypter {
    * @throws KeyczarException
    */
   public String newSession() throws KeyczarException {
-    return this.newSession(DefaultKeyType.AES.getAcceptableSizes().get(0));
+    return this.newSession((AesKeyParameters) DefaultKeyType.AES.applyDefaultParameters(null));
   }
 
   /**
@@ -73,24 +73,46 @@ public class SignedSessionEncrypter {
    * @param aesKeySize supported AES key size.
    * @return Base64 encoded session material.
    * @throws KeyczarException
+   *
+   * @deprecated use {@link #newSession(AesKeyParameters)} instead.
    */
-  public String newSession(int aesKeySize) throws KeyczarException {
-	KeyType type = DefaultKeyType.AES;
-	if (!type.isAcceptableSize(aesKeySize)) {
+  @Deprecated
+  public String newSession(final int aesKeySize) throws KeyczarException {
+    AesKeyParameters params = new AesKeyParameters() {
+
+      @Override
+      public int getKeySize() {
+        return aesKeySize;
+      }
+
+      @Override
+      public HmacKey getHmacKey() throws KeyczarException {
+        return HmacKey.generate(DefaultKeyType.HMAC_SHA1.applyDefaultParameters(null));
+      }
+    };
+    SessionMaterial sessionMaterial = new SessionMaterial(buildSessionKey(params), buildNonce());
+    session.set(sessionMaterial);
+    return encrypter.encrypt(sessionMaterial.toString());
+  }
+
+  public String newSession(AesKeyParameters params) throws KeyczarException {
+    SessionMaterial sessionMaterial =
+        new SessionMaterial(buildSessionKey(params), buildNonce());
+    session.set(sessionMaterial);
+    return encrypter.encrypt(sessionMaterial.toString());
+  }
+
+  private AesKey buildSessionKey(AesKeyParameters params) throws KeyczarException {
+    if (!DefaultKeyType.AES.isAcceptableSize(params.getKeySize())) {
       throw new KeyczarException("Unsupported key size requested for session");
-	}
+    }
+    return AesKey.generate(params);
+  }
 
-    AesKey aesKey = AesKey.generate(aesKeySize);
-
+  private String buildNonce() {
     byte[] nonce = new byte[NONCE_SIZE];
     rand(nonce);
-
-    String nonceString = Base64Coder.encodeWebSafe(nonce);
-
-    session.set(new SessionMaterial(aesKey, nonceString));
-
-    // encrypt session data in its entirety
-    return encrypter.encrypt(session.get().toString());
+    return Base64Coder.encodeWebSafe(nonce);
   }
 
   /**
@@ -104,7 +126,7 @@ public class SignedSessionEncrypter {
 	if (null == session.get()) {
       throw new KeyczarException("Session not initialized.");
 	}
-	
+
     SessionMaterial material = session.get();
     ImportedKeyReader importedKeyReader = new ImportedKeyReader(material.getKey());
     Crypter symmetricCrypter = new Crypter(importedKeyReader);

@@ -136,6 +136,10 @@ public class RsaPublicKey extends KeyczarPublicKey {
     System.arraycopy(getPadding().computeFullHash(jcePublicKey), 0, hash, 0, hash.length);
   }
 
+  int keySizeInBytes() {
+    return jcePublicKey.getModulus().bitLength() / 8;
+  }
+
   @Override
   protected RSAPublicKey getJceKey() {
     return jcePublicKey;
@@ -172,7 +176,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
 
     @Override
     public int digestSize() {
-      return getType().getOutputSize();
+      return keySizeInBytes();
     }
 
     @Override
@@ -252,7 +256,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
 
     @Override
     public int maxOutputSize(int inputLen) {
-      return getType().getOutputSize(size);
+      return keySizeInBytes();
     }
 
     @Override

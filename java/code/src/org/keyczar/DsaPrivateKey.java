@@ -23,6 +23,7 @@ import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.keyparams.KeyParameters;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
@@ -30,7 +31,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
-import java.security.KeyPair;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.DSAPrivateKey;
@@ -45,19 +45,16 @@ import java.security.spec.DSAPrivateKeySpec;
 public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String KEY_GEN_ALGORITHM = "DSA";
   private static final String SIG_ALGORITHM = "SHA1withDSA";
+  private static final int DSA_DIGEST_SIZE = 48;
 
   @Expose private final DsaPublicKey publicKey;
   @Expose private final String x;
 
   private DSAPrivateKey jcePrivateKey;
 
-  static DsaPrivateKey generate() throws KeyczarException {
-    return generate(DefaultKeyType.DSA_PRIV.defaultSize());
-  }
-
-  static DsaPrivateKey generate(int keySize) throws KeyczarException {
-    KeyPair pair = Util.generateKeyPair(KEY_GEN_ALGORITHM, keySize);
-    return new DsaPrivateKey((DSAPrivateKey) pair.getPrivate());
+  static DsaPrivateKey generate(KeyParameters params) throws KeyczarException {
+    return new DsaPrivateKey(
+        (DSAPrivateKey) Util.generateKeyPair(KEY_GEN_ALGORITHM, params.getKeySize()).getPrivate());
   }
 
   static DsaPrivateKey read(String input) throws KeyczarException {
@@ -143,7 +140,7 @@ public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
     @Override
     public int digestSize() {
-      return getType().getOutputSize();
+      return DSA_DIGEST_SIZE;
     }
 
     @Override

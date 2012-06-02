@@ -18,7 +18,6 @@ package org.keyczar;
 
 import com.google.gson.annotations.Expose;
 
-import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyType;
@@ -107,17 +106,6 @@ public abstract class KeyczarKey {
   }
 
   /**
-   * Generates private key of desired type and of the default size.
-   *
-   * @param type KeyType desired
-   * @return KeyczarKey of desired type
-   * @throws KeyczarException for unsupported key types
-   */
-  static KeyczarKey genKey(KeyType type) throws KeyczarException {
-    return genKey(type, type.defaultSize());
-  }
-
-  /**
    * Register a new key type.
    *
    * Custom {@link KeyType}s should be immutable singletons, Note that
@@ -135,68 +123,6 @@ public abstract class KeyczarKey {
   @Override
   public String toString() {
     return Util.gson().toJson(this);
-  }
-
-  /**
-   * Generates private key of the desired type and size. Cannot generate public
-   * key, instead must export public key set from private keys.
-   *
-   * If given size is unacceptable, falls back to using default size for the
-   * desired key type.
-   *
-   * @param type KeyType desired
-   * @param keySize desired length of key
-   * @return KeyczarKey of desired type
-   * @throws KeyczarException for unsupported key types
-   */
-  static KeyczarKey genKey(KeyType type, int keySize) throws KeyczarException {
-    RsaPadding padding = null;
-    if (type == DefaultKeyType.RSA_PRIV) {
-      padding = RsaPadding.OAEP;
-    }
-    return genKey(type, padding, keySize);
-  }
-
-  /**
-   * Generates private key of the desired type and size. Cannot generate public
-   * key, instead must export public key set from private keys.
-   *
-   * If given size is unacceptable, falls back to using default size for the
-   * desired key type.
-   *
-   * @param type KeyType desired
-   * @param padding Encryption padding type for RSA keys.  Should be null for others.
-   * @param keySize desired length of key
-   * @return KeyczarKey of desired type
-   * @throws KeyczarException for unsupported key types
-   */
-  static KeyczarKey genKey(KeyType type, RsaPadding padding, int keySize)
-      throws KeyczarException {
-    if (!type.isAcceptableSize(keySize)) {
-      keySize = type.defaultSize();  // fall back to default
-    }
-
-    if (padding != null && type != DefaultKeyType.RSA_PRIV) {
-      throw new KeyczarException(Messages.getString("InvalidPadding", padding.name()));
-    }
-
-    KeyType.Builder builder = (type == DefaultKeyType.RSA_PRIV) ?
-        DefaultKeyType.RSA_PRIV.getRsaBuilder(padding) : type.getBuilder();
-    return builder.generate(keySize);
-  }
-
-  /**
-   * Converts a JSON string representation of a KeyczarKey into the appropriate
-   * KeyczarKey object.
-   *
-   * @param type KeyType being read from JSON input
-   * @param key JSON String representation of a KeyczarKey
-   * @return KeyczareKey of given type
-   * @throws KeyczarException if type mismatch with JSON input or unsupported
-   * key type
-   */
-  static KeyczarKey readKey(KeyType type, String key) throws KeyczarException {
-    return type.getBuilder().read(key);
   }
 
   /**

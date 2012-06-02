@@ -18,7 +18,6 @@ package org.keyczar;
 
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
-import org.keyczar.DefaultKeyType;
 import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;

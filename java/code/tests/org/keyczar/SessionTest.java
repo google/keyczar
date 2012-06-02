@@ -16,17 +16,16 @@
 
 package org.keyczar;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.Arrays;
-
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 import org.junit.Test;
-import org.keyczar.annotations.Experimental;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
+
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.Arrays;
 
 /**
  * Tests Crypter class for encrypting and decrypting with RSA and AES.
@@ -34,7 +33,7 @@ import org.keyczar.util.Base64Coder;
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-@Experimental
+@SuppressWarnings("deprecation")
 public class SessionTest extends TestCase {
   private static final Logger LOG = Logger.getLogger(SessionTest.class);
   private static final String TEST_DATA = "./testdata";

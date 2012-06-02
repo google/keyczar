@@ -21,10 +21,11 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
+import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.NoPrimaryKeyException;
-import org.keyczar.interfaces.KeyType;
 import org.keyczar.i18n.Messages;
+import org.keyczar.keyparams.RsaKeyParameters;
 
 /**
  *
@@ -35,6 +36,18 @@ import org.keyczar.i18n.Messages;
  *
  */
 public class KeyczarToolTest extends TestCase {
+  private final static class FastRsaKeyParameters implements RsaKeyParameters {
+    @Override
+    public int getKeySize() {
+      return 512; // use 512-bit keys for speed
+    }
+
+    @Override
+    public RsaPadding getRsaPadding() {
+      return RsaPadding.OAEP;
+    }
+  }
+
   private static final String TEST_DATA = "./testdata/certificates/";
 
   MockKeyczarReader mock;
@@ -84,7 +97,7 @@ public class KeyczarToolTest extends TestCase {
 
   @Test
   public final void testPublicKeys() throws KeyczarException {
-    pubMock.addKey(33, KeyStatus.PRIMARY, 512); // use 512-bit keys for speed
+    pubMock.addKey(33, KeyStatus.PRIMARY, new FastRsaKeyParameters());
     KeyczarTool.setReader(pubMock); // use pubMock reader instead
     assertFalse(pubMock.exportedPublicKeySet());
     String[] args = {"pubkey"};
