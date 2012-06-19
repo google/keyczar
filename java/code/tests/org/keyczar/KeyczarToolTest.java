@@ -117,6 +117,40 @@ public class KeyczarToolTest extends TestCase {
   }
 
   @Test
+  public final void testAddAfterRevoke() throws KeyczarException {
+    mock = new MockKeyczarReader("TEST", KeyPurpose.ENCRYPT, DefaultKeyType.AES);
+    assertEquals(0, mock.numKeys());
+    KeyczarTool.setReader(mock);
+
+    // Add a pair of keys
+    String[] addKeyArgs = {"addkey", "--status=primary"};
+    KeyczarTool.main(addKeyArgs);
+    assertTrue(mock.existsVersion(1));
+    assertFalse(mock.existsVersion(2));
+    KeyczarTool.main(addKeyArgs);
+    assertTrue(mock.existsVersion(1));
+    assertTrue(mock.existsVersion(2));
+
+    // Demote and revoke version 1
+    String[] demoteArgs = {"demote", "--version=1"};
+    KeyczarTool.main(demoteArgs);
+    assertTrue(mock.existsVersion(1));
+    assertTrue(mock.existsVersion(2));
+    String[] revokeArgs = {"revoke", "--version=1"};
+    KeyczarTool.main(revokeArgs);
+    assertFalse(mock.existsVersion(1));
+    assertTrue(mock.existsVersion(2));
+    String key2 = mock.getKey(2);
+
+    // Add a third key
+    KeyczarTool.main(addKeyArgs);
+    assertFalse(mock.existsVersion(1));
+    assertTrue(mock.existsVersion(2));
+    assertEquals(key2, mock.getKey(2));
+    assertTrue(mock.existsVersion(3));
+  }
+
+  @Test
   public final void testImportCertificateAsActive() throws KeyczarException {
     KeyczarTool.setReader(pubMock); // use pubMock reader instead
 
