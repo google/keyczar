@@ -57,6 +57,13 @@ class SessionEncrypterTest(unittest.TestCase):
     plaintext = session_decrypter.Decrypt(ciphertext)
     self.assertEqual(self.input, plaintext)
 
+    # Test raw encryption/decryption
+    raw_ciphertext = session_encrypter.Encrypt(self.input, encoder=None)
+    # The headers should be equal; ciphertext will be different due to IVs
+    self.assertEqual(util.Base64WSDecode(ciphertext)[0:5], raw_ciphertext[0:5])
+    plaintext = session_decrypter.Decrypt(raw_ciphertext, decoder=None)
+    self.assertEqual(self.input, plaintext)
+
   def testSignedSessionEncryptAndDecrypt(self):
     encrypter = keyczar.Encrypter.Read(_get_test_dir("rsa"))
     signer = keyczar.Signer.Read(_get_test_dir("dsa"))
