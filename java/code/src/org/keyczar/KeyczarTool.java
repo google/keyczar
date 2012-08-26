@@ -26,6 +26,8 @@ import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.KeyczarReader;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -46,6 +48,9 @@ import java.util.HashMap;
  *   <li>promote: promote status of a key version in existing store
  *   <li>demote: demote status of a key version in existing store
  *   <li>revoke: revoke key version in existing store (if scheduled to be)
+ *   <li>use: encrypt a message with the specified key
+ *   <li>import: load a key into a key set
+ *   <li>export: extract a specified key version from a key set
  * </ul>
  *
  * @author steveweis@gmail.com (Steve Weis)
@@ -82,11 +87,11 @@ public class KeyczarTool {
    * @param args from the command line
    */
   public static void main(String[] args) {
+    ArrayList<String> nonFlagArgs=new ArrayList<String>();
     if (args.length == 0) {
       printUsage();
     } else {
       try {
-        Command c = Command.getCommand(args[0]);
         HashMap<Flag, String> flagMap = new HashMap<Flag, String>();
         for (String arg : args) {
           if (arg.startsWith("--")) {
@@ -96,6 +101,8 @@ public class KeyczarTool {
               Flag f = Flag.getFlag(nameValuePair[0]);
               flagMap.put(f, nameValuePair[1]);
             }
+          } else {
+            nonFlagArgs.add(arg);
           }
         }
 
@@ -118,7 +125,7 @@ public class KeyczarTool {
           sizeFlag = Integer.parseInt(flagMap.get(Flag.SIZE));
         }
 
-        switch (c) {
+        switch (Command.getCommand(nonFlagArgs.get(0))) {
           case CREATE:
             create(locationFlag, nameFlag, purposeFlag, asymmetricFlag);
             break;
@@ -138,11 +145,11 @@ public class KeyczarTool {
             revoke(locationFlag, Integer.parseInt(versionFlag));
             break;
           case USEKEY:
-            if (args.length > 2) {
-              useKey(args[1], locationFlag, destinationFlag, crypterFlag);
-            } else {
-              printUsage();
+            String message = null;
+            if (nonFlagArgs.size() > 1) {
+              message = nonFlagArgs.get(1);
             }
+            useKey(message, locationFlag, destinationFlag, crypterFlag);
             break;
           case IMPORT_KEY:
             importKey(locationFlag, pemFileFlag, statusFlag, crypterFlag, paddingFlag,
@@ -230,13 +237,21 @@ public class KeyczarTool {
   }
 
   private static void useKey(String msg, String locationFlag,
-      String destinationFlag, String crypterFlag) throws KeyczarException {
+                             String destinationFlag, String crypterFlag)
+      throws KeyczarException, IOException {
+    if (msg == null) {
+      BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+      StringBuilder msgBuilder = new StringBuilder();
+      String line;
+      while((line = in.readLine()) != null) {
+        msgBuilder.append(line);
+        msgBuilder.append("\n");
+      }
+
+      msg = msgBuilder.toString();
+    }
     GenericKeyczar genericKeyczar =
       createGenericKeyczar(locationFlag, crypterFlag);
-    if (destinationFlag == null) {
-      throw new KeyczarException(
-          Messages.getString("KeyczarTool.MustDefinePublic"));
-    }
     String answer = "";
     KeyczarReader reader = new KeyczarFileReader(locationFlag);
     if (crypterFlag != null) {
@@ -258,7 +273,11 @@ public class KeyczarTool {
             Messages.getString("KeyczarTool.UnsupportedPurpose",
                 genericKeyczar.getMetadata().getPurpose()));
     }
+    if (destinationFlag == null) {
+      System.out.println(answer);
+    } else {
     genericKeyczar.writeFile(answer, destinationFlag);
+    }
   }
 
   /**
