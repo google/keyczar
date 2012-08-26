@@ -25,7 +25,6 @@ import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.NoPrimaryKeyException;
-import org.keyczar.interfaces.KeyType;
 import org.keyczar.i18n.Messages;
 
 /**

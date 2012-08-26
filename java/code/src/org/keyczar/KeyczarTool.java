@@ -27,13 +27,13 @@ import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.KeyczarReader;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -87,7 +87,7 @@ public class KeyczarTool {
    * @param args from the command line
    */
   public static void main(String[] args) {
-    ArrayList<String> nonFlagArgs=new ArrayList<String>();
+    ArrayList<String> nonFlagArgs = new ArrayList<String>();
     if (args.length == 0) {
       printUsage();
     } else {
