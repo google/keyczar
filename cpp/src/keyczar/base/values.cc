@@ -4,6 +4,8 @@
 
 #include <keyczar/base/values.h>
 
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <keyczar/base/logging.h>
@@ -168,6 +170,24 @@ bool StringValue::Equals(const Value* other) const {
     return false;
   std::string lhs, rhs;
   return GetAsString(&lhs) && other->GetAsString(&rhs) && lhs == rhs;
+}
+
+bool StringValue::GetAsInteger(int* out_value) const {
+  if (out_value) {
+    errno = 0;
+    char* endptr;
+    const char* value_end = value_->c_str() + value_->length();
+    long val = strtol(value_->c_str(), &endptr, 10 /* base */);
+    if (errno                     // overflowed or underflowed long
+        || (val < INT_MIN)        // underflowed int
+        || (val > INT_MAX)        // overflowed int
+        || endptr != value_end) { // found non-numerics
+      return false;
+    }
+    *out_value = (int)val;
+  }
+
+  return true;
 }
 
 ///////////////////// BinaryValue ////////////////////

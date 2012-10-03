@@ -155,6 +155,11 @@ class StringValue : public Value {
   Value* DeepCopy() const;
   virtual bool Equals(const Value* other) const;
 
+  // Make the parser a bit more lenient by trying to convert strings to
+  // integers if the client asks for them as integers (e.g. if the JSON
+  // is malformed and has quotes around what should be an integer).
+  bool GetAsInteger(int* out_value) const;
+
  private:
   keyczar::base::ScopedSafeString value_;
 
