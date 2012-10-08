@@ -68,6 +68,7 @@ void StringAppendF(std::string* dst, const char* format, ...);
 // string.  All other routines are just convenience wrappers around it.
 void StringAppendV(std::string* dst, const char* format, va_list ap);
 
+int StringCompareInsensitive(const std::string& s1, const std::string& s2);
 
 // ToLower and ToUpper string conversions
 

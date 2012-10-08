@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <vector>
 
 #include <keyczar/base/logging.h>
@@ -471,4 +472,18 @@ uint32 strtou32_adaptor(const char *nptr, char **endptr, int base) {
   if (errno == 0)
     errno = saved_errno;
   return static_cast<uint32>(result);
+}
+
+void LowerCaseString(std::string* s) {
+  std::transform(s->begin(), s->end(), s->begin(), (int(*)(int)) tolower);
+}
+
+int StringCompareInsensitive(const std::string& s1, const std::string& s2) {
+  std::string s1_copy(s1);
+  std::string s2_copy(s2);
+
+  LowerCaseString(&s1_copy);
+  LowerCaseString(&s2_copy);
+
+  return s1_copy.compare(s2_copy);
 }
