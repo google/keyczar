@@ -73,12 +73,12 @@ class CryptoFactory {
 
   static RSAImpl* GeneratePrivateRSA(int size);
 
-  static RSAImpl* CreatePrivateRSA(const RSAImpl::RSAIntermediateKey& key);
+  static RSAImpl* CreatePrivateRSA(const RSAIntermediateKey& key);
 
   static RSAImpl* CreatePrivateRSAFromPEMPrivateKey(
       const std::string& filename, const std::string* passphrase);
 
-  static RSAImpl* CreatePublicRSA(const RSAImpl::RSAIntermediateKey& key);
+  static RSAImpl* CreatePublicRSA(const RSAIntermediateKey& key);
 
   static DSAImpl* GeneratePrivateDSA(int size);
 

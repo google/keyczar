@@ -22,31 +22,31 @@
 
 namespace keyczar {
 
+// This structure will be used for retrieving in a generic way the values
+// of these fields from the concrete implementations.
+struct RSAIntermediateKey {
+  std::string n;     // public modulus
+  std::string e;     // public exponent
+  std::string d;     // private exponent
+  std::string p;     // secret prime factor
+  std::string q;     // secret prime factor
+  std::string dmp1;  // d mod (p-1
+  std::string dmq1;  // d mod (q-1)
+  std::string iqmp;  // q^-1 mod p
+
+  ~RSAIntermediateKey() {
+    base::STLStringMemErase(&d);
+    base::STLStringMemErase(&p);
+    base::STLStringMemErase(&q);
+    base::STLStringMemErase(&dmp1);
+    base::STLStringMemErase(&dmq1);
+    base::STLStringMemErase(&iqmp);
+  }
+};
+
 // Cryptographic RSA interface.
 class RSAImpl {
  public:
-  // This structure will be used for retrieving in a generic way the values
-  // of these fields from the concrete implementations.
-  struct RSAIntermediateKey {
-    std::string n;     // public modulus
-    std::string e;     // public exponent
-    std::string d;     // private exponent
-    std::string p;     // secret prime factor
-    std::string q;     // secret prime factor
-    std::string dmp1;  // d mod (p-1
-    std::string dmq1;  // d mod (q-1)
-    std::string iqmp;  // q^-1 mod p
-
-    ~RSAIntermediateKey() {
-      base::STLStringMemErase(&d);
-      base::STLStringMemErase(&p);
-      base::STLStringMemErase(&q);
-      base::STLStringMemErase(&dmp1);
-      base::STLStringMemErase(&dmq1);
-      base::STLStringMemErase(&iqmp);
-    }
-  };
-
   RSAImpl() {}
   virtual ~RSAImpl() {}
 

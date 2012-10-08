@@ -233,7 +233,7 @@ RSAImpl* CryptoFactory::GeneratePrivateRSA(int size) {
 
 // static
 RSAImpl* CryptoFactory::CreatePrivateRSA(
-    const RSAImpl::RSAIntermediateKey& key) {
+    const RSAIntermediateKey& key) {
   return openssl::RSAOpenSSL::Create(key, true);
 }
 
@@ -245,7 +245,7 @@ RSAImpl* CryptoFactory::CreatePrivateRSAFromPEMPrivateKey(
 
 // static
 RSAImpl* CryptoFactory::CreatePublicRSA(
-    const RSAImpl::RSAIntermediateKey& key) {
+    const RSAIntermediateKey& key) {
   return openssl::RSAOpenSSL::Create(key, false);
 }
 

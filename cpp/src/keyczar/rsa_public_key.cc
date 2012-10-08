@@ -30,7 +30,7 @@ RSAPublicKey* RSAPublicKey::CreateFromValue(const Value& root_key) {
   const DictionaryValue* public_key = static_cast<const DictionaryValue*>(
       &root_key);
 
-  RSAImpl::RSAIntermediateKey intermediate_key;
+  RSAIntermediateKey intermediate_key;
 
   if (!util::DeserializeString(*public_key, "modulus", &intermediate_key.n))
     return NULL;
@@ -60,7 +60,7 @@ Value* RSAPublicKey::GetValue() const {
   if (public_key.get() == NULL)
     return NULL;
 
-  RSAImpl::RSAIntermediateKey intermediate_key;
+  RSAIntermediateKey intermediate_key;
   if (!rsa_impl()->GetPublicAttributes(&intermediate_key))
     return NULL;
 
@@ -80,7 +80,7 @@ bool RSAPublicKey::Hash(std::string* hash) const {
   if (hash == NULL)
     return false;
 
-  RSAImpl::RSAIntermediateKey key;
+  RSAIntermediateKey key;
   if (!rsa_impl()->GetPublicAttributes(&key))
     return false;
 

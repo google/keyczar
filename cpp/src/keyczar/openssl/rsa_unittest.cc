@@ -48,14 +48,14 @@ TEST(RSAOpenSSL, CreateKeyAndCompare) {
   ASSERT_TRUE(rsa_generated.get());
   EXPECT_EQ(rsa_generated->Size(), size);
 
-  RSAImpl::RSAIntermediateKey intermediate_key;
+  RSAIntermediateKey intermediate_key;
   ASSERT_TRUE(rsa_generated->GetAttributes(&intermediate_key));
   scoped_ptr<RSAOpenSSL> rsa_created(RSAOpenSSL::Create(intermediate_key,
                                                         true));
   ASSERT_TRUE(rsa_created.get());
   EXPECT_TRUE(rsa_generated->Equals(*rsa_created));
 
-  RSAImpl::RSAIntermediateKey intermediate_public_key;
+  RSAIntermediateKey intermediate_public_key;
   ASSERT_TRUE(rsa_generated->GetPublicAttributes(&intermediate_public_key));
   scoped_ptr<RSAOpenSSL> rsa_public(RSAOpenSSL::Create(intermediate_public_key,
                                                        false));

@@ -29,7 +29,7 @@ RSAPrivateKey* RSAPrivateKey::CreateFromValue(const Value& root_key) {
   const DictionaryValue* private_key = static_cast<const DictionaryValue*>(
       &root_key);
 
-  RSAImpl::RSAIntermediateKey intermediate_key;
+  RSAIntermediateKey intermediate_key;
 
   if (!util::SafeDeserializeString(*private_key, "privateExponent",
                                    &intermediate_key.d))
@@ -104,7 +104,7 @@ RSAPrivateKey* RSAPrivateKey::GenerateKey(int size) {
   if (rsa_private_key_impl.get() == NULL)
     return NULL;
 
-  RSAImpl::RSAIntermediateKey intermediate_public_key;
+  RSAIntermediateKey intermediate_public_key;
   if (!rsa_private_key_impl->GetPublicAttributes(&intermediate_public_key))
      return NULL;
 
@@ -135,7 +135,7 @@ RSAPrivateKey* RSAPrivateKey::CreateFromPEMPrivateKey(
   if (!KeyType::IsValidCipherSize(KeyType::RSA_PRIV, size))
     return NULL;
 
-  RSAImpl::RSAIntermediateKey intermediate_public_key;
+  RSAIntermediateKey intermediate_public_key;
   if (!rsa_private_key_impl->GetPublicAttributes(&intermediate_public_key))
      return NULL;
 
@@ -159,7 +159,7 @@ Value* RSAPrivateKey::GetValue() const {
   if (private_key.get() == NULL)
     return NULL;
 
-  RSAImpl::RSAIntermediateKey intermediate_key;
+  RSAIntermediateKey intermediate_key;
   if (!rsa_impl()->GetAttributes(&intermediate_key))
     return NULL;
 
