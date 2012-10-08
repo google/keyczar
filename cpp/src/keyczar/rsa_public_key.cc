@@ -24,18 +24,22 @@
 namespace keyczar {
 
 // static
-RSAPublicKey* RSAPublicKey::CreateFromValue(const Value& root_key) {
+RSAPublicKey* RSAPublicKey::CreateFromValue(
+    const Value& root_key, RSAIntermediateKey* intermediate_key) {
   if (!root_key.IsType(Value::TYPE_DICTIONARY))
     return NULL;
   const DictionaryValue* public_key = static_cast<const DictionaryValue*>(
       &root_key);
 
-  RSAIntermediateKey intermediate_key;
+  RSAIntermediateKey tmp;
+  if (intermediate_key == NULL) {
+    intermediate_key = &tmp;
+  }
 
-  if (!util::DeserializeString(*public_key, "modulus", &intermediate_key.n))
+  if (!util::DeserializeString(*public_key, "modulus", &intermediate_key->n))
     return NULL;
   if (!util::DeserializeString(*public_key, "publicExponent",
-                               &intermediate_key.e))
+                               &intermediate_key->e))
     return NULL;
 
   int size;
@@ -43,7 +47,7 @@ RSAPublicKey* RSAPublicKey::CreateFromValue(const Value& root_key) {
     return NULL;
 
   scoped_ptr<RSAImpl> rsa_public_key_impl(
-      CryptoFactory::CreatePublicRSA(intermediate_key));
+      CryptoFactory::CreatePublicRSA(*intermediate_key));
   if (rsa_public_key_impl.get() == NULL)
     return NULL;
 

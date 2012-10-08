@@ -24,6 +24,7 @@
 namespace keyczar {
 
 class RSAImpl;
+struct RSAIntermediateKey;
 
 class RSAPublicKey : public PublicKey {
  public:
@@ -34,7 +35,8 @@ class RSAPublicKey : public PublicKey {
 
   // Creates a key from |root_key|. The caller takes ownership of the returned
   // Key.
-  static RSAPublicKey* CreateFromValue(const Value& root_key);
+  static RSAPublicKey* CreateFromValue(const Value& root_key,
+                                       RSAIntermediateKey* intermediate = NULL);
 
   // The caller takes ownership of the returned Value.
   virtual Value* GetValue() const;

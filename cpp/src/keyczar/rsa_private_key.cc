@@ -59,14 +59,9 @@ RSAPrivateKey* RSAPrivateKey::CreateFromValue(const Value& root_key) {
   if (public_key == NULL)
     return NULL;
 
-  if (!util::DeserializeString(*public_key, "modulus", &intermediate_key.n))
-    return NULL;
-  if (!util::DeserializeString(*public_key, "publicExponent",
-                               &intermediate_key.e))
-    return NULL;
+  RSAPublicKey* rsa_public_key = RSAPublicKey::CreateFromValue(*public_key, &intermediate_key);
 
-  int size_public;
-  if (!public_key->GetInteger("size", &size_public))
+  if (rsa_public_key == NULL)
     return NULL;
 
   scoped_ptr<RSAImpl> rsa_private_key_impl(
@@ -75,18 +70,8 @@ RSAPrivateKey* RSAPrivateKey::CreateFromValue(const Value& root_key) {
     return NULL;
 
   // Check the provided size is valid.
-  if (size != size_public || size != rsa_private_key_impl->Size() ||
+  if (size != rsa_private_key_impl->Size() ||
       !KeyType::IsValidCipherSize(KeyType::RSA_PRIV, size))
-    return NULL;
-
-  scoped_ptr<RSAImpl> rsa_public_key_impl(
-      CryptoFactory::CreatePublicRSA(intermediate_key));
-  if (rsa_public_key_impl.get() == NULL)
-    return NULL;
-
-  RSAPublicKey* rsa_public_key = new RSAPublicKey(rsa_public_key_impl.release(),
-                                                  size);
-  if (rsa_public_key == NULL)
     return NULL;
 
   return new RSAPrivateKey(rsa_private_key_impl.release(),
