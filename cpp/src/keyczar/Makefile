@@ -13,22 +13,17 @@
 # If you want to create a debuggable build, set environment variable
 # DEBUG to 1
 
-JOBS ?= 1
-ifeq ($(DEBUG),1)
-    HAMMER_OPTS+="CXXFLAGS=-g LDFLAGS=-g"
-endif
-OPTS="HAMMER_OPTS=$(HAMMER_OPTS)"
-
-BUILD_CMD=cd ..; ./tools/swtoolkit/hammer.sh --compat -j$(JOBS) $(OPTS)
 
 all:
-	$(BUILD_CMD)
+	$(MAKE) -C .. all
+
+rebuild: clean all
 
 kctests:
-	$(BUILD_CMD) run_keyczar_unittests
+	$(MAKE) -C .. kctests
 
 keyczart:
-	$(BUILD_CMD) keyczart
+	$(MAKE) -C .. keyczart
 
 clean:
-	$(BUILD_CMD) -c
+	$(MAKE) -C .. clean
