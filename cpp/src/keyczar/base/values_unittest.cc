@@ -81,10 +81,10 @@ TEST(ValuesTest, List) {
   ASSERT_FALSE(mixed_list->GetString(2, &string_value));
   ASSERT_EQ("", string_value);
   ASSERT_FALSE(mixed_list->GetBoolean(3, &bool_value));
-  ASSERT_EQ(false, bool_value);
+  ASSERT_FALSE(bool_value);
 
   ASSERT_TRUE(mixed_list->GetBoolean(0, &bool_value));
-  ASSERT_EQ(true, bool_value);
+  ASSERT_TRUE(bool_value);
   ASSERT_TRUE(mixed_list->GetInteger(1, &int_value));
   ASSERT_EQ(42, int_value);
   ASSERT_TRUE(mixed_list->GetReal(2, &double_value));
