@@ -346,4 +346,41 @@ TEST_F(RSATest, DISABLED_ExportAndImportPrivateKey) {
   EXPECT_TRUE(imported_key->Verify(input_data_, signature));
 }
 
+TEST_F(RSATest, OaepIncompatibleWithPkcs) {
+  const std::vector<int> sizes = KeyType::CipherSizes(KeyType::RSA_PRIV);
+  scoped_refptr<RSAPrivateKey> private_key;
+
+  // Generates a new private key, with default (OAEP) padding.  Use a small
+  // key size for speed.
+  private_key = RSAPrivateKey::GenerateKey(512);
+  ASSERT_TRUE(private_key.get());
+
+  // Encrypt some data.
+  std::string encrypted_data;
+  RSAPublicKey* public_key =
+      const_cast<RSAPublicKey*>(
+          dynamic_cast<const RSAPublicKey*>(private_key->public_key()));
+  ASSERT_TRUE(public_key);
+  EXPECT_TRUE(public_key->Encrypt(input_data_, &encrypted_data));
+  EXPECT_EQ(static_cast<int>(encrypted_data.length()),
+	    Key::GetHeaderSize() + 512 / 8);
+
+  // Now decrypt it with normal (OAEP) padding.
+  std::string decrypted_data;
+  EXPECT_TRUE(private_key->Decrypt(encrypted_data, &decrypted_data));
+  EXPECT_EQ(input_data_, decrypted_data);
+
+  std::string oaep_hash;
+  ASSERT_TRUE(private_key->Hash(&oaep_hash));
+
+  // Set padding to PKCS and attempt to decrypt.
+  private_key->set_padding(PKCS);
+  public_key->set_padding(PKCS);
+  EXPECT_FALSE(private_key->Decrypt(encrypted_data, &decrypted_data));
+
+  std::string pkcs_hash;
+  ASSERT_TRUE(private_key->Hash(&pkcs_hash));
+  EXPECT_NE(oaep_hash, pkcs_hash);
+}
+
 }  // namespace keyczar

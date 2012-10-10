@@ -227,8 +227,8 @@ PBEImpl* CryptoFactory::CreatePBE(PBEImpl::CipherAlgorithm cipher_algorithm,
 }
 
 // static
-RSAImpl* CryptoFactory::GeneratePrivateRSA(int size) {
-  return openssl::RSAOpenSSL::GenerateKey(size);
+RSAImpl* CryptoFactory::GeneratePrivateRSA(int size, RsaPadding padding) {
+  return openssl::RSAOpenSSL::GenerateKey(size, padding);
 }
 
 // static
@@ -239,8 +239,10 @@ RSAImpl* CryptoFactory::CreatePrivateRSA(
 
 // static
 RSAImpl* CryptoFactory::CreatePrivateRSAFromPEMPrivateKey(
-    const std::string& filename, const std::string* passphrase) {
-  return openssl::RSAOpenSSL::CreateFromPEMPrivateKey(filename, passphrase);
+    const std::string& filename, const std::string* passphrase,
+    RsaPadding padding) {
+  return openssl::RSAOpenSSL::CreateFromPEMPrivateKey(filename, passphrase,
+                                                      padding);
 }
 
 // static

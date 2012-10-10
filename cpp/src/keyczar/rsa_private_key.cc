@@ -59,7 +59,8 @@ RSAPrivateKey* RSAPrivateKey::CreateFromValue(const Value& root_key) {
   if (public_key == NULL)
     return NULL;
 
-  RSAPublicKey* rsa_public_key = RSAPublicKey::CreateFromValue(*public_key, &intermediate_key);
+  RSAPublicKey* rsa_public_key = RSAPublicKey::CreateFromValue(
+      *public_key, &intermediate_key);
 
   if (rsa_public_key == NULL)
     return NULL;
@@ -80,12 +81,12 @@ RSAPrivateKey* RSAPrivateKey::CreateFromValue(const Value& root_key) {
 }
 
 // static
-RSAPrivateKey* RSAPrivateKey::GenerateKey(int size) {
+RSAPrivateKey* RSAPrivateKey::GenerateKey(int size, RsaPadding padding) {
   if (!KeyType::IsValidCipherSize(KeyType::RSA_PRIV, size))
     return NULL;
 
   scoped_ptr<RSAImpl> rsa_private_key_impl(
-      CryptoFactory::GeneratePrivateRSA(size));
+      CryptoFactory::GeneratePrivateRSA(size, padding));
   if (rsa_private_key_impl.get() == NULL)
     return NULL;
 
@@ -110,9 +111,12 @@ RSAPrivateKey* RSAPrivateKey::GenerateKey(int size) {
 
 // static
 RSAPrivateKey* RSAPrivateKey::CreateFromPEMPrivateKey(
-    const std::string& filename, const std::string* passphrase) {
+    const std::string& filename,
+    const std::string* passphrase,
+    RsaPadding padding) {
   scoped_ptr<RSAImpl> rsa_private_key_impl(
-      CryptoFactory::CreatePrivateRSAFromPEMPrivateKey(filename, passphrase));
+      CryptoFactory::CreatePrivateRSAFromPEMPrivateKey(
+          filename, passphrase, padding));
   if (rsa_private_key_impl.get() == NULL)
     return NULL;
 
@@ -211,6 +215,14 @@ bool RSAPrivateKey::Decrypt(const std::string& ciphertext,
 
   return rsa_impl()->Decrypt(ciphertext.substr(Key::GetHeaderSize()),
                              plaintext);
+}
+
+RsaPadding RSAPrivateKey::padding() const {
+  return rsa_impl()->padding();
+}
+
+void RSAPrivateKey::set_padding(RsaPadding padding) {
+  rsa_impl()->set_padding(padding);
 }
 
 }  // namespace keyczar

@@ -39,7 +39,7 @@ class RSAOpenSSL : public RSAImpl {
   // Builds a RSAOpenSSL object from a new generated key of size |size|. The
   // value of |size| is expressed in bits. The caller takes ownership over
   // the returned instance.
-  static RSAOpenSSL* GenerateKey(int size);
+  static RSAOpenSSL* GenerateKey(int size, RsaPadding padding);
 
   // Builds an RSAOpenSSL object from a PEM private key stored at |filename|.
   // |passphrase| is an optional passphrase. Its value is NULL if no
@@ -47,7 +47,8 @@ class RSAOpenSSL : public RSAImpl {
   // execution. The caller takes ownership over the returned object.
   // It can handle PEM format keys as well as PKCS8 format keys.
   static RSAOpenSSL* CreateFromPEMPrivateKey(const std::string& filename,
-                                             const std::string* passphrase);
+                                             const std::string* passphrase,
+                                             RsaPadding padding);
 
   // Exports this key encrypted with |passphrase| to |filename|. The format
   // used is PKCS8 and the key is encrypted with PBE algorithm as defined in
@@ -74,6 +75,10 @@ class RSAOpenSSL : public RSAImpl {
 
   virtual int Size() const;
 
+  virtual RsaPadding padding() const;
+
+  virtual void set_padding(RsaPadding padding);
+
   bool Equals(const RSAOpenSSL& rhs) const;
 
   bool private_key() const { return private_key_; }
@@ -88,12 +93,13 @@ class RSAOpenSSL : public RSAImpl {
   typedef scoped_ptr_malloc<
       RSA, openssl::OSSLDestroyer<RSA, RSA_free> > ScopedRSAKey;
 
-  RSAOpenSSL(RSA* key, bool private_key)
-      : key_(key), private_key_(private_key) {}
+  RSAOpenSSL(RSA* key, bool private_key, RsaPadding padding);
 
   const ScopedRSAKey key_;
 
   bool private_key_;
+
+  int padding_;
 
   DISALLOW_COPY_AND_ASSIGN(RSAOpenSSL);
 };

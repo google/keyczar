@@ -49,6 +49,11 @@ namespace keyczar {
 
 namespace openssl {
 
+RSAOpenSSL::RSAOpenSSL(RSA* key, bool private_key, RsaPadding padding)
+    : key_(key), private_key_(private_key) {
+  set_padding(padding);
+}
+
 // static
 RSAOpenSSL* RSAOpenSSL::Create(const RSAIntermediateKey& key,
                                bool private_key) {
@@ -73,7 +78,7 @@ RSAOpenSSL* RSAOpenSSL::Create(const RSAIntermediateKey& key,
     return NULL;
 
   if (!private_key)
-    return new RSAOpenSSL(rsa_key.release(), private_key);
+    return new RSAOpenSSL(rsa_key.release(), private_key, key.padding);
 
   // d
   rsa_key->d = BN_bin2bn(reinterpret_cast<unsigned char*>(
@@ -121,12 +126,13 @@ RSAOpenSSL* RSAOpenSSL::Create(const RSAIntermediateKey& key,
   if (!RSA_check_key(rsa_key.get()))
     return NULL;
 
-  return new RSAOpenSSL(rsa_key.release(), private_key);
+  return new RSAOpenSSL(rsa_key.release(), private_key, key.padding);
 }
 
 // static
-RSAOpenSSL* RSAOpenSSL::GenerateKey(int size) {
+RSAOpenSSL* RSAOpenSSL::GenerateKey(int size, RsaPadding padding) {
   ScopedRSAKey rsa_key(RSA_new());
+
   if (rsa_key.get() == NULL) {
     PrintOSSLErrors();
     return NULL;
@@ -155,12 +161,14 @@ RSAOpenSSL* RSAOpenSSL::GenerateKey(int size) {
   }
 
   return new RSAOpenSSL(rsa_key.release(),
-                        true /* private_key */);
+                        true /* private_key */,
+                        padding);
 }
 
 // static
 RSAOpenSSL* RSAOpenSSL::CreateFromPEMPrivateKey(const std::string& filename,
-                                                const std::string* passphrase) {
+                                                const std::string* passphrase,
+                                                RsaPadding padding) {
   // Load the disk based private key.
   ScopedEVPPKey evp_pkey(ReadPEMPrivateKeyFromFile(filename, passphrase));
   if (evp_pkey.get() == NULL) {
@@ -187,7 +195,8 @@ RSAOpenSSL* RSAOpenSSL::CreateFromPEMPrivateKey(const std::string& filename,
   }
 
   return new RSAOpenSSL(rsa_key.release(),
-                        true /* private_key */);
+                        true /* private_key */,
+                        padding);
 }
 
 bool RSAOpenSSL::ExportPrivateKey(const std::string& filename,
@@ -322,7 +331,38 @@ bool RSAOpenSSL::GetPublicAttributes(RSAIntermediateKey* key) {
   }
   key->e.assign(reinterpret_cast<char*>(e), num_e + 1);
 
+  key->padding = padding();
+
   return true;
+}
+
+RsaPadding RSAOpenSSL::padding() const {
+  switch (padding_) {
+    case RSA_PKCS1_PADDING:
+      return PKCS;
+    case RSA_PKCS1_OAEP_PADDING:
+      return OAEP;
+    default:
+      LOG(FATAL) << "Invalid padding (indicates a code defect)";
+      return UNDEFINED;
+  }
+}
+
+void RSAOpenSSL::set_padding(RsaPadding padding) {
+  switch (padding) {
+    case OAEP:
+      padding_ = RSA_PKCS1_OAEP_PADDING;
+      break;
+    case PKCS:
+      padding_ = RSA_PKCS1_PADDING;
+      break;
+    case UNDEFINED:
+      LOG(FATAL) << "Padding mode must be selected (code defect)";
+      break;
+    default:
+      LOG(FATAL) << "Unknown padding mode (code defect)";
+      break;
+  }
 }
 
 bool RSAOpenSSL::Sign(const MessageDigestImpl::DigestAlgorithm digest_algorithm,
@@ -400,7 +440,7 @@ bool RSAOpenSSL::Encrypt(const std::string& data,
                                              const_cast<char*>(data.data())),
                                          encrypted_buffer,
                                          key_.get(),
-                                         RSA_PKCS1_OAEP_PADDING);
+                                         padding_);
   if (encrypted_len == -1) {
     PrintOSSLErrors();
     return false;
@@ -424,7 +464,7 @@ bool RSAOpenSSL::Decrypt(const std::string& encrypted,
                                          const_cast<char*>(encrypted.data())),
                                      data_buffer,
                                      key_.get(),
-                                     RSA_PKCS1_OAEP_PADDING);
+                                     padding_);
   if (data_len == -1) {
     PrintOSSLErrors();
     return false;

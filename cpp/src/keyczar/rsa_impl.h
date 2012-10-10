@@ -19,6 +19,7 @@
 #include <keyczar/base/basictypes.h>
 #include <keyczar/base/stl_util-inl.h>
 #include <keyczar/message_digest_impl.h>
+#include <keyczar/rsa_padding.h>
 
 namespace keyczar {
 
@@ -33,6 +34,10 @@ struct RSAIntermediateKey {
   std::string dmp1;  // d mod (p-1
   std::string dmq1;  // d mod (q-1)
   std::string iqmp;  // q^-1 mod p
+  RsaPadding padding;
+
+  // Ensure that callers explicity specify padding.
+  RSAIntermediateKey() : padding(UNDEFINED) {}
 
   ~RSAIntermediateKey() {
     base::STLStringMemErase(&d);
@@ -77,6 +82,10 @@ class RSAImpl {
 
   // Returns the key size in bits.
   virtual int Size() const = 0;
+
+  virtual RsaPadding padding() const = 0;
+
+  virtual void set_padding(RsaPadding padding) = 0;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(RSAImpl);

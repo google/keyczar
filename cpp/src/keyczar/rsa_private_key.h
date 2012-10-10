@@ -37,12 +37,13 @@ class RSAPrivateKey : public PrivateKey {
 
   // Generates a |size| bits key. The caller takes ownership of the returned
   // Key.
-  static RSAPrivateKey* GenerateKey(int size);
+  static RSAPrivateKey* GenerateKey(int size, RsaPadding padding = OAEP);
 
   // Imports a PEM key |filename| and creates a new key. |passphrase| is
   // optional.
   static RSAPrivateKey* CreateFromPEMPrivateKey(const std::string& filename,
-                                                const std::string* passphrase);
+                                                const std::string* passphrase,
+                                                RsaPadding padding = OAEP);
 
   // The caller takes ownership of the returned Value.
   virtual Value* GetValue() const;
@@ -61,6 +62,14 @@ class RSAPrivateKey : public PrivateKey {
   friend class RSATest;
   FRIEND_TEST(RSATest, GenerateKeyAndPublicEncrypt);
   FRIEND_TEST(RSATest, GenerateKeyAndPrivateSign);
+  FRIEND_TEST(RSATest, OaepIncompatibleWithPkcs);
+
+  // Gets the RSA padding mode used by cipher operations.
+  RsaPadding padding() const;
+
+  // Sets the RSA padding mode used by cipher operations.  Does *not* also update
+  // the padding mode of the public key.
+  void set_padding(RsaPadding padding);
 
   // The caller doesn't take ownership over the returned object.
   RSAImpl* rsa_impl() const { return rsa_impl_.get(); }

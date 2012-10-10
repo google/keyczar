@@ -31,7 +31,7 @@ class RSAOpenSSLTest : public KeyczarTest {
 
 TEST_F(RSAOpenSSLTest, GenerateKeyAndEncrypt) {
   int size = 1024;
-  scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::GenerateKey(size));
+  scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::GenerateKey(size, OAEP));
   ASSERT_TRUE(rsa.get());
 
   std::string encrypted_data;
@@ -44,7 +44,7 @@ TEST_F(RSAOpenSSLTest, GenerateKeyAndEncrypt) {
 
 TEST(RSAOpenSSL, CreateKeyAndCompare) {
   int size = 1024;
-  scoped_ptr<RSAOpenSSL> rsa_generated(RSAOpenSSL::GenerateKey(size));
+  scoped_ptr<RSAOpenSSL> rsa_generated(RSAOpenSSL::GenerateKey(size, OAEP));
   ASSERT_TRUE(rsa_generated.get());
   EXPECT_EQ(rsa_generated->Size(), size);
 
@@ -70,7 +70,7 @@ TEST_F(RSAOpenSSLTest, GenerateKeyAndSign) {
   EXPECT_TRUE(digest.Digest(input_data_, &message_digest));
 
   int size = 1024;
-  scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::GenerateKey(size));
+  scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::GenerateKey(size, OAEP));
   ASSERT_TRUE(rsa.get());
   EXPECT_EQ(rsa->Size(), size);
 
@@ -85,7 +85,7 @@ TEST_F(RSAOpenSSLTest, GenerateKeyAndSign) {
 // TODO(swillden@google.com) Re-enable and fix
 TEST_F(RSAOpenSSLTest, DISABLED_ExportPrivateKey) {
   int size = 2048;
-  scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::GenerateKey(size));
+  scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::GenerateKey(size, OAEP));
   ASSERT_TRUE(rsa.get());
   EXPECT_EQ(rsa->Size(), size);
 
@@ -96,7 +96,7 @@ TEST_F(RSAOpenSSLTest, DISABLED_ExportPrivateKey) {
   EXPECT_TRUE(base::PathExists(pem_file));
 
   scoped_ptr<RSAOpenSSL> rsa_imported(RSAOpenSSL::CreateFromPEMPrivateKey(
-                                          pem_file.value(), &passphrase));
+      pem_file.value(), &passphrase, OAEP));
   ASSERT_TRUE(rsa_imported.get());
   EXPECT_TRUE(rsa->Equals(*rsa_imported));
 }
@@ -112,13 +112,13 @@ TEST_F(RSAOpenSSLTest, CreateFromPEMPrivateKey) {
 
   scoped_ptr<RSAOpenSSL> rsa(RSAOpenSSL::CreateFromPEMPrivateKey(
                                  rsa_pem.Append("rsa_priv.pem").value(),
-                                 NULL));
+                                 NULL, OAEP));
   EXPECT_TRUE(rsa.get());
 
   const std::string passphrase("cartman");
   rsa.reset(RSAOpenSSL::CreateFromPEMPrivateKey(
                 rsa_pem.Append("rsa_priv_encrypted.pem").value(),
-                &passphrase));
+                &passphrase, OAEP));
   EXPECT_TRUE(rsa.get());
 
   // rsa.reset(RSAOpenSSL::CreateFromPEMKey(

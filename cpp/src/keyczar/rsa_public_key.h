@@ -20,6 +20,7 @@
 #include <keyczar/base/scoped_ptr.h>
 #include <keyczar/base/values.h>
 #include <keyczar/public_key.h>
+#include <keyczar/rsa_padding.h>
 
 namespace keyczar {
 
@@ -51,9 +52,18 @@ class RSAPublicKey : public PublicKey {
 
  private:
   friend class RSATest;
+  friend class RSAPrivateKey;
+  FRIEND_TEST(RSATest, OaepIncompatibleWithPkcs);
 
   // The caller doesn't take ownership over the returned object.
   RSAImpl* rsa_impl() const { return rsa_impl_.get(); }
+
+  // Gets the RSA padding mode used by cipher operations.
+  RsaPadding padding() const;
+
+  // Sets the padding mode for encryption operations.  Does *not* also update
+  // the padding mode of the private key.
+  void set_padding(RsaPadding padding);
 
   scoped_ptr<RSAImpl> rsa_impl_;
 

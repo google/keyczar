@@ -84,6 +84,7 @@ Key* Key::GenerateKey(KeyType::Type key_type, int size) {
     case KeyType::ECDSA_PRIV:
       return ECDSAPrivateKey::GenerateKey(size);
     case KeyType::RSA_PRIV:
+      // TODO(swillden) Support PKCS1 padding.
       return RSAPrivateKey::GenerateKey(size);
     case KeyType::DSA_PUB:
     case KeyType::ECDSA_PUB:
@@ -106,6 +107,7 @@ Key* Key::CreateFromPEMPrivateKey(KeyType::Type key_type,
     case KeyType::ECDSA_PRIV:
       return ECDSAPrivateKey::CreateFromPEMPrivateKey(filename, passphrase);
     case KeyType::RSA_PRIV:
+      // TODO(swillden) Support PKCS1 padding.
       return RSAPrivateKey::CreateFromPEMPrivateKey(filename, passphrase);
 #ifdef COMPAT_KEYCZAR_06B
     case KeyType::HMAC_SHA1:
