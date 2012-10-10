@@ -68,14 +68,25 @@ static bool ConvertBignumToByteString(const BIGNUM* bignum, std::string* byte_st
   int bignum_length = BN_num_bytes(bignum);
   unsigned char byte_array[bignum_length + 1];
 
-  // Set the MSB to 0 to be compatible with Java implementation.
-  byte_array[0] = 0;
   if (BN_bn2bin(bignum, byte_array + 1) != bignum_length) {
     PrintOSSLErrors();
     return false;
   }
 
-  byte_string->assign(reinterpret_cast<char*>(byte_array), sizeof(byte_array));
+  // Set the MSB to 0 if the high order bit is set, to be compatible with the
+  // Java implementation.  The Java implementation uses BigInteger.toByteArray
+  // to produce the byte string representation, but because Java's BigIntegers
+  // are signed, it will prepend a zero byte if otherwise the high order bit
+  // would be set (which would make the number negative in 2s complement).
+  if (byte_array[1] & 0x80) {
+    byte_array[0] = 0;
+    byte_string->assign(reinterpret_cast<char*>(byte_array),
+			sizeof(byte_array));
+  } else {
+    byte_string->assign(reinterpret_cast<char*>(byte_array + 1),
+			sizeof(byte_array) - 1);
+  }
+
   memset(byte_array, 0, sizeof(byte_array));
   return true;
 }
