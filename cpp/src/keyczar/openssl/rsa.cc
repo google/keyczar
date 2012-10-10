@@ -54,6 +54,32 @@ RSAOpenSSL::RSAOpenSSL(RSA* key, bool private_key, RsaPadding padding)
   set_padding(padding);
 }
 
+static BIGNUM* ConvertByteStringToBignum(const std::string& byte_string) {
+  return BN_bin2bn(
+      reinterpret_cast<unsigned char*>(const_cast<char*>(byte_string.data())),
+      byte_string.length(),
+      NULL);
+}
+
+static bool ConvertBignumToByteString(const BIGNUM* bignum, std::string* byte_string) {
+  if (!bignum)
+    return false;
+
+  int bignum_length = BN_num_bytes(bignum);
+  unsigned char byte_array[bignum_length + 1];
+
+  // Set the MSB to 0 to be compatible with Java implementation.
+  byte_array[0] = 0;
+  if (BN_bn2bin(bignum, byte_array + 1) != bignum_length) {
+    PrintOSSLErrors();
+    return false;
+  }
+
+  byte_string->assign(reinterpret_cast<char*>(byte_array), sizeof(byte_array));
+  memset(byte_array, 0, sizeof(byte_array));
+  return true;
+}
+
 // static
 RSAOpenSSL* RSAOpenSSL::Create(const RSAIntermediateKey& key,
                                bool private_key) {
@@ -63,63 +89,24 @@ RSAOpenSSL* RSAOpenSSL::Create(const RSAIntermediateKey& key,
     return NULL;
   }
 
-  // n
-  rsa_key->n = BN_bin2bn(reinterpret_cast<unsigned char*>(
-                             const_cast<char*>(key.n.data())),
-                         key.n.length(), NULL);
-  if (rsa_key->n == NULL)
-    return NULL;
+  rsa_key->n = ConvertByteStringToBignum(key.n);
+  rsa_key->e = ConvertByteStringToBignum(key.e);
 
-  // e
-  rsa_key->e = BN_bin2bn(reinterpret_cast<unsigned char*>(
-                             const_cast<char*>(key.e.data())),
-                         key.e.length(), NULL);
-  if (rsa_key->e == NULL)
+  if (!rsa_key->n || !rsa_key->e)
     return NULL;
 
   if (!private_key)
     return new RSAOpenSSL(rsa_key.release(), private_key, key.padding);
 
-  // d
-  rsa_key->d = BN_bin2bn(reinterpret_cast<unsigned char*>(
-                             const_cast<char*>(key.d.data())),
-                         key.d.length(), NULL);
-  if (rsa_key->d == NULL)
-    return NULL;
+  rsa_key->d = ConvertByteStringToBignum(key.d);
+  rsa_key->p = ConvertByteStringToBignum(key.p);
+  rsa_key->q = ConvertByteStringToBignum(key.q);
+  rsa_key->dmp1 = ConvertByteStringToBignum(key.dmp1);
+  rsa_key->dmq1 = ConvertByteStringToBignum(key.dmq1);
+  rsa_key->iqmp = ConvertByteStringToBignum(key.iqmp);
 
-  // p
-  rsa_key->p = BN_bin2bn(reinterpret_cast<unsigned char*>(
-                             const_cast<char*>(key.p.data())),
-                         key.p.length(), NULL);
-  if (rsa_key->p == NULL)
-    return NULL;
-
-  // q
-  rsa_key->q = BN_bin2bn(reinterpret_cast<unsigned char*>(
-                             const_cast<char*>(key.q.data())),
-                         key.q.length(), NULL);
-  if (rsa_key->q == NULL)
-    return NULL;
-
-  // dmp1
-  rsa_key->dmp1 = BN_bin2bn(reinterpret_cast<unsigned char*>(
-                                const_cast<char*>(key.dmp1.data())),
-                            key.dmp1.length(), NULL);
-  if (rsa_key->dmp1 == NULL)
-    return NULL;
-
-  // dmq1
-  rsa_key->dmq1 = BN_bin2bn(reinterpret_cast<unsigned char*>(
-                                const_cast<char*>(key.dmq1.data())),
-                            key.dmq1.length(), NULL);
-  if (rsa_key->dmq1 == NULL)
-    return NULL;
-
-  // iqmp
-  rsa_key->iqmp = BN_bin2bn(reinterpret_cast<unsigned char*>(
-                                const_cast<char*>(key.iqmp.data())),
-                            key.iqmp.length(), NULL);
-  if (rsa_key->iqmp == NULL)
+  if (!rsa_key->d || !rsa_key->p || !rsa_key->q || !rsa_key->dmp1 ||
+      !rsa_key->dmq1 || !rsa_key->iqmp)
     return NULL;
 
   // Checks it is a valid well-formed private key.
@@ -132,24 +119,12 @@ RSAOpenSSL* RSAOpenSSL::Create(const RSAIntermediateKey& key,
 // static
 RSAOpenSSL* RSAOpenSSL::GenerateKey(int size, RsaPadding padding) {
   ScopedRSAKey rsa_key(RSA_new());
-
-  if (rsa_key.get() == NULL) {
-    PrintOSSLErrors();
-    return NULL;
-  }
-
   ScopedBIGNUM public_exponent(BN_new());
-  if (public_exponent.get() == NULL) {
-    PrintOSSLErrors();
-    return NULL;
-  }
 
-  if (!BN_set_word(public_exponent.get(), RSA_F4)) {
-    PrintOSSLErrors();
-    return NULL;
-  }
-
-  if (!RSA_generate_key_ex(rsa_key.get(), size, public_exponent.get(), NULL)) {
+  if (!rsa_key.get() ||
+      !public_exponent.get() ||
+      !BN_set_word(public_exponent.get(), RSA_F4) ||
+      !RSA_generate_key_ex(rsa_key.get(), size, public_exponent.get(), NULL)) {
     PrintOSSLErrors();
     return NULL;
   }
@@ -201,139 +176,36 @@ RSAOpenSSL* RSAOpenSSL::CreateFromPEMPrivateKey(const std::string& filename,
 
 bool RSAOpenSSL::ExportPrivateKey(const std::string& filename,
                                   const std::string* passphrase) const {
-  if (key_.get() == NULL || !private_key_)
-    return false;
-
   ScopedEVPPKey evp_key(EVP_PKEY_new());
-  if (evp_key.get() == NULL)
+  if (key_.get() &&
+      private_key_ &&
+      evp_key.get() &&
+      EVP_PKEY_set1_RSA(evp_key.get(), key_.get()))
+    return WritePEMPrivateKeyToFile(evp_key.get(), filename, passphrase);
+  else
     return false;
-
-  if (!EVP_PKEY_set1_RSA(evp_key.get(), key_.get()))
-    return false;
-
-  return WritePEMPrivateKeyToFile(evp_key.get(), filename, passphrase);
 }
 
 bool RSAOpenSSL::GetAttributes(RSAIntermediateKey* key) {
-  if (key == NULL || key_.get() == NULL)
-    return false;
-
-  if (!private_key_ || !key_->d || !key_->p || !key_->q || !key_->dmp1 ||
-      !key_->dmq1 || !key_->iqmp)
-    return false;
-
-  if (!GetPublicAttributes(key))
-    return false;
-
-  // d
-  int num_d = BN_num_bytes(key_->d);
-  unsigned char d[num_d + 1];
-  // Set the MSB to 0 to be compatible with Java implementation.
-  d[0] = 0;
-  if (BN_bn2bin(key_->d, d + 1) != num_d) {
-    PrintOSSLErrors();
-    return false;
-  }
-  key->d.assign(reinterpret_cast<char*>(d), num_d + 1);
-  memset(d, 0, num_d + 1);
-
-  // p
-  int num_p = BN_num_bytes(key_->p);
-  unsigned char p[num_p + 1];
-  // Set the MSB to 0 to be compatible with Java implementation.
-  p[0] = 0;
-  if (BN_bn2bin(key_->p, p + 1) != num_p) {
-    PrintOSSLErrors();
-    return false;
-  }
-  key->p.assign(reinterpret_cast<char*>(p), num_p + 1);
-  memset(p, 0, num_p + 1);
-
-  // q
-  int num_q = BN_num_bytes(key_->q);
-  unsigned char q[num_q + 1];
-  // Set the MSB to 0 to be compatible with Java implementation.
-  q[0] = 0;
-  if (BN_bn2bin(key_->q, q + 1) != num_q) {
-    PrintOSSLErrors();
-    return false;
-  }
-  key->q.assign(reinterpret_cast<char*>(q), num_q + 1);
-  // FIXME: could be better to use string_as_array to write directly
-  // into the string and avoid this call to memset.
-  memset(q, 0, num_q + 1);
-
-  // dmp1
-  int num_dmp1 = BN_num_bytes(key_->dmp1);
-  unsigned char dmp1[num_dmp1 + 1];
-  // Set the MSB to 0 to be compatible with Java implementation.
-  dmp1[0] = 0;
-  if (BN_bn2bin(key_->dmp1, dmp1 + 1) != num_dmp1) {
-    PrintOSSLErrors();
-    return false;
-  }
-  key->dmp1.assign(reinterpret_cast<char*>(dmp1), num_dmp1 + 1);
-  memset(dmp1, 0, num_dmp1 + 1);
-
-  // dmq1
-  int num_dmq1 = BN_num_bytes(key_->dmq1);
-  unsigned char dmq1[num_dmq1 + 1];
-  // Set the MSB to 0 to be compatible with Java implementation.
-  dmq1[0] = 0;
-  if (BN_bn2bin(key_->dmq1, dmq1 + 1) != num_dmq1) {
-    PrintOSSLErrors();
-    return false;
-  }
-  key->dmq1.assign(reinterpret_cast<char*>(dmq1), num_dmq1 + 1);
-  memset(dmq1, 0, num_dmq1 + 1);
-
-  // iqmp
-  int num_iqmp = BN_num_bytes(key_->iqmp);
-  unsigned char iqmp[num_iqmp + 1];
-  // Set the MSB to 0 to be compatible with Java implementation.
-  iqmp[0] = 0;
-  if (BN_bn2bin(key_->iqmp, iqmp + 1) != num_iqmp) {
-    PrintOSSLErrors();
-    return false;
-  }
-  key->iqmp.assign(reinterpret_cast<char*>(iqmp), num_iqmp + 1);
-  memset(iqmp, 0, num_iqmp + 1);
-
-  return true;
+  return (key &&
+          key_.get() &&
+          private_key_ &&
+          GetPublicAttributes(key) &&
+          ConvertBignumToByteString(key_->d, &(key->d)) &&
+          ConvertBignumToByteString(key_->p, &(key->p)) &&
+          ConvertBignumToByteString(key_->q, &(key->q)) &&
+          ConvertBignumToByteString(key_->dmp1, &(key->dmp1)) &&
+          ConvertBignumToByteString(key_->dmq1, &(key->dmq1)) &&
+          ConvertBignumToByteString(key_->iqmp, &(key->iqmp)));
 }
 
 bool RSAOpenSSL::GetPublicAttributes(RSAIntermediateKey* key) {
   if (key == NULL || key_.get() == NULL)
     return false;
 
-  if (!key_->n || !key_->e)
-    return false;
-
-  // n
-  int num_n = BN_num_bytes(key_->n);
-  unsigned char n[num_n + 1];
-  // Set the MSB to 0 to be compatible with Java implementation.
-  n[0] = 0;
-  if (BN_bn2bin(key_->n, n + 1) != num_n) {
-    PrintOSSLErrors();
-    return false;
-  }
-  key->n.assign(reinterpret_cast<char*>(n), num_n + 1);
-
-  // e
-  int num_e = BN_num_bytes(key_->e);
-  unsigned char e[num_e + 1];
-  // Set the MSB to 0 to be compatible with Java implementation.
-  e[0] = 0;
-  if (BN_bn2bin(key_->e, e + 1) != num_e) {
-    PrintOSSLErrors();
-    return false;
-  }
-  key->e.assign(reinterpret_cast<char*>(e), num_e + 1);
-
   key->padding = padding();
-
-  return true;
+  return (ConvertBignumToByteString(key_->n, &(key->n)) &&
+          ConvertBignumToByteString(key_->e, &(key->e)));
 }
 
 RsaPadding RSAOpenSSL::padding() const {
@@ -483,32 +355,21 @@ int RSAOpenSSL::Size() const {
 }
 
 bool RSAOpenSSL::Equals(const RSAOpenSSL& rhs) const {
-  if (key_.get() == NULL || private_key() != rhs.private_key())
-    return false;
-
-  const RSA* key_rhs = rhs.key();
-
-  if (BN_cmp(key_->n, key_rhs->n) != 0 || BN_cmp(key_->e, key_rhs->e) != 0)
+  if (!key_.get() ||
+      private_key() != rhs.private_key() ||
+      BN_cmp(key_->n, rhs.key()->n) != 0 ||
+      BN_cmp(key_->e, rhs.key()->e) != 0)
     return false;
 
   if (!private_key())
     return true;
 
-  bool result = true;
-  if (BN_cmp(key_->d, key_rhs->d) != 0)
-    result = false;
-  if (BN_cmp(key_->p, key_rhs->p) != 0)
-    result = false;
-  if (BN_cmp(key_->q, key_rhs->q) != 0)
-    result = false;
-  if (BN_cmp(key_->dmp1, key_rhs->dmp1) != 0)
-    result = false;
-  if (BN_cmp(key_->dmq1, key_rhs->dmq1) != 0)
-    result = false;
-  if (BN_cmp(key_->iqmp, key_rhs->iqmp) != 0)
-    result = false;
-
-  return result;
+  return (BN_cmp(key_->d, rhs.key()->d) == 0 &&
+          BN_cmp(key_->p, rhs.key()->p) == 0 &&
+          BN_cmp(key_->q, rhs.key()->q) == 0 &&
+          BN_cmp(key_->dmp1, rhs.key()->dmp1) == 0 &&
+          BN_cmp(key_->dmq1, rhs.key()->dmq1) == 0 &&
+          BN_cmp(key_->iqmp, rhs.key()->iqmp) == 0);
 }
 
 }  // namespace openssl
