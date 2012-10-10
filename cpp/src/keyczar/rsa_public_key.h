@@ -54,6 +54,7 @@ class RSAPublicKey : public PublicKey {
   friend class RSATest;
   friend class RSAPrivateKey;
   FRIEND_TEST(RSATest, OaepIncompatibleWithPkcs);
+  FRIEND_TEST(RSATest, LoadPublicKey);
 
   // The caller doesn't take ownership over the returned object.
   RSAImpl* rsa_impl() const { return rsa_impl_.get(); }

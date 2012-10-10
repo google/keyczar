@@ -71,15 +71,31 @@ class RSATest : public KeyczarTest {
   }
 
   // Loads public key from JSON file.
-  scoped_refptr<RSAPublicKey> LoadRSAPublicKey(const FilePath& path,
-                                               int key_version) {
+  scoped_refptr<RSAPublicKey> LoadRSAPublicKey(
+      const FilePath& path,
+      int key_version,
+      RSAIntermediateKey* intermediate = 0) {
     rw::KeysetJSONFileReader reader(path);
     scoped_ptr<Value> value(reader.ReadKey(key_version));
     EXPECT_NE(static_cast<Value*>(NULL), value.get());
-    scoped_refptr<RSAPublicKey> public_key(RSAPublicKey::CreateFromValue(
-                                               *value));
+    scoped_refptr<RSAPublicKey> public_key(
+        RSAPublicKey::CreateFromValue(*value, intermediate));
     CHECK(public_key);
     return public_key;
+  }
+
+  // Loads a string-type element of key from JSON file given the file path,
+  // key version and JSON path.
+  std::string LoadKeyComponentByPath(const FilePath& file_path,
+				     int key_version,
+				     std::string json_path) {
+    rw::KeysetJSONFileReader reader(file_path);
+    scoped_ptr<DictionaryValue> key(
+        dynamic_cast<DictionaryValue*>(reader.ReadKey(key_version)));
+    EXPECT_TRUE(key.get());
+    std::string element;
+    EXPECT_TRUE(key->GetString(json_path, &element));
+    return element;
   }
 };
 
@@ -136,8 +152,8 @@ TEST_F(RSATest, LoadPrivateKey) {
 
 TEST_F(RSATest, LoadPublicKey) {
   FilePath rsa_private_path = data_path_.Append("rsa-sign");
-  scoped_refptr<RSAPrivateKey> private_key = LoadRSAPrivateKey(rsa_private_path,
-                                                               1);
+  scoped_refptr<RSAPrivateKey> private_key =
+      LoadRSAPrivateKey(rsa_private_path, 1);
 
   // Attempts to sign data with this private key.
   std::string signature;
@@ -145,7 +161,15 @@ TEST_F(RSATest, LoadPublicKey) {
 
   // Loads the associated public key
   FilePath rsa_public_path = data_path_.Append("rsa-sign.public");
-  scoped_refptr<RSAPublicKey> public_key = LoadRSAPublicKey(rsa_public_path, 1);
+  RSAIntermediateKey intermediate_key1;
+  scoped_refptr<RSAPublicKey> public_key =
+      LoadRSAPublicKey(rsa_public_path, 1, &intermediate_key1);
+
+  // Check loaded public key values
+  RSAIntermediateKey intermediate_key2;
+  public_key->rsa_impl()->GetPublicAttributes(&intermediate_key2);
+  EXPECT_EQ(intermediate_key1.n, intermediate_key2.n);
+  EXPECT_EQ(intermediate_key1.e, intermediate_key2.e);
 
   // Attempts to verify the signature with this public key.
   EXPECT_TRUE(public_key->Verify(input_data_, signature));
@@ -154,10 +178,11 @@ TEST_F(RSATest, LoadPublicKey) {
 // Steps:
 // 1- Loads private key
 // 2- Dumps private key to temporary file
-// 3- Loads this temporary file
-// 3- Signs some data with this key
-// 4- Then, exports the public part into a second temporary file
-// 5- Loads this file and checks that the signature is valid
+// 3- Compares part of temporary file contents to original file contents
+// 4- Loads the temporary file
+// 5- Signs some data with the key from the temporary file
+// 6- Exports the public part into a second temporary file
+// 7- Loads the second file and checks that the signature is valid
 TEST_F(RSATest, LoadPrivateKeyDumpAndExport) {
   {
     FilePath rsa_path = data_path_.Append("rsa-sign");
@@ -167,6 +192,14 @@ TEST_F(RSATest, LoadPrivateKeyDumpAndExport) {
     rw::KeysetJSONFileWriter writer(temp_path_);
     EXPECT_TRUE(writer.WriteKey(*private_key->GetValue(), 1));
     ASSERT_TRUE(base::PathExists(temp_path_.Append("1")));
+
+    // Compare public exponents.  A bug which caused an unnecessary zero to be
+    // prepended to the common public exponent (2^16+1) made this fail.
+    std::string orig_e =
+	LoadKeyComponentByPath(rsa_path, 1, "publicKey.publicExponent");
+    std::string temp_e =
+	LoadKeyComponentByPath(temp_path_, 1, "publicKey.publicExponent");
+    EXPECT_EQ(orig_e, temp_e);
   }
 
   std::string signature;
