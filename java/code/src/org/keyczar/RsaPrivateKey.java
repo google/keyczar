@@ -19,6 +19,18 @@ package org.keyczar;
 import static org.keyczar.util.Util.decodeBigInteger;
 import static org.keyczar.util.Util.encodeBigInteger;
 
+import com.google.gson.annotations.Expose;
+
+import org.keyczar.enums.RsaPadding;
+import org.keyczar.interfaces.KeyType;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.DecryptingStream;
+import org.keyczar.interfaces.EncryptingStream;
+import org.keyczar.interfaces.SigningStream;
+import org.keyczar.interfaces.Stream;
+import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.util.Util;
+
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -31,18 +43,6 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
-
-import org.keyczar.enums.KeyType;
-import org.keyczar.enums.RsaPadding;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.interfaces.DecryptingStream;
-import org.keyczar.interfaces.EncryptingStream;
-import org.keyczar.interfaces.SigningStream;
-import org.keyczar.interfaces.Stream;
-import org.keyczar.interfaces.VerifyingStream;
-import org.keyczar.util.Util;
-
-import com.google.gson.annotations.Expose;
 
 /**
  * Wrapping class for RSA Private Keys
@@ -66,7 +66,7 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private RSAPrivateCrtKey jcePrivateKey;
 
   static RsaPrivateKey generate(RsaPadding padding) throws KeyczarException {
-    return generate(KeyType.RSA_PRIV.defaultSize(), padding);
+    return generate(DefaultKeyType.RSA_PRIV.defaultSize(), padding);
   }
 
   static RsaPrivateKey generate(int keySize, RsaPadding padding) throws KeyczarException {
@@ -91,18 +91,30 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     jcePrivateKey = privateKey;
   }
 
+  private RsaPrivateKey() {
+    super(0);
+    publicKey = null;
+    privateExponent = null;
+    primeP = null;
+    primeQ = null;
+    primeExponentP = null;
+    primeExponentQ = null;
+    crtCoefficient = null;
+    jcePrivateKey = null;
+  }
+
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new RsaPrivateStream();
   }
 
   @Override
   public KeyType getType() {
-    return KeyType.RSA_PRIV;
+    return DefaultKeyType.RSA_PRIV;
   }
 
   @Override
-  byte[] hash() {
+  protected byte[] hash() {
     return publicKey.hash();
   }
 

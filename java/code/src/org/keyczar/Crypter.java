@@ -16,8 +16,6 @@
 
 package org.keyczar;
 
-import java.nio.ByteBuffer;
-
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.BadVersionException;
@@ -31,6 +29,8 @@ import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 
+import java.nio.ByteBuffer;
+
 /**
  * Crypters may both encrypt and decrypt data using sets of symmetric or private
  * keys. Sets of public keys may only be used with {@link Encrypter} objects.
@@ -41,7 +41,7 @@ import org.keyczar.util.Base64Coder;
 public class Crypter extends Encrypter {
   private static final int DECRYPT_CHUNK_SIZE = 1024;
   private static final Logger LOG = Logger.getLogger(Crypter.class);
-  private static final StreamCache<DecryptingStream> CRYPT_CACHE
+  private final StreamCache<DecryptingStream> CRYPT_CACHE
     = new StreamCache<DecryptingStream>();
 
   /**

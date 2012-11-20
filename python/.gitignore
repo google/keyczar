@@ -1,3 +1,4 @@
 .settings/*
 build
+dist
 *pyc

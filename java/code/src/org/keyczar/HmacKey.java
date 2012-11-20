@@ -16,22 +16,22 @@
 
 package org.keyczar;
 
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
+import com.google.gson.annotations.Expose;
 
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
-import com.google.gson.annotations.Expose;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Wrapping class for HMAC-SHA1 keys
@@ -40,7 +40,7 @@ import com.google.gson.annotations.Expose;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-class HmacKey extends KeyczarKey {
+public class HmacKey extends KeyczarKey {
   private static final String MAC_ALGORITHM = "HMACSHA1";
 
   @Expose private final String hmacKeyString;
@@ -61,7 +61,7 @@ class HmacKey extends KeyczarKey {
   }
 
   static HmacKey generate() throws KeyczarException {
-    return generate(KeyType.HMAC_SHA1.defaultSize());
+    return generate(DefaultKeyType.HMAC_SHA1.defaultSize());
   }
 
   static HmacKey generate(int keySize) throws KeyczarException {
@@ -72,7 +72,7 @@ class HmacKey extends KeyczarKey {
     initJceKey(Base64Coder.decodeWebSafe(hmacKeyString));
   }
 
-  public void initJceKey(byte[] keyBytes) throws KeyczarException {
+  private void initJceKey(byte[] keyBytes) throws KeyczarException {
     hmacKey = new SecretKeySpec(keyBytes, MAC_ALGORITHM);
     System.arraycopy(Util.hash(keyBytes), 0, hash, 0, hash.length);
   }
@@ -86,17 +86,17 @@ class HmacKey extends KeyczarKey {
   }
 
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new HmacStream();
   }
 
   @Override
   public KeyType getType() {
-    return KeyType.HMAC_SHA1;
+    return DefaultKeyType.HMAC_SHA1;
   }
 
   @Override
-  byte[] hash() {
+  protected byte[] hash() {
     return hash;
   }
 

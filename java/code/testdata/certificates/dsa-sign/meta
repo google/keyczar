@@ -1,6 +1,7 @@
 {
    "encrypted": false,
    "name": "Test",
+   "nextKeyVersionNumber": 2,
    "purpose": "SIGN_AND_VERIFY",
    "type": "DSA_PRIV",
    "versions": [ {

@@ -16,6 +16,15 @@
 
 package org.keyczar;
 
+import com.google.gson.annotations.Expose;
+
+import org.keyczar.enums.RsaPadding;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.i18n.Messages;
+import org.keyczar.interfaces.KeyType;
+import org.keyczar.interfaces.Stream;
+import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -28,17 +37,6 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
-
-import org.keyczar.enums.KeyType;
-import org.keyczar.enums.RsaPadding;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.exceptions.UnsupportedTypeException;
-import org.keyczar.i18n.Messages;
-import org.keyczar.interfaces.Stream;
-import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
-
-import com.google.gson.annotations.Expose;
 
 /**
  * Common base wrapper class for different types of KeyczarKeys (e.g. AesKey).
@@ -88,7 +86,7 @@ public abstract class KeyczarKey {
     return Util.toInt(this.hash());
   }
 
-  abstract Stream getStream() throws KeyczarException;
+  protected abstract Stream getStream() throws KeyczarException;
 
   /**
    * Return this key's type
@@ -102,7 +100,7 @@ public abstract class KeyczarKey {
    *
    * @return A byte array hash of this key material
    */
-  abstract byte[] hash();
+  protected abstract byte[] hash();
 
   int size() {
     return size;
@@ -117,6 +115,21 @@ public abstract class KeyczarKey {
    */
   static KeyczarKey genKey(KeyType type) throws KeyczarException {
     return genKey(type, type.defaultSize());
+  }
+
+  /**
+   * Register a new key type.
+   *
+   * Custom {@link KeyType}s should be immutable singletons, Note that
+   * defining custom key types is strongly discouraged for most applications.
+   *
+   * This method is just a proxy to
+   * {@link KeyType.KeyTypeDeserializer#registerType}
+   *
+   * @param keyType a singleton immutable key type to register for the name
+   */
+  public static void registerType(KeyType keyType) {
+    KeyType.KeyTypeDeserializer.registerType(keyType);
   }
 
   @Override
@@ -138,7 +151,7 @@ public abstract class KeyczarKey {
    */
   static KeyczarKey genKey(KeyType type, int keySize) throws KeyczarException {
     RsaPadding padding = null;
-    if (type == KeyType.RSA_PRIV) {
+    if (type == DefaultKeyType.RSA_PRIV) {
       padding = RsaPadding.OAEP;
     }
     return genKey(type, padding, keySize);
@@ -162,26 +175,14 @@ public abstract class KeyczarKey {
     if (!type.isAcceptableSize(keySize)) {
       keySize = type.defaultSize();  // fall back to default
     }
-    if (padding != null && type != KeyType.RSA_PRIV) {
+
+    if (padding != null && type != DefaultKeyType.RSA_PRIV) {
       throw new KeyczarException(Messages.getString("InvalidPadding", padding.name()));
     }
-    switch (type) {
-      case AES:
-        return AesKey.generate(keySize);
-      case HMAC_SHA1:
-        return HmacKey.generate(keySize);
-      case DSA_PRIV:
-        return DsaPrivateKey.generate(keySize);
-      case RSA_PRIV:
-        return RsaPrivateKey.generate(keySize, padding);
-      // Currently unsupported. See "unofficial" directory.
-      //case EC_PRIV:
-      //    return EcPrivateKey.generate(keySize);
-      case RSA_PUB: case DSA_PUB:
-        throw new KeyczarException(
-            Messages.getString("KeyczarKey.PublicKeyExport", type));
-    }
-    throw new UnsupportedTypeException(type);
+
+    KeyType.Builder builder = (type == DefaultKeyType.RSA_PRIV) ?
+        DefaultKeyType.RSA_PRIV.getRsaBuilder(padding) : type.getBuilder();
+    return builder.generate(keySize);
   }
 
   /**
@@ -195,27 +196,7 @@ public abstract class KeyczarKey {
    * key type
    */
   static KeyczarKey readKey(KeyType type, String key) throws KeyczarException {
-    switch (type) {
-      case AES:
-        return AesKey.read(key);
-      case HMAC_SHA1:
-        return HmacKey.read(key);
-      case DSA_PRIV:
-        return DsaPrivateKey.read(key);
-      case DSA_PUB:
-        return DsaPublicKey.read(key);
-      case RSA_PRIV:
-        return RsaPrivateKey.read(key);
-      case RSA_PUB:
-        return RsaPublicKey.read(key);
-      // Currently unsupported. See "unofficial" directory.
-      //case EC_PRIV:
-      //    return EcPrivateKey.read(key);
-      //case EC_PUB:
-      //    return EcPublicKey.read(key);
-    }
-
-    throw new UnsupportedTypeException(type);
+    return type.getBuilder().read(key);
   }
 
   /**

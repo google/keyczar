@@ -16,6 +16,21 @@
 
 package org.keyczar;
 
+import com.google.gson.annotations.Expose;
+
+import org.keyczar.enums.CipherMode;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.exceptions.ShortBufferException;
+import org.keyczar.i18n.Messages;
+import org.keyczar.interfaces.DecryptingStream;
+import org.keyczar.interfaces.EncryptingStream;
+import org.keyczar.interfaces.KeyType;
+import org.keyczar.interfaces.SigningStream;
+import org.keyczar.interfaces.Stream;
+import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
+
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
@@ -23,21 +38,6 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import org.keyczar.enums.CipherMode;
-import org.keyczar.enums.KeyType;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.exceptions.ShortBufferException;
-import org.keyczar.i18n.Messages;
-import org.keyczar.interfaces.DecryptingStream;
-import org.keyczar.interfaces.EncryptingStream;
-import org.keyczar.interfaces.SigningStream;
-import org.keyczar.interfaces.Stream;
-import org.keyczar.interfaces.VerifyingStream;
-import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
-
-import com.google.gson.annotations.Expose;
 
 /**
  * Wrapping class for AES keys. Currently the default is to use CBC mode.
@@ -79,7 +79,7 @@ public class AesKey extends KeyczarKey {
   }
 
   static AesKey generate() throws KeyczarException {
-    return generate(KeyType.AES.defaultSize());
+    return generate(DefaultKeyType.AES.defaultSize());
   }
 
   static AesKey generate(int keySize) throws KeyczarException {
@@ -99,11 +99,11 @@ public class AesKey extends KeyczarKey {
 
   @Override
   public KeyType getType() {
-    return KeyType.AES;
+    return DefaultKeyType.AES;
   }
 
   @Override
-  byte[] hash() {
+  protected byte[] hash() {
     return hash;
   }
 
@@ -114,7 +114,7 @@ public class AesKey extends KeyczarKey {
     return key;
   }
 
-  public void initJceKey(byte[] aesBytes) throws KeyczarException {
+  private void initJceKey(byte[] aesBytes) throws KeyczarException {
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
     byte[] fullHash = Util.hash(Util.fromInt(BLOCK_SIZE), aesBytes, hmacKey.getEncoded());
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
@@ -129,7 +129,7 @@ public class AesKey extends KeyczarKey {
   }
 
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new AesStream();
   }
 

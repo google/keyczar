@@ -16,8 +16,8 @@
 
 package org.keyczar.exceptions;
 
-import org.keyczar.enums.KeyType;
 import org.keyczar.i18n.Messages;
+import org.keyczar.interfaces.KeyType;
 
 /**
  * A key type was used in an inappropriate purpose.

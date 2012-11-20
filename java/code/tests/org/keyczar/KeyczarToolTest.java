@@ -16,15 +16,14 @@
 
 package org.keyczar;
 
-
 import junit.framework.TestCase;
 
 import org.junit.Test;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.NoPrimaryKeyException;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.i18n.Messages;
 
 /**
@@ -43,13 +42,13 @@ public class KeyczarToolTest extends TestCase {
 
   @Override
   public final void setUp() throws KeyczarException {
-    mock = new MockKeyczarReader("TEST", KeyPurpose.ENCRYPT, KeyType.AES);
+    mock = new MockKeyczarReader("TEST", KeyPurpose.ENCRYPT, DefaultKeyType.AES);
     mock.addKey(42, KeyStatus.PRIMARY);
     mock.addKey(77, KeyStatus.ACTIVE);
     mock.addKey(99, KeyStatus.INACTIVE);
 
     pubMock = new MockKeyczarReader("PUBLIC-TEST",
-        KeyPurpose.DECRYPT_AND_ENCRYPT, KeyType.RSA_PRIV);
+        KeyPurpose.DECRYPT_AND_ENCRYPT, DefaultKeyType.RSA_PRIV);
 
     KeyczarTool.setReader(mock); // use mock reader
   }
@@ -59,11 +58,11 @@ public class KeyczarToolTest extends TestCase {
     String[] args = {"create", "--name=create-test", "--purpose=test"};
     assertEquals("TEST", mock.name());
     assertEquals(KeyPurpose.ENCRYPT, mock.purpose());
-    assertEquals(KeyType.AES, mock.type());
+    assertEquals(DefaultKeyType.AES, mock.type());
     KeyczarTool.main(args);
     assertEquals("create-test", mock.name());
     assertEquals(KeyPurpose.TEST, mock.purpose());
-    assertEquals(KeyType.TEST, mock.type());
+    assertEquals(DefaultKeyType.TEST, mock.type());
   }
 
   @Test
@@ -180,7 +179,7 @@ public class KeyczarToolTest extends TestCase {
   }
 
   @Test
-  public final void testImportPkcsRsaKeyNoPassphrase() throws KeyczarException {
+  public final void testImportPkcsRsaKeyNoPassphrase() {
     String[] args = {"importkey",
                      "--pemfile=" + TEST_DATA + "rsa-crypt-pkcs8.pem" };
 
@@ -203,7 +202,7 @@ public class KeyczarToolTest extends TestCase {
   }
 
   @Test
-  public final void testImportPkcsDsaKeyNoPassphrase() throws KeyczarException {
+  public final void testImportPkcsDsaKeyNoPassphrase() {
     String[] args = {"importkey",
                      "--pemfile=" + TEST_DATA + "dsa-sign-pkcs8.pem" };
 
@@ -223,7 +222,7 @@ public class KeyczarToolTest extends TestCase {
    */
   @Test
   public final void testAddNewKey() {
-    mock = new MockKeyczarReader("TEST", KeyPurpose.ENCRYPT, KeyType.AES);
+    mock = new MockKeyczarReader("TEST", KeyPurpose.ENCRYPT, DefaultKeyType.AES);
     KeyczarTool.setReader(mock); // use mock reader
     assertEquals(0, mock.numKeys());
     String[] args = {"addkey", "--status=primary"};

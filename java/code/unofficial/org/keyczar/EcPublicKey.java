@@ -18,8 +18,8 @@ package org.keyczar;
 
 import com.google.gson.annotations.Expose;
 
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
@@ -40,7 +40,7 @@ import java.security.spec.X509EncodedKeySpec;
  * @author martclau@gmail.com
  * 
  */
-class EcPublicKey extends KeyczarPublicKey {
+public class EcPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "EC";
   private static final String SIG_ALGORITHM = "SHA256withECDSA";
 
@@ -73,18 +73,18 @@ class EcPublicKey extends KeyczarPublicKey {
   }
   
   @Override
-  byte[] hash() {
+  protected byte[] hash() {
     return hash;
   }
   
   @Override
-  public Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new EcVerifyingStream();
   }
 
   @Override
   public KeyType getType() {
-    return KeyType.EC_PUB;
+    return DefaultKeyType.EC_PUB;
   }
 
   @Override

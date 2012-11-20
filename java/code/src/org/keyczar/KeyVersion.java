@@ -16,10 +16,10 @@
 
 package org.keyczar;
 
+import com.google.gson.annotations.Expose;
+
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.util.Util;
-
-import com.google.gson.annotations.Expose;
 
 
 /**

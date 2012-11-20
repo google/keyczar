@@ -83,7 +83,7 @@ class ObserverList {
 
   // Add an observer to the list.
   void AddObserver(ObserverType* obs) {
-    DCHECK(find(observers_.begin(), observers_.end(), obs) == observers_.end())
+    DCHECK(std::find(observers_.begin(), observers_.end(), obs) == observers_.end())
         << "Observers can only be added once!";
     observers_.push_back(obs);
   }

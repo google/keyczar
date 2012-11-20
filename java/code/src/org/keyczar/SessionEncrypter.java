@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,8 +16,6 @@
 
 package org.keyczar;
 
-import org.keyczar.annotations.Experimental;
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
 
@@ -25,10 +23,13 @@ import org.keyczar.util.Base64Coder;
  * A session encrypter will generate and encrypt a session key with a given
  * {@link Encrypter}. That session key will be used to encrypt arbitrary data.
  *
+ * This class and {@link SessionDecrypter} have been deprecated in favor of
+ * {@link SessionCrypter}.
+ *
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
-@Experimental
+@Deprecated
 public class SessionEncrypter {
   private final Crypter symmetricCrypter;
   private final byte[] sessionMaterial;
@@ -39,11 +40,12 @@ public class SessionEncrypter {
    * arbitrary data.
    *
    * @param encrypter The encrypter used to encrypt session keys
-   * @throws KeyczarException If there is an error instantiating a Crypter 
+   * @throws KeyczarException If there is an error instantiating a Crypter
    */
   public SessionEncrypter(Encrypter encrypter) throws KeyczarException {
-    // Using minimum acceptable AES key size, which is 128 bits 
-    AesKey aesKey = AesKey.generate(KeyType.AES.getAcceptableSizes().get(0));
+    // Using minimum acceptable AES key size, which is 128 bits
+    AesKey aesKey =
+        AesKey.generate(DefaultKeyType.AES.getAcceptableSizes().get(0));
     ImportedKeyReader importedKeyReader = new ImportedKeyReader(aesKey);
     this.symmetricCrypter = new Crypter(importedKeyReader);
     this.sessionMaterial = encrypter.encrypt(aesKey.getEncoded());
@@ -75,5 +77,11 @@ public class SessionEncrypter {
    */
   public String getSessionString() {
     return Base64Coder.encodeWebSafe(getSessionMaterial());
+
+  /**
+   * @return the embedded symmetric crypter for extending classes
+   */
+  protected Crypter getSymmetricCrypter() {
+    return symmetricCrypter;
   }
 }

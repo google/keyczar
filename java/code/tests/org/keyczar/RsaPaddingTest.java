@@ -181,17 +181,17 @@ public class RsaPaddingTest extends TestCase {
     }
 
     @Override
-    public String getKey(int version) throws KeyczarException {
+    public String getKey(int version) {
       return key;
     }
 
     @Override
-    public String getKey() throws KeyczarException {
+    public String getKey() {
       return key;
     }
 
     @Override
-    public String getMetadata() throws KeyczarException {
+    public String getMetadata() {
       return metadata;
     }
   }

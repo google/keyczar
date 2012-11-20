@@ -16,6 +16,16 @@
 
 package org.keyczar;
 
+import com.google.gson.annotations.Expose;
+
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyType;
+import org.keyczar.interfaces.SigningStream;
+import org.keyczar.interfaces.Stream;
+import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -25,16 +35,6 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.spec.DSAPrivateKeySpec;
-
-import org.keyczar.enums.KeyType;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.interfaces.SigningStream;
-import org.keyczar.interfaces.Stream;
-import org.keyczar.interfaces.VerifyingStream;
-import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
-
-import com.google.gson.annotations.Expose;
 
 /**
  * Wrapping class for DSA Private Keys
@@ -52,7 +52,7 @@ public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private DSAPrivateKey jcePrivateKey;
 
   static DsaPrivateKey generate() throws KeyczarException {
-    return generate(KeyType.DSA_PRIV.defaultSize());
+    return generate(DefaultKeyType.DSA_PRIV.defaultSize());
   }
 
   static DsaPrivateKey generate(int keySize) throws KeyczarException {
@@ -80,7 +80,7 @@ public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   @Override
-  byte[] hash() {
+  protected byte[] hash() {
     return getPublic().hash();
   }
 
@@ -94,13 +94,13 @@ public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new DsaSigningStream();
   }
 
   @Override
   public KeyType getType() {
-    return KeyType.DSA_PRIV;
+    return DefaultKeyType.DSA_PRIV;
   }
 
   /**

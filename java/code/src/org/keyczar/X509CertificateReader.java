@@ -16,6 +16,14 @@
 
 package org.keyczar;
 
+import org.keyczar.enums.KeyPurpose;
+import org.keyczar.enums.KeyStatus;
+import org.keyczar.DefaultKeyType;
+import org.keyczar.enums.RsaPadding;
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.i18n.Messages;
+import org.keyczar.interfaces.KeyczarReader;
+
 import java.io.InputStream;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
@@ -23,14 +31,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
-
-import org.keyczar.enums.KeyPurpose;
-import org.keyczar.enums.KeyStatus;
-import org.keyczar.enums.KeyType;
-import org.keyczar.enums.RsaPadding;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.i18n.Messages;
-import org.keyczar.interfaces.KeyczarReader;
 
 /**
  * @author swillden@google.com (Shawn Willden)
@@ -93,7 +93,7 @@ public class X509CertificateReader implements KeyczarReader {
   }
 
   private void constructMetadata() throws KeyczarException {
-    if (purpose == KeyPurpose.ENCRYPT && key.getType() == KeyType.DSA_PUB) {
+    if (purpose == KeyPurpose.ENCRYPT && key.getType() == DefaultKeyType.DSA_PUB) {
       throw new KeyczarException(Messages.getString("Keyczartool.InvalidUseOfDsaKey"));
     }
     meta = new KeyMetadata("imported from certificate", purpose, key.getType());

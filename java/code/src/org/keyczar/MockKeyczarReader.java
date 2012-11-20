@@ -1,16 +1,16 @@
 package org.keyczar;
 
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.BadVersionException;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.util.Util;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A mock representation of a KeyczarReader used for testing.
@@ -38,7 +38,7 @@ public class MockKeyczarReader implements KeyczarReader {
       throw new BadVersionException((byte) version);
     }
   }
-  
+
   @Override
   public String getKey() throws KeyczarException {
 	KeyMetadata metadata = KeyMetadata.read(getMetadata());

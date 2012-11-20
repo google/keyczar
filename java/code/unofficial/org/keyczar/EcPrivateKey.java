@@ -18,8 +18,8 @@ package org.keyczar;
 
 import com.google.gson.annotations.Expose;
 
-import org.keyczar.enums.KeyType;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
@@ -43,7 +43,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
  * @author martclau@gmail.com
  * 
  */
-class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
+public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String KEY_GEN_ALGORITHM = "EC";
   private static final String SIG_ALGORITHM = "SHA256withECDSA";
 
@@ -67,18 +67,18 @@ class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
   
   @Override
-  byte[] hash() {
+  protected byte[] hash() {
     return getPublic().hash();
   }
 
   @Override
-  Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new EcSigningStream();
   }
 
   @Override
   public KeyType getType() {
-    return KeyType.EC_PRIV;
+    return DefaultKeyType.EC_PRIV;
   }
 
   public void setPublic(KeyczarPublicKey pub) throws KeyczarException {
@@ -92,7 +92,7 @@ class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   static EcPrivateKey generate() throws KeyczarException {
-    return generate(KeyType.EC_PRIV.defaultSize());
+    return generate(DefaultKeyType.EC_PRIV.defaultSize());
   }
 
   void init() throws KeyczarException {

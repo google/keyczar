@@ -16,6 +16,15 @@
 
 package org.keyczar;
 
+import com.google.gson.annotations.Expose;
+
+import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyType;
+import org.keyczar.interfaces.Stream;
+import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.util.Base64Coder;
+import org.keyczar.util.Util;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -28,22 +37,13 @@ import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPublicKeySpec;
 
-import org.keyczar.enums.KeyType;
-import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.interfaces.Stream;
-import org.keyczar.interfaces.VerifyingStream;
-import org.keyczar.util.Base64Coder;
-import org.keyczar.util.Util;
-
-import com.google.gson.annotations.Expose;
-
 /**
  * Wrapping class for DSA Public Keys. These must be exported from existing DSA
  * private key sets.
  *
  * @author steveweis@gmail.com (Steve Weis)
  */
-class DsaPublicKey extends KeyczarPublicKey {
+public class DsaPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "DSA";
   private static final String SIG_ALGORITHM = "SHA1withDSA";
 
@@ -102,13 +102,13 @@ class DsaPublicKey extends KeyczarPublicKey {
   }
 
   @Override
-  public Stream getStream() throws KeyczarException {
+  protected Stream getStream() throws KeyczarException {
     return new DsaVerifyingStream();
   }
 
   @Override
   public KeyType getType() {
-    return KeyType.DSA_PUB;
+    return DefaultKeyType.DSA_PUB;
   }
 
   @Override
