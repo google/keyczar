@@ -95,9 +95,9 @@ public class SignedSessionEncrypter {
 
   /**
    * Encrypt and sign the plaintext.
-   * 
-   * @param plainText byte array to encrypt.
-   * @return encrypted payload with signature attached.
+   *
+   * @param plainText string to encrypt.
+   * @return encrypted payload with signing attached.
    * @throws KeyczarException
    */
   public byte[] encrypt(byte[] plainText) throws KeyczarException {
@@ -113,16 +113,5 @@ public class SignedSessionEncrypter {
     // encrypted nonce is not base 64 encoded for the signature, so decode before
     // using for hidden.
     return signer.attachedSign(ciphertext, Base64Coder.decodeWebSafe(material.getNonce()));
-  }
-  
-  /**
-   * Encrypt and sign the plaintext.
-   * 
-   * @param plainText string to encrypt.
-   * @return encrypted payload with signature attached, as a web-safe base64-encoded string.
-   * @throws KeyczarException
-   */
-  public String encrypt(String plainText) throws KeyczarException {
-    return Base64Coder.encodeWebSafe(encrypt(plainText.getBytes()));
   }
 }

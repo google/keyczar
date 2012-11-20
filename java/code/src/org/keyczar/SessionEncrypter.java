@@ -17,7 +17,6 @@
 package org.keyczar;
 
 import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.util.Base64Coder;
 
 /**
  * A session encrypter will generate and encrypt a session key with a given
@@ -52,31 +51,20 @@ public class SessionEncrypter {
   }
 
   /**
-   * Encrypts a byte array with the session key.
+   * @param plaintext The plaintext to encrypt
+   * @return An encryption of the plaintext using the session key
+   * @throws KeyczarException
    */
   public byte[] encrypt(byte[] plaintext) throws KeyczarException {
     return symmetricCrypter.encrypt(plaintext);
   }
-  
-  /**
-   * Encrypts a string with the session key.
-   */
-  public String encrypt(String plaintext) throws KeyczarException {
-    return symmetricCrypter.encrypt(plaintext);
-  }
 
   /**
-   * @return Encrypted session key
+   * @return An encryption of a session key
    */
   public byte[] getSessionMaterial() {
     return this.sessionMaterial;
   }
-  
-  /**
-   * @return Encrypted session key as a web-safe base64-encoded string.
-   */
-  public String getSessionString() {
-    return Base64Coder.encodeWebSafe(getSessionMaterial());
 
   /**
    * @return the embedded symmetric crypter for extending classes
