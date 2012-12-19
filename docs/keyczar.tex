@@ -12,7 +12,7 @@
 \and
 Google Inc., Mountain View, CA, USA 94043
 \and
-Google Inc., Boulder, CO, USA 80403}
+Google Inc., Boulder, CO, USA 80302}
 
 \begin{document}
 \maketitle
@@ -116,14 +116,14 @@ created in the file {\tt 2}. Some example {\tt addkey} commands:
 \item Create a new primary key: \\
 {\tt KeyczarTool addkey --location=/path/to/keyset --status=primary}
 \item Create a new active key: \\
-{\tt KeyczarTool addkey --location=/path/to/keyset} 
+{\tt KeyczarTool addkey --location=/path/to/keyset}
 \end{itemize}
 
 Keyczar supports encrypted keysets. The {\tt crypter} flag may be used
 to encrypt a key set when adding a new key. It will specify the
 location of an existing keyset which will be used to encrypt a newly
 generated key:
- 
+
 \begin{itemize}
 \item Create a new active key and encrypt it with another keyset: \\
 {\tt KeyczarTool addkey --location=/path/to/keyset
@@ -142,7 +142,7 @@ Public keys in Keyczar are exported from existing asymmetric key
 sets. The {\tt pubkey} command requires both an existing {\tt
   location} flag and a {\tt destination} where public keys will be
 exported. If the keyset under {\tt location} was not created with an
-{\tt asymmetric} flag, then a {\tt pubkey} command will fail.
+{\tt asymmetric} flag, the {\tt pubkey} command will fail.
 
 \begin{itemize}
 \item Exptract a public key: \\
@@ -162,8 +162,8 @@ The {\tt promote}, {\tt demote}, and {\tt revoke} commands are used to
 change key status values. Each of these commands require a {\tt
   location} and {\tt version} flag.
 
-Promoting an {\it active} will raise its status to {\it primary}, and
-promoting an {\it inactive} status will make it {\it active}. There
+Promoting an {\it active} key will raise its status to {\it primary}, and
+promoting an {\it inactive} key will make it {\it active}. There
 can only be a single {\it primary} key in a given key set, so if there
 is an existing primary key it will be demoted to {\it active}.
 
@@ -190,54 +190,48 @@ procedure will allow Alice and Bob to continue communicating without
 interruption during the rotation process:
 
 \begin{enumerate}
-\item Bob creates a new key pair, by default marked {\it active}: \\
-{\tt KeyczarTool create --location=bobskey --purpose=crypt}
+\item Bob creates a new key pair, and marks it as {\it primary}: \\
+{\tt KeyczarTool create --location=bobskey --purpose=crypt --status=primary}
 \item Bob extracts the public key: \\
-{\tt KeyczarTool pubkey --location=bobskey --destination=newpubkey}
-\item Bob sends the new public key to Alice, perhaps in a new public
-  key certificate.  Alice imports it into her {\tt bobskey} keyset.
-\item Alice promotes the new key, (suppose it's version 2), to {\it
-  primary}, which automatically demotes the old key to {\it active}:
-  \\
-{\tt KeyczarTool promote --location=bobskey --version=2}
-\item Bob promotes the new key to {\it primary}, which automatically
-  demotes the old key to {\it active}: \\
-{\tt KeyczarTool promote --location=bobskey --version=2}
-\item Bob demotes the old key to {\it inactive}: \\
-{\tt KeyczarTool demote --location=bobskey --version=1}
-\item Some time later, Bob revokes the old key, making it impossible
-  ever to use it again: \\
-{\tt KeyczarTool revoke --location=bobskey --version=1}
+  {\tt KeyczarTool pubkey --location=bobskey --destination=newpubkey} \\
+  and sends it to Alice.
+\item Alice who imports the new key into her {\tt bobskey} keyset
+  and marks it as primary.\\
+{\tt KeyczarTool import --location=bobskey --key=newpubkey --status=primary}
 \end{enumerate}
 
-After step 4, Alice's messages to Bob are encrypted with the new key,
-but Bob doesn't have to perform step 5 at the same time, because he
-still has the old key marked {\it active}, so Keyczar will still use
-it..  As long as Bob doesn't take step 6 before Alice takes step 4, he
-can continue decrypting her messages without interruption.
+At this point, Alice's messages to Bob are encrypted with the new key,
+but Bob doesn't have to be concerned about any messages Alice sends
+before she imports the new key.  Whether before or after the import,
+he'll be able to decrypt her messages.
+
+At some time later, when certain that Alice is using the new key, Bob
+can set his old key to {\it inactive} status, and then eventually to
+revoke it.
 
 \subsection{KeyczarTool importkey and exportkey}
 
 To enable interoperation with other cryptography libraries and tools,
 and to facilitate exchanging keys between parties, KeyczarTool also
-provides some commands for importing and exporting keys, using
+provides some commands for importing and exporting keys in
 standard formats.
 
 The {\tt importkey} command is is used to import a public key
 certificate in X.509 format\footnote{X.509 and PKCS\#8 files may be in
-either PEM or DER format, KeyczarTool will detect which is used and
-process it appropriately.  A ``DER'' file is an ASN.1 structure
-conforming to some specification (e.g. X.509 certificate or PKCS\#8
-private key) and encoded using the ASN.1 Distinguished Encoding
-Rules.  A PEM file is a DER file which has been base64-encoded and
-wrapped in an ASCII header and footer that provides a human-readable
-description of the contents.}, or a public/private key pair,
-in PKCS\#8 format. Into an existing keyset, which must already exist
-and have the appropriate type and purpose.  PCKS\#8 files containing private keys are
-generally password-protected, so {\tt importkey} allows a {\tt
-passphrase} option to be specified.  To encrypt the destination
-keyset, the {\tt crypter} option may be used to specify the location
-of the keyset that will be used to encrypt the imported key.
+  either PEM or DER format.  KeyczarTool will detect which is used and
+  process it appropriately.  A ``DER'' file is an ASN.1 structure
+  conforming to the appropriate specification (e.g. X.509 certificate
+  or PKCS\#8 private key) and encoded using the ASN.1 Distinguished
+  Encoding Rules.  A PEM file is a DER file which has been
+  base64-encoded and wrapped in an ASCII header and footer that
+  provides a human-readable description of the contents.}, or a
+public/private key pair, in PKCS\#8 format. Into an existing keyset,
+which must already exist and have the appropriate type and purpose.
+PCKS\#8 files containing private keys are generally
+password-protected, so {\tt importkey} allows a {\tt passphrase}
+option to be specified.  To encrypt the destination keyset, the {\tt
+  crypter} option may be used to specify the location of the keyset
+that will be used to encrypt the imported key.
 
 \begin{itemize}
 \item Import a public key from a certificate into an existing keyset:\\
@@ -254,34 +248,177 @@ Using openssl, the following steps may be used to create a public key
 certificate request:
 
 \begin{enumerate}
-  \item Export the current primary key pair to a PKCS\#8 file:\\
-    {\tt KeyczarTool exportkey --location=/path/to/keys  
-      --dest=/path/to/file.pem \texttt{\char`\\} \\
-      --passphrase=``mypass''}
-  \item Generate a certificate signing request:\\
-    {\tt openssl req -new -in /path/to/file.pem -out /path/to/file.csr}
+  
+\item Export the current primary key pair to a PKCS\#8 file:\\
+  {\tt KeyczarTool exportkey --location=/path/to/keys
+    --dest=/path/to/file.pem \texttt{\char`\\} \\
+    --passphrase=``mypass''}
+    
+\item Generate a certificate signing request:\\
+  {\tt openssl req -new -in /path/to/file.pem -out /path/to/file.csr}
+  
 \end{enumerate}
+
+\section{Keyczar Libraries}
+
+Keyczar is implemented in multiple languages to enable easy
+integration into many different software stacks.  At the time of this
+writing (late 2012), three implementations are in the
+officially-supported repository:  Java, Python and C++.  Two more, C\#
+and Go, are mostly functional and nearing integration.
+
+All implementations provide the same basic API structure and features,
+and are interoperable.  Details vary, and some implementations provide
+features not implemented in others.  The core feature set implemented
+by all libraries is documented here, and a page will be added to the
+wiki on the Google Code web site that details the additional features
+and which implementations provide them.
+
+\subsection{Core API}\label{coreapis}
+
+In all languages, the core library provides eight classes which are
+used to encrypt, decrypt, sign and verify data.  They are:
+
+\begin{itemize}
+
+\item {\tt Encrypter} provides methods to encrypt data.  A keyset is
+  specified during construction, and the {\tt Encrypter} encrypts data
+  using the {\it primary} key from that keyset, which must be a key
+  capable of encrypting data (i.e. AES or RSA).
+
+\item {\tt Crypter} provides the capabilities of an {\tt Encrypter},
+  and additional methods that can decrypt data using any {\it active}
+  or {\it primary} key from the keyset provided during construction.
+  The keys must be capable of decrypting data (i.e. AES or RSA private).
+
+\item {\tt Verifier} provides methods to verify digital signatures on
+  data using any {\it active} or {\it primary} key from the keyset
+  provided during construction.  The keys must be capable of signature
+  verification (i.e. HMAC, RSA or DSA).
+
+\item {\tt Signer} provides the capabilities of a {\tt Verifier} and
+  additional methods that can sign data using the {\it primary} key
+  from the keyset provided during construction.  The key must be
+  capable of signing (i.e. HMAC, RSA private or DSA private).
+
+\item {\tt SessionEncrypter} also provides methods that encrypt data
+  but these methods encrypt the provided data using a ``session
+  key'', a randomly-generated AES key.  This session key, in turn, is
+  encrypted by a {\tt Crypter} instance that must be provided during
+  {\tt SessionEncrypter} creation.  A method is provided that
+  retrieves a WebSafeBase64-encoded copy of the encrypted session
+  key, called the ``session data''.  This session data must be sent
+  along with the encrypted data in order for the recipient to decrypt
+  the encrypted data.
+
+  There are two reasons to use a {\tt SessionEncrypter} rather than an
+  {\tt Encrypter}:
+
+  \begin{enumerate}
+
+  \item An {\tt Encrypter} using an RSA key can only encrypt data
+    blocks that are significantly smaller than the RSA key size (exact
+    maximum size depends on the padding mode used).  Since a {\tt
+      SessionEncrypter} uses the AES session key in CBC mode, it can
+    encrypt any size of data arrays/strings.
+
+  \item An {\tt Encrypter} using an RSA key produces output blocks
+    that are as large as the RSA key, no matter how small the input
+    it.  This means that encrypting $n$ small data elements with, say,
+    a 2048-bit (256-byte) key will produce $256n$ bytes of encrypted
+    output.  In contrast, using a {\tt SessionEncrypter} will produce
+    one 256-byte block containing the encrypted session key, plus
+    multiple encrypted data blocks which are not too much larger than
+    the input blocks (each is between 41 and 56 bytes larger).
+    
+  \end{enumerate}
+
+\item {\tt SessionDecrypter} is the counterpart to {\tt
+    SessionEncrypter}, which must be initialized with the session data
+  string from a {\tt SessionEncrypter} and a {\tt Crypter} containing
+  the appropriate decryption key, and can then be used to decrypt the
+  encrypted data messages.
+
+\item {\tt SignedSessionEncrypter} is similar to {\tt
+    SessionEncrypter}, except it must be provided with both {\tt
+    Encrypter} and {\tt Signer} instances, and the encrypted messages
+  it produces are signed with the {\tt Signer} as well as being
+  encrypted with the session key.
+
+  For most applications using RSA encryption keys, {\tt
+    SignedSessionEncrypter} is the recommended encryption class.
+
+\item {\tt SignedSessionDecrypter} is the counterpart to {\tt
+    SignedSessionEncrypter}, which must be initialized with the
+  session data string, the {\tt Crypter} and the {\tt Verifier} and
+  decrypts and verifies the encrypted messages produced by a {\tt
+    SignedSesssionEncrypter}.
+
+  For most applications using RSA decryption keys, {\tt
+    SignedSessionDecrypter} is the recommended encryption class.
+
+\end{itemize}
+
+\subsection{Key Readers}
+
+Each implementation provides a ``Key Reader'' abstraction which is
+used to retrieve key data and provide it to the operational classes.
+At least one implementation is provided for each language, an
+implementation that retrieves key data from the file system.
+Additional implementations may be written by users, to integrate with
+various technology stacks.
+
+\subsection {Keys}
+
+Each implementation provides a ``Key'' abstraction with
+implementations for various specific types of keys.  Users may extend
+the library with additional key types to provide more algorithms, or
+to integrate with different underlying cryptographic libraries or
+APIs.  For example, if a user wishes to perform the actual
+cryptographic operations in an HSM (Host Security Module), a hardware
+cryptographic engine which does not export key material for maximal
+security, an additional key type could be added which implements the
+details of communication with the HSM and makes the necessary
+functionality available to the rest of the Keyczar library.
+  
+\subsection{Strings vs Byte Arrays}
+
+Encrypting and decrypting byte arrays is very straightforward:  the
+raw bytes are processed as-is, with whatever padding or chaining is
+appropriate for the type of encryption key, and the output is likewise
+a raw byte array (though it's often convenient to apply WebSafeBase64
+encoding prior to sending the encrypted data to the recipient).
+
+For processing of string data, it's convenient for encrypted data to
+be easily represented in strings, so the Keyczar libraries perform
+WebSafeBase64 encoding automatically to encrypted data, and do the
+appropriate decoding prior to decryption.  Another issue that arises
+when processing strings is how to convert the character string into
+raw bytes prior to encryption, and how to convert decrypted bytes back
+into characters.  Since different software stacks may use different
+native encodings of characters into bytes, it's useful for Keyczar to
+standardize on a single encoding in order to maximize
+interoperability.  UTF-8 is used for encoding character strings into
+byte arrays, and for decoding byte arrays into character strings when
+string APIs are used.  See language-specific sections below for
+details.
 
 \section{Using Java Keyczar}
 
-The {\tt org.keyczar} package contains four public classes that
-developers will use for cryptographic basic functions: {\tt Crypter},
-{\tt Encrypter}, {\tt Signer}, and {\tt Verifier}. All four classes
-are children of the abstract {\tt Keyczar} class and may be
-constructed either with a {\tt KeyczarReader} or a simple String
-location of a keyset:
-
+The four basic operational classes, {\tt Crypter}, {\tt Encrypter},
+{\tt Signer}, and {\tt Verifier}, are children of the abstract {\tt
+  Keyczar} class and may be constructed either with a {\tt
+  KeyczarReader} or a simple String containing the filesystem path of
+a keyset:
 
 \begin{itemize}
   \item Constructor: {\tt Keyczar(KeyczarReader reader)}
   \item Constructor: {\tt Keyczar(String keySetLocation)}
 \end{itemize}
 
-Also, {\tt org.keyczar} contains four additional public classes that
-developers will use for session encryption and decryption: {\tt
-SessionEncrypter}, {\tt SessionDecrypter}, {\tt
-  SignedSessionEncrypter}, and {\tt SignedSessionDecrypter}.  These
-classes are not derived from {\tt Keyczar} and must be provided with
+The {\tt SessionEncrypter}, {\tt SessionDecrypter}, {\tt
+  SignedSessionEncrypter}, and {\tt SignedSessionDecrypter} classes
+are not derived from {\tt Keyczar} and must be provided with
 appropriate {\tt Keyczar}-derived class instances which provide the
 basic cryptographic operations:
 
@@ -294,11 +431,8 @@ basic cryptographic operations:
     Verifier verifier)}
 \end{itemize}
 
-Session encrypters and decrypters differ from Encrypters and Crypters
-in that they do not encrypt or decrypt data directly with the key
-provided.  Instead, data is encrypted or decrypted using a session
-key, which is in turn protected by the provided key.  Session
-encryption is recommended when using asymmetric keys.
+See section \ref{coreapis} for a description of the session classes,
+to understand how they differ from the basic classes.
 
 \subsection{KeyczarReaders}
 
@@ -309,93 +443,105 @@ reads key material from a keyset. Keyczar includes a {\tt
 disk. Developers may implement their own {\tt KeyczarReaders} to read
 from arbitrary sources and pass them to {\tt Keyczar} constructors.
 
-\subsection{Encrypters}
+\subsection{Encrypter}
 
 The {\tt Encypter} class is only able to encrypt data. {\tt Encrypter}
 objects will be initialized by passing it the location of a crypting
-key set.  {\tt Encrypters} can encrypt plaintext encoded in UTF-8
-Strings, byte arrays, or ByteBuffers. {\tt Encrypters} must be
-initialized with a keyset containing a {\it primary} status key to
-encrypt any data.
-\begin{itemize}
-  \item {\tt String encrypt(String input)}: Encrypt a string and
-    return a WebSafeBase64 output ciphertext.
-  \item {\tt byte[] encrypt(byte[] input)}: Encrypt a byte array and
-    return the ciphertext as a byte array.
-  \item {\tt int encrypt(ByteBuffer input, ByteBuffer output)}:
-    Encrypt the contents of the input buffer and write the ciphertext
-    to the output. Return the number of bytes written.
-  \item {\tt int ciphertextSize(int inputLength)}: Return the size of
-    the ciphertext that would result from encrypting an input of the
-    given length.
-\end{itemize}
-
-\subsection{Crypters}
-
-The {\tt Crypter} class is a child of {\tt Encrypter} and is also able
-to decrypt data. {\tt Crypter} objects may only be initialized by
-crypting key sets that contain keys able to decrypt, namely symmetric
-keys or private keys. {\tt Crypters} cannot be initialized with public
-keys. {\tt Crypters} can decrypt ciphertext in WebSafeBase64 encoded
-Strings, byte arrays, or ByteBuffers.
-
+key set.  {\tt Encrypters} can encrypt plaintext encoded in Strings,
+byte arrays, or ByteBuffers. {\tt Encrypters} must be initialized with
+a keyset containing a {\it primary} status key to encrypt any data.
 
 \begin{itemize}
-  \item {\tt String decrypt(String input)}: Decrypt a WebSafeBase64
-    string and return a UTF-8 encoded plaintext output.
-  \item {\tt byte[] decrypt(byte[] input)}: Decrypt a ciphertext byte
-    array and return the plaintext as a byte array.
-  \item {\tt int decrypt(ByteBuffer input, ByteBuffer output)}:
-    Decrypt the input ByteBuffer and write its output into the given
-    output ByteBuffer.  Return the number of bytes written.
+
+\item {\tt String encrypt(String input)}: Encodes the Java String as a
+  UTF-8 byte array, then encrypts the array and returns a
+  WebSafeBase64-encoded output ciphertext.
+
+\item {\tt byte[] encrypt(byte[] input)}: Encrypts a byte array and
+  returns the ciphertext as a byte array.
+
+\item {\tt int encrypt(ByteBuffer input, ByteBuffer output)}: Encrypts
+  the contents of the input buffer and writes the ciphertext to the
+  output buffer. Return the number of bytes written.
+
+\item {\tt int ciphertextSize(int inputLength)}: Returns the size of
+  the ciphertext that would result from encrypting an input of the
+  given length.
+
 \end{itemize}
 
-\subsection{Verifiers}
+\subsection{Crypter}
+
+The {\tt Crypter} class is a child of {\tt Encrypter} and is able to
+both encrypt and decrypt data. {\tt Crypter} objects may only be
+initialized by crypting key sets that contain keys able to decrypt,
+namely symmetric keys or private keys. {\tt Crypters} cannot be
+initialized with public keys. {\tt Crypters} can decrypt ciphertext in
+WebSafeBase64 encoded Strings, byte arrays, or ByteBuffers.
+
+\begin{itemize}
+
+\item {\tt String decrypt(String input)}: Decodes a WebSafeBase64 to a
+  byte array, decrypts the byte array, decodes the plaintext byte
+  array to a String using the UTF-8 decoder and returns the String.
+
+\item {\tt byte[] decrypt(byte[] input)}: Decrypt a ciphertext byte
+  array and return the plaintext as a byte array.
+
+\item {\tt int decrypt(ByteBuffer input, ByteBuffer output)}: Decrypt
+  the input ByteBuffer and write its output into the given output
+  ByteBuffer.  Return the number of bytes written.
+
+\end{itemize}
+
+\subsection{Verifier}
 
 The {\tt Verifier} class is only able to verify signatures. {\tt
-Verifier} objects may be initialized by passing it the location of
-any signing key set.  It can verify signatures in WebSafeBase64
-format, as byte arrays, or in ByteBuffers:
-
+  Verifier} objects may be initialized by passing in the location of
+any signing or verification key set.  It can verify signatures in
+WebSafeBase64 format, as byte arrays, or in ByteBuffers:
 
 \begin{itemize}
-  \item {\tt boolean verify(String data, String signature)}: Verifies
-    a WebSafeBase64 encoded signature on the given UTF-8 String of
-    data. Returns a boolean representing whether the signature is
-    valid.
-  \item {\tt boolean verify(byte[] data, byte[] signature)}: Verifies
-    a signature in a byte array on the given byte array of
-    data. Returns a boolean representing whether the signature is
-    valid.
-  \item {\tt boolean verify(ByteBuffer data, ByteBuffer signature}:
-    Verifies a signauture in a ByteBuffer on the given ByteBuffer of
-    data. Returns a boolean representing whether the signature is
-    valid.
-  \item {\tt boolean attachedVerify(byte[] signedBlob, byte[] hidden)}:
-    Verifies a signature when the data and signature have been
-    {\it attached} and are both contained in the signedBlob.  The
-    attached signature computation also includes additional {\tt
-    hidden} data (usually called a {\it nonce} in cryptographic
-    literature).  This hidden data must be provided for verification
-    to succeed.
-  \item {\tt byte[] getAttachedData(byte[] signedBlob, byte[] hidden)}:
-    Verifies an attached signature (see previous method) and extracts
-    and returns the data portion of {\tt signedBlob}.  Throws
-    KeyczarException if signature verification fails.
-  \item {\tt byte[] getAttachedDataWithoutVerifying(byte[]
-    signedBlob)}: Extracts and returns the data portion of the blob,
-    but does not check the signature.
+
+\item {\tt boolean verify(String data, String signature)}: Verifies a
+  WebSafeBase64 encoded signature on the given data. Returns a boolean
+  representing whether the signature is valid.
+
+\item {\tt boolean verify(byte[] data, byte[] signature)}: Verifies a
+  signature in a byte array on the given byte array of data. Returns a
+  boolean representing whether the signature is valid.
+
+\item {\tt boolean verify(ByteBuffer data, ByteBuffer signature}:
+  Verifies a signauture in a ByteBuffer on the given ByteBuffer of
+  data. Returns a boolean representing whether the signature is valid.
+
+\item {\tt boolean attachedVerify(byte[] signedBlob, byte[] hidden)}:
+  Verifies a signature when the data and signature have been {\it
+    attached} and are both contained in the signedBlob.  The attached
+  signature computation also includes additional {\tt hidden} data
+  (usually called a {\it nonce} in cryptographic literature).  This
+  hidden data must be provided for verification to succeed.
+
+\item {\tt byte[] getAttachedData(byte[] signedBlob, byte[] hidden)}:
+  Verifies an attached signature (see previous method) and extracts
+  and returns the data portion of {\tt signedBlob}.  Throws
+  KeyczarException if signature verification fails.
+
+\item {\tt byte[] getAttachedDataWithoutVerifying(byte[] signedBlob)}:
+  Extracts and returns the data portion of the blob, but does not
+  check the signature.
 \end{itemize}
 
-\subsection{Signers}
+\subsection{Signer}
 
 The {\tt Signer} class is a child of the {\tt Verifier} class and is
-also able to generate signatures by signing data. {\tt Signer} objects
-may only be initialized by keysets that are able to sign, namely
-symmetric keys and private keys. {\tt Signers} may not be initialized
-by public keys and may sign data in UTF-8 Strings, byte arrays, or
-ByteBuffers. {\tt Signers} must be initialized with a keyset
-containing a {\it primary} status key to sign any data.
+also able to generate signatures. {\tt Signer} objects may only be
+initialized by keysets that are able to sign, namely symmetric keys
+and private keys. {\tt Signers} may not be initialized by public keys
+and may sign data in Strings, byte arrays, or ByteBuffers. {\tt
+  Signers} must be initialized with a keyset containing a {\it
+  primary} status key to sign any data.
+
 \begin{itemize}
   \item {\tt String sign(String data)}: Signs a UTF-8 string of data
     and returns a signatures as a WebSafeBase64 string.
@@ -414,7 +560,6 @@ containing a {\it primary} status key to sign any data.
 The following command-line commands would create a new AES encrypting
 key:
 
-
 \begin{verbatim}
 mkdir /aeskeys
 KeyczarTool create --location=/aeskeys --purpose=crypt
@@ -423,7 +568,6 @@ KeyczarTool addkey --location=/aeskeys --status=primary
 
 Then within a Java program, the following code would encrypt a string
 of data:
-
 
 \begin{verbatim}
 Crypter crypter = new Crypter(``/aeskeys'');
@@ -438,7 +582,6 @@ String plaintext = crypter.decrypt(ciphertext);
 \end{verbatim}
 
 Using public keys is similar:
-
 
 \begin{verbatim}
 mkdir /rsakeys
@@ -455,7 +598,7 @@ private key set to decrypt:
 // Initialize an Encrypter with the public keys
 Encypter encrypter = new Encrypter(``/rsa-publickeykeys'');
 String ciphertext = encrypter.encrypt(``Some data to encrypt'');
-... 
+...
 // Initialize a Crypter with the private keys
 Crypter crypter = new Crypter(``/rsakeys'');
 String plaintext = crypter.decrypt(ciphertext);
@@ -558,21 +701,21 @@ revoked and removed from a key set entirely.
 
 Each Keyczar keyset contains a metadata file that contains information about
 that set's name, purpose, key type, encrypted status, and a list of key version
-information (see Section \ref{versions}). Valid purposes are encrypting, 
+information (see Section \ref{versions}). Valid purposes are encrypting,
 verifying, encrypting and decrypting, and signing and verifying. Having the
-purpose value in the metadata prevents a key from being used for an 
+purpose value in the metadata prevents a key from being used for an
 inappropriate purpose. For example, an RSA key that is typically used for
 encrypting shouldn't also be used for signing.
 
 These purposes correspond to their respective public and symmetric/private
-keys, and are usable by the Keyczar classes specified in the table below: 
+keys, and are usable by the Keyczar classes specified in the table below:
 
 \vspace*{3mm}
 \begin{tabular}{ l | l | l }
 {\bf Purpose} &  {\bf Public, Private, or Symmetric } & {\bf Class used by} \\
 \hline Encrypting & Public & Encrypter or Crypter \\ \hline
 Encrypting and Decrypting & Private or Symmetric & Crypter \\ \hline
-Verifying & Public & Verifier or Signer \\ \hline 
+Verifying & Public & Verifier or Signer \\ \hline
 Verifying and Signing & Private or Symmetric & Signer \\ \hline
 \end{tabular}
 \vspace*{3mm}
@@ -635,7 +778,7 @@ material itself. The following values will be hashed for each key type:
   \item DSA Private: Same as DSA Public.
   \item RSA Public: 4-byte integer value representing the length of the X.509
   representation of this key, followed by the X.509 representation.
-  \item RSA Private: Same as RSA Public. 
+  \item RSA Private: Same as RSA Public.
 \end{itemize}
 
 The SHA-1 output on each of these values is truncated to the first four bytes.
@@ -669,22 +812,22 @@ supports ``CBC''.
 \subsubsection{Public RSA}
 
 Public RSA keys have an ``x509'' field containing the Base64 representation of
-a X.509 public key certificate. 
+a X.509 public key certificate.
 
 \subsubsection{Private RSA}
 
 Private RSA keys contain a public RSA key, and a ``pkcs8'' field containing a
-Base64 representation of a PKCS8 encoded RSA private key. 
+Base64 representation of a PKCS8 encoded RSA private key.
 
 \subsubsection{Public DSA}
 
 Public DSA keys have an ``x509'' field containing the Base64 representation of
-a X.509 public key certificate. 
+a X.509 public key certificate.
 
 \subsubsection{Private DSA}
 
 Private DSA keys contain a public DSA key, and a ``pkcs8'' field containing a
-Base64 representation of a PKCS8 encoded DSA private key. 
+Base64 representation of a PKCS8 encoded DSA private key.
 
 \section{Output Formats}
 
@@ -793,7 +936,7 @@ The following example was created using the command: \\
 The following command will create a new key in an existing keyset: \\
 {\tt KeyczarTool addkey --location=/path/to/keyset}
 
-This will add key version information to the existing {\tt meta} file: 
+This will add key version information to the existing {\tt meta} file:
 \begin{verbatim}
 {
  "name":"test",
@@ -831,7 +974,7 @@ This will just alter the meta file to reflect the promotion:
  "purpose":"SIGN_AND_VERIFY",
  "type":"HMAC_SHA1",
  "versions":[
-    { 
+    {
       "exportable":false,
       "status":"PRIMARY",
       "versionNumber":1
@@ -853,12 +996,12 @@ be active:
  "purpose":"SIGN_AND_VERIFY",
  "type":"HMAC_SHA1",
  "versions":[
-    { 
+    {
       "exportable":false,
       "status":"ACTIVE",
       "versionNumber":1
     },
-    { 
+    {
       "exportable":false,
       "status":"PRIMARY",
       "versionNumber":2
@@ -903,20 +1046,20 @@ This is truncated down to the four bytes {\tt d8, 36, 36, 62}, which is
 this key's hash identifier. As described in Section \ref{header}, all output
 will be prefixed with a version byte (currently equal to 1) and this identifier.
 
-\subsection{Signing and Verifying} 
+\subsection{Signing and Verifying}
 
 To sign the string ``Hello world'' with our newly generated keys in Java, we
 would simply use the following two lines of code.
 
 \begin{verbatim}
-Signer signer = new Signer("/path/to/keyset"); 
+Signer signer = new Signer("/path/to/keyset");
 String signature = signer.sign("Hello world");
 \end{verbatim}
 
 Keyczar will convert the string to the bytes to the following values:
 \begin{verbatim}
 48, 65, 6c, 6c, 6f, 20, 77, 6f, 72, 6c, 64
-\end{verbatim} 
+\end{verbatim}
 
 The output Base64 encoded signature would be the value {\tt
 Adg2NmIPTshpioGdunRaGRYWFNgheKmjvg}, which corresponds to the bytes:
@@ -944,7 +1087,7 @@ Java's {\tt javax.crypto} package, which may not be available in all countries
 due to local laws and regulations.
 
 Python Keyczar depends on the Python Cryptography Toolkit \cite{python-crypto}
-and simplejson \cite{simplejson}. 
+and simplejson \cite{simplejson}.
 
 \section{Acknowledgements}
 
