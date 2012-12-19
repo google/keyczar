@@ -1,4 +1,3 @@
-#!/usr/bin/python2.4
 #
 # Copyright 2011 LightKeeper LLC.
 #
