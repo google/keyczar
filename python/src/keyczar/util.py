@@ -28,6 +28,7 @@ import os
 import struct
 import warnings
 import sys
+import datetime
 
 try:
   # Import hashlib if Python >= 2.5
@@ -286,6 +287,12 @@ def IntToBytes(n):
   byte_array = [m % 256 for m in [n >> 24, n >> 16, n >> 8, n]]
   return "".join([chr(b) for b in byte_array])  # byte array to byte string
 
+def LongLongToBytes(n):
+  return struct.pack(BIG_ENDIAN_LONG_LONG_SPECIFIER, n)
+
+def BytesToLongLong(n):
+  return struct.unpack(BIG_ENDIAN_LONG_LONG_SPECIFIER,n)[0]
+
 def BytesToLong(byte_string):
   l = len(byte_string)
   return long(sum([ord(byte_string[i]) * 256**(l - 1 - i) for i in range(l)]))
@@ -395,6 +402,7 @@ def Base64WSDecode(s):
 
 # Struct packed byte array format specifiers used below
 BIG_ENDIAN_INT_SPECIFIER = ">i"
+BIG_ENDIAN_LONG_LONG_SPECIFIER = ">q"
 STRING_SPECIFIER = "s"
 
 def PackByteArray(array):
@@ -893,4 +901,9 @@ def ImportBackends():
   if xtra_paths:
     for path in xtra_paths.split(os.pathsep):
       ImportAll(path)
+
+def UnixTimeMilliseconds(dt):
+    epoch = datetime.datetime(1970,1,1,0,0,0)#UTC
+    delta = dt - epoch
+    return delta.total_seconds() * 1000
 

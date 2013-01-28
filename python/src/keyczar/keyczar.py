@@ -31,11 +31,13 @@ import keys
 import readers
 import writers
 import util
+import datetime
 
 VERSION = 0
 VERSION_BYTE = '\x00'
 KEY_HASH_SIZE = 4
 HEADER_SIZE = 1 + KEY_HASH_SIZE
+TIMEOUT_SIZE = 8
 
 class Keyczar(object):
   """Abstract Keyczar base class."""
@@ -438,6 +440,65 @@ class Verifier(Keyczar):
     key = self._ParseHeader(header)
     return key.Verify(data + util.PackByteArray(nonce) + VERSION_BYTE, signature)
 
+class TimeoutVerifier(Keyczar):
+  """Capable of verifying only."""
+
+  @staticmethod
+  def Read(location):
+    """
+    Return a TimeoutVerifier object created from FileReader at given location.
+
+    @param location: pathname of the directory storing the key files
+    @type location: string
+
+    @return: a TimeoutVerifier to manage the keys stored at the given location and
+      perform verify functions.
+    @rtype: L{TimeoutVerifier}
+    """
+    return TimeoutVerifier(readers.CreateReader(location))
+
+  def IsAcceptablePurpose(self, purpose):
+    """Only valid if purpose includes verifying."""
+    return purpose == keyinfo.VERIFY or purpose == keyinfo.SIGN_AND_VERIFY
+
+  def Verify(self, data, sig, current_time =None):
+    """
+    Verifies whether the signature corresponds to the given data.
+
+    @param data: message that has been signed with sig
+    @type data: string
+
+    @param sig: Base64 string formatted as Header|Expire|Signature
+    @type sig: string
+
+    @param current_time: Optionally provided current time otherwise uses system time
+    @type current_time: datetime (UTC)
+
+    @return: True if sig corresponds to data, False otherwise.
+    @rtype: boolean
+    """
+    sig_bytes = util.Base64WSDecode(sig)
+    if len(sig_bytes) < HEADER_SIZE + TIMEOUT_SIZE:
+      raise errors.ShortSignatureError(len(sig_bytes))
+    return self.__InternalVerify(
+      sig_bytes[:HEADER_SIZE],
+      sig_bytes[HEADER_SIZE : HEADER_SIZE + TIMEOUT_SIZE],
+      sig_bytes[HEADER_SIZE + TIMEOUT_SIZE:], 
+      data, current_time)
+
+  def __InternalVerify(self, header, timeout, signature, data, current_time):
+
+    if not current_time:
+      current_time = datetime.datetime.utcnow()
+
+    millinow = util.UnixTimeMilliseconds(current_time)
+    expire = util.BytesToLongLong(timeout)
+
+    key = self._ParseHeader(header)
+    if not key.Verify(timeout + data + VERSION_BYTE, signature):
+      return False
+    return (expire > millinow)
+
 
 class UnversionedVerifier(Keyczar):
   """Capable of verifying unversioned, standard signatures only."""
@@ -627,6 +688,55 @@ class Signer(Verifier):
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
     return signing_key.Sign(data + util.PackByteArray(nonce) + VERSION_BYTE)
+
+class TimeoutSigner(TimeoutVerifier):
+  """Capable of both signing and verifying."""
+
+  @staticmethod
+  def Read(location):
+    """
+    Return a TimeoutSigner object created from FileReader at given location.
+
+    @param location: pathname of the directory storing the key files
+    @type location: string
+
+    @return: a TimeoutSigner to manage the keys stored at the given location and
+      perform sign and verify functions.
+    @rtype: L{TimeoutSigner}
+    """
+    return Signer(readers.CreateReader(location))
+
+  def IsAcceptablePurpose(self, purpose):
+    """Only valid if purpose includes signing."""
+    return purpose == keyinfo.SIGN_AND_VERIFY
+
+  def Sign(self, data, expire_date):
+    """
+    Sign given data and return corresponding signature.
+
+    For message M, outputs the signature as Header|Sig(Header.M).
+
+    @param data: message to be signed
+    @type data: string
+
+    @param expire_date: datetime when signature expires
+    @type expire_date: datetime (UTC)
+
+    @return: signature on the data encoded as a Base64 string
+    @rtype: string
+    """
+
+    expire_milli = util.UnixTimeMilliseconds(expire_date)
+    expire_bytes = util.LongLongToBytes(expire_milli)
+
+    return util.Base64WSEncode(self.primary_key.Header() +
+                             expire_bytes + self.__InternalSign(expire_bytes + data))
+
+  def __InternalSign(self, data):
+    signing_key = self.primary_key
+    if signing_key is None:
+      raise errors.NoPrimaryKeyError()
+    return signing_key.Sign(data + VERSION_BYTE)
 
 class UnversionedSigner(UnversionedVerifier):
   """Capable of both signing and verifying. This outputs standard signatures
