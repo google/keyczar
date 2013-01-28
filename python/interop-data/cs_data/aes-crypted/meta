@@ -1,0 +1,1 @@
+{"name":"Test","purpose":"DECRYPT_AND_ENCRYPT","type":"AES","encrypted":true,"versions":[{"versionNumber":1,"exportable":false,"status":"ACTIVE"},{"versionNumber":2,"exportable":false,"status":"PRIMARY"}]}
