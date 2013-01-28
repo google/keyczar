@@ -29,6 +29,7 @@ import struct
 import warnings
 import sys
 import datetime
+import errno
 
 try:
   # Import hashlib if Python >= 2.5
@@ -907,3 +908,12 @@ def UnixTimeMilliseconds(dt):
     delta = dt - epoch
     return delta.total_seconds() * 1000
 
+def mkdir_p(path):
+    if path is None:
+      return
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
