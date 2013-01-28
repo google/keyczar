@@ -29,13 +29,14 @@ import keyinfo
 import readers
 import writers
 import util
+import datetime
 
-KEYSETS = [('aes', keyinfo.DECRYPT_AND_ENCRYPT, None, None),
-           ('aes-crypted', keyinfo.DECRYPT_AND_ENCRYPT, None, 'aes'),
-           ('hmac', keyinfo.SIGN_AND_VERIFY, None, None),
-           ('rsa', keyinfo.DECRYPT_AND_ENCRYPT, 'rsa', None),
-           ('rsa-sign', keyinfo.SIGN_AND_VERIFY, 'rsa', None),
-           ('dsa', keyinfo.SIGN_AND_VERIFY, 'dsa', None)]
+KEYSETS = [('aes', keyinfo.DECRYPT_AND_ENCRYPT, 'crypt', None, None),
+           ('aes-crypted', keyinfo.DECRYPT_AND_ENCRYPT, 'crypt', None, 'aes'),
+           ('hmac', keyinfo.SIGN_AND_VERIFY, 'sign', None, None),
+           ('rsa', keyinfo.DECRYPT_AND_ENCRYPT, 'crypt', 'rsa', None),
+           ('rsa-sign', keyinfo.SIGN_AND_VERIFY, 'sign', 'rsa', None),
+           ('dsa', keyinfo.SIGN_AND_VERIFY, 'sign', 'dsa', None)]
 
 mock = None  # mock reader used for testing purposes, disabled when set to None
 
@@ -57,9 +58,11 @@ PROMOTE = Command("promote")
 DEMOTE = Command("demote")
 REVOKE = Command("revoke")
 GENKEY = Command("genkey")
+USEKEY = Command("usekey")
+
 commands = {"create": CREATE, "addkey": ADDKEY, "pubkey": PUBKEY, 
             "promote": PROMOTE, "demote": DEMOTE, "revoke": REVOKE, 
-            "genkey": GENKEY}
+            "genkey": GENKEY, "usekey": USEKEY}
 
 def GetCommand(cmd):
   try:
@@ -71,17 +74,23 @@ class Flag(_Name):
   """Enum representing keyczart flags."""
 
 LOCATION = Flag("location")
+LOCATION2 = Flag("location2")
+FORMAT = Flag("format")
 NAME = Flag("name")
 SIZE = Flag("size")
 STATUS = Flag("status")
 PURPOSE = Flag("purpose")
 DESTINATION = Flag("destination")
+DESTINATION2 = Flag("destination2")
 VERSION = Flag("version")
 ASYMMETRIC = Flag("asymmetric")
 CRYPTER = Flag("crypter")
+CRYPTER2 = Flag("crypter2")
+
 flags = {"location": LOCATION, "name": NAME, "size": SIZE, "status": STATUS,
          "purpose": PURPOSE, "destination": DESTINATION, "version": VERSION,
-         "asymmetric": ASYMMETRIC, "crypter": CRYPTER}
+         "asymmetric": ASYMMETRIC, "crypter": CRYPTER, "location2": LOCATION2,
+         "destination2": DESTINATION2,"crypter2": CRYPTER2, "format":FORMAT}
 
 def GetFlag(flag):
   try:
@@ -167,7 +176,7 @@ def _CreateCrypter(location):
 
 def GenKeySet(loc):
   print "Generating private key sets..."
-  for (name, purpose, asymmetric, crypter) in KEYSETS:
+  for (name, purpose, form, asymmetric, crypter) in KEYSETS:
     print "."
     dir_path = os.path.join(loc, name)
     if crypter:
@@ -175,9 +184,9 @@ def GenKeySet(loc):
     Clean(dir_path)
     Create(dir_path, "Test", purpose, asymmetric)
     AddKey(dir_path, keyinfo.PRIMARY, crypter)
-    UseKey(purpose, dir_path, os.path.join(dir_path, "1.out"), crypter)
+    UseKey(form, dir_path, os.path.join(dir_path, "1.out"), crypter, msg="This is some test data")
     AddKey(dir_path, keyinfo.PRIMARY, crypter)
-    UseKey(purpose, dir_path, os.path.join(dir_path, "2.out"), crypter)
+    UseKey(form, dir_path, os.path.join(dir_path, "2.out"), crypter, msg="This is some test data")
   
   print "Exporting public key sets..."
   for name in ('dsa', 'rsa-sign'):
@@ -193,19 +202,54 @@ def Clean(directory):
     if not os.path.isdir(path): 
       os.remove(path)
 
-def UseKey(purpose, loc, dest, crypter=None, msg="This is some test data"):
+def UseKey(purpose, loc, dest, crypter=None, dest2=None, loc2 = None, crypter2=None,  msg=None, param =[]):
   reader = readers.CreateReader(loc)
+  reader2 = None
+  if loc2:
+    reader2 = readers.CreateReader(loc2)
   try:
     answer = ""
+    answer2 = ""
+
     if crypter:
       reader = readers.EncryptedReader(reader, crypter)
-    if purpose == keyinfo.DECRYPT_AND_ENCRYPT:
-      answer = keyczar.Crypter(reader).Encrypt(msg)
-    elif purpose == keyinfo.SIGN_AND_VERIFY:
+    if crypter2 and reader2:
+      reader2 = readers.EncryptedReader(reader2, crypter2)
+
+    if purpose == "crypt":
+      answer = keyczar.Encrypter(reader).Encrypt(msg)
+    elif purpose == "sign":
       answer = keyczar.Signer(reader).Sign(msg)
+    elif purpose == "sign-timeout":
+	 if len(param) > 0:
+             expire_string  = param[0]
+             expire_date = datetime.datetime.strptime(expire_string,"%Y-%m-%dT%H:%M:%SZ")
+             answer = keyczar.TimeoutSigner(reader).Sign(msg, expire_date)
+         else:
+	   print "Needs UTC time as extra parameter for timeout expiration"
+    elif purpose == "sign-attached":
+      hidden = "" 
+      if len(param) > 0:
+	hidden = param[0]
+      answer = keyczar.Signer(reader).AttachedSign(msg,hidden)
+    elif purpose == "sign-unversioned":
+      answer = keyczar.UnversionedSigner(reader).Sign(msg)
+    elif purpose == "crypt-session":
+      sencrypt = keyczar.SessionEncrypter(keyczar.Encrypter(reader))
+      answer = sencrypt.session_material
+      answer2 = sencrypt.Encrypt(msg)
+    elif purpose == "crypt-signedsession":
+      sencrypt = keyczar.SignedSessionEncrypter(keyczar.Encrypter(reader), keyczar.Signer(reader2))
+      answer = sencrypt.session_material
+      answer2 = sencrypt.Encrypt(msg)
+
     util.WriteFile(answer, dest)
+    if dest2:
+      util.WriteFile(answer2, dest2)
   finally:
     reader.Close()
+    if reader2:
+      reader2.Close()
 
 def Usage():
   print '''Usage: "Keyczart command flags"
@@ -280,16 +324,18 @@ def main(argv):
   else:
     cmd = GetCommand(argv[0])   
     flags = {}
+    other = [] 
     for arg in argv:
       if arg.startswith("--"):
         arg = arg[2:]  # trim leading dashes
         try:
-          [flag, val] = arg.split("=")
-          flags[GetFlag(flag)] = val
+          [flag, val] =  arg.split("=")
+          flags[GetFlag(flag)] = val 
         except ValueError:
           print "Flags incorrectly formatted"
           Usage()
-    
+      else:
+	other.append(arg)
     try:
       version = int(flags.get(VERSION, -1))
       size = int(flags.get(SIZE, -1))
@@ -322,6 +368,16 @@ def main(argv):
       Revoke(loc, version)
     elif cmd == GENKEY:
       GenKeySet(loc)
+    elif cmd == USEKEY:
+      if CRYPTER in flags:
+        crypter = _CreateCrypter(flags[CRYPTER])
+      else:
+        crypter = None
+      if CRYPTER2 in flags:
+	crypter2=_CreateCrypter(flags[CRYPTER2])
+      else:
+	crypter2 = None
+      UseKey(flags.get(FORMAT), loc, flags.get(DESTINATION), crypter, flags.get(DESTINATION2), flags.get(LOCATION2), crypter2,other[1], other[2:])
     else:
       Usage()
 
