@@ -147,7 +147,17 @@ class Key(object):
     """Indirect getter for hash_id."""
     return self._Hash()
 
+  def _FallbackHashes(self):
+    return []
+
+  def __FallbackHashes(self):
+    """Indirect getter for fallback_hash_id."""
+    return self._FallbackHashes()
+
   hash_id = property(__Hash, doc="""The hash_id id of the key.""")
+
+  fallback_hash_ids = property(__FallbackHashes, doc="""The fallback hash ids from other bad implementations""")
+
   size = property(lambda self: self.__size, __SetSize,
                   doc="""The size of the key in bits.""")
   key_string = property(__GetKeyString, doc="""The key as a Base64 string.""")
@@ -342,6 +352,24 @@ class AesKey(SymmetricKey):
                          self.key_bytes,
                          self.hmac_key.key_bytes)
     return util.Base64WSEncode(fullhash[:keyczar.KEY_HASH_SIZE])
+
+  def _FallbackHashes(self):
+    fbh = []
+    #java uses the block sizes instead of keylength to produce hashes for aes
+    if len(self.key_bytes) != 16:
+      badjavahash = util.Hash(util.IntToBytes(16),
+                         self.key_bytes,
+                         self.hmac_key.key_bytes)
+      fbh.append(util.Base64WSEncode(badjavahash[:keyczar.KEY_HASH_SIZE]))
+    #old version of cpp stripped leading zeros of aes key
+    if len(self.key_bytes) > 0 and self.key_bytes[0] == '\x00':
+      stripped_key_bytes = self.key_bytes.lstrip('\x00')
+      badcpphash = util.Hash(util.IntToBytes(len(stripped_key_bytes)),
+                         stripped_key_bytes,
+                         self.hmac_key.key_bytes)
+      fbh.append(util.Base64WSEncode(badcpphash[:keyczar.KEY_HASH_SIZE]))
+      
+    return fbh
 
   @staticmethod
   def Generate(size=keyinfo.AES.default_size):

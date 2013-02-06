@@ -68,6 +68,8 @@ class Keyczar(object):
                          reader.GetKey(version.version_number))
       self._keys[version] = key
       self._AddHashedKey(key, key.hash_id)
+      self._AddFallbackHashedKey(key)
+
 
   versions = property(lambda self: [k for k in self._keys.keys()
                                     if isinstance(k, keydata.KeyVersion)],
@@ -85,6 +87,10 @@ class Keyczar(object):
     else:
       self._keys[hash_id].append(key)
   
+  def _AddFallbackHashedKey(self, key):
+    for fbh in key.fallback_hash_ids:
+      self._AddHashedKey(key, fbh)
+
   def _ParseHeader(self, header):
     """
     Parse the header and verify version, format info. Return key if exists.
@@ -139,6 +145,7 @@ class Keyczar(object):
   def _AddKey(self, version, key):
     self._keys[version] = key
     self._AddHashedKey(key, key.hash_id)
+    self._AddFallbackHashedKey(key)
     self.metadata.AddVersion(version)
 
 class GenericKeyczar(Keyczar):
