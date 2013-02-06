@@ -314,6 +314,12 @@ class BaseCrypterTest(unittest.TestCase):
   def testAesKeyCollisionDecrypt(self):
     self.__testDecrypt(os.path.join("key-collision", "aes"))
 
+  def testAesKeyBadJavaLargeSizeHashDecrypt(self):
+    self.__testDecrypt(os.path.join("badhash", "aes-java-size"))
+
+  def testAesKeyBadCppStripped0HashDecrypt(self):
+    self.__testDecrypt(os.path.join("badhash", "aes-cpp-0"))
+
   def testAesEncryptedKeyDecrypt(self):
     file_reader = readers.FileReader(os.path.join(TEST_DATA, "aes-crypted"))
     key_decrypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
