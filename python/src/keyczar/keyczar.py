@@ -67,7 +67,7 @@ class Keyczar(object):
       key = keys.ReadKey(self.metadata.type,
                          reader.GetKey(version.version_number))
       self._keys[version] = key
-      self._keys[key.hash_id] = key
+      self._AddHashedKey(key, key.hash_id)
 
   versions = property(lambda self: [k for k in self._keys.keys()
                                     if isinstance(k, keydata.KeyVersion)],
@@ -78,6 +78,13 @@ class Keyczar(object):
   def __str__(self):
     return str(self.metadata)
 
+  def _AddHashedKey(self, key, hash_id):
+    #Storing keys by hash_id as list
+    if (self._keys.get(hash_id) is None):
+      self._keys[hash_id] = [key]
+    else:
+      self._keys[hash_id].append(key)
+  
   def _ParseHeader(self, header):
     """
     Parse the header and verify version, format info. Return key if exists.
@@ -130,7 +137,8 @@ class Keyczar(object):
       raise errors.KeyNotFoundError(key_id)
 
   def _AddKey(self, version, key):
-    self._keys[version] = self._keys[key.hash_id] = key
+    self._keys[version] = key
+    self._AddHashedKey(key, key.hash_id)
     self.metadata.AddVersion(version)
 
 class GenericKeyczar(Keyczar):
@@ -437,8 +445,13 @@ class Verifier(Keyczar):
       return None
 
   def __InternalVerify(self, header,  signature, data, nonce = None):
-    key = self._ParseHeader(header)
-    return key.Verify(data + util.PackByteArray(nonce) + VERSION_BYTE, signature)
+    keys = self._ParseHeader(header)
+    for key in keys:
+      if key.Verify(data + util.PackByteArray(nonce) + VERSION_BYTE, signature):
+        return True
+    return False
+
+
 
 class TimeoutVerifier(Keyczar):
   """Capable of verifying only."""
@@ -494,10 +507,12 @@ class TimeoutVerifier(Keyczar):
     millinow = util.UnixTimeMilliseconds(current_time)
     expire = util.BytesToLongLong(timeout)
 
-    key = self._ParseHeader(header)
-    if not key.Verify(timeout + data + VERSION_BYTE, signature):
-      return False
-    return (expire > millinow)
+    keys = self._ParseHeader(header)
+    for key in keys:
+      if key.Verify(timeout + data + VERSION_BYTE, signature):
+        return (expire > millinow)
+    return False
+      
 
 
 class UnversionedVerifier(Keyczar):
@@ -594,8 +609,15 @@ class Crypter(Encrypter):
     data_bytes = decoder(ciphertext) if decoder else ciphertext
     if len(data_bytes) < HEADER_SIZE:
       raise errors.ShortCiphertextError(len(data_bytes))
-    key = self._ParseHeader(data_bytes[:HEADER_SIZE])
-    return key.Decrypt(data_bytes)
+    keys = self._ParseHeader(data_bytes[:HEADER_SIZE])
+    for key in keys:
+      try:
+        return key.Decrypt(data_bytes)
+      except errors.InvalidSignatureError:
+        pass
+      except:
+        raise
+    raise errors.InvalidSignatureError()
 
   def CreateDecryptingStreamReader(self, output_stream,
                                    decoder=util.IncrementalBase64WSStreamReader,

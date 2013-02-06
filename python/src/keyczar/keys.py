@@ -1278,7 +1278,10 @@ class DecryptingStreamReader(object):
       if len(self.__encrypted_buffer) >= keyczar.HEADER_SIZE:
         hdr_bytes = self.__encrypted_buffer[:keyczar.HEADER_SIZE]
         self.__encrypted_buffer = self.__encrypted_buffer[keyczar.HEADER_SIZE:]
-        self.__key = self.__key_set._ParseHeader(hdr_bytes)
+        keys = self.__key_set._ParseHeader(hdr_bytes)
+        if(len(keys) > 1):
+            raise errors.KeyczarError("Streaming decrypt cannot handle key collisions")
+        self.__key = keys[0]
         self.__hmac_stream = self.__key.hmac_key.CreateStreamable()
         self.__hmac_stream.Update(hdr_bytes)
         if self.__buffer_size >= 0:
