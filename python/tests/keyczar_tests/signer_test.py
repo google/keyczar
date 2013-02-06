@@ -122,6 +122,9 @@ class SignerTest(unittest.TestCase):
 
   def testHmacVerify(self):
     self.__testSignerVerify("hmac")
+
+  def testHmacKeyCollisionVerify(self):
+    self.__testSignerVerify(os.path.join("key-collision", "hmac"))
   
   def testBadHmacVerify(self):
     self.__testBadVerify("hmac")

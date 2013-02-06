@@ -311,6 +311,9 @@ class BaseCrypterTest(unittest.TestCase):
                                       ("aes", None,),
                                       no_data_reqd=True)
 
+  def testAesKeyCollisionDecrypt(self):
+    self.__testDecrypt(os.path.join("key-collision", "aes"))
+
   def testAesEncryptedKeyDecrypt(self):
     file_reader = readers.FileReader(os.path.join(TEST_DATA, "aes-crypted"))
     key_decrypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, "aes"))
