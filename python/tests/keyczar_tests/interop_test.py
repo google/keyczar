@@ -289,7 +289,7 @@ class PYInteropTest(FullInteropTest):
   def __init__(self, methodName='runTest'):
       FullInteropTest.__init__(self,"py", methodName)
       
-class JInteropTest(BaseInteropTest): 
+class JInteropTest(FullInteropTest): 
   def __init__(self, methodName='runTest'):
       BaseInteropTest.__init__(self,"j", methodName)
 

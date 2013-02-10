@@ -622,6 +622,8 @@ class Crypter(Encrypter):
         return key.Decrypt(data_bytes)
       except errors.InvalidSignatureError:
         pass
+      except errors.OaepDecodingError:
+        pass
       except:
         raise
     raise errors.InvalidSignatureError()

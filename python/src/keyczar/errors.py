@@ -38,6 +38,12 @@ class InvalidSignatureError(KeyczarError):
   def __init__(self):
     KeyczarError.__init__(self, "Invalid ciphertext signature")
 
+class OaepDecodingError(KeyczarError):
+  """Indicates an OAEP Decoding Error."""
+  
+  def __init__(self, message):
+    KeyczarError.__init__(self, message)
+
 class KeyNotFoundError(KeyczarError):
   """Indicates a key with a certain hash id was not found."""
   

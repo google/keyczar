@@ -142,6 +142,9 @@ class SignerTest(unittest.TestCase):
   def testDsaVerify(self):
     self.__testVerify("dsa")
 
+  def testDsaKeyCollisionVerify(self):
+    self.__testSignerVerify(os.path.join("key-collision", "dsa"))
+
   def testDsaPublicVerify(self):
     self.__testPublicVerify("dsa")
   
@@ -157,6 +160,9 @@ class SignerTest(unittest.TestCase):
   
   def testRsaSignerVerify(self):
     self.__testSignerVerify("rsa-sign")
+
+  def testRsaKeyCollisionVerify(self):
+    self.__testSignerVerify(os.path.join("key-collision", "rsa-sign"))
   
   def testRsaVerify(self):
     self.__testVerify("rsa-sign")

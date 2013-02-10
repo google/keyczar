@@ -744,9 +744,9 @@ class RsaPrivateKey(PrivateKey):
     # See PKCS#1 v2.1: ftp://ftp.rsasecurity.com/pub/pkcs/pkcs-1/pkcs-1v2-1.pdf
     if len(label) >= 2**61:
       # 2^61 = the input limit for SHA-1
-      raise errors.KeyczarError("OAEP Decoding Error - label is too large %d" % len(label))
+      raise errors.OaepDecodingError("OAEP Decoding Error - label is too large %d" % len(label))
     if len(encoded_message) < 2 * util.HLEN + 2:
-      raise errors.KeyczarError(
+      raise errors.OaepDecodingError(
         "OAEP Decoding Error - encoded_message is too small: %d" % len(encoded_message))
 
     # Step 3b  EM = Y || maskedSeed || maskedDB
@@ -774,11 +774,11 @@ class RsaPrivateKey(PrivateKey):
     label_hash = datablock[:util.HLEN]
     expected_label_hash = util.Hash(label)  # Debugging
     if label_hash != expected_label_hash:
-      raise errors.KeyczarError("OAEP Decoding Error - hash_id is invalid")
+      raise errors.OaepDecodingError("OAEP Decoding Error - hash_id is invalid")
 
     delimited_message = datablock[util.HLEN:].lstrip('\x00')
     if delimited_message[0] != '\x01':
-      raise errors.KeyczarError("OAEP Decoding Error - expected a 1 value")
+      raise errors.OaepDecodingError("OAEP Decoding Error - expected a 1 value")
     return delimited_message[1:]  # The message
 
   def __str__(self):

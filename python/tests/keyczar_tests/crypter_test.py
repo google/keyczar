@@ -301,6 +301,9 @@ class BaseCrypterTest(unittest.TestCase):
     self.__testDecrypt("rsa")
     self.__testDecryptReflowed("rsa")
 
+  def testRsaKeyCollisionDecrypt(self):
+    self.__testDecrypt(os.path.join("key-collision", "rsa"))
+
   def testRsaEncryptAndDecrypt(self):
     self.__testEncryptAndDecrypt("rsa")
 
