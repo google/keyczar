@@ -196,12 +196,13 @@ class FullInteropTest(BaseInteropTest):
     verifypath = path
     if public:
       verifypath = path +".public"
-    date = datetime.datetime(2012,12,21,11,6)
+    date = lambda: datetime.datetime(2012,12,21,11,6)
     if expired:
-      date =datetime.datetime(2012,12,21,11,16)
+      date = lambda:datetime.datetime(2012,12,21,11,16)
     sig = util.ReadFile(os.path.join(path, "2.timeout"))
     verifier = keyczar.TimeoutVerifier.Read(verifypath)
-    self.assertEquals(verifier.Verify(self.input, sig, date), not expired)
+    verifier.SetCurrentTimeFunc(date)
+    self.assertEquals(verifier.Verify(self.input, sig), not expired)
 
   def __testVerifyUnversioned(self, subdirpublic =False):
     path = os.path.join(self.TEST_DATA, subdir)

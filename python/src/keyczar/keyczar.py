@@ -477,11 +477,15 @@ class TimeoutVerifier(Keyczar):
     """
     return TimeoutVerifier(readers.CreateReader(location))
 
+  def SetCurrentTimeFunc(self, value):
+	"""Set to a function that returns the current time (UTC), can be used for testing."""
+        self.__currentTimeFunc = value
+
   def IsAcceptablePurpose(self, purpose):
     """Only valid if purpose includes verifying."""
     return purpose == keyinfo.VERIFY or purpose == keyinfo.SIGN_AND_VERIFY
 
-  def Verify(self, data, sig, current_time =None):
+  def Verify(self, data, sig):
     """
     Verifies whether the signature corresponds to the given data.
 
@@ -490,9 +494,6 @@ class TimeoutVerifier(Keyczar):
 
     @param sig: Base64 string formatted as Header|Expire|Signature
     @type sig: string
-
-    @param current_time: Optionally provided current time otherwise uses system time
-    @type current_time: datetime (UTC)
 
     @return: True if sig corresponds to data, False otherwise.
     @rtype: boolean
@@ -504,14 +505,14 @@ class TimeoutVerifier(Keyczar):
       sig_bytes[:HEADER_SIZE],
       sig_bytes[HEADER_SIZE : HEADER_SIZE + TIMEOUT_SIZE],
       sig_bytes[HEADER_SIZE + TIMEOUT_SIZE:], 
-      data, current_time)
+      data)
 
-  def __InternalVerify(self, header, timeout, signature, data, current_time):
+  def __InternalVerify(self, header, timeout, signature, data):
 
-    if not current_time:
-      current_time = datetime.datetime.utcnow()
+    if not self.__currentTimeFunc:
+      self.__currentTimeFunc = lambda: datetime.datetime.utcnow()
 
-    millinow = util.UnixTimeMilliseconds(current_time)
+    millinow = util.UnixTimeMilliseconds(self.__currentTimeFunc())
     expire = util.BytesToLongLong(timeout)
 
     keys = self._ParseHeader(header)
