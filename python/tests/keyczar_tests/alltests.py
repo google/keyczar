@@ -28,6 +28,7 @@ import signer_test
 import util_test
 import session_test
 import interop_test
+import collision_test
 
 def suite():
   alltests = unittest.TestSuite()
@@ -37,7 +38,8 @@ def suite():
   alltests.addTest(util_test.suite())
   alltests.addTest(session_test.suite())
   alltests.addTest(interop_test.suite())
-  
+  alltests.addTest(collision_test.suite())
+
   return alltests
 
 if __name__ == '__main__':

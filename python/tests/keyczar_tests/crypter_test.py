@@ -301,9 +301,6 @@ class BaseCrypterTest(unittest.TestCase):
     self.__testDecrypt("rsa")
     self.__testDecryptReflowed("rsa")
 
-  def testRsaKeyCollisionDecrypt(self):
-    self.__testDecrypt(os.path.join("key-collision", "rsa"))
-
   def testRsaEncryptAndDecrypt(self):
     self.__testEncryptAndDecrypt("rsa")
 
@@ -313,9 +310,6 @@ class BaseCrypterTest(unittest.TestCase):
     self.__testAllModesAndBufferSizes(self.__testDecryptStream,
                                       ("aes", None,),
                                       no_data_reqd=True)
-
-  def testAesKeyCollisionDecrypt(self):
-    self.__testDecrypt(os.path.join("key-collision", "aes"))
 
   def testAesKeyBadJavaLargeSizeHashDecrypt(self):
     self.__testDecrypt(os.path.join("badhash", "aes-java-size"))
