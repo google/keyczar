@@ -252,7 +252,7 @@ def UseKey(purpose, loc, dest, crypter=None, dest2=None, loc2 = None, crypter2=N
       reader2.Close()
 
 def Usage():
-  print '''Usage: "Keyczart command flags"
+  print '''Usage: "keyczart command flags"
   Commands: create addkey pubkey promote demote revoke
 Flags: location name size status purpose destination version asymmetric crypter
 Command Usage:
@@ -317,6 +317,10 @@ def UpdateGenericKeyczar(czar, loc, encrypter=None):
       czar.Write(writer, encrypter)
     finally:
       writer.Close()
+
+# Used when called as the keyczar command-line tool (created by setuptools)
+def _main_setuptools():
+  return main(sys.argv[1:])
 
 def main(argv):
   if len(argv) == 0:
