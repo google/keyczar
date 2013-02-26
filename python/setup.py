@@ -12,12 +12,14 @@ Keyczar was originally developed by members of the Google Security Team and is r
 """
 
 from setuptools import setup
+import sys
 
 classifiers = """
 Development Status :: 5 - Production/Stable
 Intended Audience :: Developers
 License :: OSI Approved :: Apache Software License
 Programming Language :: Python
+Programming Language :: Python :: 3
 Topic :: Security
 Topic :: Security :: Cryptography
 Topic :: Software Development :: Libraries :: Python Modules
@@ -28,22 +30,26 @@ Operating System :: Unix
 
 doclines = __doc__.split("\n")
 
+extra = {}
+if sys.version_info >= (3,):
+    extra['use_2to3'] = True
+    
 setup(name='python-keyczar',
       description='Toolkit for safe and simple cryptography',
       author='Arkajit Dey',
       author_email='arkajit.dey@gmail.com',
       url='http://www.keyczar.org/',
       version='0.71c',
-      packages=['keyczar'],
-      package_dir={'keyczar': 'src/keyczar'},
-      install_requires=['pycrypto>2.0', 'pyasn1'],
+      packages=['keyczar','keyczar.tool','keyczar.test'],
+      test_suite="keyczar.test.allsuite",
+      install_requires= ['pycrypto>2.0', 'pyasn1'],
       maintainer='Google, Inc.',
       maintainer_email='keyczar-discuss@googlegroups.com',
       license='http://www.apache.org/licenses/LICENSE-2.0',
       platforms=['any'],
       classifiers=filter(None, classifiers.split("\n")),
       long_description=doclines[0],
-
       # create an executable for the KeyCzar tool
-      entry_points={'console_scripts': ['keyczart = keyczar.keyczart:_main_setuptools']},
+      entry_points={'console_scripts': ['keyczart = keyczar.tool.keyczart:_main_setuptools']},
+      **extra
 )

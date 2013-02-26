@@ -2,6 +2,5 @@ include README
 include ChangeLog
 include LICENSE
 recursive-include doc *
-recursive-include jtestdata *
 recursive-include testdata *
-recursive-include tests *
+recursive-include interop-data *

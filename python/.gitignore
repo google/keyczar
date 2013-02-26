@@ -3,3 +3,5 @@ build
 dist
 *pyc
 MANIFEST
+*.egg
+*.egg-info
