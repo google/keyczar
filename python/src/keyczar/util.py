@@ -906,7 +906,7 @@ def ImportBackends():
 def UnixTimeMilliseconds(dt):
     epoch = datetime.datetime(1970,1,1,0,0,0)#UTC
     delta = dt - epoch
-    return delta.total_seconds() * 1000
+    return (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**3
 
 def mkdir_p(path):
     if path is None:
