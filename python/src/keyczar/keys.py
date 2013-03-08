@@ -1200,11 +1200,7 @@ class DecryptingStreamReader(object):
         self.__hmac_stream.Update(data_to_decrypt)
         self.__encrypted_buffer = self.__encrypted_buffer[len(data_to_decrypt):]
         decrypted_data = self.__cipher.decrypt(data_to_decrypt)
-        if not is_data_avail:
-          decrypted_data = self.__key._UnPad(decrypted_data)
-
-        self.__decrypted_buffer += decrypted_data
-
+        
         if not is_data_avail:
           if len(self.__encrypted_buffer) != util.HLEN:
             raise errors.ShortCiphertextError(len(self.__encrypted_buffer))
@@ -1214,7 +1210,10 @@ class DecryptingStreamReader(object):
           if not self.__key.hmac_key.VerifySignedData(current_sig_bytes, 
                                                       msg_sig_bytes):
             raise errors.InvalidSignatureError()
-
+          decrypted_data = self.__key._UnPad(decrypted_data)
+          
+        self.__decrypted_buffer += decrypted_data
+        
     if chars < 0:
       result = self.__decrypted_buffer
       self.__decrypted_buffer = ''
