@@ -28,26 +28,17 @@ import hmac
 import math
 import random
 import json
-import io
 
-try:
-  # Import hashlib if Python >= 2.5
-  from hashlib import sha1
-except ImportError:
-  import sha as sha1
-
+from hashlib import sha1
 from Crypto.Cipher import AES
 from Crypto.PublicKey import DSA
 from Crypto.PublicKey import RSA
- 
-
- 
 
 # do we have access to M2Crypto?
 try:
-    from M2Crypto import EVP
+  from M2Crypto import EVP
 except ImportError:
-    EVP = None
+  EVP = None
 
 # overideable crypt library selection
 ACTIVE_CRYPT_LIB = 'm2crypto' if EVP else 'pycrypto'
@@ -144,7 +135,9 @@ class Key(object):
     return self._GetKeyString()
 
   def _Hash(self):
-    """Compute and return the hash_id id of this key. Can override default hash_id."""
+    """
+    Compute and return the hash_id id of this key. Can override default hash_id.
+    """
     fullhash = util.PrefixHash(self.key_bytes)
     return util.Base64WSEncode(fullhash[:constants.KEY_HASH_SIZE])
 
@@ -161,7 +154,8 @@ class Key(object):
 
   hash_id = property(__Hash, doc="""The hash_id id of the key.""")
 
-  fallback_hash_ids = property(__FallbackHashes, doc="""The fallback hash ids from other bad implementations""")
+  fallback_hash_ids = property(__FallbackHashes,
+   doc="""The fallback hash ids from other bad implementations""")
 
   size = property(lambda self: self.__size, __SetSize,
                   doc="""The size of the key in bits.""")
@@ -170,8 +164,11 @@ class Key(object):
                        doc="""The key as bytes.""")
 
   def Header(self):
-    """Return the 5-byte header string including version byte, 4-byte hash_id."""
-    return bytes(bytearray([constants.VERSION])) + util.Base64WSDecode(self.hash_id)
+    """
+    Return the 5-byte header string including version byte, 4-byte hash_id.
+    """
+    return (bytes(bytearray([constants.VERSION]))
+                      + util.Base64WSDecode(self.hash_id))
 
 class SymmetricKey(Key):
   """Parent class for symmetric keys such as AES, HMAC-SHA1"""
@@ -273,7 +270,7 @@ class AesKey(SymmetricKey):
 
       @return: EVP.Cipher
       """
-      assert selector in self.OP_TYPES, 'Invalid selector :%s' %selector
+      assert selector in self.OP_TYPES, 'Invalid selector :%s' % selector
       if selector == self.OP_ACTIVE and (len(self.ciphers.keys()) > 1 or 
                                          not len(self.ciphers.keys())):
         assert 0, 'If both encryption and decryption used then selector must \
@@ -292,7 +289,7 @@ class AesKey(SymmetricKey):
           # convert between AES and EVP modes
           # NOTE: AES auto-selects based on key size using the same mode, but
           # EVP requires different mode strings for each key size (in bits)
-          mode = 'aes_%s_cbc' %(self.key_size*8)
+          mode = 'aes_%s_cbc' % (self.key_size*8)
           cipher = EVP.Cipher(alg=mode,
                               key=self.key_bytes, 
                               iv=self.IV,
@@ -343,7 +340,8 @@ class AesKey(SymmetricKey):
     assert AES.block_size == 16
     self.block_size = AES.block_size
     self.size = size
-    # Only CBC mode is actually supported, in spite of what the signature leads you to believe.
+    # Only CBC mode is actually supported, in spite of what
+    # the signature leads you to believe.
     assert mode == keyinfo.CBC
 
   def __str__(self):
@@ -423,7 +421,7 @@ class AesKey(SymmetricKey):
     @rtype: string
     """
     pad = self.block_size - len(data) % self.block_size
-    return data + util.RepeatByte(pad,pad)
+    return data + util.RepeatByte(pad, pad)
 
   def _UnPad(self, padded):
     """
@@ -468,7 +466,7 @@ class AesKey(SymmetricKey):
     mac = self.hmac_key.CreateStreamable()
     
     #Write and update mac for header
-    header =self.Header()
+    header = self.Header()
     writer.write(header)
     mac.Update(header)
 
@@ -477,16 +475,15 @@ class AesKey(SymmetricKey):
     writer.write(iv_bytes)
     mac.Update(iv_bytes)
 
-    buffer_size =self.block_size * 4;
+    buffer_size = self.block_size * 4
     cipher = self.__CreateCipher(self.key_bytes, iv_bytes)
-    more = True;
+    more = True
     while more:
-      data = reader.read(buffer_size)
+      data = util.ReadLength(reader, buffer_size)
+      more = len(data) == buffer_size
 
-      #if end of data, pad it before encrypting
-      if (len(data) < buffer_size):
-        data= self._Pad(data)
-        more =False;
+      if not more:
+        data = self._Pad(data)
 
       #encrypt, update mac and write out ciphertext
       ciph_bytes = cipher.encrypt(data)
@@ -502,27 +499,28 @@ class AesKey(SymmetricKey):
     writer.write(mac.Sign())
     writer.flush()
 
-
   def DecryptIO(self, header, reader, writer):
     mac = self.hmac_key.CreateStreamable()
 
     #update mac of header
     mac.Update(header)
     #read out iv and update mac
-    iv_bytes = reader.read(self.block_size)
+    iv_bytes = util.ReadLength(reader, self.block_size)
     mac.Update(iv_bytes)
 
     cipher = self.__CreateCipher(self.key_bytes, iv_bytes)
    
-    more = True;
+    more = True
     # buffer_size is a block multiple -- req'd
     buffer_size = self.block_size * 4 
     # read out one more byte into starting tag buff
     # so on a valid ciphertext we will know we are on 
     # the last block to unpad
-    tagbuff = reader.read(util.HLEN + 1)
+    initial_len = util.HLEN + 1
+    tagbuff = util.ReadLength(reader, initial_len)
+
     while more:
-      buff = reader.read(buffer_size)
+      buff = util.ReadLength(reader, buffer_size)
       more = len(buff) == buffer_size
       tempbuff = tagbuff + buff
       if more:
@@ -534,7 +532,7 @@ class AesKey(SymmetricKey):
       mac.Update(buff)
       if not more:
         #check the mac before we try and finish decryption
-        calctag =mac.Sign()
+        calctag = mac.Sign()
         if not util.ConstantTimeCompare(tagbuff, calctag):
           raise errors.InvalidSignatureError()
       ptext = cipher.decrypt(buff)
@@ -584,8 +582,8 @@ class HmacKey(SymmetricKey):
     return util.Base64WSEncode(fullhash[:constants.KEY_HASH_SIZE])
 
   def CreateStreamable(self):
-      """Return a streaming version of this key"""
-      return HmacKeyStream(self)
+    """Return a streaming version of this key"""
+    return HmacKeyStream(self)
 
   @staticmethod
   def Generate(size=keyinfo.HMAC_SHA1.default_size):
@@ -666,7 +664,7 @@ class HmacKeyStream(object):
     self.hmac = hmac.new(self.hmac_key.key_bytes, b'', sha1)
 
   def Update(self, data):
-      self.hmac.update(data)
+    self.hmac.update(data)
 
   def Sign(self):
     """
@@ -788,10 +786,12 @@ class RsaPrivateKey(PrivateKey):
     # See PKCS#1 v2.1: ftp://ftp.rsasecurity.com/pub/pkcs/pkcs-1/pkcs-1v2-1.pdf
     if len(label) >= 2**61:
       # 2^61 = the input limit for SHA-1
-      raise errors.OaepDecodingError("OAEP Decoding Error - label is too large %d" % len(label))
+      raise errors.OaepDecodingError(
+        "OAEP Decoding Error - label is too large %d" % len(label))
     if len(encoded_message) < 2 * util.HLEN + 2:
       raise errors.OaepDecodingError(
-        "OAEP Decoding Error - encoded_message is too small: %d" % len(encoded_message))
+        "OAEP Decoding Error - encoded_message is too small: %d"
+         % len(encoded_message))
 
     # Step 3b  EM = Y || maskedSeed || maskedDB
     k = int(math.floor(math.log(self.key.n, 256)) + 1) # num bytes in n
@@ -809,8 +809,9 @@ class RsaPrivateKey(PrivateKey):
     seed_mask = util.MGF(masked_datablock, util.HLEN)
     seed = util.Xor(masked_seed, seed_mask)
 
-    # Step 3e
-    datablock_mask = util.MGF(seed, len(masked_datablock))  # encoded_message already stripped of 0
+    # Step 3e  
+    # encoded_message already stripped of 0
+    datablock_mask = util.MGF(seed, len(masked_datablock))  
 
     # Step 3f
     datablock = util.Xor(masked_datablock, datablock_mask)
@@ -854,12 +855,15 @@ class RsaPrivateKey(PrivateKey):
     params = { 'privateExponent': util.PadBytes(util.BigIntToBytes(key.d), 1),
                'primeP': util.PadBytes(util.BigIntToBytes(key.q), 1),
                'primeQ': util.PadBytes(util.BigIntToBytes(key.p), 1),
-               'primeExponentP': util.PadBytes(util.BigIntToBytes(key.d % (key.q - 1)), 1),
-               'primeExponentQ': util.PadBytes(util.BigIntToBytes(key.d % (key.p - 1)), 1),
+               'primeExponentP': util.PadBytes(util.BigIntToBytes(key.d 
+                    % (key.q - 1)), 1),
+               'primeExponentQ': util.PadBytes(util.BigIntToBytes(key.d 
+                    % (key.p - 1)), 1),
                'crtCoefficient': util.PadBytes(util.BigIntToBytes(key.u), 1)}
     pubkey = key.publickey()
     pub_params = { 'modulus': util.PadBytes(util.BigIntToBytes(key.n), 1),
-                   'publicExponent': util.PadBytes(util.BigIntToBytes(key.e), 1)}
+                   'publicExponent': util.PadBytes(util.BigIntToBytes(key.e),
+                    1)}
     pub = RsaPublicKey(pub_params, pubkey, size)
     return RsaPrivateKey(params, pub, key, size)
 
@@ -897,7 +901,7 @@ class RsaPrivateKey(PrivateKey):
     return self.public_key.EncryptIO(reader, writer)
 
   def DecryptIO(self, header, reader, writer):
-    ciph_bytes = reader.read()
+    ciph_bytes = util.ReadAll(reader)
     decrypted = self.key.decrypt(ciph_bytes)
     writer.write(self.__Decode(decrypted))
     writer.flush()
@@ -1006,7 +1010,7 @@ class RsaPublicKey(PublicKey):
     pad_octets = (k - len(msg) - 2 * util.HLEN - 2)  # Number of zeros to pad
     if pad_octets < 0:
       raise errors.KeyczarError("Message is too long: %d" % len(msg))
-    datablock = label_hash + util.RepeatByte(0x00,pad_octets) + b'\x01' + msg
+    datablock = label_hash + util.RepeatByte(0x00, pad_octets) + b'\x01' + msg
     seed = util.RandBytes(util.HLEN)
 
     # Steps 2e, f
@@ -1052,7 +1056,7 @@ class RsaPublicKey(PublicKey):
     
   def EncryptIO(self, reader, writer):
    
-    data = self.__Encode(reader.read())
+    data = self.__Encode(util.ReadAll(reader))
     writer.write(self.Header())
     writer.write(self.key.encrypt(data, None)[0])  # PyCrypto returns 1-tuple
     writer.flush()
@@ -1071,7 +1075,8 @@ class RsaPublicKey(PublicKey):
     @rtype: boolean
     """
     try:
-      return self.key.verify(util.MakeEmsaMessage(msg, self.size), (util.BytesToLong(sig),))
+      return self.key.verify(util.MakeEmsaMessage(msg, self.size),
+       (util.BytesToLong(sig),))
     except ValueError:
       # if sig is not a long, it's invalid
       return False
@@ -1334,10 +1339,12 @@ class DecryptingStreamReader(object):
 
       if len(self.__encrypted_buffer) >= constants.HEADER_SIZE:
         hdr_bytes = self.__encrypted_buffer[:constants.HEADER_SIZE]
-        self.__encrypted_buffer = self.__encrypted_buffer[constants.HEADER_SIZE:]
+        self.__encrypted_buffer = (
+          self.__encrypted_buffer[constants.HEADER_SIZE:])
         keys = self.__key_set._ParseHeader(hdr_bytes)
         if(len(keys) > 1):
-            raise errors.KeyczarError("Streaming decrypt cannot handle key collisions")
+          raise errors.KeyczarError(
+            "Streaming decrypt cannot handle key collisions")
         self.__key = keys[0]
         self.__hmac_stream = self.__key.hmac_key.CreateStreamable()
         self.__hmac_stream.Update(hdr_bytes)

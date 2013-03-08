@@ -27,6 +27,8 @@ import datetime
 import json
 import io
 
+from abc import ABCMeta
+
 from keyczar import errors
 from keyczar import keydata
 from keyczar import keyinfo
@@ -40,7 +42,7 @@ from keyczar import constants
 class Keyczar(object):
   """Abstract Keyczar base class."""
 
-  __metaclass__ = util.ABCMeta
+  __metaclass__ = ABCMeta
 
   def __init__(self, reader):
     self.metadata = keydata.KeyMetadata.Read(reader.GetMetadata())
@@ -441,7 +443,8 @@ class Verifier(Keyczar):
     sig_bytes = util.Base64WSDecode(sig)
     if len(sig_bytes) < constants.HEADER_SIZE:
       raise errors.ShortSignatureError(len(sig_bytes))
-    return self.__InternalVerify(sig_bytes[:constants.HEADER_SIZE], sig_bytes[constants.HEADER_SIZE:],util.RawBytes(data))
+    return self.__InternalVerify(sig_bytes[:constants.HEADER_SIZE], 
+                        sig_bytes[constants.HEADER_SIZE:],util.RawBytes(data))
 
   def AttachedVerify(self, signed_data, nonce):
     """
@@ -464,7 +467,7 @@ class Verifier(Keyczar):
     decoded_data = util.Base64WSDecode(signed_data)
     reader = util.BytesReader(decoded_data)
     writer, getoutput = util.BytesWriter()
-    nonce =util.RawBytes(nonce);
+    nonce = util.RawBytes(nonce)
     if self.AttachedVerifyIO(reader, writer, nonce):
       return util.RawString(getoutput())
     return None
@@ -490,21 +493,22 @@ class Verifier(Keyczar):
     @rtype: boolean
     """
 
-    header = signed_data_reader.read(constants.HEADER_SIZE)
-    length = signed_data_reader.read(4)
+    header = util.ReadLength(signed_data_reader, constants.HEADER_SIZE)
+    length = util.ReadLength(signed_data_reader, 4)
     length = util.BytesToInt(length)
-    data = signed_data_reader.read(length)
-    signature = signed_data_reader.read()
+    data = util.ReadLength(signed_data_reader, length)
+    signature = util.ReadAll(signed_data_reader)
     if self.__InternalVerify(header, signature, data, nonce):
-       data_writer.write(data)
-       data_writer.flush()
-       return True
+      data_writer.write(data)
+      data_writer.flush()
+      return True
     return False
 
   def __InternalVerify(self, header,  signature, data, nonce = None):
-    keys = self._ParseHeader(header)
-    for key in keys:
-      if key.Verify(data + util.PackByteArray(nonce) + constants.VERSION_BYTE, signature):
+    matchedkeys = self._ParseHeader(header)
+    for key in matchedkeys:
+      if key.Verify(data + util.PackByteArray(nonce)
+                                         + constants.VERSION_BYTE, signature):
         return True
     return False
 
@@ -531,7 +535,7 @@ class TimeoutVerifier(Keyczar):
     """
     Set to a function that returns the current time (UTC), can be used for testing.
     """
-    self.__currentTimeFunc = value
+    self._current_time_fn = value
 
   def IsAcceptablePurpose(self, purpose):
     """
@@ -557,20 +561,22 @@ class TimeoutVerifier(Keyczar):
       raise errors.ShortSignatureError(len(sig_bytes))
     return self.__InternalVerify(
       sig_bytes[:constants.HEADER_SIZE],
-      sig_bytes[constants.HEADER_SIZE : constants.HEADER_SIZE + constants.TIMEOUT_SIZE],
+      sig_bytes[constants.HEADER_SIZE : constants.HEADER_SIZE 
+                                      + constants.TIMEOUT_SIZE],
       sig_bytes[constants.HEADER_SIZE + constants.TIMEOUT_SIZE:], 
       util.RawBytes(data))
 
   def __InternalVerify(self, header, timeout, signature, data):
 
-    if not self.__currentTimeFunc:
-      self.__currentTimeFunc = lambda: datetime.datetime.utcnow()
+    current_time_fn = self._current_time_fn
+    if not current_time_fn:
+      current_time_fn = datetime.datetime.utcnow
 
-    millinow = util.UnixTimeMilliseconds(self.__currentTimeFunc())
+    millinow = util.UnixTimeMilliseconds(current_time_fn())
     expire = util.BytesToLongLong(timeout)
 
-    keys = self._ParseHeader(header)
-    for key in keys:
+    matchedkeys = self._ParseHeader(header)
+    for key in matchedkeys:
       if key.Verify(timeout + data + constants.VERSION_BYTE, signature):
         return (expire > millinow)
     return False
@@ -670,7 +676,7 @@ class Crypter(Encrypter):
     """
     data_bytes = decoder(ciphertext) if decoder else ciphertext
     reader = util.BytesReader(data_bytes)
-    writer,getvalue = util.BytesWriter()
+    writer, getvalue = util.BytesWriter()
 
     self.DecryptIO(reader , writer)
 
@@ -692,24 +698,24 @@ class Crypter(Encrypter):
     @raise KeyNotFoundError: if key specified in header doesn't exist
     @raise InvalidSignatureError: if the signature can't be verified
     """
-    header = reader.read(constants.HEADER_SIZE)
+    header = util.ReadLength(reader, constants.HEADER_SIZE)
     if len(header) < constants.HEADER_SIZE:
-        raise errors.ShortCiphertextError(len(header)) 
-    keys = self._ParseHeader(header)
+      raise errors.ShortCiphertextError(len(header)) 
+    matchedkeys = self._ParseHeader(header)
     tempwriter = writer
-    multiplekeys = len(keys) > 1
-    for key in keys:
+    multiplekeys = len(matchedkeys) > 1
+    for key in matchedkeys:
       if multiplekeys:
         # if we have more than one key possiblity we need
         # to take precations
         if not reader.seekable():
           # read the entire stream if it's not seekable
-          reader = util.BytesReader(header + reader.read())
+          reader = util.BytesReader(header + util.ReadAll(reader))
         reader.seek(constants.HEADER_SIZE)
         # use a temp writer
-        tempwriter,getvalue = util.BytesWriter()
+        tempwriter, getvalue = util.BytesWriter()
       try:
-        dcrypt =key.DecryptIO(header, reader, tempwriter)
+        key.DecryptIO(header, reader, tempwriter)
         if multiplekeys:
           #write to final output on success
           writer.write(getvalue())
@@ -815,14 +821,16 @@ class Signer(Verifier):
     """
     return util.Base64WSEncode(self.primary_key.Header()
                        + util.PackByteArray(util.RawBytes(data))
-                       + self.__InternalSign(util.RawBytes(data), util.RawBytes(nonce)))
+                       + self.__InternalSign(util.RawBytes(data), 
+                        util.RawBytes(nonce)))
 
 
   def __InternalSign(self, data, nonce = None):
     signing_key = self.primary_key
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
-    return signing_key.Sign(data + util.PackByteArray(nonce) + constants.VERSION_BYTE)
+    return signing_key.Sign(data + util.PackByteArray(nonce) 
+      + constants.VERSION_BYTE)
 
 class TimeoutSigner(TimeoutVerifier):
   """Capable of both signing and verifying."""
@@ -865,7 +873,8 @@ class TimeoutSigner(TimeoutVerifier):
     expire_bytes = util.LongLongToBytes(expire_milli)
 
     return util.Base64WSEncode(self.primary_key.Header() +
-                             expire_bytes + self.__InternalSign(expire_bytes + util.RawBytes(data)))
+                             expire_bytes + self.__InternalSign(expire_bytes
+                              + util.RawBytes(data)))
 
   def __InternalSign(self, data):
     signing_key = self.primary_key
@@ -931,30 +940,32 @@ class _Session(object):
     Constructs and returns a new _Session instance, containing a newly-generated
     AES key and random nonce.
     """
-    return _Session.__Create(keys.AesKey.Generate(), util.RandBytes(SESSION_NONCE_SIZE))
+    return _Session.__Create(keys.AesKey.Generate(),
+                                   util.RandBytes(SESSION_NONCE_SIZE))
 
   @staticmethod
   def LoadPackedKey(packed_key_data):
     """
-    Constructs and returns a new _Session instance, initialized with the key data
-    extracted from the provided packed_key_data, which must have been produced by
-    _Session.packed_key.
+    Constructs and returns a new _Session instance, initialized with the key
+    data extracted from the provided packed_key_data, which must have 
+    been produced by _Session.packed_key.
     """
     unpacked = util.UnpackMultipleByteArrays(packed_key_data)
     assert len(unpacked) == 2
     aes_key_bytes = unpacked[0]
     hmac_key_bytes = unpacked[1]
-    hmac_key = keys.HmacKey(util.Base64WSEncode(hmac_key_bytes), len(hmac_key_bytes) * 8)
-    session_key = keys.AesKey(util.Base64WSEncode(aes_key_bytes), hmac_key, len(aes_key_bytes) * 8,
-                              keyinfo.CBC)
+    hmac_key = keys.HmacKey(util.Base64WSEncode(hmac_key_bytes), 
+        len(hmac_key_bytes) * 8)
+    session_key = keys.AesKey(util.Base64WSEncode(aes_key_bytes), 
+        hmac_key, len(aes_key_bytes) * 8, keyinfo.CBC)
     return _Session.__Create(session_key, None)
 
   @staticmethod
   def LoadJsonSession(json_session_data):
     """
-    Constructs and returns a new _Session instance, initialized with the key and nonce
-    extracted from the provided json_session_data, which must have been produced by
-    _Session.json.
+    Constructs and returns a new _Session instance, initialized with
+    the key and nonce extracted from the provided json_session_data, which must
+    have been produced by _Session.json.
     """
     json_dict = json.loads(json_session_data)
     aes_key_string = json.dumps(json_dict['key'])
@@ -964,7 +975,8 @@ class _Session(object):
   @staticmethod
   def __Create(session_key, nonce):
     """
-    Creates a new _Session instance, with the private fields initialized to the provided values.
+    Creates a new _Session instance, with the private fields 
+    initialized to the provided values.
     """
     session = _Session()
     session.__session_key = session_key
@@ -975,9 +987,11 @@ class _Session(object):
   @util.Memoize
   def crypter(self):
     """
-    Returns a Crypter which can be used to encrypt and decrypt data using the session key.
+    Returns a Crypter which can be used to encrypt and decrypt data using 
+    the session key.
     """
-    return Crypter(readers.StaticKeyReader(self.__session_key, keyinfo.DECRYPT_AND_ENCRYPT))
+    return Crypter(readers.StaticKeyReader(self.__session_key, 
+      keyinfo.DECRYPT_AND_ENCRYPT))
 
   @property
   def nonce(self):
@@ -997,60 +1011,65 @@ class _Session(object):
     Returns the session key data and nonce in Json format.
     """
     aes_key_string = json.loads(str(self.__session_key))
-    return json.dumps({ 'key' : aes_key_string, 'nonce' : util.Base64WSEncode(self.__nonce) })
+    return json.dumps({ 'key' : aes_key_string, 
+      'nonce' : util.Base64WSEncode(self.__nonce) })
 
 
 class SessionEncrypter(object):
   """
-  An Encrypter that encrypts the data with a generated AES session key.  The session key
-  is in turn encrypted with a user-provided Encrypter, producing session_material, which
-  must be provided to the SessionDecrypter to be able to decrypt session-encrypted data.
+  An Encrypter that encrypts the data with a generated AES session key. 
+  The session key  is in turn encrypted with a user-provided Encrypter,
+  producing session_material, which  must be provided to the SessionDecrypter
+  to be able to decrypt session-encrypted data.
   """
 
   def __init__(self, encrypter):
     self._session = _Session.New()
-    self._encrypted_session_material = encrypter.Encrypt(self._session.packed_key)
+    self._encrypted_session_material = encrypter.Encrypt(
+      self._session.packed_key)
 
   @property
   def session_material(self):
     """
-    Returns the base64-encoded, encrypted session blob that must be provided to the
-    SessionDecrypter in order to decrypt data encrypted by this object.
+    Returns the base64-encoded, encrypted session blob that must be provided 
+    to the SessionDecrypter in order to decrypt data encrypted by this object.
     """
     return self._encrypted_session_material
 
   def Encrypt(self, plaintext):
     """
-    Encrypts the given plaintext with the session key and returns the base 64-encoded result.
+    Encrypts the given plaintext with the session key and returns the
+    base 64-encoded result.
     """
     return self._session.crypter.Encrypt(plaintext)
 
 
 class SessionDecrypter(object):
   """
-  A Decrypter that can decrypt data encrypted with a session key, which is obtained by
-  decrypting the provided session_material using the provided Crypter.
+  A Decrypter that can decrypt data encrypted with a session key, which
+  is obtained by decrypting the provided session_material 
+  using the provided Crypter.
   """
 
   def __init__(self, crypter, session_material):
-    material_bytes =util.Base64WSDecode(session_material)
-    writer,getoutput = util.BytesWriter()
-    reader =util.BytesReader(material_bytes)
+    material_bytes = util.Base64WSDecode(session_material)
+    writer, getoutput = util.BytesWriter()
+    reader = util.BytesReader(material_bytes)
     crypter.DecryptIO(reader, writer)
     self._session = _Session.LoadPackedKey(getoutput())
 
   def Decrypt(self, ciphertext):
     """
-    Decrypts the given base 64-encoded ciphertext with the session key and returns the
-    decrypted plaintext.
+    Decrypts the given base 64-encoded ciphertext with the session key 
+    and returns thedecrypted plaintext.
     """
     return self._session.crypter.Decrypt(ciphertext)
 
 
 class SignedSessionEncrypter(object):
   """
-  An object that encrypts data with a session key, which is in turn encrypted by the provided
-  encrypter, and signs the data with the provided signer.
+  An object that encrypts data with a session key, which is in turn encrypted
+  by the provided encrypter, and signs the data with the provided signer.
   """
 
   def __init__(self, encrypter, signer):
@@ -1061,8 +1080,9 @@ class SignedSessionEncrypter(object):
   @property
   def session_material(self):
     """
-    Returns the base64-encoded, encrypted session blob that must be provided to the
-    SignedSessionDecrypter in order to decrypt data encrypted by this object.
+    Returns the base64-encoded, encrypted session blob that must be provided
+    to the SignedSessionDecrypter in order to decrypt data encrypted
+    by this object.
     """
     return self._encrypted_session_material
 
@@ -1073,8 +1093,8 @@ class SignedSessionEncrypter(object):
 
 class SignedSessionDecrypter(object):
   """
-  An object that verifies signatures on and decrypts data signed and encrypted by a
-  SignedSessionEncrypter
+  An object that verifies signatures on and decrypts data signed and encrypted 
+  by a SignedSessionEncrypter
   """
 
   def __init__(self, crypter, verifier, session_material):
@@ -1083,11 +1103,12 @@ class SignedSessionDecrypter(object):
 
   def Decrypt(self, signed_ciphertext):
     """
-    Verifies the signature on the given ciphertext and, if successful, decrypts it and
-    returns the decrypted plaintext.  If verification fails, returns None.
+    Verifies the signature on the given ciphertext and, if successful, 
+    decrypts it and returns the decrypted plaintext.  
+    If verification fails, returns None.
     """
     reader = util.BytesReader(util.Base64WSDecode(signed_ciphertext))
-    writer,getoutput = util.BytesWriter()
+    writer, getoutput = util.BytesWriter()
 
     if not self._verifier.AttachedVerifyIO(reader, writer, self._session.nonce):
       return None

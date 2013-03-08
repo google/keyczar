@@ -15,34 +15,29 @@
 # limitations under the License.
 
 """
-Consolidated Testcases to test behavior of Keyczar Crypters/Signers of other implementations.
+Consolidated Testcases to test behavior of Keyczar Crypters/Signers of
+ other implementations.
 
 @author: arkajit.dey@gmail.com (Arkajit Dey)
 
-1/2013 - Combined from other tests for different platform data by Jay Tuley (jay+code@tuley.name)
+1/2013 - Combined from other tests for different platform 
+         data by Jay Tuley (jay+code@tuley.name)
 """
 from __future__ import absolute_import
 
-import cStringIO as StringIO
 import os
-import random
 import unittest
 import datetime
 
-from keyczar import errors
 from keyczar import keyczar
-from keyczar import readers
-from keyczar import writers
 from keyczar import util
-from keyczar import keys
-from keyczar import keyinfo
 
 class BaseInteropTest(unittest.TestCase):
-  def __init__(self, imp, methodName='runTest'):
-      unittest.TestCase.__init__(self, methodName)
-      self.TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), 
+  def __init__(self, imp, methodname='runTest'):
+    unittest.TestCase.__init__(self, methodname)
+    self.TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), 
                        "interop-data", imp+"_data"))
-      self.input = "This is some test data"
+    self.input = "This is some test data"
 
   def __testDecrypt(self, subdir):
     path = os.path.join(self.TEST_DATA, subdir)
@@ -66,7 +61,8 @@ class BaseInteropTest(unittest.TestCase):
     if not public:
       czar = keyczar.Verifier.Read(path)
     else:
-      czar = keyczar.Verifier.Read(os.path.join(self.TEST_DATA, subdir+".public"))
+      czar = keyczar.Verifier.Read(os.path.join(self.TEST_DATA,
+       subdir+".public"))
     active_sig = util.ReadFile(os.path.join(path, "1.out"))
     primary_sig = util.ReadFile(os.path.join(path, "2.out"))
     return (czar, active_sig, primary_sig)
@@ -76,7 +72,8 @@ class BaseInteropTest(unittest.TestCase):
     if not public:
       czar = keyczar.Verifier.Read(path)
     else:
-      czar = keyczar.Verifier.Read(os.path.join(self.TEST_DATA, subdir+".public"))
+      czar = keyczar.Verifier.Read(os.path.join(self.TEST_DATA, 
+        subdir+".public"))
     active_sig = util.ReadFile(os.path.join(path, size + ".out"))
     return (czar, active_sig)
 
@@ -90,12 +87,14 @@ class BaseInteropTest(unittest.TestCase):
     self.assertTrue(verifier.Verify(self.input, active_sig))
   
   def __testPublicVerify(self, subdir):
-    (pubverifier, active_sig, primary_sig) = self.__readGoldenOutput(subdir, True)
+    (pubverifier, active_sig, primary_sig) = self.__readGoldenOutput(subdir,
+                                                                         True)
     self.assertTrue(pubverifier.Verify(self.input, active_sig))
     self.assertTrue(pubverifier.Verify(self.input, primary_sig))
 
   def __testPublicVerifySizes(self, subdir, size):
-    (pubverifier, active_sig) = self.__readGoldenOutputSizes(subdir+"-size", size, True)
+    (pubverifier, active_sig) = self.__readGoldenOutputSizes(subdir+"-size", 
+                                                                    size, True)
     self.assertTrue(pubverifier.Verify(self.input, active_sig))
 
   def testAes(self):
@@ -156,8 +155,8 @@ class BaseInteropTest(unittest.TestCase):
     self.__testPublicVerifySizes("rsa-sign","4096")
 
 class FullInteropTest(BaseInteropTest):
-  def __init__(self, imp, methodName='runTest'):
-      BaseInteropTest.__init__(self, imp, methodName)
+  def __init__(self, imp, methodname='runTest'):
+    BaseInteropTest.__init__(self, imp, methodname)
 
   def __testSessionDecrypt(self, subdir):
     path = os.path.join(self.TEST_DATA, subdir)
@@ -175,37 +174,37 @@ class FullInteropTest(BaseInteropTest):
     ciphertext = util.ReadFile(os.path.join(path, "2.signedsession.ciphertext"))
     crypter = keyczar.Crypter.Read(path)
     verifier = keyczar.Verifier.Read(signpath)
-    session = keyczar.SignedSessionDecrypter(crypter,verifier, material)
+    session = keyczar.SignedSessionDecrypter(crypter, verifier, material)
     decrypted = session.Decrypt(ciphertext)
     self.assertEqual(self.input, decrypted)
 
 
-  def __testVerifyAttached(self, subdir, secret="", public =False):
+  def __testVerifyAttached(self, subdir, secret="", public=False):
     path = os.path.join(self.TEST_DATA, subdir)
     verifypath = path
     if public:
       verifypath = path +".public"
     ext = ".attached"
     if secret:
-       ext = "." + secret + ext
+      ext = "." + secret + ext
     message = util.ReadFile(os.path.join(path, "2" + ext))
     verifier = keyczar.Verifier.Read(verifypath)
     self.assertTrue(verifier.AttachedVerify(message, secret))
 
-  def __testVerifyTimeout(self, subdir, expired =False, public =False):
+  def __testVerifyTimeout(self, subdir, expired=False, public=False):
     path = os.path.join(self.TEST_DATA, subdir)
     verifypath = path
     if public:
       verifypath = path +".public"
-    date = lambda: datetime.datetime(2012,12,21,11,6)
+    date = lambda: datetime.datetime(2012, 12, 21, 11, 6)
     if expired:
-      date = lambda:datetime.datetime(2012,12,21,11,16)
+      date = lambda:datetime.datetime(2012, 12, 21, 11, 16)
     sig = util.ReadFile(os.path.join(path, "2.timeout"))
     verifier = keyczar.TimeoutVerifier.Read(verifypath)
     verifier.SetCurrentTimeFunc(date)
     self.assertEqual(verifier.Verify(self.input, sig), not expired)
 
-  def __testVerifyUnversioned(self, subdir, public =False):
+  def __testVerifyUnversioned(self, subdir, public=False):
     path = os.path.join(self.TEST_DATA, subdir)
     verifypath = path
     if public:
@@ -236,7 +235,7 @@ class FullInteropTest(BaseInteropTest):
     self.__testVerifyTimeout("hmac", expired=True)
 
   def testHmacVerifyUnversioned(self):
-      self.__testVerifyUnversioned("hmac")
+    self.__testVerifyUnversioned("hmac")
 
   def testDsaVerifyAttached(self):
     self.__testVerifyAttached("dsa")
@@ -251,22 +250,22 @@ class FullInteropTest(BaseInteropTest):
     self.__testVerifyTimeout("dsa", expired=True)
 
   def testDsaVerifyUnversioned(self):
-          self.__testVerifyUnversioned("dsa")
+    self.__testVerifyUnversioned("dsa")
           
   def testDsaPublicVerifyAttached(self):
-    self.__testVerifyAttached("dsa", public= True)
+    self.__testVerifyAttached("dsa", public=True)
 
   def testDsaPublicVerifySecretAttached(self):
-    self.__testVerifyAttached("dsa", "secret", public= True)
+    self.__testVerifyAttached("dsa", "secret", public=True)
 
   def testDsaPublicVerifyTimeoutSuccess(self):
     self.__testVerifyTimeout("dsa", public= True)
 
   def testDsaPublicVerifyTimeoutFail(self):
-    self.__testVerifyTimeout("dsa", expired=True, public= True)
+    self.__testVerifyTimeout("dsa", expired=True, public=True)
 
   def testDsaPublicVerifyUnversioned(self):
-        self.__testVerifyUnversioned("dsa", public=True)
+    self.__testVerifyUnversioned("dsa", public=True)
 
   def testRsaVerifyAttached(self):
     self.__testVerifyAttached("rsa-sign")
@@ -287,28 +286,28 @@ class FullInteropTest(BaseInteropTest):
     self.__testVerifyAttached("rsa-sign", public= True)
 
   def testRsaPublicVerifySecretAttached(self):
-    self.__testVerifyAttached("rsa-sign", "secret", public= True)
+    self.__testVerifyAttached("rsa-sign", "secret", public=True)
 
   def testRsaPublicVerifyTimeoutSuccess(self):
     self.__testVerifyTimeout("rsa-sign", public= True)
 
   def testRsaPublicVerifyTimeoutFail(self):
-    self.__testVerifyTimeout("rsa-sign", expired=True, public= True)
+    self.__testVerifyTimeout("rsa-sign", expired=True, public=True)
   
   def testRsaPublicVerifyUnversioned(self):
-          self.__testVerifyUnversioned("rsa-sign", public=True)
+    self.__testVerifyUnversioned("rsa-sign", public=True)
 
 class CSInteropTest(FullInteropTest):
-   def __init__(self, methodName='runTest'):
-      FullInteropTest.__init__(self, "cs", methodName)
+  def __init__(self, methodname='runTest'):
+    FullInteropTest.__init__(self, "cs", methodname)
 
 class PYInteropTest(FullInteropTest):
-  def __init__(self, methodName='runTest'):
-      FullInteropTest.__init__(self,"py", methodName)
+  def __init__(self, methodname='runTest'):
+    FullInteropTest.__init__(self, "py", methodname)
       
 class JInteropTest(FullInteropTest): 
-  def __init__(self, methodName='runTest'):
-      BaseInteropTest.__init__(self,"j", methodName)
+  def __init__(self, methodname='runTest'):
+    FullInteropTest.__init__(self, "j", methodname)
 
 
 def suite():

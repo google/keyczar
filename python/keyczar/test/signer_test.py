@@ -42,7 +42,8 @@ class SignerTest(unittest.TestCase):
     return (signer, sig)
   
   def __unversionedSignInput(self, subdir):
-    unversioned_signer = keyczar.UnversionedSigner.Read(os.path.join(TEST_DATA, subdir))
+    unversioned_signer = keyczar.UnversionedSigner.Read(os.path.join(TEST_DATA,
+                                                                       subdir))
     sig = unversioned_signer.Sign(self.input)
     return (unversioned_signer, sig)
   
@@ -91,7 +92,8 @@ class SignerTest(unittest.TestCase):
   def __modifyByteString(self, string, offset):
     decoded = util.Base64WSDecode(string)
     modified_char = util.ByteChr(util.ByteOrd(decoded[offset]) ^ 0xFF)
-    return util.Base64WSEncode(decoded[:offset] + modified_char + decoded[offset+1:])
+    return util.Base64WSEncode(decoded[:offset] 
+      + modified_char + decoded[offset+1:])
   
   def __testSignerVerify(self, subdir):
     (signer, active_sig, primary_sig) = self.__readGoldenOutput(subdir)
@@ -174,8 +176,11 @@ class SignerTest(unittest.TestCase):
     bad_sig = util.Base64WSEncode(util.ByteChr(23) + sig_bytes[1:])
     self.assertRaises(errors.BadVersionError, signer.Verify, 
                       self.input, bad_sig)
-    char = util.ByteChr(util.ByteOrd(sig_bytes[1]) ^ 45)  # Munge key hash info in sig 
-    bad_sig = util.Base64WSEncode(util.ByteChr(sig_bytes[0]) + char + sig_bytes[2:])
+
+    # Munge key hash info in sig 
+    char = util.ByteChr(util.ByteOrd(sig_bytes[1]) ^ 45) 
+    bad_sig = util.Base64WSEncode(util.ByteChr(sig_bytes[0]) 
+      + char + sig_bytes[2:])
     self.assertRaises(errors.KeyNotFoundError, signer.Verify, 
                       self.input, bad_sig)
     

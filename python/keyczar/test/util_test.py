@@ -23,7 +23,6 @@ from __future__ import absolute_import
 
 import unittest
 import base64
-import StringIO
 import random
 import os
 import io

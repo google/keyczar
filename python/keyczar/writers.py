@@ -22,6 +22,8 @@ from __future__ import absolute_import
 
 import os
 
+from abc import ABCMeta, abstractmethod, abstractproperty
+
 from keyczar import errors
 from keyczar import util
 
@@ -41,11 +43,13 @@ def CreateWriter(location):
     "Unable to create a writer for %s. Does the location exist?" % location)
 
 class Writer(object):
-  """Abstract class/interface providing supported methods for writing key sets."""
+  """
+  Abstract class/interface providing supported methods for writing key sets.
+  """
 
-  __metaclass__ = util.ABCMeta
+  __metaclass__ = ABCMeta
 
-  @util.abstractmethod
+  @abstractmethod
   def WriteMetadata(self, metadata, overwrite=True):
     """
     Write the metadata for the key.
@@ -57,7 +61,7 @@ class Writer(object):
     """
     return
   
-  @util.abstractmethod
+  @abstractmethod
   def WriteKey(self, key, version_number, encrypter=None):
     """
     Write out the key at the given version.
@@ -75,7 +79,7 @@ class Writer(object):
     """
     return
 
-  @util.abstractmethod
+  @abstractmethod
   def Remove(self, version_number):
     """
     Remove the key for the given version.
@@ -87,7 +91,7 @@ class Writer(object):
     """
     return
 
-  @util.abstractmethod
+  @abstractmethod
   def Close(self):
     """
     Clean up this writer
@@ -101,7 +105,8 @@ class Writer(object):
     """
     Return an instance of this class if it handles the location
     """
-    raise NotImplementedError('CreateWriter() class method MUST be implemented for:%s' %cls)
+    raise NotImplementedError(
+      'CreateWriter() class method MUST be implemented for:%s' %cls)
 
 class FileWriter(Writer):
   """Write key sets to a file."""
@@ -116,7 +121,7 @@ class FileWriter(Writer):
     """
     fname = os.path.join(self.location, "meta")
     if not overwrite and os.path.exists(fname):
-        raise errors.KeyczarError("File:%s already exists" %fname)
+      raise errors.KeyczarError("File:%s already exists" %fname)
     util.WriteFile(str(metadata), fname)
     return
   

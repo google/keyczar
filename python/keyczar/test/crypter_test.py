@@ -60,7 +60,8 @@ class BaseCrypterTest(unittest.TestCase):
     if len_to_write == -1:
       stream.write(data)
     else:
-      seg_data = [data[x:x+len_to_write] for x in range(0, len(data), len_to_write)]
+      seg_data = [data[x:x+len_to_write] for x in range(0, len(data),
+                                                            len_to_write)]
       for c in seg_data:
         stream.write(bytes(bytearray(c)))
     stream.flush()
@@ -82,7 +83,7 @@ class BaseCrypterTest(unittest.TestCase):
           result += read_data
     stream.close()
     try:
-       return util.RawString(result)
+      return util.RawString(result)
     except:
       return result
 
@@ -184,9 +185,9 @@ class BaseCrypterTest(unittest.TestCase):
     crypter = keyczar.Crypter.Read(os.path.join(TEST_DATA, subdir))
     ciphertext = crypter.Encrypt(self.input_data, encoder=None)
     try:
-        plaintext = crypter.Decrypt(ciphertext)
+      plaintext = crypter.Decrypt(ciphertext)
     except:
-        pass
+      pass
     plaintext = crypter.Decrypt(ciphertext, decoder=None)
     self.assertEqual(self.input_data, plaintext)
 
@@ -243,7 +244,7 @@ class BaseCrypterTest(unittest.TestCase):
     if decoder:
       ciphertext = decoder(ciphertext)
     cipherreader = util.BytesReader(ciphertext)
-    plainwriter,getplain = util.BytesWriter()
+    plainwriter, getplain = util.BytesWriter()
     crypter.DecryptIO(cipherreader, plainwriter)
     plaintext = getplain()
     self.assertEqual(len(input_data), len(plaintext),
@@ -504,25 +505,25 @@ class PyCryptoM2CryptoInteropTest(unittest.TestCase):
 
   def _encryptDecryptWithKey(self, value, aeskey):
     reader = util.BytesReader(value)
-    writer,getoutput = util.BytesWriter()
-    aeskey.EncryptIO(reader,writer)
+    writer, getoutput = util.BytesWriter()
+    aeskey.EncryptIO(reader, writer)
     reader2 = util.BytesReader(getoutput())
-    writer2,getoutput2 = util.BytesWriter()
-    header2 =reader2.read(constants.HEADER_SIZE)
-    aeskey.DecryptIO(header2,reader2,writer2)
+    writer2, getoutput2 = util.BytesWriter()
+    header2 = reader2.read(constants.HEADER_SIZE)
+    aeskey.DecryptIO(header2, reader2, writer2)
     return getoutput2()
 
   def _encryptWithKey(self, value, aeskey):
     reader = util.BytesReader(value)
-    writer,getoutput = util.BytesWriter()
-    aeskey.EncryptIO(reader,writer)
+    writer, getoutput = util.BytesWriter()
+    aeskey.EncryptIO(reader, writer)
     return getoutput()
 
   def _decryptWithKey(self, value, aeskey):
     reader = util.BytesReader(value)
-    header =reader.read(constants.HEADER_SIZE)
-    writer,getoutput = util.BytesWriter()
-    aeskey.DecryptIO(header,reader,writer)
+    header = reader.read(constants.HEADER_SIZE)
+    writer, getoutput = util.BytesWriter()
+    aeskey.DecryptIO(header, reader, writer)
     return getoutput()
 
   def testKeysizeInterop(self):

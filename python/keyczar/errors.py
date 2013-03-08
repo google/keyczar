@@ -49,14 +49,16 @@ class KeyNotFoundError(KeyczarError):
   
   def __init__(self, hash_val):
     KeyczarError.__init__(self, 
-                          "Key with hash_val identifier %s not found." % hash_val)
+                          "Key with hash_val identifier %s not found." 
+                          % hash_val)
 
 class ShortCiphertextError(KeyczarError):
   """Indicates a ciphertext too short to be valid."""
   
   def __init__(self, length):
     KeyczarError.__init__(self, 
-            "Input of length %s is too short to be valid ciphertext." % length)
+            "Input of length %s is too short to be valid ciphertext." 
+            % length)
 
 class ShortSignatureError(KeyczarError):  
   """Indicates a signature too short to be valid."""

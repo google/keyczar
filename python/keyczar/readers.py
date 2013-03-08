@@ -20,7 +20,9 @@ A Reader supports reading metadata and key info for key sets.
 """
 from __future__ import absolute_import
 
-import os                
+import os      
+
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 from keyczar import errors
 from keyczar import keydata
@@ -47,9 +49,9 @@ def CreateReader(location):
 class Reader(object):
   """Interface providing supported methods (no implementation)."""
 
-  __metaclass__ = util.ABCMeta
+  __metaclass__ = ABCMeta
 
-  @util.abstractmethod
+  @abstractmethod
   def GetMetadata(self):
     """
     Return the KeyMetadata for the key set being read.
@@ -61,7 +63,7 @@ class Reader(object):
     """
     return
   
-  @util.abstractmethod
+  @abstractmethod
   def GetKey(self, version_number):
     """
     Return the key corresponding to the given version.
@@ -76,7 +78,7 @@ class Reader(object):
     """
     return
 
-  @util.abstractmethod
+  @abstractmethod
   def Close(self):
     """
     Clean up this reader

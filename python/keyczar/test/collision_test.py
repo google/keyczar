@@ -25,7 +25,6 @@ import os
 import unittest
 import datetime
 
-from keyczar import errors
 from keyczar import keyczar
 from keyczar import util
 
@@ -51,7 +50,8 @@ class CollisionTest(unittest.TestCase):
     if not public:
       czar = keyczar.Verifier.Read(path)
     else:
-      czar = keyczar.Verifier.Read(os.path.join(self.TEST_DATA, subdir+".public"))
+      czar = keyczar.Verifier.Read(os.path.join(self.TEST_DATA, 
+        subdir+".public"))
     active_sig = util.ReadFile(os.path.join(path, "1.out"))
     primary_sig = util.ReadFile(os.path.join(path, "2.out"))
     return (czar, active_sig, primary_sig)
@@ -68,7 +68,7 @@ class CollisionTest(unittest.TestCase):
       verifypath = path +".public"
     ext = ".attached"
     if secret:
-       ext = "." + secret + ext
+      ext = "." + secret + ext
     message = util.ReadFile(os.path.join(path, "2" + ext))
     verifier = keyczar.Verifier.Read(verifypath)
     self.assertTrue(verifier.AttachedVerify(message, secret))
@@ -78,9 +78,9 @@ class CollisionTest(unittest.TestCase):
     verifypath = path
     if public:
       verifypath = path +".public"
-    date = lambda: datetime.datetime(2012,12,21,11,6)
+    date = lambda: datetime.datetime(2012, 12, 21, 11, 6)
     if expired:
-      date = lambda:datetime.datetime(2012,12,21,11,16)
+      date = lambda:datetime.datetime(2012, 12, 21, 11, 16)
     sig = util.ReadFile(os.path.join(path, "2.timeout"))
     verifier = keyczar.TimeoutVerifier.Read(verifypath)
     verifier.SetCurrentTimeFunc(date)
@@ -135,7 +135,8 @@ class CollisionTest(unittest.TestCase):
     self.__testVerifyAttached(os.path.join("key-collision", "rsa-sign"))
 
   def testRsaKeyVerifyAttachedSecret(self):
-    self.__testVerifyAttached(os.path.join("key-collision", "rsa-sign"), "secret")
+    self.__testVerifyAttached(os.path.join("key-collision", "rsa-sign"), 
+      "secret")
 
   def tearDown(self):
     self.input = None

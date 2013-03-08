@@ -22,7 +22,10 @@ from __future__ import division
 from __future__ import absolute_import
 
 import base64
-import pickle
+try: 
+  import cPickle as pickle
+except ImportError:
+  import pickle
 import codecs
 import functools
 import math
@@ -41,21 +44,8 @@ from pyasn1.codec.der import decoder
 from pyasn1.codec.der import encoder
 from pyasn1.type import univ
 
-from keyczar import errors
+from keyczar import errors as kzr_errors
 from keyczar import constants
-
-try:
-  from abc import ABCMeta, abstractmethod, abstractproperty
-except ImportError:
-  # to keep compatible with older Python versions.
-  class ABCMeta(type):
-    pass
-
-  def abstractmethod(funcobj):
-    return funcobj
-
-  def abstractproperty(funcobj):
-    return property(funcobj)
 
 HLEN = sha1().digest_size  # length of the hash output
 
@@ -110,10 +100,10 @@ def ParseASN1Sequence(seq):
 def ParsePkcs8(pkcs8):
   seq = ParseASN1Sequence(decoder.decode(Base64WSDecode(pkcs8))[0])
   if len(seq) != 3:  # need three fields in PrivateKeyInfo
-    raise errors.KeyczarError("Illegal PKCS8 String.")
+    raise kzr_errors.KeyczarError("Illegal PKCS8 String.")
   version = int(seq[0])
   if version != 0:
-      raise errors.KeyczarError("Unrecognized PKCS8 Version")
+    raise kzr_errors.KeyczarError("Unrecognized PKCS8 Version")
   [oid, alg_params] = ParseASN1Sequence(seq[1])
   key = decoder.decode(seq[2])[0]
   # Component 2 is an OCTET STRING which is further decoded
@@ -122,7 +112,7 @@ def ParsePkcs8(pkcs8):
     key = ParseASN1Sequence(key)
     version = int(key[0])
     if version != 0:
-      raise errors.KeyczarError("Unrecognized RSA Private Key Version")
+      raise kzr_errors.KeyczarError("Unrecognized RSA Private Key Version")
     for i in range(len(RSA_PARAMS)):
       params[RSA_PARAMS[i]] = long(key[i+1])
   elif oid == DSA_OID:
@@ -131,7 +121,7 @@ def ParsePkcs8(pkcs8):
       params[DSA_PARAMS[i]] = long(alg_params[i])
     params['x'] = long(key)
   else:
-    raise errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
+    raise kzr_errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
   return params
 
 def ExportRsaPkcs8(params):
@@ -159,7 +149,7 @@ def ExportDsaPkcs8(params):
 def ParseX509(x509):
   seq = ParseASN1Sequence(decoder.decode(Base64WSDecode(x509))[0])
   if len(seq) != 2:  # need two fields in SubjectPublicKeyInfo
-    raise errors.KeyczarError("Illegal X.509 String.")
+    raise kzr_errors.KeyczarError("Illegal X.509 String.")
   [oid, alg_params] = ParseASN1Sequence(seq[0])
   pubkey = decoder.decode(univ.OctetString(BinToBytes(seq[1].
                                                       prettyPrint()[1:-2])))[0]
@@ -174,7 +164,7 @@ def ParseX509(x509):
       params[DSA_PARAMS[i]] = vals[i]
     params['y'] = long(pubkey)
   else:
-    raise errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
+    raise kzr_errors.KeyczarError("Unrecognized AlgorithmIdentifier: not RSA/DSA")
   return params
 
 def ExportRsaX509(params):
@@ -225,21 +215,21 @@ def ParseDsaSig(sig):
   """
   seq = decoder.decode(sig)[0]
   if len(seq) != 2:
-    raise errors.KeyczarError("Illegal DSA signature.")
+    raise kzr_errors.KeyczarError("Illegal DSA signature.")
   r = long(seq.getComponentByPosition(0))
   s = long(seq.getComponentByPosition(1))
   return (r, s)
 
 def MakeEmsaMessage(msg, modulus_size):
   """Algorithm EMSA_PKCS1-v1_5 from PKCS 1 version 2"""
-  magic_sha1_header = bytearray([0x30, 0x21, 0x30, 0x9, 0x6, 0x5, 0x2b, 0xe, 0x3, 0x2,
-                       0x1a, 0x5, 0x0, 0x4, 0x14])
+  magic_sha1_header = bytearray([0x30, 0x21, 0x30, 0x9, 0x6, 0x5,
+                  0x2b, 0xe, 0x3, 0x2, 0x1a, 0x5, 0x0, 0x4, 0x14])
   encoded = bytes(magic_sha1_header) + Hash(msg)
   pad_string = RepeatByte(0xFF, (modulus_size // 8 - len(encoded) - 3))
   return b'\x01' + pad_string + b'\x00'+ encoded
 
 def RepeatByte(b, n):
-  return bytes(bytearray(map(lambda x: b, range(n))))
+  return bytes(bytearray([b for x in range(n)]))
 
 def BinToBytes(bits):
   """Convert bit string to byte string."""
@@ -280,35 +270,68 @@ def RawString(b):
     return b
 
 def RawBytes(s):
-  if constants.IS_PYTHON_3 and isinstance(s,str):
-     return bytes(s,constants.DEFAULT_ENCODING)
+  if constants.IS_PYTHON_3 and isinstance(s, str):
+    return bytes(s, constants.DEFAULT_ENCODING)
   return s
   
 def ByteOrd(s):
-    return bytearray(s)[0]
+  return bytearray(s)[0]
     
 def ByteChr(b):
-    return bytes(bytearray([b]))
+  return bytes(bytearray([b]))
 
 def BytesReader(b):
   return io.BufferedReader(io.BytesIO(b))
 
 def BytesWriter():
   output = io.BytesIO()
-  return (io.BufferedWriter(output),lambda: output.getvalue())
+  return (io.BufferedWriter(output), output.getvalue)
+
+def ReadAll(reader):
+  # Some non-buffered python streams return 
+  # early rather than full length
+  tempout = None
+  output = b""
+  while tempout is None or len(tempout) > 0:
+    try:
+      tempout = reader.read()
+    except io.BlockingIOError:
+      continue
+    if tempout is None:
+      continue
+    output += tempout
+  return output
+
+def ReadLength(reader, length):
+  # Some non-buffered python streams return 
+  # early rather than full length
+  buff = b""
+  remaining = length
+  while remaining != 0:
+    try:
+      temp = reader.read(remaining)
+    except io.BlockingIOError:
+      continue
+    if temp is None:
+      continue
+    if len(temp) == 0:
+      break
+    buff += temp
+    remaining -= len(temp)
+  return buff
 
 def IntToBytes(n):
   """Return byte string of 4 big-endian ordered byte_array representing n."""
   return struct.pack(BIG_ENDIAN_INT_SPECIFIER, n)
 
 def BytesToInt(n):
-  return struct.unpack(BIG_ENDIAN_INT_SPECIFIER,n)[0]
+  return struct.unpack(BIG_ENDIAN_INT_SPECIFIER, n)[0]
 
 def LongLongToBytes(n):
   return struct.pack(BIG_ENDIAN_LONG_LONG_SPECIFIER, n)
 
 def BytesToLongLong(n):
-  return struct.unpack(BIG_ENDIAN_LONG_LONG_SPECIFIER,n)[0]
+  return struct.unpack(BIG_ENDIAN_LONG_LONG_SPECIFIER, n)[0]
 
 def BytesToLong(byte_string):
   l = len(byte_string)
@@ -319,12 +342,12 @@ def Xor(a, b):
   """Return a ^ b as a byte string where a and b are byte strings."""
   # pad shorter byte string with zeros to make length equal
 
-  return bytes(bytearray([x ^ y for (x,y) in zip(bytearray(a),bytearray(b))]))
+  return bytes(bytearray([x ^ y for (x, y) in zip(bytearray(a), bytearray(b))]))
 
 
 def PadBytes(byte_string, n):
   """Prepend a byte string with n zero bytes."""
-  return RepeatByte(0x00,n) + byte_string
+  return RepeatByte(0x00, n) + byte_string
 
 def TrimBytes(byte_string):
   """Trim leading zero bytes."""
@@ -349,10 +372,10 @@ def Hash(*inputs):
 
 def ConstantTimeCompare(a, b):
   if len(a) != len(b) or len(a) == 0:
-      return False
+    return False
   result = 0
   for x, y in zip(bytearray(a), bytearray(b)):
-      result |= x ^ y
+    result |= x ^ y
   return result == 0
 
 def PrefixHash(*inputs):
@@ -364,7 +387,8 @@ def PrefixHash(*inputs):
   return md.digest() 
 
 def Encode(s):
-  warnings.warn('Encode() is deprecated, use Base64WSEncode() instead', DeprecationWarning)
+  warnings.warn('Encode() is deprecated, use Base64WSEncode() instead', 
+    DeprecationWarning)
   return Base64WSEncode(s)
 
 
@@ -385,7 +409,8 @@ def Base64WSEncode(b):
 
 
 def Decode(s):
-  warnings.warn('Decode() is deprecated, use Base64WSDecode() instead', DeprecationWarning)
+  warnings.warn('Decode() is deprecated, use Base64WSDecode() instead',
+    DeprecationWarning)
   return Base64WSDecode(s)
 
 
@@ -411,18 +436,18 @@ def Base64WSDecode(s):
   s = str(s.replace(" ", ""))  # kill whitespace, make string (not unicode)
   d = len(s) % 4
   if d == 1:
-    raise errors.Base64DecodingError()
+    raise kzr_errors.Base64DecodingError()
   elif d == 2:
     s += "=="
   elif d == 3:
     s += "="
   
-  s =RawBytes(s)
+  s = RawBytes(s)
   try:
     return base64.urlsafe_b64decode(s)
   except TypeError:
     # Decoding raises TypeError if s contains invalid characters.
-    raise errors.Base64DecodingError()
+    raise kzr_errors.Base64DecodingError()
 
 # Struct packed byte array format specifiers used below
 BIG_ENDIAN_INT_SPECIFIER = ">i"
@@ -447,7 +472,8 @@ def PackMultipleByteArrays(*arrays):
   length-prefixed by PackByteArray().
   """
   array_count_header = struct.pack(BIG_ENDIAN_INT_SPECIFIER, len(arrays))
-  array_contents = reduce(lambda x,y: x+y,[PackByteArray(a) for a in arrays],b'')
+  array_contents = reduce(
+        lambda x,y: x+y, [PackByteArray(a) for a in arrays], b'')
   return array_count_header + array_contents
 
 def UnpackByteArray(data, offset):
@@ -456,7 +482,8 @@ def UnpackByteArray(data, offset):
   starting from position 'offset'.  Returns a tuple of the data array and the
   offset of the first byte after the end of the extracted array.
   """
-  array_len = struct.unpack(BIG_ENDIAN_INT_SPECIFIER, data[offset:offset + 4])[0]
+  array_len = struct.unpack(BIG_ENDIAN_INT_SPECIFIER, 
+    data[offset:offset + 4])[0]
   offset += 4
   return data[offset:offset + array_len], offset + array_len
 
@@ -465,8 +492,8 @@ def UnpackMultipleByteArrays(data):
   Extracts and returns a list of byte arrays that were packed by
   PackMultipleByteArrays().
   """
-  # The initial integer containing the number of byte arrays that follow is redundant.  We
-  # just skip it.
+  # The initial integer containing the number of byte arrays 
+  # that follow is redundant.  We just skip it.
   position = 4
   result = []
   while position < len(data):
@@ -492,7 +519,7 @@ def WriteFile(data, loc):
     f.write(data)
     f.close()
   except IOError:
-    raise errors.KeyczarError("Unable to write to file %s." % loc)
+    raise kzr_errors.KeyczarError("Unable to write to file %s." % loc)
 
 def ReadFile(loc):
   """
@@ -508,12 +535,12 @@ def ReadFile(loc):
   """
   try:
     f = open(loc)
-    data =f.read()
+    data = f.read()
     f.close()
     return data
     
   except IOError:
-    raise errors.KeyczarError("Unable to read file %s." % loc)
+    raise kzr_errors.KeyczarError("Unable to read file %s." % loc)
 
 def MGF(seed, mlen):
   """
@@ -531,7 +558,7 @@ def MGF(seed, mlen):
   @raise KeyczarError: if mask length too long, > 2^32 * hash_length
   """
   if mlen > 2**32 * HLEN:
-    raise errors.KeyczarError("MGF1 mask length too long.")
+    raise kzr_errors.KeyczarError("MGF1 mask length too long.")
   output = b""
   for i in range(int(math.ceil(mlen / float(HLEN)))):
     output += Hash(seed, IntToBytes(i))
@@ -574,7 +601,8 @@ class BufferedIncrementalBase64WSEncoder(codecs.BufferedIncrementalEncoder):
       len_to_write = 3 * (len(input) // 3)
     else:
       len_to_write = len(input)
-    return (RawBytes(Base64WSEncode(RawBytes(input[:len_to_write]))), len_to_write)
+    return (RawBytes(Base64WSEncode(RawBytes(input[:len_to_write]))),
+                                                            len_to_write)
 
   def encode(self, input, final=False):
     """
@@ -813,7 +841,8 @@ class IncrementalBase64WSStreamReader(codecs.StreamReader, object):
     @rtype: string
     """
     try:
-      result = super(IncrementalBase64WSStreamReader, self).read(size, chars, firstline)
+      result = (super(IncrementalBase64WSStreamReader, self)
+        .read(size, chars, firstline))
     except io.BlockingIOError:
       return None
     except TypeError as exc:
@@ -840,7 +869,7 @@ def Memoize(func):
     pickled_args = pickle.dumps((args, sorted(kwargs.iteritems())))
 
     if pickled_args not in memory:
-      memory[pickled_args] = func(*args,**kwargs)
+      memory[pickled_args] = func(*args, **kwargs)
 
     return memory[pickled_args]
 
@@ -877,16 +906,17 @@ def ImportBackends():
       ImportAll(path)
 
 def UnixTimeMilliseconds(dt):
-    epoch = datetime.datetime(1970,1,1,0,0,0)#UTC
-    delta = dt - epoch
-    return (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) // 10**3
+  epoch = datetime.datetime(1970, 1, 1, 0, 0, 0)#UTC
+  delta = dt - epoch
+  return (delta.microseconds 
+                   + (delta.seconds + delta.days * 24 * 3600) * 10**6) // 10**3
 
-def mkdir_p(path):
-    if path is None:
-      return
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else: raise
+def MakeDirRecursive(path):
+  if path is None:
+    return
+  try:
+    os.makedirs(path)
+  except OSError as exc:
+    if exc.errno == errno.EEXIST and os.path.isdir(path):
+      pass
+    else: raise

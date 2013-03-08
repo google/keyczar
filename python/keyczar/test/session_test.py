@@ -25,7 +25,6 @@ import unittest
 
 from keyczar import keyczar
 from keyczar import util
-from keyczar import errors
 
 TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "testdata"))
 

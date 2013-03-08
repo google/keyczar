@@ -61,13 +61,13 @@ REVOKE = Command("revoke")
 GENKEY = Command("genkey")
 USEKEY = Command("usekey")
 
-commands = {"create": CREATE, "addkey": ADDKEY, "pubkey": PUBKEY, 
+_COMMANDS = {"create": CREATE, "addkey": ADDKEY, "pubkey": PUBKEY, 
             "promote": PROMOTE, "demote": DEMOTE, "revoke": REVOKE, 
             "genkey": GENKEY, "usekey": USEKEY}
 
 def GetCommand(cmd):
   try:
-    return commands[cmd]
+    return _COMMANDS[cmd]
   except KeyError:
     raise errors.KeyczarError("Illegal command")
 
@@ -88,19 +88,19 @@ ASYMMETRIC = Flag("asymmetric")
 CRYPTER = Flag("crypter")
 CRYPTER2 = Flag("crypter2")
 
-flags = {"location": LOCATION, "name": NAME, "size": SIZE, "status": STATUS,
+FLAGS = {"location": LOCATION, "name": NAME, "size": SIZE, "status": STATUS,
          "purpose": PURPOSE, "destination": DESTINATION, "version": VERSION,
          "asymmetric": ASYMMETRIC, "crypter": CRYPTER, "location2": LOCATION2,
          "destination2": DESTINATION2,"crypter2": CRYPTER2, "format":FORMAT}
 
 def GetFlag(flag):
   try:
-    return flags[flag]
+    return FLAGS[flag]
   except KeyError:
     raise errors.KeyczarError("Unknown flag")
 
 def Create(loc, name, purpose, asymmetric=None):
-  util.mkdir_p(loc)
+  util.MakeDirRecursive(loc)
   if mock is None and loc is None:  # not testing
     raise errors.KeyczarError("Location missing")
   kmd = None
@@ -136,7 +136,7 @@ def AddKey(loc, status, crypter=None, size=None):
   UpdateGenericKeyczar(czar, loc, crypter)
 
 def PubKey(loc, dest):
-  util.mkdir_p(dest)
+  util.MakeDirRecursive(dest)
   if mock is None and dest is None:  # not required when testing
     raise errors.KeyczarError("Must define destination")
   czar = CreateGenericKeyczar(loc)
@@ -185,9 +185,11 @@ def GenKeySet(loc):
     Clean(dir_path)
     Create(dir_path, "Test", purpose, asymmetric)
     AddKey(dir_path, keyinfo.PRIMARY, crypter)
-    UseKey(form, dir_path, os.path.join(dir_path, "1.out"), crypter, msg="This is some test data")
+    UseKey(form, dir_path, os.path.join(dir_path, "1.out"), crypter,
+      msg="This is some test data")
     AddKey(dir_path, keyinfo.PRIMARY, crypter)
-    UseKey(form, dir_path, os.path.join(dir_path, "2.out"), crypter, msg="This is some test data")
+    UseKey(form, dir_path, os.path.join(dir_path, "2.out"), crypter, 
+      msg="This is some test data")
   
   print "Exporting public key sets..."
   for name in ('dsa', 'rsa-sign'):
@@ -203,7 +205,8 @@ def Clean(directory):
     if not os.path.isdir(path): 
       os.remove(path)
 
-def UseKey(purpose, loc, dest, crypter=None, dest2=None, loc2 = None, crypter2=None,  msg=None, param =[]):
+def UseKey(purpose, loc, dest, crypter=None, dest2=None, loc2 = None, 
+                                          crypter2=None,  msg=None, param =[]):
   reader = readers.CreateReader(loc)
   reader2 = None
   if loc2:
@@ -223,16 +226,17 @@ def UseKey(purpose, loc, dest, crypter=None, dest2=None, loc2 = None, crypter2=N
       answer = keyczar.Signer(reader).Sign(msg)
     elif purpose == "sign-timeout":
       if len(param) > 0:
-             expire_string  = param[0]
-             expire_date = datetime.datetime.strptime(expire_string,"%Y-%m-%dT%H:%M:%SZ")
-             answer = keyczar.TimeoutSigner(reader).Sign(msg, expire_date)
+        expire_string  = param[0]
+        expire_date = datetime.datetime.strptime(expire_string,
+          "%Y-%m-%dT%H:%M:%SZ")
+        answer = keyczar.TimeoutSigner(reader).Sign(msg, expire_date)
       else:
         print "Needs UTC time as extra parameter for timeout expiration"
     elif purpose == "sign-attached":
       hidden = "" 
       if len(param) > 0:
         hidden = param[0]
-      answer = keyczar.Signer(reader).AttachedSign(msg,hidden)
+      answer = keyczar.Signer(reader).AttachedSign(msg, hidden)
     elif purpose == "sign-unversioned":
       answer = keyczar.UnversionedSigner(reader).Sign(msg)
     elif purpose == "crypt-session":
@@ -240,7 +244,8 @@ def UseKey(purpose, loc, dest, crypter=None, dest2=None, loc2 = None, crypter2=N
       answer = sencrypt.session_material
       answer2 = sencrypt.Encrypt(msg)
     elif purpose == "crypt-signedsession":
-      sencrypt = keyczar.SignedSessionEncrypter(keyczar.Encrypter(reader), keyczar.Signer(reader2))
+      sencrypt = keyczar.SignedSessionEncrypter(keyczar.Encrypter(reader),
+        keyczar.Signer(reader2))
       answer = sencrypt.session_material
       answer2 = sencrypt.Encrypt(msg)
 
@@ -352,7 +357,7 @@ def main(argv):
     loc = flags.get(LOCATION)  # all commands need location
       
     if cmd == CREATE:
-      util.mkdir_p(loc)
+      util.MakeDirRecursive(loc)
       purpose = {'crypt': keyinfo.DECRYPT_AND_ENCRYPT,
                  'sign': keyinfo.SIGN_AND_VERIFY}.get(flags.get(PURPOSE))
       Create(loc, flags.get(NAME, 'Test'), purpose, flags.get(ASYMMETRIC))
@@ -379,10 +384,13 @@ def main(argv):
       else:
         crypter = None
       if CRYPTER2 in flags:
-        crypter2=_CreateCrypter(flags[CRYPTER2])
+        crypter2 = _CreateCrypter(flags[CRYPTER2])
       else:
         crypter2 = None
-      UseKey(flags.get(FORMAT), loc, flags.get(DESTINATION), crypter, flags.get(DESTINATION2), flags.get(LOCATION2), crypter2,other[1], other[2:])
+      UseKey(flags.get(FORMAT), loc, 
+        flags.get(DESTINATION), crypter, 
+        flags.get(DESTINATION2), flags.get(LOCATION2),
+        crypter2, other[1], other[2:])
     else:
       Usage()
 
