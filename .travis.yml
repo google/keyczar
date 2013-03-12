@@ -1,4 +1,7 @@
 language: python
+branches:
+  except:
+    - google_code
 python:
   - "2.6"
   - "2.7"
