@@ -261,7 +261,10 @@ def BigIntToBytes(n):
     array.append(n % 256)
     n = n >> 8
   array.reverse()
-  return bytes(bytearray(array))
+  barray = bytearray(array)
+  if barray[0] & 0x80:
+    return b'\x00' + bytes(barray)
+  return bytes(barray)
 
 def RawString(b):
   if constants.IS_PYTHON_3 and isinstance(b, bytes):
@@ -344,10 +347,6 @@ def Xor(a, b):
 
   return bytes(bytearray([x ^ y for (x, y) in zip(bytearray(a), bytearray(b))]))
 
-
-def PadBytes(byte_string, n):
-  """Prepend a byte string with n zero bytes."""
-  return RepeatByte(0x00, n) + byte_string
 
 def TrimBytes(byte_string):
   """Trim leading zero bytes."""

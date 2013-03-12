@@ -720,13 +720,12 @@ class DsaPrivateKey(PrivateKey):
     @rtype: L{DsaPrivateKey}
     """
     key = DSA.generate(size, util.RandBytes)
-    params = { 'x': util.PadBytes(util.BigIntToBytes(key.x), 1) }
+    params = { 'x': util.BigIntToBytes(key.x)}
     pubkey = key.publickey()
-    pub_params = { 'g': util.PadBytes(util.BigIntToBytes(pubkey.g), 1),
-                   'p': util.PadBytes(util.BigIntToBytes(pubkey.p), 1),
-                   'q': util.PadBytes(util.BigIntToBytes(pubkey.q), 1),
-                   'y': util.PadBytes(util.BigIntToBytes(pubkey.y), 1)
-                   }
+    pub_params = { 'g': util.BigIntToBytes(pubkey.g),
+                   'p': util.BigIntToBytes(pubkey.p),
+                   'q': util.BigIntToBytes(pubkey.q),
+                   'y': util.BigIntToBytes(pubkey.y) }
     pub = DsaPublicKey(pub_params, pubkey, size)
     return DsaPrivateKey(params, pub, key, size)
 
@@ -852,18 +851,17 @@ class RsaPrivateKey(PrivateKey):
     #NOTE: PyCrypto stores p < q, u = p^{-1} mod q
     #But OpenSSL and PKCS8 stores q < p, invq = q^{-1} mod p
     #So we have to reverse the p and q values
-    params = { 'privateExponent': util.PadBytes(util.BigIntToBytes(key.d), 1),
-               'primeP': util.PadBytes(util.BigIntToBytes(key.q), 1),
-               'primeQ': util.PadBytes(util.BigIntToBytes(key.p), 1),
-               'primeExponentP': util.PadBytes(util.BigIntToBytes(key.d 
-                    % (key.q - 1)), 1),
-               'primeExponentQ': util.PadBytes(util.BigIntToBytes(key.d 
-                    % (key.p - 1)), 1),
-               'crtCoefficient': util.PadBytes(util.BigIntToBytes(key.u), 1)}
+    params = { 'privateExponent': util.BigIntToBytes(key.d),
+               'primeP': util.BigIntToBytes(key.q),
+               'primeQ': util.BigIntToBytes(key.p),
+               'primeExponentP': util.BigIntToBytes(key.d 
+                    % (key.q - 1)),
+               'primeExponentQ': util.BigIntToBytes(key.d 
+                    % (key.p - 1)),
+               'crtCoefficient': util.BigIntToBytes(key.u) }
     pubkey = key.publickey()
-    pub_params = { 'modulus': util.PadBytes(util.BigIntToBytes(key.n), 1),
-                   'publicExponent': util.PadBytes(util.BigIntToBytes(key.e),
-                    1)}
+    pub_params = { 'modulus': util.BigIntToBytes(key.n),
+                   'publicExponent': util.BigIntToBytes(key.e) }
     pub = RsaPublicKey(pub_params, pubkey, size)
     return RsaPrivateKey(params, pub, key, size)
 
