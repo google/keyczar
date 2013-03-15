@@ -207,17 +207,6 @@ bool AESKey::Encrypt(const std::string& plaintext,
   if (!aes_impl_->Encrypt(plaintext, &encrypted_plaintext, &iv))
     return false;
 
-  // Fixme: trick to provide same data format than Java implementation.
-  // AES use an IV size equals to its block size but for preserving the
-  // compatibilty with Java implementation the IV is serialized on the
-  // key length bytes. The rightmost bytes should not be considered by
-  // mains AES implementations (including OpenSSL). These implementations
-  // use a block size of 16 bytes even for AES 192 and AES 256. When an IV
-  // of 32 bytes used with AES 256 is transmitted to OpenSSL, only its 16
-  // first bytes are effectively, ignoring the last 16 bytes.
-  if (iv.length() < aes_impl_->GetKey().length())
-    iv.append(aes_impl_->GetKey().length() - iv.length(), '\0');
-
   std::string header;
   if (!Header(&header))
     return false;
@@ -237,15 +226,16 @@ bool AESKey::Decrypt(const std::string& ciphertext,
   if (plaintext == NULL || aes_impl_.get() == NULL || hmac_key() == NULL)
     return false;
 
-  int key_size = size() / 8;
+
+  int block_size = 128 / 8;
   int digest_size = hmac_key()->size() / 8;
 
   std::string data_bytes = ciphertext.substr(Key::GetHeaderSize());
   int data_bytes_len = data_bytes.length();
 
-  std::string iv_bytes = data_bytes.substr(0, key_size);
+  std::string iv_bytes = data_bytes.substr(0, block_size);
   std::string aes_bytes = data_bytes.substr(
-      key_size, data_bytes_len - digest_size - key_size);
+      block_size, data_bytes_len - digest_size - block_size);
   std::string signature_bytes = data_bytes.substr(data_bytes_len - digest_size);
 
   if (!hmac_key()->Verify(
