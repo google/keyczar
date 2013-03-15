@@ -83,7 +83,7 @@ public class DsaPublicKey extends KeyczarPublicKey {
   }
 
   private DsaPublicKey(BigInteger yVal, DSAParams params) throws KeyczarException {
-    super(yVal.bitLength());
+    super(params.getP().bitLength());
     BigInteger pVal = params.getP();
     BigInteger qVal = params.getQ();
     BigInteger gVal = params.getG();
