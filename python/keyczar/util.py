@@ -222,11 +222,13 @@ def ParseDsaSig(sig):
 
 def MakeEmsaMessage(msg, modulus_size):
   """Algorithm EMSA_PKCS1-v1_5 from PKCS 1 version 2"""
+  # EB = 00 || BT || PS || 00 || D . 
+  # ftp://ftp.rsasecurity.com/pub/pkcs/ascii/pkcs-1.asc
   magic_sha1_header = bytearray([0x30, 0x21, 0x30, 0x9, 0x6, 0x5,
                   0x2b, 0xe, 0x3, 0x2, 0x1a, 0x5, 0x0, 0x4, 0x14])
   encoded = bytes(magic_sha1_header) + Hash(msg)
   pad_string = RepeatByte(0xFF, (modulus_size // 8 - len(encoded) - 3))
-  return b'\x01' + pad_string + b'\x00'+ encoded
+  return b'\x00' + b'\x01' + pad_string + b'\x00'+ encoded
 
 def RepeatByte(b, n):
   return bytes(bytearray([b for x in range(n)]))
@@ -347,6 +349,9 @@ def Xor(a, b):
 
   return bytes(bytearray([x ^ y for (x, y) in zip(bytearray(a), bytearray(b))]))
 
+def PadBytes(byte_string, n):
+  """Prepend a byte string with n zero bytes."""
+  return RepeatByte(0x00, n) + byte_string
 
 def TrimBytes(byte_string):
   """Trim leading zero bytes."""
