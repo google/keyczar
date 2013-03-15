@@ -349,6 +349,9 @@ def Xor(a, b):
 
   return bytes(bytearray([x ^ y for (x, y) in zip(bytearray(a), bytearray(b))]))
 
+def PadBytes(byte_string, n):
+  """Prepend a byte string with n zero bytes."""
+  return RepeatByte(0x00, n) + byte_string
 
 def TrimBytes(byte_string):
   """Trim leading zero bytes."""
