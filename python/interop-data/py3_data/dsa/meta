@@ -1,0 +1,1 @@
+{"encrypted": false, "versions": [{"status": "ACTIVE", "versionNumber": 1, "exportable": false}, {"status": "PRIMARY", "versionNumber": 2, "exportable": false}], "type": "DSA_PRIV", "name": "Test", "purpose": "SIGN_AND_VERIFY"}

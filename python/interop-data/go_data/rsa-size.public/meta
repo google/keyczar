@@ -1,0 +1,1 @@
+{"name":"Test","type":"RSA_PUB","purpose":"ENCRYPT","encrypted":false,"versions":[{"versionNumber":1,"status":"ACTIVE","exportable":false},{"versionNumber":2,"status":"ACTIVE","exportable":false},{"versionNumber":3,"status":"PRIMARY","exportable":false}]}
