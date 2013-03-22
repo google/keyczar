@@ -304,17 +304,26 @@ class CSInteropTest(FullInteropTest):
 class PYInteropTest(FullInteropTest):
   def __init__(self, methodname='runTest'):
     FullInteropTest.__init__(self, "py", methodname)
+
+class PY3InteropTest(FullInteropTest):
+  def __init__(self, methodname='runTest'):
+    FullInteropTest.__init__(self, "py3", methodname)
       
 class JInteropTest(FullInteropTest): 
   def __init__(self, methodname='runTest'):
     FullInteropTest.__init__(self, "j", methodname)
 
+class GOInteropTest(FullInteropTest):
+  def __init__(self, methodname='runTest'):
+    FullInteropTest.__init__(self, "go", methodname)
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTests(unittest.TestLoader().loadTestsFromTestCase(CSInteropTest))
   suite.addTests(unittest.TestLoader().loadTestsFromTestCase(JInteropTest))
   suite.addTests(unittest.TestLoader().loadTestsFromTestCase(PYInteropTest))
+  suite.addTests(unittest.TestLoader().loadTestsFromTestCase(PY3InteropTest))
+  suite.addTests(unittest.TestLoader().loadTestsFromTestCase(GOInteropTest))
   return suite
 
 if __name__ == "__main__":
