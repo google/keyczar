@@ -79,7 +79,8 @@ public class KeyczarToolTest extends TestCase {
   public final void testAddKeySizeFlag() {
     String[] args = {"addkey", "--status=active", "--size=192"};
     KeyczarTool.main(args);
-    assertEquals(192, mock.getKeySize(4)); // adding fourth key
+    assertTrue(mock.existsVersion(100));
+    assertEquals(192, mock.getKeySize(100)); // adding fourth key
   }
 
   @Test
@@ -194,9 +195,9 @@ public class KeyczarToolTest extends TestCase {
     assertEquals(3, mock.numKeys());
     KeyczarTool.main(args);
     assertEquals(4, mock.numKeys());
-    assertTrue(mock.existsVersion(4));
-    assertFalse(mock.getKey(4).contains("\"OAEP\""));
-    assertTrue(mock.getKey(4).contains("\"PKCS\""));
+    assertTrue(mock.existsVersion(100));
+    assertFalse(mock.getKey(100).contains("\"OAEP\""));
+    assertTrue(mock.getKey(100).contains("\"PKCS\""));
   }
 
   @Test
@@ -204,12 +205,11 @@ public class KeyczarToolTest extends TestCase {
     String[] args = {"importkey",
                      "--pemfile=" + TEST_DATA + "rsa-crypt-pkcs8.pem",
                      "--passphrase=pass"};
-
     assertEquals(3, mock.numKeys());
     KeyczarTool.main(args);
     assertEquals(4, mock.numKeys());
-    assertTrue(mock.existsVersion(4));
-    assertTrue("Should contain a private key", mock.getKey(4).contains("primeP"));
+    assertTrue(mock.existsVersion(100));
+    assertTrue("Should contain a private key", mock.getKey(100).contains("primeP"));
   }
 
   @Test
@@ -231,8 +231,8 @@ public class KeyczarToolTest extends TestCase {
     assertEquals(3, mock.numKeys());
     KeyczarTool.main(args);
     assertEquals(4, mock.numKeys());
-    assertTrue(mock.existsVersion(4));
-    assertTrue("Should contain a private key", mock.getKey(4).contains("\"x\":"));
+    assertTrue(mock.existsVersion(100));
+    assertTrue("Should contain a private key", mock.getKey(100).contains("\"x\":"));
   }
 
   @Test
