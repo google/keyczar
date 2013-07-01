@@ -159,7 +159,7 @@ public class GenericKeyczar extends Keyczar {
    * @param status KeyStatus desired for new key version
    */
   public void addVersion(KeyStatus status, KeyczarKey key) {
-    KeyVersion version = new KeyVersion(numVersions() + 1, status, false);
+    KeyVersion version = new KeyVersion(maxVersion() + 1, status, false);
     if (status == KeyStatus.PRIMARY) {
       if (primaryVersion != null) {
         primaryVersion.setStatus(KeyStatus.ACTIVE);
@@ -168,6 +168,17 @@ public class GenericKeyczar extends Keyczar {
     }
     addKey(version, key);
     LOG.debug(Messages.getString("Keyczar.NewVersion", version));
+  }
+
+  private int maxVersion() {
+    int max = 0;
+    for (KeyVersion version : getVersions()) {
+      if (version.getVersionNumber() > max) {
+        max = version.getVersionNumber();
+      }
+    }
+
+    return max;
   }
 
   /**
