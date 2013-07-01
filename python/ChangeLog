@@ -1,5 +1,15 @@
+
+Keyczar Python release 0.71c
+==================
+
+Overview of Changes:
+	* Remove hashbangs from code
+	* Make test files executable
+	* Add LICENSE file to repo and MANIFEST.in to comply with ASL 2.0
+	* Bumped version to 0.71c in setup.py etc.
+
 Keyczar Python release 0.71b
-============================
+=======
 
 Overview of Changes:
 	* Streaming encryption/decryption support (Robert Leftwich)
@@ -7,6 +17,8 @@ Overview of Changes:
 	* Pluggable back-ends (Robert Leftwich)
 	* Made base-64 encoding optional (Shawn Willden)
 	* Added signed session support (Shawn Willden)
+
+2012-12-20 23:30:00 +0100 Maxim Burgerhout / Shawn Willden
 
 2012-01-27 15:35:44 +1100 Robert Leftwich
 

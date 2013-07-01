@@ -1,4 +1,3 @@
-#!/usr/bin/python2.4
 #
 # Copyright 2008 Google Inc.
 #
@@ -208,7 +207,7 @@ def UseKey(purpose, loc, dest, crypter=None, msg="This is some test data"):
     reader.Close()
 
 def Usage():
-  print '''Usage: "Keyczart command flags"
+  print '''Usage: "keyczart command flags"
   Commands: create addkey pubkey promote demote revoke
 Flags: location name size status purpose destination version asymmetric crypter
 Command Usage:
@@ -273,6 +272,10 @@ def UpdateGenericKeyczar(czar, loc, encrypter=None):
       czar.Write(writer, encrypter)
     finally:
       writer.Close()
+
+# Used when called as the keyczar command-line tool (created by setuptools)
+def _main_setuptools():
+  return main(sys.argv[1:])
 
 def main(argv):
   if len(argv) == 0:
