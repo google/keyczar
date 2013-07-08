@@ -1,4 +1,3 @@
-#!/usr/bin/python2.4
 #
 # Copyright 2008 Google Inc.
 #
@@ -403,7 +402,7 @@ def PackByteArray(array):
   Packs the given array into a structure composed of a four-byte, big-endian
   integer containing the array length, followed by the array contents.
   """
-  if not array:
+  if array is None:
     return ''
   array_length_header = struct.pack(BIG_ENDIAN_INT_SPECIFIER, len(array))
   return array_length_header + array
