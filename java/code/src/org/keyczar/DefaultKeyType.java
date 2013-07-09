@@ -29,18 +29,18 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Encodes different types of keys each with (default size, output size). Some
+ * Encodes different types of keys each with default key size. Some
  * have multiple acceptable sizes given in a list with the first as default.
  * <ul>
- *   <li>AES:         ((128, 192, 256), 0)
- *   <li>HMAC-SHA1:   (256, 20)
- *   <li>DSA Private: (1024, 48)
- *   <li>DSA Public:  (1024, 48)
- *   <li>RSA Private: ((4096, 2048, 1024), 256)
- *   <li>RSA Public:  ((4096, 2048, 1024), 256)
- *   <li>EC Private:  ((256, 384, 521, 192), 70)
- *   <li>EC Public:   ((256, 384, 521, 192), 70)
- *   <li>Test:        (1, 0)
+ *   <li>AES:         (128, 192, 256)
+ *   <li>HMAC-SHA1:   (256)
+ *   <li>DSA Private: (1024)
+ *   <li>DSA Public:  (1024)
+ *   <li>RSA Private: (4096, 2048, 1024)
+ *   <li>RSA Public:  (4096, 2048, 1024)
+ *   <li>EC Private:  (256, 384, 521, 192)
+ *   <li>EC Public:   (256, 384, 521, 192)
+ *   <li>Test:        (1)
  * </ul>
  *
  * <p>JSON Representation currently supports these strings:
@@ -49,6 +49,8 @@ import java.util.List;
  *   <li>"HMAC_SHA1"
  *   <li>"DSA_PRIV"
  *   <li>"DSA_PUB"
+ *   <li>"RSA_PRIV"
+ *   <li>"RSA_PUB"
  * </ul>
  *
  * Using the default key types is strongly encouraged.
@@ -62,8 +64,8 @@ public enum DefaultKeyType implements KeyType {
   HMAC_SHA1(Arrays.asList(256)),
   DSA_PRIV(Arrays.asList(1024)),
   DSA_PUB(Arrays.asList(1024)),
-  RSA_PRIV(Arrays.asList(4096, 2048, 1024, 512)),
-  RSA_PUB(Arrays.asList(4096, 2048, 1024, 512)),
+  RSA_PRIV(Arrays.asList(4096, 2048, 1024)),
+  RSA_PUB(Arrays.asList(4096, 2048, 1024)),
   EC_PRIV(Arrays.asList(256, 384, 521, 192)),
   EC_PUB(Arrays.asList(256, 384, 521, 192)),
   TEST(Arrays.asList(1));

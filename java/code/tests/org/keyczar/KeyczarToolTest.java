@@ -39,7 +39,7 @@ public class KeyczarToolTest extends TestCase {
   private final static class FastRsaKeyParameters implements RsaKeyParameters {
     @Override
     public int getKeySize() {
-      return 512; // use 512-bit keys for speed
+      return 1024; // use 1024-bit keys for speed
     }
 
     @Override
