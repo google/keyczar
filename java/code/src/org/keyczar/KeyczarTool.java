@@ -48,7 +48,7 @@ import java.util.HashMap;
  *   <li>promote: promote status of a key version in existing store
  *   <li>demote: demote status of a key version in existing store
  *   <li>revoke: revoke key version in existing store (if scheduled to be)
- *   <li>use: encrypt a message with the specified key
+ *   <li>usekey: encrypt or sign a message with the specified key
  *   <li>import: load a key into a key set
  *   <li>export: extract a specified key version from a key set
  * </ul>
@@ -236,9 +236,8 @@ public class KeyczarTool {
     }
   }
 
-  private static void useKey(String msg, String locationFlag,
-                             String destinationFlag, String crypterFlag)
-      throws KeyczarException, IOException {
+  private static void useKey(String msg, String locationFlag, String destinationFlag, 
+      String crypterFlag) throws KeyczarException, IOException {
     if (msg == null) {
       BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
       StringBuilder msgBuilder = new StringBuilder();
