@@ -42,7 +42,7 @@ EVP_PKEY* ReadPEMPrivateKeyFromFile(const std::string& filename,
   }
 
   // Ciphers table requires to be loaded.
-  OpenSSL_add_all_ciphers();
+  OpenSSL_add_all_algorithms();
 
   ScopedEVPPKey evp_pkey;
   // The first NULL value means we are not implementing our own password
