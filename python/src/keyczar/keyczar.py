@@ -389,7 +389,7 @@ class Verifier(Keyczar):
     """Only valid if purpose includes verifying."""
     return purpose == keyinfo.VERIFY or purpose == keyinfo.SIGN_AND_VERIFY
 
-  def Verify(self, data, sig):
+  def Verify(self, data, sig, decoder=util.Base64WSDecode):
     """
     Verifies whether the signature corresponds to the given data.
 
@@ -402,12 +402,12 @@ class Verifier(Keyczar):
     @return: True if sig corresponds to data, False otherwise.
     @rtype: boolean
     """
-    sig_bytes = util.Base64WSDecode(sig)
+    sig_bytes = decoder(sig) if decoder else sig
     if len(sig_bytes) < HEADER_SIZE:
       raise errors.ShortSignatureError(len(sig_bytes))
     return self.__InternalVerify(sig_bytes[:HEADER_SIZE], sig_bytes[HEADER_SIZE:], data)
 
-  def AttachedVerify(self, signed_data, nonce):
+  def AttachedVerify(self, signed_data, nonce, decoder=util.Base64WSDecode):
     """
     Verifies the signature in the signed blob corresponds to the data
     in the signed blob and the provided nonce, and returns the data.
@@ -425,7 +425,7 @@ class Verifier(Keyczar):
     otherwise, None
     @rtype: string
     """
-    decoded_data = util.Base64WSDecode(signed_data)
+    decoded_data = decoder(signed_data) if decoder else signed_data
 
     data, offset = util.UnpackByteArray(decoded_data, HEADER_SIZE)
     signature = decoded_data[offset:]
@@ -461,7 +461,7 @@ class UnversionedVerifier(Keyczar):
     """Only valid if purpose includes verifying."""
     return purpose == keyinfo.VERIFY or purpose == keyinfo.SIGN_AND_VERIFY
 
-  def Verify(self, data, sig):
+  def Verify(self, data, sig, decoder=util.Base64WSDecode):
     """
     Verifies whether the signature corresponds to the given data. This is a
     stanard signature (i.e. HMAC-SHA1, RSA-SHA1, DSA-SHA1) that contains no
@@ -476,7 +476,7 @@ class UnversionedVerifier(Keyczar):
     @return: True if sig corresponds to data, False otherwise.
     @rtype: boolean
     """
-    sig_bytes = util.Base64WSDecode(sig)
+    sig_bytes = decoder(sig) if decoder else sig
 
     for version in self.versions:
       key = self._keys[version]
@@ -586,7 +586,7 @@ class Signer(Verifier):
     """Only valid if purpose includes signing."""
     return purpose == keyinfo.SIGN_AND_VERIFY
 
-  def Sign(self, data):
+  def Sign(self, data, encoder=util.Base64WSEncode):
     """
     Sign given data and return corresponding signature.
 
@@ -598,10 +598,10 @@ class Signer(Verifier):
     @return: signature on the data encoded as a Base64 string
     @rtype: string
     """
-    return util.Base64WSEncode(self.primary_key.Header()
-                             + self.__InternalSign(data))
+    signature = self.primary_key.Header() + self.__InternalSign(data)
+    return encoder(signature) if encoder else signature
 
-  def AttachedSign(self, data, nonce):
+  def AttachedSign(self, data, nonce, encoder=util.Base64WSEncode):
     """
     Sign given data and nonce and return a blob containing both data and
     signature
@@ -617,9 +617,10 @@ class Signer(Verifier):
     @return: signature on the data encoded as a Base64 string
     @rtype: string
     """
-    return util.Base64WSEncode(self.primary_key.Header()
-                       + util.PackByteArray(data)
-                       + self.__InternalSign(data, nonce))
+    signature = self.primary_key.Header() \
+                + util.PackByteArray(data) \
+                + self.__InternalSign(data, nonce)
+    return encoder(signature) if encoder else signature
 
 
   def __InternalSign(self, data, nonce = None):
@@ -652,7 +653,7 @@ class UnversionedSigner(UnversionedVerifier):
     """Only valid if purpose includes signing."""
     return purpose == keyinfo.SIGN_AND_VERIFY
 
-  def Sign(self, data):
+  def Sign(self, data, encoder=util.Base64WSEncode):
     """
     Sign given data and return corresponding signature. This signature
     contains no header or version information.
@@ -668,7 +669,8 @@ class UnversionedSigner(UnversionedVerifier):
     signing_key = self.primary_key
     if signing_key is None:
       raise errors.NoPrimaryKeyError()
-    return util.Base64WSEncode(signing_key.Sign(data))
+    signature = signing_key.Sign(data)
+    return encoder(signature) if encoder else signature
 
 
 SESSION_NONCE_SIZE = 16
