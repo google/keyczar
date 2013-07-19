@@ -590,7 +590,7 @@ class Signer(Verifier):
     """
     Sign given data and return corresponding signature.
 
-    For message M, outputs the signature as Header|Sig(Header.M).
+    For message M, outputs the signature as Header|Sig(M|VersionByte).
 
     @param data: message to be signed
     @type data: string
@@ -606,7 +606,7 @@ class Signer(Verifier):
     Sign given data and nonce and return a blob containing both data and
     signature
 
-    For message M, and nonce N, outputs Header|len(M)|M|Sig(Header|M|N).
+    For message M, and nonce N, outputs Header|len(M)|M|Sig(M|len(N)|N|VersionByte).
 
     @param data: message to be signed
     @type data: string
