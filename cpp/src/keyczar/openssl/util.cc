@@ -41,7 +41,7 @@ EVP_PKEY* ReadPEMPrivateKeyFromFile(const std::string& filename,
     return NULL;
   }
 
-  // Ciphers table requires to be loaded.
+  // Needs ciphers and digests to be loaded.
   OpenSSL_add_all_algorithms();
 
   ScopedEVPPKey evp_pkey;
