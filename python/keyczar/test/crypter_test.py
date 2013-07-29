@@ -35,7 +35,7 @@ from keyczar import util
 from keyczar import keys
 from keyczar import keyinfo
 
-TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "testdata"))
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "test-data", "existing-data", "python"))
 
 class BaseCrypterTest(unittest.TestCase):
 
@@ -326,10 +326,10 @@ class BaseCrypterTest(unittest.TestCase):
                                       no_data_reqd=True)
 
   def testAesKeyBadJavaLargeSizeHashDecrypt(self):
-    self.__testDecrypt(os.path.join("badhash", "aes-java-size"))
+    self.__testDecrypt(os.path.join("..", "..", "special-case", "badhash", "aes-java-size"))
 
   def testAesKeyBadCppStripped0HashDecrypt(self):
-    self.__testDecrypt(os.path.join("badhash", "aes-cpp-0"))
+    self.__testDecrypt(os.path.join("..", "..", "special-case", "badhash", "aes-cpp-0"))
 
   def testAesEncryptedKeyDecrypt(self):
     file_reader = readers.FileReader(os.path.join(TEST_DATA, "aes-crypted"))

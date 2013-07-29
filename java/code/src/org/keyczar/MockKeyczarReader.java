@@ -7,6 +7,7 @@ import org.keyczar.exceptions.BadVersionException;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.KeyczarReader;
+import org.keyczar.keyparams.KeyParameters;
 import org.keyczar.util.Util;
 
 import java.util.HashMap;
@@ -20,7 +21,7 @@ import java.util.Map;
  */
 public class MockKeyczarReader implements KeyczarReader {
 
-  private Map<Integer, KeyczarKey> keys, publicKeys; // link version #s to keys
+  private final Map<Integer, KeyczarKey> keys, publicKeys; // link version #s to keys
   private KeyMetadata kmd, publicKmd;
 
   public MockKeyczarReader(String n, KeyPurpose p, KeyType t) {
@@ -42,7 +43,7 @@ public class MockKeyczarReader implements KeyczarReader {
   @Override
   public String getKey() throws KeyczarException {
 	KeyMetadata metadata = KeyMetadata.read(getMetadata());
-		
+
 	return getKey(metadata.getPrimaryVersion().getVersionNumber());
   }
 
@@ -85,14 +86,15 @@ public class MockKeyczarReader implements KeyczarReader {
 
   public boolean addKey(int versionNumber, KeyStatus status)
       throws KeyczarException {
-    KeyczarKey key = KeyczarKey.genKey(kmd.getType());
+    KeyType type = kmd.getType();
+    KeyczarKey key = type.getBuilder().generate(type.applyDefaultParameters(null));
     keys.put(versionNumber, key);
     return kmd.addVersion(new KeyVersion(versionNumber, status, false));
   }
 
-  public boolean addKey(int versionNumber, KeyStatus status, int size)
+  public boolean addKey(int versionNumber, KeyStatus status, KeyParameters keyParams)
       throws KeyczarException {
-    KeyczarKey key = KeyczarKey.genKey(kmd.getType(), size);
+    KeyczarKey key = kmd.getType().getBuilder().generate(keyParams);
     keys.put(versionNumber, key);
     return kmd.addVersion(new KeyVersion(versionNumber, status, false));
   }

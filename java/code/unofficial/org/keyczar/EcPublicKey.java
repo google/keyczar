@@ -43,6 +43,7 @@ import java.security.spec.X509EncodedKeySpec;
 public class EcPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "EC";
   private static final String SIG_ALGORITHM = "SHA256withECDSA";
+  private static final int EC_DIGEST_SIZE = 70; // TODO(swillden) Incorrect size?
 
   private PublicKey jcePublicKey;
   @Expose String x509;
@@ -111,7 +112,7 @@ public class EcPublicKey extends KeyczarPublicKey {
 
     @Override
     public int digestSize() {
-      return getType().getOutputSize();
+      return EC_DIGEST_SIZE;
     }
 
     @Override

@@ -1,12 +1,12 @@
 /*
  * Copyright 2008 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -24,6 +24,7 @@ import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.jce.EcCore;
+import org.keyczar.keyparams.KeyParameters;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
@@ -39,13 +40,14 @@ import java.security.spec.PKCS8EncodedKeySpec;
 
 /**
  * Wrapping class for EC Private Keys
- * 
+ *
  * @author martclau@gmail.com
- * 
+ *
  */
 public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String KEY_GEN_ALGORITHM = "EC";
   private static final String SIG_ALGORITHM = "SHA256withECDSA";
+  private static final int EC_DIGEST_SIZE = 70; // TODO(swillden) Incorrect size?
 
   @Expose private EcPublicKey publicKey;
   @Expose private String pkcs8;
@@ -65,7 +67,7 @@ public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   public KeyczarPublicKey getPublic() {
     return publicKey;
   }
-  
+
   @Override
   protected byte[] hash() {
     return getPublic().hash();
@@ -91,8 +93,8 @@ public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     return jcePrivateKey;
   }
 
-  static EcPrivateKey generate() throws KeyczarException {
-    return generate(DefaultKeyType.EC_PRIV.defaultSize());
+  static EcPrivateKey generate(KeyParameters params) throws KeyczarException {
+    return generate(params.getKeySize());
   }
 
   void init() throws KeyczarException {
@@ -105,7 +107,7 @@ public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
       throw new KeyczarException(e);
     }
   }
-  
+
   static EcPrivateKey generate(int keySize) throws KeyczarException {
     EcPrivateKey key = new EcPrivateKey(keySize);
     try {
@@ -147,7 +149,7 @@ public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
     @Override
     public int digestSize() {
-      return getType().getOutputSize();
+      return EC_DIGEST_SIZE;
     }
 
     @Override

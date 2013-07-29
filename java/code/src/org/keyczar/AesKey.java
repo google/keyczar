@@ -28,6 +28,7 @@ import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.keyparams.AesKeyParameters;
 import org.keyczar.util.Base64Coder;
 import org.keyczar.util.Util;
 
@@ -47,6 +48,7 @@ import javax.crypto.spec.SecretKeySpec;
  *
  */
 public class AesKey extends KeyczarKey {
+  private static final DefaultKeyType KEY_TYPE = DefaultKeyType.AES;
   private static final int BLOCK_SIZE = 16;
   private static final String AES_ALGORITHM = "AES";
   private static final CipherMode DEFAULT_MODE = CipherMode.CBC;
@@ -78,12 +80,8 @@ public class AesKey extends KeyczarKey {
     mode = null;
   }
 
-  static AesKey generate() throws KeyczarException {
-    return generate(DefaultKeyType.AES.defaultSize());
-  }
-
-  static AesKey generate(int keySize) throws KeyczarException {
-    return new AesKey(Util.rand(keySize / 8), HmacKey.generate());
+  static AesKey generate(AesKeyParameters params) throws KeyczarException {
+    return new AesKey(Util.rand(params.getKeySize() / 8), params.getHmacKey());
   }
 
   /*
@@ -99,7 +97,7 @@ public class AesKey extends KeyczarKey {
 
   @Override
   public KeyType getType() {
-    return DefaultKeyType.AES;
+    return KEY_TYPE;
   }
 
   @Override

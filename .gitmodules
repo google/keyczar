@@ -1,0 +1,13 @@
+[submodule "python/test-data"]
+	path = python/test-data
+	url = https://code.google.com/r/jtuley-keyczar-testdata
+
+
+#[submodule "cpp/src/keyczar/test-data"]
+#	path = cpp/src/keyczar/test-data
+#	url = https://code.google.com/r/jtuley-keyczar-testdata
+
+
+#[submodule "java/code/test-data"]
+#	path = java/code/test-data
+#	url = https://code.google.com/r/jtuley-keyczar-testdata

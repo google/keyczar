@@ -46,6 +46,7 @@ import java.security.spec.DSAPublicKeySpec;
 public class DsaPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "DSA";
   private static final String SIG_ALGORITHM = "SHA1withDSA";
+  private static final int DSA_DIGEST_SIZE = 48;
 
   private DSAPublicKey jcePublicKey;
   private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
@@ -82,7 +83,7 @@ public class DsaPublicKey extends KeyczarPublicKey {
   }
 
   private DsaPublicKey(BigInteger yVal, DSAParams params) throws KeyczarException {
-    super(yVal.bitLength());
+    super(params.getP().bitLength());
     BigInteger pVal = params.getP();
     BigInteger qVal = params.getQ();
     BigInteger gVal = params.getG();
@@ -173,7 +174,7 @@ public class DsaPublicKey extends KeyczarPublicKey {
 
     @Override
     public int digestSize() {
-      return getType().getOutputSize();
+      return DSA_DIGEST_SIZE;
     }
 
     @Override

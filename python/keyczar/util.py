@@ -152,7 +152,7 @@ def ParseX509(x509):
     raise kzr_errors.KeyczarError("Illegal X.509 String.")
   [oid, alg_params] = ParseASN1Sequence(seq[0])
   pubkey = decoder.decode(univ.OctetString(BinToBytes(seq[1].
-                                                      prettyPrint()[1:-2])))[0]
+                                                      prettyPrint()[2:-3])))[0]
   # Component 1 should be a BIT STRING, get raw bits by discarding extra chars,
   # then convert to OCTET STRING which can be ASN.1 decoded
   params = {}
@@ -237,7 +237,7 @@ def BinToBytes(bits):
   """Convert bit string to byte string."""
   bits = _PadByte(bits)
   octets = [bits[8 * i:8 * (i + 1)] for i in range(len(bits) // 8)]
-  return "".join([chr(int(x, 2)) for x in octets])
+  return b"".join([ByteChr(int(x, 2)) for x in octets])
 
 def BytesToBin(byte_string):
   """Convert byte string to bit string."""

@@ -26,17 +26,15 @@ import org.keyczar.util.Base64Coder;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 /**
 * Unversioned Verifiers are used strictly to verify standard signatures
 * (i.e. HMAC-SHA1, DSA-SHA1, RSA-SHA1) with no key version information.
 * Typically, UnversionedVerifiers will read sets of public keys, although may
 * also be instantiated with sets of symmetric or private keys.
-* 
+*
 * Since UnversionedVerifiers verify standard signatures, they will try all keys
-* in a set until one verifies. 
+* in a set until one verifies.
 *
 * {@link UnversionedSigner} objects should be used with symmetric or private
 * key sets to generate unversioned signatures.
@@ -100,34 +98,31 @@ public class UnversionedVerifier extends Keyczar {
    * @param data The data to verify the signature on
    * @param signature The signature to verify
    * @return Whether this is a valid signature
-   * @throws KeyczarException If the signature is malformed or a JCE error
-   * occurs.
+   * @throws KeyczarException If the signature is malformed or a JCE error occurs.
    */
   public boolean verify(ByteBuffer data, ByteBuffer signature)
       throws KeyczarException {
-    LOG.debug(
-        Messages.getString("UnversionedVerifier.Verifying", data.remaining()));
+    LOG.debug(Messages.getString("UnversionedVerifier.Verifying", data.remaining()));
 
-    // Try to verify the signature with each key in the set.
-    for (Iterator<Entry<KeyVersion, KeyczarKey>> iter =
-      versionMap.entrySet().iterator(); iter.hasNext(); ) {
-      KeyczarKey key = iter.next().getValue();
-      ByteBuffer dataCopy = data.duplicate();
-      ByteBuffer signatureCopy = signature.duplicate();
-      VerifyingStream stream = VERIFY_CACHE.get(key);
-      if (stream == null) {
-        stream = (VerifyingStream) key.getStream();
-      }
-      stream.initVerify();
-      stream.updateVerify(dataCopy);
-      boolean result = stream.verify(signatureCopy);
-      VERIFY_CACHE.put(key, stream);
-      if (result) {
+    for (KeyczarKey key : versionMap.values()) {
+      if (verify(data, signature, key)) {
         return true;
       }
     }
-    
     return false;
+  }
+
+  private boolean verify(ByteBuffer data, ByteBuffer signature, KeyczarKey key)
+      throws KeyczarException {
+    VerifyingStream stream = VERIFY_CACHE.get(key);
+    if (stream == null) {
+      stream = (VerifyingStream) key.getStream();
+    }
+    stream.initVerify();
+    stream.updateVerify(data.duplicate());
+    boolean foundValidSignature = stream.verify(signature.duplicate());
+    VERIFY_CACHE.put(key, stream);
+    return foundValidSignature;
   }
 
   /**

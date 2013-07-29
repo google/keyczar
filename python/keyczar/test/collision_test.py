@@ -30,7 +30,7 @@ from keyczar import util
 
 class CollisionTest(unittest.TestCase):
 
-  TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "testdata"))
+  TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "test-data", "special-case"))
 
   def setUp(self):
     self.input = "This is some test data"

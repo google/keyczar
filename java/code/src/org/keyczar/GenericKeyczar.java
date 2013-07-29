@@ -3,10 +3,11 @@ package org.keyczar;
 import org.apache.log4j.Logger;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
-import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.KeyczarReader;
+import org.keyczar.keyparams.KeyParameters;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -104,51 +105,27 @@ public class GenericKeyczar extends Keyczar {
   }
 
   /**
-   * Uses default key size and padding to add a new key version.
+   * Uses default key parameters to add a new key version.
    */
   public void addVersion(KeyStatus status) throws KeyczarException {
-    addVersion(status, null, kmd.getType().defaultSize());
-  }
-
-  /**
-   * Uses default padding to add a new key version.
-   */
-  public void addVersion(KeyStatus status, int keySize) throws KeyczarException {
-    addVersion(status, null, keySize);
-  }
-
-  /**
-   * Uses default key size to add a new key version.
-   *
-   * @param status KeyStatus desired for new key version
-   * @param padding Encryption padding type for RSA keys.  Should be null for others.
-   */
-  public void addVersion(KeyStatus status, RsaPadding padding) throws KeyczarException {
-    addVersion(status, padding, kmd.getType().defaultSize());
+    addVersion(status, kmd.getType().applyDefaultParameters(null));
   }
 
   /**
    * Adds a new key version with given status and next available version
    * number to key set. Generates a new key of same type (repeated until hash
-   * identifier is unique) for this version. Uses supplied key size in lieu
-   * of the default key size. If this is an unacceptable key size, defaults
-   * to the default key size.
+   * identifier is unique) for this version. Uses supplied key parameters.
    *
    * @param status KeyStatus desired for new key version
-   * @param padding Encryption padding type for RSA keys.  Should be null for others.
-   * @param keySize desired key size in bits
+   * @param keyParams parameters for new key generation.
    * @throws KeyczarException if key type is unsupported.
    */
-  public void addVersion(KeyStatus status, RsaPadding padding, int keySize)
-      throws KeyczarException {
+  public void addVersion(KeyStatus status, KeyParameters keyParams) throws KeyczarException {
+    KeyType type = kmd.getType();
     KeyczarKey key;
-    if (keySize < kmd.getType().defaultSize()) { // print a warning statement
-      LOG.warn(Messages.getString("Keyczar.SizeWarning",
-          keySize, kmd.getType().defaultSize(), kmd.getType().toString()));
-    }
-    do { // Make sure no keys collide on their identifiers
-      key = KeyczarKey.genKey(kmd.getType(), padding, keySize);
-    } while (getKey(key.hash()) != null);
+    do {
+      key = type.getBuilder().generate(keyParams);
+    } while (haveKeyWithId(key.hash()));
     addVersion(status, key);
   }
 
@@ -159,7 +136,7 @@ public class GenericKeyczar extends Keyczar {
    * @param status KeyStatus desired for new key version
    */
   public void addVersion(KeyStatus status, KeyczarKey key) {
-    KeyVersion version = new KeyVersion(numVersions() + 1, status, false);
+    KeyVersion version = new KeyVersion(maxVersion() + 1, status, false);
     if (status == KeyStatus.PRIMARY) {
       if (primaryVersion != null) {
         primaryVersion.setStatus(KeyStatus.ACTIVE);
@@ -168,6 +145,17 @@ public class GenericKeyczar extends Keyczar {
     }
     addKey(version, key);
     LOG.debug(Messages.getString("Keyczar.NewVersion", version));
+  }
+
+  private int maxVersion() {
+    int max = 0;
+    for (KeyVersion version : getVersions()) {
+      if (version.getVersionNumber() > max) {
+        max = version.getVersionNumber();
+      }
+    }
+
+    return max;
   }
 
   /**
@@ -201,6 +189,10 @@ public class GenericKeyczar extends Keyczar {
     } else {
       throw new KeyczarException(Messages.getString("Keyczar.CantRevoke"));
     }
+  }
+
+  private boolean haveKeyWithId(byte[] keyId) {
+    return getKey(keyId) != null;
   }
 
   /**

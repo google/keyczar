@@ -26,12 +26,11 @@ import com.google.gson.JsonSerializer;
 
 import org.keyczar.DefaultKeyType;
 import org.keyczar.KeyczarKey;
-
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.keyparams.KeyParameters;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -42,35 +41,21 @@ import java.util.Map;
 public interface KeyType {
 
   /**
-   * Returns the default (recommended) key size.
-   *
-   * @return default key size in bits
+   * Validates the specified parameters instance, throwing a
+   * {@link KeyczarException} if the parameters cannot be used to generate
+   * a key and a warning string which may be displayed to users
+   * if the parameters are valid but potentially problematic.
+   * @throws KeyczarException
    */
-  public int defaultSize();
+  public String validateKeyParameters(KeyParameters parameters) throws KeyczarException;
 
   /**
-   * @return the output size for the default key size
+   * Returns a new {@link KeyParameters} instance that overrides any
+   * unspecified parameters in the provided parameters instance.
+   * The argument may be null, in which case all parameters will be
+   * defaulted.
    */
-  public int getOutputSize();
-
-  /**
-   * @param keySize the key size to get the output size for
-   * @return the output size for the given key size
-   */
-  public int getOutputSize(int keySize);
-
-  /**
-   * Checks whether a given key size is acceptable.
-   *
-   * @param size integer key size
-   * @return True if size is acceptable, False otherwise.
-   */
-  public boolean isAcceptableSize(int size);
-
-  /**
-   * @return a list of acceptable sizes for this key type
-   */
-  public List<Integer> getAcceptableSizes();
+  public KeyParameters applyDefaultParameters(KeyParameters parameters);
 
   /**
    * Returns a unique name used for JSON serialization.
@@ -97,11 +82,11 @@ public interface KeyType {
     /**
      * Generates a key of this type, of the given size.
      *
-     * @param keySize a valid key size, from {@link #getAcceptableSizes}.
+     * @param keyParams a parameters instance, of the correct type.
      * @return a new {@link KeyczarKey}
      * @throws KeyczarException for key creation creation errors
      */
-    public KeyczarKey generate(int keySize) throws KeyczarException;
+    public KeyczarKey generate(KeyParameters keyParams) throws KeyczarException;
   }
 
   /**

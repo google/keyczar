@@ -25,6 +25,7 @@ import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.KeyczarReader;
+import org.keyczar.keyparams.KeyParameters;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -113,17 +114,13 @@ public class KeyczarTool {
         final String passphraseFlag = flagMap.get(Flag.PASSPHRASE);
         final String pemFileFlag = flagMap.get(Flag.PEMFILE);
         final String versionFlag = flagMap.get(Flag.VERSION);
-        int sizeFlag = -1;
-        if (flagMap.containsKey(Flag.SIZE)) {
-          sizeFlag = Integer.parseInt(flagMap.get(Flag.SIZE));
-        }
 
         switch (c) {
           case CREATE:
             create(locationFlag, nameFlag, purposeFlag, asymmetricFlag);
             break;
           case ADDKEY:
-            addKey(locationFlag, statusFlag, crypterFlag, sizeFlag, paddingFlag);
+            addKey(locationFlag, statusFlag, crypterFlag, new KeyczarToolKeyParameters(flagMap));
             break;
           case PUBKEY:
             publicKeys(locationFlag, destinationFlag);
@@ -264,22 +261,14 @@ public class KeyczarTool {
   /**
    * Adds key of given status to key set and pushes update to meta file.
    * Requires location and status flags.
-   * @param sizeFlag
-   * @param crypterFlag
-   * @param statusFlag
-   * @param locationFlag
    *
    * @throws KeyczarException if location flag is not set or
    * key type is unsupported
    */
   private static void addKey(String locationFlag, KeyStatus statusFlag,
-      String crypterFlag, int sizeFlag, String paddingFlag) throws KeyczarException {
+      String crypterFlag, KeyParameters keyParams) throws KeyczarException {
     GenericKeyczar genericKeyczar = createGenericKeyczar(locationFlag, crypterFlag);
-    if (sizeFlag == -1) { // use default size
-      genericKeyczar.addVersion(statusFlag, getPadding(paddingFlag));
-    } else { // use given size
-      genericKeyczar.addVersion(statusFlag, getPadding(paddingFlag), sizeFlag);
-    }
+    genericKeyczar.addVersion(statusFlag, keyParams);
     updateGenericKeyczar(genericKeyczar, crypterFlag, locationFlag);
   }
 
