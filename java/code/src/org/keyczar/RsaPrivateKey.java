@@ -22,13 +22,14 @@ import static org.keyczar.util.Util.encodeBigInteger;
 import com.google.gson.annotations.Expose;
 
 import org.keyczar.enums.RsaPadding;
-import org.keyczar.interfaces.KeyType;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.DecryptingStream;
 import org.keyczar.interfaces.EncryptingStream;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.interfaces.Stream;
 import org.keyczar.interfaces.VerifyingStream;
+import org.keyczar.keyparams.RsaKeyParameters;
 import org.keyczar.util.Util;
 
 import java.nio.ByteBuffer;
@@ -65,13 +66,10 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
   private RSAPrivateCrtKey jcePrivateKey;
 
-  static RsaPrivateKey generate(RsaPadding padding) throws KeyczarException {
-    return generate(DefaultKeyType.RSA_PRIV.defaultSize(), padding);
-  }
-
-  static RsaPrivateKey generate(int keySize, RsaPadding padding) throws KeyczarException {
-    KeyPair keyPair = Util.generateKeyPair(KEY_GEN_ALGORITHM, keySize);
-    return new RsaPrivateKey((RSAPrivateCrtKey) keyPair.getPrivate(), padding);
+  static RsaPrivateKey generate(RsaKeyParameters params) throws KeyczarException {
+    KeyPair keyPair = Util.generateKeyPair(KEY_GEN_ALGORITHM, params.getKeySize());
+    return new RsaPrivateKey((RSAPrivateCrtKey) keyPair.getPrivate(),
+        (params.getRsaPadding() == null) ? RsaPadding.OAEP : params.getRsaPadding());
   }
 
   static RsaPrivateKey read(String input) throws KeyczarException {
@@ -167,7 +165,7 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
     @Override
     public int digestSize() {
-      return getType().getOutputSize();
+      return publicKey.keySizeInBytes();
     }
 
     @Override
@@ -247,7 +245,7 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
     @Override
     public int maxOutputSize(int inputLen) {
-      return getType().getOutputSize(size);
+      return publicKey.keySizeInBytes();
     }
 
     @Override

@@ -96,8 +96,8 @@ public abstract class Keyczar {
         }
         primaryVersion = version;
       }
-      KeyczarKey key = KeyczarKey.readKey(kmd.getType(),
-          reader.getKey(version.getVersionNumber()));
+      String keyString = reader.getKey(version.getVersionNumber());
+      KeyczarKey key = kmd.getType().getBuilder().read(keyString);
       LOG.debug(Messages.getString("Keyczar.ReadVersion", version));
       hashMap.put(new KeyHash(key.hash()), key);
       versionMap.put(version, key);
