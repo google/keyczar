@@ -36,7 +36,7 @@ class BaseInteropTest(unittest.TestCase):
   def __init__(self, imp, methodname='runTest'):
     unittest.TestCase.__init__(self, methodname)
     self.TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), 
-                       "interop-data", imp+"_data"))
+                      "test-data", "interop-data", imp+"_data"))
     self.input = "This is some test data"
 
   def __testDecrypt(self, subdir):

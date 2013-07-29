@@ -29,7 +29,7 @@ from keyczar import keyczar
 from keyczar import util
 from keyczar import constants
 
-TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "testdata"))
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "test-data", "existing-data", "python"))
 
 class SignerTest(unittest.TestCase):
   

@@ -1,6 +1,6 @@
-#[submodule "python/test-data"]
-#	path = python/test-data
-#	url = https://code.google.com/r/jtuley-keyczar-testdata
+[submodule "python/test-data"]
+	path = python/test-data
+	url = https://code.google.com/r/jtuley-keyczar-testdata
 
 
 #[submodule "cpp/src/keyczar/test-data"]

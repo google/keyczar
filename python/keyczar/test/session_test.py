@@ -26,7 +26,7 @@ import unittest
 from keyczar import keyczar
 from keyczar import util
 
-TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "testdata"))
+TEST_DATA = os.path.realpath(os.path.join(os.getcwd(), "test-data", "existing-data", "python"))
 
 
 def _get_test_dir(subdir):
