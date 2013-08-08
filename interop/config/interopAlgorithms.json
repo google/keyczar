@@ -1,0 +1,32 @@
+{
+  "rsa-crypt" : {
+    "purpose" : "crypt",
+    "keySizes" : [1024, 2048, 4096],
+    "createFlags" : ["--purpose=crypt", "--asymmetric=rsa"],
+    "addKeyFlags" : []
+  },
+  "rsa-sign" : {
+    "purpose" : "sign",
+    "keySizes" : [1024, 2048, 4096],
+    "createFlags" : ["--purpose=sign", "--asymmetric=rsa"],
+    "addKeyFlags" : []
+  },
+  "dsa" : {
+    "purpose" : "sign",
+    "keySizes" : [1024],
+    "createFlags" : ["--purpose=sign", "--asymmetric=dsa"],
+    "addKeyFlags" : []
+  },
+  "aes" : {
+    "purpose" : "crypt",
+    "keySizes" : [128, 192, 256],
+    "createFlags" : ["--purpose=crypt"],
+    "addKeyFlags" : []
+  },
+  "hmac" : {
+    "purpose" : "sign",
+    "keySizes" : [256],
+    "createFlags" : ["--purpose=sign"],
+    "addKeyFlags" : []
+  }
+}

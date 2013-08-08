@@ -1,0 +1,44 @@
+{
+  "unversioned" : {
+    "keytype" : "sign",
+    "generateOptions" : [
+      ["encoded", "unencoded"]
+    ],
+    "testOptions" : [
+      ["verifier", "signer"]
+    ]
+  },
+  "signedSession" : {
+    "keytype" : "crypt",
+    "generateOptions" : [
+      ["rsa-sign1024", "rsa-sign2048", "rsa-sign4096", "dsa1024", "hmac256"]
+    ],
+    "testOptions" : []
+  },
+  "attached" : {
+    "keytype" : "sign",
+    "generateOptions" : [
+      ["encoded", "unencoded"]
+    ],
+    "testOptions" : [
+      ["verifier", "signer"]
+    ]
+  },
+  "sign" : {
+    "keytype" : "sign",
+    "generateOptions" : [
+      ["encoded", "unencoded"]
+    ],
+    "testOptions" : [
+      ["verifier", "signer"]
+    ]
+  },
+  "encrypt" : {
+    "keytype" : "crypt",
+    "generateOptions" : [
+      ["encoded", "unencoded"],
+      ["crypter", "encrypter"]
+    ],
+    "testOptions" : []
+  }
+}
