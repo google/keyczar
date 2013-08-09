@@ -43,8 +43,7 @@ import java.nio.ByteBuffer;
 public class Signer extends Verifier {
   static final int TIMESTAMP_SIZE = 8;
   private static final Logger LOG = Logger.getLogger(Signer.class);
-  private final StreamQueue<SigningStream> SIGN_QUEUE =
-    new StreamQueue<SigningStream>();
+  private final StreamQueue<SigningStream> SIGN_QUEUE = new StreamQueue<SigningStream>();
 
   /**
    * Initialize a new Signer with a KeyczarReader. The corresponding key set
@@ -111,8 +110,7 @@ public class Signer extends Verifier {
    * @throws KeyczarException If this Signer does not have a primary or a
    * JCE exception occurs.
    */
-  public void sign(ByteBuffer input, ByteBuffer output)
-      throws KeyczarException {
+  public void sign(ByteBuffer input, ByteBuffer output) throws KeyczarException {
     sign(input, null, 0, output);
   }
 
@@ -127,10 +125,10 @@ public class Signer extends Verifier {
    *
    * @throws KeyczarException
    */
-  void sign(ByteBuffer input, ByteBuffer hidden, long expirationTime,
-      ByteBuffer output) throws KeyczarException {
-    if(LOG.isDebugEnabled()) {
-	  LOG.debug(Messages.getString("Signer.Signing", input.remaining()));
+  void sign(ByteBuffer input, ByteBuffer hidden, long expirationTime, ByteBuffer output)
+      throws KeyczarException {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(Messages.getString("Signer.Signing", input.remaining()));
     }
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
@@ -206,8 +204,7 @@ public class Signer extends Verifier {
    * @param hidden Hidden data or nonce to include in signature
    * @return The input data with an attached signature
    */
-  public byte[] attachedSign(final byte[] blob, final byte[] hidden)
-      throws KeyczarException {
+  public byte[] attachedSign(final byte[] blob, final byte[] hidden) throws KeyczarException {
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
       throw new NoPrimaryKeyException();
@@ -225,7 +222,7 @@ public class Signer extends Verifier {
     // [blob | hidden.length | hidden | format] or [blob | 0 | format]
     byte[] hiddenPlusLength = Util.fromInt(0);
     if (hidden.length > 0) {
-    	hiddenPlusLength = Util.lenPrefix(hidden);
+      hiddenPlusLength = Util.lenPrefix(hidden);
     }
 
     stream.updateSign(ByteBuffer.wrap(blob));
@@ -241,8 +238,8 @@ public class Signer extends Verifier {
 
     // Attached signature format is:
     // [Format number | 4 bytes of key hash | blob size | blob | raw signature]
-    byte[] signature = Util.cat(FORMAT_BYTES, signingKey.hash(),
-        Util.lenPrefix(blob), output.array());
+    byte[] signature =
+        Util.cat(FORMAT_BYTES, signingKey.hash(), Util.lenPrefix(blob), output.array());
 
     SIGN_QUEUE.add(stream);
 
