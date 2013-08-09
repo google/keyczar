@@ -30,7 +30,7 @@ import org.keyczar.util.Base64Coder;
 
 /**
  * Tests signed session encryption and decryption
- * with RSA, DSA and AES. 
+ * with RSA, DSA and AES.
  *
  * @author normandl@google.com (David Norman)
  */
@@ -47,7 +47,7 @@ public class SignedSessionTest extends TestCase {
   private Verifier publicKeyVerifier;
   private SignedSessionEncrypter sessionEncrypter;
   private SignedSessionDecrypter sessionDecrypter;
-  
+
   @Override
   protected void setUp() throws Exception {
     super.setUp();
@@ -58,42 +58,74 @@ public class SignedSessionTest extends TestCase {
     privateKeyDecrypter = new Crypter(TEST_DATA + "/rsa");
     publicKeyVerifier = new Verifier(TEST_DATA + "/dsa.public");
   }
-  
+
   @Test
   public final void testEncryptAndDecrypt() throws KeyczarException {
     // create a new session, already encrypted and encoded.
     String sessionMaterialString = sessionEncrypter.newSession();
     LOG.debug(String.format("Encoded session material: %s",
       sessionMaterialString));
-    
+
     // perform encryption
     byte[] ciphertext = sessionEncrypter.encrypt(input.getBytes());
     String ciphertextString = Base64Coder.encodeWebSafe(ciphertext);
     LOG.debug(String.format("Encoded ciphertext: %s", ciphertextString));
-    
+
     // perform decryption
     sessionDecrypter = new SignedSessionDecrypter(privateKeyDecrypter,
       publicKeyVerifier, sessionMaterialString);
     byte[] plaintext = sessionDecrypter.decrypt(ciphertext);
     String decrypted = new String(plaintext);
     assertEquals(input, decrypted);
-    
+
     // Try encrypting a bigger input under the same session key
     byte[] bigCiphertext = sessionEncrypter.encrypt(bigInput);
     byte[] bigPlaintext = sessionDecrypter.decrypt(bigCiphertext);
     assertTrue(Arrays.equals(bigInput, bigPlaintext));
   }
-  
+
+  @Test
+  public final void testEncryptAndDecryptWithRsaSigner() throws KeyczarException {
+    publicKeyEncrypter = new Encrypter(TEST_DATA + "/rsa.public");
+    privateKeySigner = new Signer(TEST_DATA + "/rsa-sign");
+    sessionEncrypter = new SignedSessionEncrypter(publicKeyEncrypter,
+      privateKeySigner);
+    privateKeyDecrypter = new Crypter(TEST_DATA + "/rsa");
+    publicKeyVerifier = new Verifier(TEST_DATA + "/rsa-sign.public");
+
+    // create a new session, already encrypted and encoded.
+    String sessionMaterialString = sessionEncrypter.newSession();
+    LOG.debug(String.format("Encoded session material: %s",
+      sessionMaterialString));
+
+    // perform encryption
+    byte[] ciphertext = sessionEncrypter.encrypt(input.getBytes());
+    String ciphertextString = Base64Coder.encodeWebSafe(ciphertext);
+    LOG.debug(String.format("Encoded ciphertext: %s", ciphertextString));
+
+    // perform decryption
+    sessionDecrypter = new SignedSessionDecrypter(privateKeyDecrypter,
+      publicKeyVerifier, sessionMaterialString);
+    byte[] plaintext = sessionDecrypter.decrypt(ciphertext);
+    String decrypted = new String(plaintext);
+    assertEquals(input, decrypted);
+
+    // Try encrypting a bigger input under the same session key
+    byte[] bigCiphertext = sessionEncrypter.encrypt(bigInput);
+    byte[] bigPlaintext = sessionDecrypter.decrypt(bigCiphertext);
+    assertTrue(Arrays.equals(bigInput, bigPlaintext));
+  }
+
   @Test
   public final void testDecrypt() throws KeyczarException, IOException {
     RandomAccessFile sessionMaterialInput =
         new RandomAccessFile(TEST_DATA + "/signedsession/signed.session.out", "r");
     String sessionMaterialString = sessionMaterialInput.readLine();
     sessionMaterialInput.close();
-    
+
     RandomAccessFile sessionCiphertextInput =
         new RandomAccessFile(TEST_DATA + "/signedsession/signed.ciphertext.out", "r");
-    String sessionCiphertextString = sessionCiphertextInput.readLine(); 
+    String sessionCiphertextString = sessionCiphertextInput.readLine();
     sessionCiphertextInput.close();
     byte[] sessionCiphertext = Base64Coder.decodeWebSafe(sessionCiphertextString);
     sessionDecrypter = new SignedSessionDecrypter(privateKeyDecrypter,
@@ -102,13 +134,13 @@ public class SignedSessionTest extends TestCase {
     String decrypted = new String(plaintext);
     assertEquals(input, decrypted);
   }
-  
+
   @Test
   public final void testWrongSession() throws KeyczarException {
 	// gen a new session, to work with offsetting sessions.
-    sessionEncrypter.newSession();    
-    byte[] ciphertext = sessionEncrypter.encrypt(input.getBytes());    
-    
+    sessionEncrypter.newSession();
+    byte[] ciphertext = sessionEncrypter.encrypt(input.getBytes());
+
     // Instantiate a new hybrid encrypter
     String newSessionMaterialString = sessionEncrypter.newSession();
     sessionDecrypter = new SignedSessionDecrypter(privateKeyDecrypter,
@@ -120,5 +152,5 @@ public class SignedSessionTest extends TestCase {
     } catch (KeyczarException e) {
       // expected
     }
-  } 
+  }
 }
