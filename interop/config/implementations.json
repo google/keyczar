@@ -1,3 +1,4 @@
 {
-  "python" : "../python/tests/keyczar_tests/interop_test.py"
+  "python" : ["../python/tests/keyczar_tests/interop_test.py"],
+  "java" : ["java", "-cp", "../java/code/tests/:../java/code/target/classes:../../.m2/repository/com/google/code/gson/gson/1.7.1/gson-1.7.1.jar:../../.m2/repository/log4j/log4j/1.2.14/log4j-1.2.14.jar", "org.keyczar.interop.Interop"]
 }

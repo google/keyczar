@@ -1,13 +1,18 @@
 {
-  "python" : {
+  "*" : {
     "signedSession" : {
-      "rsa-crypt1024" : [
-        ["dsa1024"],
-        ["rsa-sign1024"],
-        ["hmac256"],
-        ["rsa-sign2048"],
-        ["rsa-sign4096"]
+      "rsa-crypt1024" : "*"
+    }
+  },
+  "java" : {
+    "attached" : {
+      "*" : [
+        ["encoded"]
       ]
+    },
+    "*" : {
+      "aes256" : "*",
+      "aes192" : "*"
     }
   }
 }

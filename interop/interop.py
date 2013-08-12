@@ -38,7 +38,6 @@ implementations.json.
 
 @author: dlundberg@google.com (Devin Lundberg)
 """
-import base64
 import itertools
 import json
 import os
@@ -53,6 +52,7 @@ INTEROP_DATA = "keys"
 IGNORED_TESTS = "config/ignoredTests.json"
 OPERATIONS = "config/operations.json"
 IMPLEMENTATIONS = "config/implementations.json"
+TESTDATA = "This is some test data."
 
 
 class InteropTestRunner(object):
@@ -63,6 +63,50 @@ class InteropTestRunner(object):
     self.ignored_tests = json.loads(util.ReadFile(IGNORED_TESTS))
     self.operations = json.loads(util.ReadFile(OPERATIONS))
     self.implementations = json.loads(util.ReadFile(IMPLEMENTATIONS))
+    self._InitializeIgnoredTests()
+
+  def _InitializeIgnoredTests(self):
+    """ Allows for wildcards ("*") in the ignored tests json file """
+    if "*" in self.ignored_tests:
+      for implementation in self.implementations:
+        for operation, algorithms in self.ignored_tests["*"].iteritems():
+          for algorithm, options in algorithms.iteritems():
+            self._AddIgnoredTest(implementation, operation, algorithm, options)
+      del self.ignored_tests["*"]
+    for implementation in self.ignored_tests:
+      if "*" in self.ignored_tests[implementation]:
+        for operation in self.operations:
+          for algorithm, options in (
+              self.ignored_tests[implementation]["*"].iteritems()):
+            self._AddIgnoredTest(implementation, operation, algorithm, options)
+        del self.ignored_tests[implementation]["*"]
+    for implementation in self.ignored_tests:
+      for operation in self.ignored_tests[implementation]:
+        if "*" in self.ignored_tests[implementation][operation]:
+          for algorithm in self.GetKeysByPurpose():
+            options = self.ignored_tests[implementation][operation]["*"]
+            self._AddIgnoredTest(implementation, operation, algorithm, options)
+          del self.ignored_tests[implementation][operation]["*"]
+    for implementation in self.ignored_tests:
+      for operation in self.ignored_tests[implementation]:
+        for algorithm, options in self.ignored_tests[implementation][operation].iteritems():
+          if options == "*":
+            self._AddIgnoredTest(implementation, operation, algorithm, options)
+
+  def _AddIgnoredTest(self, implementation, operation, algorithm, options):
+    """ adds an ignored test for the specific parameters """
+    if implementation not in self.ignored_tests:
+      self.ignored_tests[implementation] = {}
+    if operation not in self.ignored_tests[implementation]:
+      self.ignored_tests[implementation][operation] = {}
+    if algorithm not in self.ignored_tests[implementation][operation]:
+      self.ignored_tests[implementation][operation][algorithm] = []
+    if options == "*":
+      all_options = self.operations[operation]["generateOptions"]
+      options = itertools.product(*all_options)
+      self.ignored_tests[implementation][operation][algorithm] = []
+    for option in options:
+      self.ignored_tests[implementation][operation][algorithm].append(option)
 
   def GetKeysByPurpose(self, purpose=""):
     """ Gets names for all algorithms or ones with the given purpose. """
@@ -91,13 +135,13 @@ class InteropTestRunner(object):
         return True
     return False
 
-  def TestAll(self, operation, algorithm):
+  def TestAll(self, operation, algorithm, generate_options):
     """ Generates all possible configurations for the Test function. """
     for implementation in self.implementations:
       all_options = self.operations[operation]["testOptions"]
       for options in itertools.product(*all_options):
         if not self._IsException(
-            implementation, operation, algorithm, options):
+            implementation, operation, algorithm, generate_options):
           yield (implementation, options)
 
   def GenerateAll(self):
@@ -138,7 +182,7 @@ class InteropTestRunner(object):
 
   def _CallImplementation(self, implementation, *params):
     """ Makes a call to an implementation and returns response """
-    args = [str(self.implementations[implementation])] + list(params)
+    args = self.implementations[implementation] + list(params)
     try:
       return subprocess.check_output(args, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError, e:
@@ -155,12 +199,13 @@ class InteropTestRunner(object):
         "createFlags": create_flags,
         "addKeyFlags": add_key_flags,
         }
-    self._CallImplementation(implementation, json.dumps(params))
+    print self._CallImplementation(implementation, json.dumps(params))
 
   def _GetCreateFlags(self, algorithm, size, location):
     """ Returns list of flags for keyczart key creation """
     name = algorithm + str(size)
     create_flags = [
+        "create",
         "--name=" + name,
         "--location=" + location
         ]
@@ -169,6 +214,8 @@ class InteropTestRunner(object):
   def _GetAddKeyFlags(self, algorithm, size, location):
     """ Returns list of flags for add key call to keyczart """
     add_key_flags = [
+        "addkey",
+        "--status=primary",
         "--size=" + str(size),
         "--status=primary",
         "--location=" + location
@@ -189,23 +236,25 @@ class InteropTestRunner(object):
         "operation": operation,
         "keyPath": self._GetKeyPath(implementation),
         "algorithm": algorithm,
-        "generateOptions": options
+        "generateOptions": options,
+        "testData": TESTDATA
         }
     return self._CallImplementation(implementation, json.dumps(args))
 
-  def _Test(self, output, implementation, operation,
-            algorithm, generate_options, test_options):
+  def _Test(self, output, test_implementation, generate_implementation,
+            operation, algorithm, generate_options, test_options):
     """ Sets up arguments and calls test function for given parameters. """
     args = {
         "command": "test",
         "operation": operation,
-        "keyPath": self._GetKeyPath(implementation),
+        "keyPath": self._GetKeyPath(generate_implementation),
         "algorithm": algorithm,
         "generateOptions": generate_options,
         "testOptions": test_options,
-        "b64Output": base64.b64encode(output)
+        "output": output,
+        "testData": TESTDATA
         }
-    return self._CallImplementation(implementation, json.dumps(args))
+    return self._CallImplementation(test_implementation, json.dumps(args))
 
   def InteropTestGenerator(self, *args):
     def Test(_):
@@ -223,12 +272,12 @@ class InteropTestRunner(object):
     for params in self.GenerateAll():
       generate_implementation, operation, algorithm, generate_options = params
       output = self._Generate(
-          generate_implementation, operation, algorithm, generate_options)[:-1]
+          generate_implementation, operation, algorithm, generate_options)
       for test_implementation, test_options in self.TestAll(
-          operation, algorithm):
-        test_name = "test_%s_in_%s_%s_%s_%s_%s" % (
-            generate_implementation,
+          operation, algorithm, generate_options):
+        test_name = "test_%s_generated_by_%s_%s_%s_%s_%s" % (
             test_implementation,
+            generate_implementation,
             operation,
             algorithm,
             "_".join(generate_options),
@@ -238,6 +287,7 @@ class InteropTestRunner(object):
         test = self.InteropTestGenerator(
             output,
             test_implementation,
+            generate_implementation,
             operation,
             algorithm,
             generate_options,
