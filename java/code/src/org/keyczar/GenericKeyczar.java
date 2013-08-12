@@ -269,12 +269,12 @@ public class GenericKeyczar extends Keyczar {
    * @throws KeyczarException if unable to write to given location.
    */
   void write(String location) throws KeyczarException {
-    writeFile(kmd.toString(), location
-        + KeyczarFileReader.META_FILE);
     for (KeyVersion version : getVersions()) {
       writeFile(getKey(version).toString(), location
           + version.getVersionNumber());
     }
+    writeFile(kmd.toString(), location
+        + KeyczarFileReader.META_FILE);
   }
 
   /**
@@ -288,11 +288,11 @@ public class GenericKeyczar extends Keyczar {
       throws KeyczarException {
     KeyMetadata kmd = getMetadata();
     kmd.setEncrypted(true);
-    writeFile(kmd.toString(), location + KeyczarFileReader.META_FILE);
     for (KeyVersion version : getVersions()) {
       writeFile(encrypter.encrypt(getKey(version).toString()), location
           + version.getVersionNumber());
     }
+    writeFile(kmd.toString(), location + KeyczarFileReader.META_FILE);
   }
 
   /**
