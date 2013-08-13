@@ -1,44 +1,44 @@
 {
   "unversioned" : {
     "keytype" : "sign",
-    "generateOptions" : [
-      ["encoded", "unencoded"]
-    ],
-    "testOptions" : [
-      ["verifier", "signer"]
-    ]
+    "generateOptions" : {
+      "encoding" : ["encoded", "unencoded"]
+    },
+    "testOptions" : {
+      "class" : ["verifier", "signer"]
+    }
   },
   "signedSession" : {
     "keytype" : "crypt",
-    "generateOptions" : [
-      ["rsa-sign1024", "rsa-sign2048", "rsa-sign4096", "dsa1024", "hmac256"]
-    ],
-    "testOptions" : []
+    "generateOptions" : {
+      "signer" : ["rsa-sign1024", "rsa-sign2048", "rsa-sign4096", "dsa1024", "hmac256"]
+    },
+    "testOptions" : {}
   },
   "attached" : {
     "keytype" : "sign",
-    "generateOptions" : [
-      ["encoded", "unencoded"]
-    ],
-    "testOptions" : [
-      ["verifier", "signer"]
-    ]
+    "generateOptions" : {
+      "encoding" : ["encoded", "unencoded"]
+    },
+    "testOptions" : {
+      "class" : ["verifier", "signer"]
+    }
   },
   "sign" : {
     "keytype" : "sign",
-    "generateOptions" : [
-      ["encoded", "unencoded"]
-    ],
-    "testOptions" : [
-      ["verifier", "signer"]
-    ]
+    "generateOptions" : {
+      "encoding" : ["encoded", "unencoded"]
+    },
+    "testOptions" : {
+      "class" : ["verifier", "signer"]
+    }
   },
   "encrypt" : {
     "keytype" : "crypt",
-    "generateOptions" : [
-      ["encoded", "unencoded"],
-      ["crypter", "encrypter"]
-    ],
-    "testOptions" : []
+    "generateOptions" : {
+      "encoding" : ["encoded", "unencoded"],
+      "class" : ["crypter", "encrypter"]
+    },
+    "testOptions" : {}
   }
 }

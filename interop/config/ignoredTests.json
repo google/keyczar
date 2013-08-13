@@ -6,9 +6,9 @@
   },
   "java" : {
     "attached" : {
-      "*" : [
-        ["encoded"]
-      ]
+      "*" : {
+        "encoding" : ["encoded"]
+      }
     },
     "*" : {
       "aes256" : "*",

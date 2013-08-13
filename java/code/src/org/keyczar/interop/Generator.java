@@ -3,6 +3,7 @@ package org.keyczar.interop;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interop.operations.Operation;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -14,12 +15,12 @@ public class Generator {
   private final String operation;
   private final String keyPath;
   private final String algorithm;
-  private final Set<String> generateOptions;
+  private final Map<String, String> generateOptions;
   private final String testData;
   
   private Generator(
       String command, String operation, String keyPath, 
-      String algorithm, Set<String> generateOptions, String testData) {
+      String algorithm, Map<String, String> generateOptions, String testData) {
     this.command = command;
     this.operation = operation;
     this.keyPath = keyPath;

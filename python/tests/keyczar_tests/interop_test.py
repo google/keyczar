@@ -48,27 +48,13 @@ class BaseOperation(object):
 
   def __init__(self, key_path, test_data):
     """
-    Sets params for the generate and test function
-
-    generate_params is a list of dictionaries where each
-    key, value pair is a name and value to pass to the
-    Generate function that can be replaced by any other value
-    in that same dictionary. The name is used for file names
-    and must be consistant between versions.
-
-    test_params is similar to generate_params, but they
-    represent different options that can be presented to
-    the Test function.
+    Sets test_data and key_path for the operation
     """
     self.test_data = str(test_data)
     self.key_path = key_path
-    self.generate_params = [{
-        "unencoded": None,
-        "encoded": util.Base64WSEncode
-        }]
-    self.test_params = []
 
-  def Generate(self, algorithm, *options):
+
+  def Generate(self, algorithm, options):
     """
     Generates output that will later be saved to file and
     tested using the test function in this and other
@@ -84,7 +70,7 @@ class BaseOperation(object):
     """
     raise NotImplementedError()
 
-  def Test(self, output, algorithm, chosen_params, *test_options):
+  def Test(self, output, algorithm, chosen_params, test_options):
     """
     Will return without error if the input is valid.
 
@@ -136,20 +122,26 @@ class UnversionedSignOperation(BaseOperation):
 
   def __init__(self, *args):
     super(UnversionedSignOperation, self).__init__(*args)
-    self.test_params.append({
-        "verifier": keyczar.UnversionedVerifier,
-        "signer": keyczar.UnversionedSigner
-        })
 
   @JsonOutput
-  def Generate(self, algorithm, encoder):
+  def Generate(self, algorithm, options):
+    if options["encoding"] == "encoded":
+      encoder = util.Base64WSEncode
+    else:
+      encoder = None
     signer = keyczar.UnversionedSigner.Read(self._GetKeyPath(algorithm))
     signature = signer.Sign(self.test_data, encoder)
     return signature
 
   @JsonInput
-  def Test(self, signature, algorithm, generate_params, verifier_class):
-    decoder = util.Base64WSDecode if "encoded" in generate_params else None
+  def Test(self, signature, algorithm, generate_params, test_options):
+    if generate_params["encoding"] == "encoded":
+      decoder = util.Base64WSDecode
+    else:
+      decoder = None
+    verifier_class = (keyczar.UnversionedVerifier
+                      if test_options["class"] == "verifier"
+                      else keyczar.UnversionedSigner)
     verifier = verifier_class.Read(self._GetKeyPath(algorithm))
     assert verifier.Verify(self.test_data, signature, decoder=decoder)
 
@@ -159,18 +151,9 @@ class SignedSessionOperation(BaseOperation):
 
   def __init__(self, *args):
     super(SignedSessionOperation, self).__init__(*args)
-    self.generate_params = []
-    signers = [
-        "rsa-sign1024",
-        "rsa-sign2048",
-        "rsa-sign4096",
-        "dsa1024",
-        "hmac256"
-        ]
-    self.generate_params.append(dict([(signer, signer) for signer in signers]))
 
-  def Generate(self, crypter_algorithm, signer_algorithm):
-    signer = keyczar.Signer.Read(self._GetKeyPath(signer_algorithm))
+  def Generate(self, crypter_algorithm, options):
+    signer = keyczar.Signer.Read(self._GetKeyPath(options["signer"]))
     key_encrypter = keyczar.Encrypter.Read(
         self._GetKeyPath(crypter_algorithm))
     crypter = keyczar.SignedSessionEncrypter(key_encrypter, signer)
@@ -185,11 +168,11 @@ class SignedSessionOperation(BaseOperation):
 
     return json.dumps(output)
 
-  def Test(self, output, algorithm, generate_params):
+  def Test(self, output, algorithm, generate_options, test_options):
     output = json.loads(output)
     encrypted_data = output["output"]
     session_material = output["sessionMaterial"]
-    signer_algorithm = generate_params[0]
+    signer_algorithm = generate_options["signer"]
     verifier = keyczar.Verifier.Read(self._GetKeyPath(signer_algorithm))
     key_crypter = keyczar.Crypter.Read(self._GetKeyPath(algorithm))
     session_decrypter = keyczar.SignedSessionDecrypter(
@@ -203,20 +186,26 @@ class AttachedSignOperation(BaseOperation):
 
   def __init__(self, *args):
     super(AttachedSignOperation, self).__init__(*args)
-    self.test_params.append({
-        "verifier": keyczar.Verifier,
-        "signer": keyczar.Signer
-        })
 
   @JsonOutput
-  def Generate(self, algorithm, encoder):
+  def Generate(self, algorithm, options):
+    if options["encoding"] == "encoded":
+      encoder = util.Base64WSEncode
+    else:
+      encoder = None
     signer = keyczar.Signer.Read(self._GetKeyPath(algorithm))
     signature = signer.AttachedSign(self.test_data, "", encoder)
     return signature
 
   @JsonInput
-  def Test(self, signature, algorithm, generate_params, verifier_class):
-    decoder = util.Base64WSDecode if "encoded" in generate_params else None
+  def Test(self, signature, algorithm, generate_params, test_options):
+    if generate_params["encoding"] == "encoded":
+      decoder = util.Base64WSDecode
+    else:
+      decoder = None
+    verifier_class = (keyczar.Verifier
+                      if test_options["class"] == "verifier"
+                      else keyczar.Signer)
     verifier = verifier_class.Read(self._GetKeyPath(algorithm))
     assert verifier.AttachedVerify(signature, "", decoder=decoder)
 
@@ -226,20 +215,26 @@ class SignOperation(BaseOperation):
 
   def __init__(self, *args):
     super(SignOperation, self).__init__(*args)
-    self.test_params.append({
-        "verifier": keyczar.Verifier,
-        "signer": keyczar.Signer
-        })
 
   @JsonOutput
-  def Generate(self, algorithm, encoder):
+  def Generate(self, algorithm, options):
+    if options["encoding"] == "encoded":
+      encoder = util.Base64WSEncode
+    else:
+      encoder = None
     signer = keyczar.Signer.Read(self._GetKeyPath(algorithm))
     signature = signer.Sign(self.test_data, encoder)
     return signature
 
   @JsonInput
-  def Test(self, signature, algorithm, generate_params, verifier_class):
-    decoder = util.Base64WSDecode if "encoded" in generate_params else None
+  def Test(self, signature, algorithm, generate_params, test_options):
+    if generate_params["encoding"] == "encoded":
+      decoder = util.Base64WSDecode
+    else:
+      decoder = None
+    verifier_class = (keyczar.Verifier
+                      if test_options["class"] == "verifier"
+                      else keyczar.Signer)
     verifier = verifier_class.Read(self._GetKeyPath(algorithm))
     assert verifier.Verify(self.test_data, signature, decoder=decoder)
 
@@ -249,20 +244,27 @@ class EncryptOperation(BaseOperation):
 
   def __init__(self, *args):
     super(EncryptOperation, self).__init__(*args)
-    self.generate_params.append({
-        "crypter": keyczar.Crypter,
-        "encrypter": keyczar.Encrypter
-        })
 
   @JsonOutput
-  def Generate(self, algorithm, encoder, crypter_class):
+  def Generate(self, algorithm, options):
+    if options["encoding"] == "encoded":
+      encoder = util.Base64WSEncode
+    else:
+      encoder = None
+    if options["class"] == "crypter":
+      crypter_class = keyczar.Crypter
+    else:
+      crypter_class = keyczar.Encrypter
     crypter = crypter_class.Read(self._GetKeyPath(algorithm))
     ciphertext = crypter.Encrypt(self.test_data, encoder)
     return ciphertext
 
   @JsonInput
-  def Test(self, ciphertext, algorithm, generate_params):
-    decoder = util.Base64WSDecode if "encoded" in generate_params else None
+  def Test(self, ciphertext, algorithm, generate_params, test_options):
+    if generate_params["encoding"] == "encoded":
+      decoder = util.Base64WSDecode
+    else:
+      decoder = None
     crypter = keyczar.Crypter.Read(self._GetKeyPath(algorithm))
     assert crypter.Decrypt(ciphertext, decoder=decoder) == self.test_data
 
@@ -285,23 +287,18 @@ def Create(create_flags, add_key_flags):
 
 
 def Generate(
-    operation_name, key_path, algorithm, generate_option_names, test_data):
+    operation_name, key_path, algorithm, generate_options, test_data):
   operation = operations[operation_name]
   current_operation = operation(key_path, test_data)
-  generate_options = [option_dict[option_name] for option_name, option_dict in
-                      zip(generate_option_names,
-                          current_operation.generate_params)]
-  output = current_operation.Generate(algorithm, *generate_options)
+  output = current_operation.Generate(algorithm, generate_options)
   print output
 
 
 def Test(operation_name, output, key_path,
-         algorithm, generate_options, test_option_names, test_data):
+         algorithm, generate_options, test_options, test_data):
   operation = operations[operation_name]
   current_operation = operation(key_path, test_data)
-  test_options = [option_dict[option_name] for option_name, option_dict in
-                  zip(test_option_names, current_operation.test_params)]
-  current_operation.Test(output, algorithm, generate_options, *test_options)
+  current_operation.Test(output, algorithm, generate_options, test_options)
   print "Test passes"
 
 

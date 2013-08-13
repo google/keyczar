@@ -102,11 +102,8 @@ class InteropTestRunner(object):
     if algorithm not in self.ignored_tests[implementation][operation]:
       self.ignored_tests[implementation][operation][algorithm] = []
     if options == "*":
-      all_options = self.operations[operation]["generateOptions"]
-      options = itertools.product(*all_options)
-      self.ignored_tests[implementation][operation][algorithm] = []
-    for option in options:
-      self.ignored_tests[implementation][operation][algorithm].append(option)
+      options = self.operations[operation]["generateOptions"]
+    self.ignored_tests[implementation][operation][algorithm] = options 
 
   def GetKeysByPurpose(self, purpose=""):
     """ Gets names for all algorithms or ones with the given purpose. """
@@ -126,23 +123,31 @@ class InteropTestRunner(object):
     if (implementation in self.ignored_tests and
         operation in self.ignored_tests[implementation] and
         algorithm in self.ignored_tests[implementation][operation]):
-      exceptions = [tuple(test) for test in
-                    self.ignored_tests
-                    [implementation][operation][algorithm]]
-      if tuple(options) in set(exceptions):
-        print "Ignoring %s with %s for %s with options %s" % (
-            operation, algorithm, implementation, ", ".join(options))
-        return True
+      ignored_ops = self.ignored_tests[implementation][operation][algorithm]
+      for option_name in options:
+        if options[option_name] not in ignored_ops[option_name]:
+          return False
+      print "Ignoring %s with %s for %s with options %s" % (
+          operation, algorithm, implementation, ", ".join(options.values()))
+      return True
     return False
 
   def TestAll(self, operation, algorithm, generate_options):
     """ Generates all possible configurations for the Test function. """
     for implementation in self.implementations:
-      all_options = self.operations[operation]["testOptions"]
-      for options in itertools.product(*all_options):
+      option_dict = self.operations[operation]["testOptions"]
+      if not option_dict:
         if not self._IsException(
-            implementation, operation, algorithm, generate_options):
-          yield (implementation, options)
+            implementation, operation, algorithm, {}):
+          yield (implementation, {})
+      else:
+        names, all_options = zip(*option_dict.items())
+        for options in itertools.product(*all_options):
+          options_with_names = dict(
+              [(name, option) for name, option in zip(names, options)])
+          if not self._IsException(
+              implementation, operation, algorithm, generate_options):
+            yield (implementation, options_with_names)
 
   def GenerateAll(self):
     """ Generates all possible configurations for the Generate function. """
@@ -150,11 +155,19 @@ class InteropTestRunner(object):
       for operation in self.operations:
         purpose = self.operations[operation]["keytype"]
         for algorithm in self.GetKeysByPurpose(purpose):
-          all_options = self.operations[operation]["generateOptions"]
-          for options in itertools.product(*all_options):
+          option_dict = self.operations[operation]["generateOptions"]
+          if not option_dict:
             if not self._IsException(
-                implementation, operation, algorithm, options):
-              yield (implementation, operation, algorithm, options)
+                implementation, operation, algorithm, {}):
+              yield (implementation, operation, algorithm, {})
+          else:
+            names, all_options = zip(*option_dict.items())
+            for options in itertools.product(*all_options):
+              chosen_options = dict(
+                  [(name, option) for name, option in zip(names, options)])
+              if not self._IsException(
+                  implementation, operation, algorithm, chosen_options):
+                yield (implementation, operation, algorithm, chosen_options)
 
   def _MakeDirs(self, location):
     """ Makes directories, will empty the leaf if it exists """
@@ -280,8 +293,8 @@ class InteropTestRunner(object):
             generate_implementation,
             operation,
             algorithm,
-            "_".join(generate_options),
-            "_".join(test_options),
+            "_".join(generate_options.values()),
+            "_".join(test_options.values()),
             )
 
         test = self.InteropTestGenerator(
@@ -309,6 +322,6 @@ def Suite():
 
 if __name__ == "__main__":
   runner = InteropTestRunner()
-  runner.CreateKeys()
+  #runner.CreateKeys()
   runner.SetupInteropTests()
   unittest.main(defaultTest="Suite")

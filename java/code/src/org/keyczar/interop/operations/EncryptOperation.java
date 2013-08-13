@@ -4,6 +4,7 @@ import org.keyczar.Crypter;
 import org.keyczar.Encrypter;
 import org.keyczar.exceptions.KeyczarException;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -16,24 +17,24 @@ public class EncryptOperation extends Operation {
   }
 
   @Override
-  public byte[] generate(String algorithm, Set<String> generateParams) throws KeyczarException {
-    if (generateParams.contains("crypter")) {
+  public byte[] generate(String algorithm, Map<String, String> generateParams) throws KeyczarException {
+    if (generateParams.get("class").equals("crypter")) {
       Crypter crypter = new Crypter(getKeyPath(algorithm));
-      if (generateParams.contains("encoded")) {
+      if (generateParams.get("encoding").equals("encoded")) {
         String ciphertext = crypter.encrypt(testData);
         return ciphertext.getBytes();
-      } else if (generateParams.contains("unencoded")) {
+      } else if (generateParams.get("encoding").equals("unencoded")) {
         byte[] ciphertext = crypter.encrypt(testData.getBytes());
         return ciphertext;
       } else {
         throw new KeyczarException("Expects encoded or unencoded in parameters");
       }
-    } else if (generateParams.contains("encrypter")) {
+    } else if (generateParams.get("class").equals("encrypter")) {
       Encrypter crypter = new Encrypter(getKeyPath(algorithm));
-      if (generateParams.contains("encoded")) {
+      if (generateParams.get("encoding").equals("encoded")) {
         String ciphertext = crypter.encrypt(testData);
         return ciphertext.getBytes();
-      } else if (generateParams.contains("unencoded")) {
+      } else if (generateParams.get("encoding").equals("unencoded")) {
         byte[] ciphertext = crypter.encrypt(testData.getBytes());
         return ciphertext;
       } else {
@@ -46,13 +47,13 @@ public class EncryptOperation extends Operation {
 
   @Override
   public void test(
-      byte[] output, String algorithm, Set<String> generateParams, Set<String> testParams)
+      byte[] output, String algorithm, Map<String, String> generateParams, Map<String, String> testParams)
       throws KeyczarException {
     Crypter crypter = new Crypter(getKeyPath(algorithm));
-    if (generateParams.contains("encoded")) {
+    if (generateParams.get("encoding").equals("encoded")) {
       String plaintext = crypter.decrypt(new String(output));
       assert(plaintext.equals(testData));
-    } else if (generateParams.contains("unencoded")) {
+    } else if (generateParams.get("encoding").equals("unencoded")) {
       byte[] plaintext = crypter.decrypt(output);
       assert((new String(plaintext)).equals(testData));
     } else {

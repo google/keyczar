@@ -23,7 +23,7 @@ import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
 
 import java.io.File;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * Base class for all operations. An operation is a basic 
@@ -75,7 +75,7 @@ public abstract class Operation {
    * 
    * @raise NotImplementedError: If the child class does not implement
   */
-  public abstract byte[] generate(String algorithm, Set<String> generateParams)
+  public abstract byte[] generate(String algorithm, Map<String, String> generateParams)
       throws KeyczarException;
 
   /**
@@ -100,7 +100,8 @@ public abstract class Operation {
    * @param algorithm
    */
   public abstract void test(
-      byte[] output, String algorithm, Set<String> generateParams, Set<String> testParams)
+      byte[] output, String algorithm,
+      Map<String, String> generateParams, Map<String, String> testParams)
           throws KeyczarException;
 
   /**

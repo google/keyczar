@@ -12,6 +12,7 @@ import org.keyczar.exceptions.Base64DecodingException;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -24,9 +25,9 @@ public class SignedSessionOperation extends Operation {
   }
 
   @Override
-  public byte[] generate(String algorithm, Set<String> generateParams) throws KeyczarException{
+  public byte[] generate(String algorithm, Map<String, String> generateParams) throws KeyczarException{
     Encrypter keyEncrypter = new Encrypter(getKeyPath(algorithm));
-    Signer signer = new Signer(getKeyPath(generateParams.toArray(new String[1])[0]));
+    Signer signer = new Signer(getKeyPath(generateParams.get("signer")));
     SignedSessionEncrypter crypter = new SignedSessionEncrypter(keyEncrypter, signer);
     String sessionMaterial = crypter.newSession();
     byte[] ciphertext = crypter.encrypt(testData.getBytes());
@@ -38,7 +39,7 @@ public class SignedSessionOperation extends Operation {
 
   @Override
   public void test(
-      byte[] output, String algorithm, Set<String> generateParams, Set<String> testParams)
+      byte[] output, String algorithm, Map<String, String> generateParams, Map<String, String> testParams)
       throws KeyczarException {
     Gson gson = new Gson();
     SignedSessionOutput out = gson.fromJson(new String(output), SignedSessionOutput.class);
@@ -46,7 +47,7 @@ public class SignedSessionOperation extends Operation {
     String sessionMaterial = out.sessionMaterial;
     
     Crypter keyCrypter = new Crypter(getKeyPath(algorithm));
-    Verifier verifier = new Verifier(getKeyPath(generateParams.toArray(new String[1])[0]));
+    Verifier verifier = new Verifier(getKeyPath(generateParams.get("signer")));
     SignedSessionDecrypter sessionCrypter =
         new SignedSessionDecrypter(keyCrypter, verifier, sessionMaterial);
     byte[] decryptedData = sessionCrypter.decrypt(encryptedData);

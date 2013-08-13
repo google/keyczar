@@ -3,6 +3,7 @@ package org.keyczar.interop;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interop.operations.Operation;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -14,14 +15,14 @@ public class Tester {
   private final String operation;
   private final String keyPath;
   private final String algorithm;
-  private final Set<String> generateOptions;
-  private final Set<String> testOptions;
+  private final Map<String, String> generateOptions;
+  private final Map<String, String> testOptions;
   private final String output;
   private final String testData;
   
   public Tester(
       String command, String operation, String keyPath, String algorithm, 
-      Set<String> generateOptions, Set<String> testOptions, String output, String testData) {
+      Map<String, String> generateOptions, Map<String, String> testOptions, String output, String testData) {
     this.command = command;
     this.operation = operation;
     this.keyPath = keyPath;

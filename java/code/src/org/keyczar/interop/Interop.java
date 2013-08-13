@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.varia.NullAppender;
 import org.keyczar.exceptions.KeyczarException;
 
 /**
@@ -16,6 +18,7 @@ public class Interop {
    * @param args
    */
   public static void main(String[] args) {
+    BasicConfigurator.configure(new NullAppender());
     Gson gson = new Gson();
     switch (getCommandType(args[0])) {
       case GENERATE:
