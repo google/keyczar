@@ -34,6 +34,22 @@ class SignerTest(unittest.TestCase):
   def setUp(self):
     self.input = "This is some test data"
   
+  def __unencodedSignInput(self, subdir):
+    signer = keyczar.Signer.Read(os.path.join(TEST_DATA, subdir))
+    sig = signer.Sign(self.input, None)
+    return (signer, sig)
+  
+  def __unencodedUnversionedSignInput(self, subdir):
+    unversioned_signer = keyczar.UnversionedSigner.Read(os.path.join(TEST_DATA, subdir))
+    sig = unversioned_signer.Sign(self.input, None)
+    return (unversioned_signer, sig)
+  
+  def __unencodedAttachedSignInput(self, subdir, nonce):
+    signer = keyczar.Signer.Read(os.path.join(TEST_DATA, subdir))
+    attached_sig = signer.AttachedSign(self.input, nonce, None)
+    return (signer, attached_sig)
+
+  
   def __signInput(self, subdir):
     signer = keyczar.Signer.Read(os.path.join(TEST_DATA, subdir))
     sig = signer.Sign(self.input)
@@ -116,7 +132,57 @@ class SignerTest(unittest.TestCase):
   def testHmacSignAndVerify(self):
     self.__testSignAndVerify("hmac")
     self.__testAttachedSignAndVerify("hmac")
+  
+  def testUnencodedVerify(self):
+    (signer, sig) = self.__signInput("hmac")
+
+    unencoded_sig = util.Base64WSDecode(sig)
+    self.assertTrue(signer.Verify(self.input, unencoded_sig, None))
+    try:
+      signer.Verify(self.input, unencoded_sig)
+      raise Exception("Verify should throw a Decoding error")
+    except errors.Base64DecodingError, e:
+      pass
+    self.assertTrue(signer.Verify(self.input, sig))
     
+  def testUnencodedSign(self):
+    (signer, sig) = self.__unencodedSignInput("hmac")
+    encoded_sig = util.Base64WSEncode(sig)
+    self.assertTrue(signer.Verify(self.input, encoded_sig))
+    self.assertTrue(signer.Verify(self.input, sig, None))
+  
+  def testUnencodedUnversionedVerify(self):
+    (signer, sig) = self.__unversionedSignInput("hmac")
+    unencoded_sig = util.Base64WSDecode(sig)
+    self.assertTrue(signer.Verify(self.input, unencoded_sig, None))
+    self.assertFalse(signer.Verify(self.input, unencoded_sig))
+    self.assertFalse(signer.Verify(self.input, sig, None))
+    self.assertTrue(signer.Verify(self.input, sig))
+    
+  def testUnencodedUnversionedSign(self):
+    (signer, sig) = self.__unencodedUnversionedSignInput("hmac")
+    encoded_sig = util.Base64WSEncode(sig)
+    self.assertFalse(signer.Verify(self.input, encoded_sig, None))
+    self.assertTrue(signer.Verify(self.input, encoded_sig))
+    self.assertTrue(signer.Verify(self.input, sig, None))
+  
+  def testUnencodedAttachedVerify(self):
+    (signer, sig) = self.__attachedSignInput("hmac", "nonce")
+    unencoded_sig = util.Base64WSDecode(sig)
+    self.assertTrue(signer.AttachedVerify(unencoded_sig, "nonce", None))
+    try:
+      signer.Verify(self.input, unencoded_sig)
+      raise Exception("Verify should throw a Decoding error")
+    except errors.Base64DecodingError, e:
+      pass
+    self.assertTrue(signer.AttachedVerify(sig, "nonce"))
+    
+  def testUnencodedAttachedSign(self):
+    (signer, sig) = self.__unencodedAttachedSignInput("hmac", "nonce")
+    encoded_sig = util.Base64WSEncode(sig)
+    self.assertTrue(signer.AttachedVerify(encoded_sig, "nonce"))
+    self.assertTrue(signer.AttachedVerify(sig, "nonce", None))
+  
   def testHmacUnversionedSignAndVerify(self):
     self.__testUnversionedSignAndVerify("hmac")
 
