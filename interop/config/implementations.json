@@ -1,4 +1,5 @@
 {
   "python" : ["../python/tests/keyczar_tests/interop_test.py"],
-  "java" : ["java", "-cp", "../java/code/target/*", "org.keyczar.interop.Interop"]
+  "java" : ["java", "-cp", "../java/code/target/*", "org.keyczar.interop.Interop"],
+  "cpp" : ["../cpp/src/scons-out/opt-linux/staging/interop_test"]
 }

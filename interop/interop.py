@@ -199,7 +199,8 @@ class InteropTestRunner(object):
     try:
       return subprocess.check_output(args, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError, e:
-      raise AssertionError(e.output)
+      cmd = subprocess.list2cmdline(args)
+      raise Exception("%s failed:\n %s" % (cmd, e.output))
 
   def _Create(self, implementation, algorithm, size):
     """ Sets up necessary flags and creates keys """

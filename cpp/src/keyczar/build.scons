@@ -160,6 +160,23 @@ keyzart_sources = [
 out_program = keyczart_env.ComponentProgram('keyczart', keyzart_sources)
 installer.AddProgram(out_program)
 
+#### interop
+interop_env = env.Clone()
+
+interop_env.Append(
+    LIBS = [
+        lib_name,
+        'crypto',
+        ],
+    )
+
+interop_sources = [
+    'interop/interop_test.cc',
+    'interop/operation.cc'
+    ]
+
+interop_env.ComponentProgram('interop_test', interop_sources)
+
 
 #### testdata_gen*
 
