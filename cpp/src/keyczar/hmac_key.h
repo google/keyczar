@@ -50,7 +50,7 @@ class HMACKey : public Key {
 
   // The caller doesn't take ownership over the returned HMACKey object.
   const HMACImpl* hmac_impl() const { return hmac_impl_.get(); }
-  
+
   const int digest_size() const {
 #ifdef COMPAT_KEYCZAR_06B
     return 160;
@@ -58,7 +58,7 @@ class HMACKey : public Key {
     return size();
 #endif
   }
-  
+
  private:
   scoped_ptr<HMACImpl> hmac_impl_;
 

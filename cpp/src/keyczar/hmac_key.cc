@@ -72,14 +72,14 @@ HMACKey* HMACKey::CreateFromValue(const Value& root_key) {
     LOG(ERROR) << "Mismatch between key string length and declared size";
     return NULL;
   }
-  
+
 #ifdef COMPAT_KEYCZAR_06B
   if (!KeyType::IsValidCipherSize(KeyType::HMAC_SHA1, size))
     return NULL;
 #else
   if (!KeyType::IsValidCipherSize(KeyType::HMAC, size))
     return NULL;
-  
+
   std::string digest_name;
   if (!hmac_key->GetString("digest", &digest_name))
     return NULL;
