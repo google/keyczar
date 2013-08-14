@@ -26,7 +26,7 @@ namespace {
 // This function returns 0 if it fails.
 static int GetHMACSizeFromAESSize(int size) {
 #ifdef COMPAT_KEYCZAR_06B
-  return 160;
+  return 256;
 #else
   // These choices follow the NIST recommendations, see SP800-57 part1
   // pages 63-64.
@@ -238,7 +238,7 @@ bool AESKey::Decrypt(const std::string& ciphertext,
     return false;
 
   int key_size = size() / 8;
-  int digest_size = hmac_key()->size() / 8;
+  int digest_size = hmac_key()->digest_size() / 8;
 
   std::string data_bytes = ciphertext.substr(Key::GetHeaderSize());
   int data_bytes_len = data_bytes.length();

@@ -139,7 +139,7 @@ AESImpl* CryptoFactory::CreateAES(CipherMode::Type cipher_mode,
 HMACImpl* CryptoFactory::GenerateHMAC(int size) {
 #ifdef COMPAT_KEYCZAR_06B
   switch (size) {
-    case 160:
+    case 256:
       return openssl::HMACOpenSSL::GenerateKey(HMACImpl::SHA1, 256);
     default:
       NOTREACHED();

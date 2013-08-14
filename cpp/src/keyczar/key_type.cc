@@ -22,7 +22,7 @@ namespace {
 
 static const int kAESSizes[] = {128, 192, 256, 0};
 #ifdef COMPAT_KEYCZAR_06B
-static const int kHMACSHA1Sizes[] = {160, 0};
+static const int kHMACSHA1Sizes[] = {256, 0};
 static const int kRSASizes[] = {512, 768, 1024, 2048, 3072, 4096, 0};
 #else
 static const int kHMACSizes[] = {160, 224, 256, 384, 512, 0};
@@ -130,7 +130,7 @@ int KeyType::DefaultCipherSize(Type type) {
       return 128;
 #ifdef COMPAT_KEYCZAR_06B
     case HMAC_SHA1:
-      return 160;
+      return 256;
 #else
     case HMAC:
       return 160;
