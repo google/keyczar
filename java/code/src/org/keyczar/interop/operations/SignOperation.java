@@ -5,7 +5,6 @@ import org.keyczar.Verifier;
 import org.keyczar.exceptions.KeyczarException;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Tests functionality of signing
@@ -17,7 +16,8 @@ public class SignOperation extends Operation {
   }
 
   @Override
-  public byte[] generate(String algorithm, Map<String, String> generateParams) throws KeyczarException{
+  public byte[] generate(String algorithm, Map<String, String> generateParams)
+      throws KeyczarException{
     Signer signer = new Signer(getKeyPath(algorithm));
     if (generateParams.get("encoding").equals("encoded")) {
       String signature = signer.sign(testData);
@@ -32,8 +32,8 @@ public class SignOperation extends Operation {
 
   @Override
   public void test(
-      byte[] output, String algorithm, Map<String, String> generateParams, Map<String, String> testParams)
-      throws KeyczarException {
+      byte[] output, String algorithm, Map<String, String> generateParams,
+      Map<String, String> testParams) throws KeyczarException {
     if (testParams.get("class").equals("signer")) {
       Signer verifier = new Signer(getKeyPath(algorithm));
       if (generateParams.get("encoding").equals("encoded")) {
@@ -54,7 +54,7 @@ public class SignOperation extends Operation {
       }
     } else {
       throw new KeyczarException("Expects signer or verifier in parameters");
-    }  
+    }
   }
 
 }

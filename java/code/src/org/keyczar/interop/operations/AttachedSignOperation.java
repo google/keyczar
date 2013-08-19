@@ -5,7 +5,6 @@ import org.keyczar.Verifier;
 import org.keyczar.exceptions.KeyczarException;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Tests functionality of attached signing
@@ -17,7 +16,8 @@ public class AttachedSignOperation extends Operation {
   }
 
   @Override
-  public byte[] generate(String algorithm, Map<String, String> generateParams) throws KeyczarException {
+  public byte[] generate(String algorithm, Map<String, String> generateParams)
+      throws KeyczarException {
     Signer signer = new Signer(getKeyPath(algorithm));
     if (generateParams.get("encoding").equals("encoded")) {
       // String signature = signer.attachedSign(testData, "".getBytes());
@@ -41,7 +41,7 @@ public class AttachedSignOperation extends Operation {
       if (generateParams.get("encoding").equals("encoded")) {
         throw new KeyczarException("Not Implemented");
       } else if (generateParams.get("encoding").equals("unencoded")) {
-        assert(verifier.verify(testData.getBytes(), output));
+        assert(verifier.attachedVerify(output, "".getBytes()));
       } else {
         throw new KeyczarException("Expects encoded or unencoded in parameters");
       }
@@ -50,13 +50,12 @@ public class AttachedSignOperation extends Operation {
       if (generateParams.get("encoding").equals("encoded")) {
         throw new KeyczarException("Not Implemented");
       } else if (generateParams.get("encoding").equals("unencoded")) {
-        assert(verifier.attachedVerify(testData.getBytes(), output));
+        assert(verifier.attachedVerify(output, "".getBytes()));
       } else {
         throw new KeyczarException("Expects encoded or unencoded in parameters");
       }
     } else {
       throw new KeyczarException("Expects signer or verifier in parameters");
-    }  
+    }
   }
-
 }

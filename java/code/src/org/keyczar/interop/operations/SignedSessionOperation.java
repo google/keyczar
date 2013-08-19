@@ -13,7 +13,6 @@ import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Tests functionality of signed sessions
@@ -25,7 +24,8 @@ public class SignedSessionOperation extends Operation {
   }
 
   @Override
-  public byte[] generate(String algorithm, Map<String, String> generateParams) throws KeyczarException{
+  public byte[] generate(String algorithm, Map<String, String> generateParams)
+      throws KeyczarException {
     Encrypter keyEncrypter = new Encrypter(getKeyPath(algorithm));
     Signer signer = new Signer(getKeyPath(generateParams.get("signer")));
     SignedSessionEncrypter crypter = new SignedSessionEncrypter(keyEncrypter, signer);
@@ -39,8 +39,8 @@ public class SignedSessionOperation extends Operation {
 
   @Override
   public void test(
-      byte[] output, String algorithm, Map<String, String> generateParams, Map<String, String> testParams)
-      throws KeyczarException {
+      byte[] output, String algorithm, Map<String, String> generateParams,
+      Map<String, String> testParams) throws KeyczarException {
     Gson gson = new Gson();
     SignedSessionOutput out = gson.fromJson(new String(output), SignedSessionOutput.class);
     byte[] encryptedData = Base64Coder.decodeWebSafe(out.output);
@@ -51,7 +51,7 @@ public class SignedSessionOperation extends Operation {
     SignedSessionDecrypter sessionCrypter =
         new SignedSessionDecrypter(keyCrypter, verifier, sessionMaterial);
     byte[] decryptedData = sessionCrypter.decrypt(encryptedData);
-    assert(decryptedData.equals(testData));
+    assert(new String(decryptedData).equals(testData));
 
   }
   

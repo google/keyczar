@@ -5,7 +5,6 @@ import org.keyczar.Encrypter;
 import org.keyczar.exceptions.KeyczarException;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Tests functionality of Encryption
@@ -17,7 +16,8 @@ public class EncryptOperation extends Operation {
   }
 
   @Override
-  public byte[] generate(String algorithm, Map<String, String> generateParams) throws KeyczarException {
+  public byte[] generate(String algorithm, Map<String, String> generateParams)
+      throws KeyczarException {
     if (generateParams.get("class").equals("crypter")) {
       Crypter crypter = new Crypter(getKeyPath(algorithm));
       if (generateParams.get("encoding").equals("encoded")) {
@@ -47,8 +47,8 @@ public class EncryptOperation extends Operation {
 
   @Override
   public void test(
-      byte[] output, String algorithm, Map<String, String> generateParams, Map<String, String> testParams)
-      throws KeyczarException {
+      byte[] output, String algorithm, Map<String, String> generateParams,
+      Map<String, String> testParams) throws KeyczarException {
     Crypter crypter = new Crypter(getKeyPath(algorithm));
     if (generateParams.get("encoding").equals("encoded")) {
       String plaintext = crypter.decrypt(new String(output));
