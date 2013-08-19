@@ -1,24 +1,30 @@
-{
-  "*" : {
-    "signedSession" : {
-      "rsa-crypt1024" : "*"
-    }
+[
+  {
+    "implementation" : ["*"],
+    "operation" : ["signedSession"],
+    "algorithm" : ["rsa-crypt1024"],
+    "options" : {"*" : "*"},
+    "reason" : "metadata in signed session is too big to be encrypted by 1024 bit RSA"
   },
-  "cpp" : {
-    "*" : {
-      "aes256" : "*",
-      "aes192" : "*"
-    }
+  {
+    "implementation" : ["cpp"],
+    "operation" : ["*"],
+    "algorithm" : ["aes256", "aes192"],
+    "options" : {"*" : "*"},
+    "reason" : "Cpp wrong IV size for AES keysizes above 128 (Issue 132)"
   },
-  "java" : {
-    "attached" : {
-      "*" : {
-        "encoding" : ["encoded"]
-      }
-    },
-    "*" : {
-      "aes256" : "*",
-      "aes192" : "*"
-    }
+  {
+    "implementation" : ["java"],
+    "operation" : ["attached"],
+    "algorithm" : ["*"],
+    "options" : {"encoding" : ["encoded"]},
+    "reason" : "AttachedSign does not have the option to be encoded in java"
+  },
+  {
+    "implementation" : ["java"],
+    "operation" : ["*"],
+    "algorithm" : ["aes256", "aes192"],
+    "options" : {"*" : "*"},
+    "reason" : "Java doesn't produce the same hash for non 128 bit keysizes of AES as C++&Python (Issue 105)"
   }
-}
+]

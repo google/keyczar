@@ -63,47 +63,7 @@ class InteropTestRunner(object):
     self.ignored_tests = json.loads(util.ReadFile(IGNORED_TESTS))
     self.operations = json.loads(util.ReadFile(OPERATIONS))
     self.implementations = json.loads(util.ReadFile(IMPLEMENTATIONS))
-    self._InitializeIgnoredTests()
 
-  def _InitializeIgnoredTests(self):
-    """ Allows for wildcards ("*") in the ignored tests json file """
-    if "*" in self.ignored_tests:
-      for implementation in self.implementations:
-        for operation, algorithms in self.ignored_tests["*"].iteritems():
-          for algorithm, options in algorithms.iteritems():
-            self._AddIgnoredTest(implementation, operation, algorithm, options)
-      del self.ignored_tests["*"]
-    for implementation in self.ignored_tests:
-      if "*" in self.ignored_tests[implementation]:
-        for operation in self.operations:
-          for algorithm, options in (
-              self.ignored_tests[implementation]["*"].iteritems()):
-            self._AddIgnoredTest(implementation, operation, algorithm, options)
-        del self.ignored_tests[implementation]["*"]
-    for implementation in self.ignored_tests:
-      for operation in self.ignored_tests[implementation]:
-        if "*" in self.ignored_tests[implementation][operation]:
-          for algorithm in self.GetKeysByPurpose():
-            options = self.ignored_tests[implementation][operation]["*"]
-            self._AddIgnoredTest(implementation, operation, algorithm, options)
-          del self.ignored_tests[implementation][operation]["*"]
-    for implementation in self.ignored_tests:
-      for operation in self.ignored_tests[implementation]:
-        for algorithm, options in self.ignored_tests[implementation][operation].iteritems():
-          if options == "*":
-            self._AddIgnoredTest(implementation, operation, algorithm, options)
-
-  def _AddIgnoredTest(self, implementation, operation, algorithm, options):
-    """ adds an ignored test for the specific parameters """
-    if implementation not in self.ignored_tests:
-      self.ignored_tests[implementation] = {}
-    if operation not in self.ignored_tests[implementation]:
-      self.ignored_tests[implementation][operation] = {}
-    if algorithm not in self.ignored_tests[implementation][operation]:
-      self.ignored_tests[implementation][operation][algorithm] = []
-    if options == "*":
-      options = self.operations[operation]["generateOptions"]
-    self.ignored_tests[implementation][operation][algorithm] = options 
 
   def GetKeysByPurpose(self, purpose=""):
     """ Gets names for all algorithms or ones with the given purpose. """
@@ -120,17 +80,24 @@ class InteropTestRunner(object):
 
   def _IsException(self, implementation, operation, algorithm, options):
     """ Returns true if the configuration given is supposed to be ignored. """
-    if (implementation in self.ignored_tests and
-        operation in self.ignored_tests[implementation] and
-        algorithm in self.ignored_tests[implementation][operation]):
-      ignored_ops = self.ignored_tests[implementation][operation][algorithm]
-      for option_name in options:
-        if options[option_name] not in ignored_ops[option_name]:
-          return False
-      print "Ignoring %s with %s for %s with options %s" % (
-          operation, algorithm, implementation, ", ".join(options.values()))
-      return True
+    for ignored_test in self.ignored_tests:
+      contains = lambda v, name: any(x in ignored_test[name] for x in (v,"*"))
+      if (contains(implementation, "implementation") and
+          contains(algorithm, "algorithm") and
+          contains(operation, "operation")):
+        ignored_ops = ignored_test["options"]
+        ignored = True
+        for option_name in options:
+          if (option_name in ignored_ops and
+              options[option_name] not in ignored_ops[option_name]):
+            ignored = False
+        if ignored:
+          print "Ignoring %s with %s for %s with options %s because %s" % (
+            operation, algorithm, implementation,
+            ", ".join(options.values()), ignored_test["reason"])
+          return True
     return False
+
 
   def TestAll(self, operation, algorithm, generate_options):
     """ Generates all possible configurations for the Test function. """
@@ -323,6 +290,6 @@ def Suite():
 
 if __name__ == "__main__":
   runner = InteropTestRunner()
-  #runner.CreateKeys()
+  runner.CreateKeys()
   runner.SetupInteropTests()
   unittest.main(defaultTest="Suite")
