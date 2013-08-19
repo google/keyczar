@@ -116,7 +116,23 @@ class SignerTest(unittest.TestCase):
   def testHmacSignAndVerify(self):
     self.__testSignAndVerify("hmac")
     self.__testAttachedSignAndVerify("hmac")
+
+  def testRsaSignatureLengthPadding(self):
+    """
+    Checks that byte strings are padded with 0s in front for small signatures.
     
+    Generates strings of 'a's and signs them until a signature is either
+    of the incorrect length or contains a \x00 byte as the first character  
+    """
+    signer = keyczar.Signer.Read(os.path.join(TEST_DATA, "rsa-sign"))
+    t = 0
+    flag = True
+    while flag:
+      t += 1
+      sig = util.Base64WSDecode(signer.Sign(t*"a"))
+      assert(len(sig) == 256 + keyczar.HEADER_SIZE) # 256 = keysize in bytes
+      flag = sig[keyczar.HEADER_SIZE] != chr(0)
+
   def testHmacUnversionedSignAndVerify(self):
     self.__testUnversionedSignAndVerify("hmac")
 
