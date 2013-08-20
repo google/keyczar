@@ -207,8 +207,8 @@ bool RSAPrivateKey::Sign(const std::string& data,
   if (rsa_impl() == NULL || signature == NULL)
     return false;
 
-  MessageDigestImpl* digest_impl = CryptoFactory::SHAFromFFCIFCSize(size());
-  if (digest_impl == NULL)
+  scoped_ptr<MessageDigestImpl> digest_impl(CryptoFactory::SHAFromFFCIFCSize(size()));
+  if (digest_impl.get() == NULL)
     return false;
 
   std::string message_digest;
