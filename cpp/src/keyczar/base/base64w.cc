@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <keyczar/base/modp/modp_b64w.h>
 
+#include <stdint.h>
+
 namespace keyczar {
 namespace base {
 
