@@ -16,6 +16,8 @@
 
 package org.keyczar;
 
+import java.io.RandomAccessFile;
+
 import junit.framework.TestCase;
 
 import org.junit.Test;
@@ -278,6 +280,54 @@ public class KeyczarToolTest extends TestCase {
     assertEquals(KeyStatus.PRIMARY, mock.getStatus(1));
   }
 
+  @Test
+  public final void testUseKey() {
+    try {
+      KeyczarTool.setReader(null); // use real reader
+      String testKeyPath = "./testdata/aes";
+      // TODO(mtomczak): Choose a safer location for this scratch file.
+      String testOutputPath = "/tmp/keyczar_test_output";
+      String testOutputPath2 = "/tmp/keyczar_test_output_2";
+      String testMsg = "hello, world!";
+      Crypter crypter = new Crypter(testKeyPath);
+
+      {
+        String[] args = {"usekey",
+                         "--location=" + testKeyPath,
+                         "--destination=" + testOutputPath,
+                         testMsg};
+        KeyczarTool.main(args);
+        RandomAccessFile encryptedOutput =
+            new RandomAccessFile(testOutputPath, "r");
+        String encryptedKey = encryptedOutput.readLine();
+        encryptedOutput.close();
+
+        assertEquals(crypter.decrypt(encryptedKey), testMsg);
+      }
+      {
+        // Verify argument order does not matter.
+        String[] args2 = {"usekey",
+                          "--location=" + testKeyPath,
+                          testMsg,
+                          "--destination=" + testOutputPath2};
+
+        KeyczarTool.main(args2);
+        RandomAccessFile encryptedOutput =
+            new RandomAccessFile(testOutputPath2, "r");
+        String encryptedKey = encryptedOutput.readLine();
+        encryptedOutput.close();
+
+        assertEquals(crypter.decrypt(encryptedKey), testMsg);
+      }
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      fail("Unexpected exception: " + e.toString());
+    }
+  }
+
+  // TODO(mtomczak): Add tests for stdin and stdout support. Will need
+  //                 to mock stdin and stdout in keytool.
   // TODO(swillden) Add export tests.
 
   @Override
