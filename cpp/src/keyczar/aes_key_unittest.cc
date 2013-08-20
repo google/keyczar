@@ -89,7 +89,9 @@ TEST_F(AESTest, GenerateKeyDumpAndCompare) {
 
   // Dumps this secret key into temporary path
   rw::KeysetJSONFileWriter writer(temp_path_);
-  EXPECT_TRUE(writer.WriteKey(*aes_key->GetValue(), 1));
+  Value *value = aes_key()->GetValue();
+  EXPECT_TRUE(writer.WriteKey(*value, 1));
+  delete value;
   ASSERT_TRUE(base::PathExists(temp_path_.Append("1")));
 
   // Loads this key
