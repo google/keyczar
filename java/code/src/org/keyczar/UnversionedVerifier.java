@@ -115,12 +115,18 @@ public class UnversionedVerifier extends Keyczar {
   private boolean verify(ByteBuffer data, ByteBuffer signature, KeyczarKey key)
       throws KeyczarException {
     VerifyingStream stream = VERIFY_CACHE.get(key);
+    boolean foundValidSignature = false;
     if (stream == null) {
       stream = (VerifyingStream) key.getStream();
     }
-    stream.initVerify();
-    stream.updateVerify(data.duplicate());
-    boolean foundValidSignature = stream.verify(signature.duplicate());
+    try {
+      stream.initVerify();
+      stream.updateVerify(data.duplicate());
+      foundValidSignature = stream.verify(signature.duplicate());
+    } catch (KeyczarException e) {
+      LOG.debug(e.getMessage(), e);
+      return false;
+    }
     VERIFY_CACHE.put(key, stream);
     return foundValidSignature;
   }
