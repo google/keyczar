@@ -916,11 +916,12 @@ def UnixTimeMilliseconds(dt):
                    + (delta.seconds + delta.days * 24 * 3600) * 10**6) // 10**3
 
 def MakeDirRecursive(path):
-  if path is None:
-    return
-  try:
-    os.makedirs(path)
-  except OSError as exc:
-    if exc.errno == errno.EEXIST and os.path.isdir(path):
-      pass
-    else: raise
+    if path is None:
+      return
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+          pass
+        else:
+          raise
