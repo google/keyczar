@@ -100,7 +100,6 @@ def GetFlag(flag):
     raise errors.KeyczarError("Unknown flag")
 
 def Create(loc, name, purpose, asymmetric=None):
-  util.MakeDirRecursive(loc)
   if mock is None and loc is None:  # not testing
     raise errors.KeyczarError("Location missing")
   kmd = None
@@ -122,6 +121,7 @@ def Create(loc, name, purpose, asymmetric=None):
   if mock is not None:  # just testing, update mock object
     mock.kmd = kmd
   else:
+    util.MakeDirRecursive(loc)
     writer = writers.CreateWriter(loc)
     try:
       writer.WriteMetadata(kmd, overwrite=False)
@@ -136,10 +136,11 @@ def AddKey(loc, status, crypter=None, size=None):
   UpdateGenericKeyczar(czar, loc, crypter)
 
 def PubKey(loc, dest):
-  util.MakeDirRecursive(dest)
   if mock is None and dest is None:  # not required when testing
     raise errors.KeyczarError("Must define destination")
   czar = CreateGenericKeyczar(loc)
+  if mock is None:
+    util.MakeDirRecursive(dest)
   czar.PublicKeyExport(dest, mock)  # supply mock for testing if enabled
 
 def Promote(loc, num):
@@ -357,7 +358,6 @@ def main(argv):
     loc = flags.get(LOCATION)  # all commands need location
       
     if cmd == CREATE:
-      util.MakeDirRecursive(loc)
       purpose = {'crypt': keyinfo.DECRYPT_AND_ENCRYPT,
                  'sign': keyinfo.SIGN_AND_VERIFY}.get(flags.get(PURPOSE))
       Create(loc, flags.get(NAME, 'Test'), purpose, flags.get(ASYMMETRIC))
