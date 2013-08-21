@@ -31,10 +31,18 @@ import json
 import os
 import sys
 
-from keyczar import errors
-from keyczar import keyczar
-from keyczar import keyczart
-from keyczar import util
+# makes interop_test think it's part of the keyczar package
+test_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(test_dir))
+sys.path.insert(1, os.path.join(parent_dir, "src/keyczar/")) 
+import keyczar
+__package__ = "keyczar"
+
+import errors
+import keyczar
+import keyczart
+import util
+
 
 
 class BaseOperation(object):
@@ -281,9 +289,9 @@ GENERATE = "generate"
 TEST = "test"
 
 
-def Create(create_flags, add_key_flags):
-  keyczart.main(create_flags)
-  keyczart.main(add_key_flags)
+def Create(keyczart_commands):
+  for command in keyczart_commands:
+    keyczart.main(command)
 
 
 def Generate(
@@ -323,7 +331,7 @@ def main(argv):
     else:
       cmd = args["command"]
       if cmd == CREATE:
-        Create(args["createFlags"], args["addKeyFlags"])
+        Create(args["keyczartCommands"])
       elif cmd == GENERATE:
         Generate(args["operation"], args["keyPath"],
                  args["algorithm"], args["generateOptions"], args["testData"])

@@ -97,16 +97,18 @@ bool Interop::CallKeyczarTool(const ListValue * args) const {
 }
 
 bool Interop::CmdCreate(const DictionaryValue* json) const {
-  ListValue* create_flags;
-  ListValue* add_key_flags;
+  ListValue* commands;
+  ListValue* args;
 
-  if (!json->GetList("createFlags", &create_flags))
+  if (!json->GetList("keyczartCommands", &commands)) {
+    std::cout << "keyczartCommands not found in json" << std::endl;
     return false;
-  if (!json->GetList("addKeyFlags", &add_key_flags))
-    return false;
-
-  CallKeyczarTool(create_flags);
-  CallKeyczarTool(add_key_flags);
+  }
+  
+  for (int i = 0; i < commands->GetSize(); i++) {
+    if (!commands->GetList(i, &args) || !CallKeyczarTool(args))
+      return false;
+  }
   return true;
 }
 

@@ -10,19 +10,17 @@ import java.util.List;
 public class Creator {
   @SuppressWarnings("unused")
   private final String command;
-  private final List<String> createFlags;
-  private final List<String> addKeyFlags;
+  private final List<List<String>> keyczartCommands;
   
-  public Creator(String command, List<String> createFlags, List<String> addKeyFlags) {
+  public Creator(String command, List<List<String>> keyczartCommands) {
     this.command = command;
-    this.createFlags = createFlags;
-    this.addKeyFlags = addKeyFlags;
+    this.keyczartCommands = keyczartCommands;
   }
   
   public void create() {
-    String [] createArgs = createFlags.toArray(new String[createFlags.size()]);
-    KeyczarTool.main(createArgs);
-    String [] addKeyArgs = addKeyFlags.toArray(new String[addKeyFlags.size()]);
-    KeyczarTool.main(addKeyArgs);
+    for (List<String> keyczartCommand : keyczartCommands) {
+      String [] args = keyczartCommand.toArray(new String[keyczartCommand.size()]);
+      KeyczarTool.main(args);
+    }
   }
 }

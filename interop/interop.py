@@ -44,8 +44,6 @@ import os
 import subprocess
 import unittest
 
-from keyczar import util
-
 
 ALGORITHM_JSON = "config/interopAlgorithms.json"
 INTEROP_DATA = "keys"
@@ -54,15 +52,32 @@ OPERATIONS = "config/operations.json"
 IMPLEMENTATIONS = "config/implementations.json"
 TESTDATA = "This is some test data."
 
+def ReadFile(loc):
+  """
+  Read data from file at given location.
+
+  @param loc: name of file to read from
+  @type loc: string
+
+  @return: contents of the file
+  @rtype: string
+
+  @raise KeyczarError: if unable to read from file because of IOError
+  """
+  try:
+    return open(loc).read()
+  except IOError:
+    raise Exception("Unable to read file %s." % loc)
+
 
 class InteropTestRunner(object):
 
   def __init__(self):
     """ loads the json data from the config files """
-    self.algorithms = json.loads(util.ReadFile(ALGORITHM_JSON))
-    self.ignored_tests = json.loads(util.ReadFile(IGNORED_TESTS))
-    self.operations = json.loads(util.ReadFile(OPERATIONS))
-    self.implementations = json.loads(util.ReadFile(IMPLEMENTATIONS))
+    self.algorithms = json.loads(ReadFile(ALGORITHM_JSON))
+    self.ignored_tests = json.loads(ReadFile(IGNORED_TESTS))
+    self.operations = json.loads(ReadFile(OPERATIONS))
+    self.implementations = json.loads(ReadFile(IMPLEMENTATIONS))
 
 
   def GetKeysByPurpose(self, purpose=""):
@@ -177,8 +192,7 @@ class InteropTestRunner(object):
     add_key_flags = self._GetAddKeyFlags(algorithm, size, location)
     params = {
         "command": "create",
-        "createFlags": create_flags,
-        "addKeyFlags": add_key_flags,
+        "keyczartCommands": [create_flags, add_key_flags]
         }
     print self._CallImplementation(implementation, json.dumps(params))
 
