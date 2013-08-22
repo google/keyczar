@@ -19,6 +19,7 @@
 #include <keyczar/base/basictypes.h>
 #include <keyczar/base/scoped_ptr.h>
 #include <keyczar/base/values.h>
+#include <keyczar/rw/keyset_reader.h>
 
 namespace keyczar {
 namespace interop {
@@ -48,6 +49,8 @@ class Operation {
 
  protected:
   const std::string GetKeyPath(const std::string& algorithm);
+  
+  rw::KeysetReader* GetReader(const std::string& algorithm, const std::string& crypter);
 
   const std::string key_path_;
   const std::string test_data_;

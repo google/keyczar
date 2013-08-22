@@ -41,6 +41,7 @@ __package__ = "keyczar"
 import errors
 import keyczar
 import keyczart
+import readers
 import util
 
 
@@ -105,6 +106,16 @@ class BaseOperation(object):
 
   def _GetKeyPath(self, algorithm):
     return os.path.join(self.key_path, algorithm)
+  
+  """
+  Gets a keyczar reader for the given algorithm and key set crypter
+  """
+  def _GetReader(self, algorithm, crypter):
+    reader = readers.CreateReader(self._GetKeyPath(algorithm + crypter))
+    if crypter:
+      key_set_crypter = keyczar.Crypter.Read(self._GetKeyPath(crypter))
+      reader = readers.EncryptedReader(reader, key_set_crypter)
+    return reader
 
 
 def JsonOutput(method):
@@ -137,20 +148,22 @@ class UnversionedSignOperation(BaseOperation):
       encoder = util.Base64WSEncode
     else:
       encoder = None
-    signer = keyczar.UnversionedSigner.Read(self._GetKeyPath(algorithm))
+    signer = keyczar.UnversionedSigner(
+        self._GetReader(algorithm, options["cryptedKeySet"]))
     signature = signer.Sign(self.test_data, encoder)
     return signature
 
   @JsonInput
-  def Test(self, signature, algorithm, generate_params, test_options):
-    if generate_params["encoding"] == "encoded":
+  def Test(self, signature, algorithm, generate_options, test_options):
+    if generate_options["encoding"] == "encoded":
       decoder = util.Base64WSDecode
     else:
       decoder = None
     verifier_class = (keyczar.UnversionedVerifier
                       if test_options["class"] == "verifier"
                       else keyczar.UnversionedSigner)
-    verifier = verifier_class.Read(self._GetKeyPath(algorithm))
+    verifier = verifier_class(
+        self._GetReader(algorithm, generate_options["cryptedKeySet"]))
     assert verifier.Verify(self.test_data, signature, decoder=decoder)
 
 
@@ -161,9 +174,10 @@ class SignedSessionOperation(BaseOperation):
     super(SignedSessionOperation, self).__init__(*args)
 
   def Generate(self, crypter_algorithm, options):
-    signer = keyczar.Signer.Read(self._GetKeyPath(options["signer"]))
-    key_encrypter = keyczar.Encrypter.Read(
-        self._GetKeyPath(crypter_algorithm))
+    signer = keyczar.Signer(
+        self._GetReader(options["signer"], options["cryptedKeySet"]))
+    key_encrypter = keyczar.Encrypter(
+        self._GetReader(crypter_algorithm, options["cryptedKeySet"]))
     crypter = keyczar.SignedSessionEncrypter(key_encrypter, signer)
     encrypted_data = crypter.Encrypt(self.test_data)
 
@@ -181,8 +195,10 @@ class SignedSessionOperation(BaseOperation):
     encrypted_data = output["output"]
     session_material = output["sessionMaterial"]
     signer_algorithm = generate_options["signer"]
-    verifier = keyczar.Verifier.Read(self._GetKeyPath(signer_algorithm))
-    key_crypter = keyczar.Crypter.Read(self._GetKeyPath(algorithm))
+    verifier = keyczar.Verifier(self._GetReader(
+        generate_options["signer"], generate_options["cryptedKeySet"]))
+    key_crypter = keyczar.Crypter(
+        self._GetReader(algorithm, generate_options["cryptedKeySet"]))
     session_decrypter = keyczar.SignedSessionDecrypter(
         key_crypter, verifier, session_material)
     decrypted_data = session_decrypter.Decrypt(encrypted_data)
@@ -201,20 +217,22 @@ class AttachedSignOperation(BaseOperation):
       encoder = util.Base64WSEncode
     else:
       encoder = None
-    signer = keyczar.Signer.Read(self._GetKeyPath(algorithm))
+    signer = keyczar.Signer(
+        self._GetReader(algorithm, options["cryptedKeySet"]))
     signature = signer.AttachedSign(self.test_data, "", encoder)
     return signature
 
   @JsonInput
-  def Test(self, signature, algorithm, generate_params, test_options):
-    if generate_params["encoding"] == "encoded":
+  def Test(self, signature, algorithm, generate_options, test_options):
+    if generate_options["encoding"] == "encoded":
       decoder = util.Base64WSDecode
     else:
       decoder = None
     verifier_class = (keyczar.Verifier
                       if test_options["class"] == "verifier"
                       else keyczar.Signer)
-    verifier = verifier_class.Read(self._GetKeyPath(algorithm))
+    verifier = verifier_class(
+        self._GetReader(algorithm, generate_options["cryptedKeySet"]))
     assert verifier.AttachedVerify(signature, "", decoder=decoder)
 
 
@@ -230,20 +248,22 @@ class SignOperation(BaseOperation):
       encoder = util.Base64WSEncode
     else:
       encoder = None
-    signer = keyczar.Signer.Read(self._GetKeyPath(algorithm))
+    signer = keyczar.Signer(
+        self._GetReader(algorithm, options["cryptedKeySet"]))
     signature = signer.Sign(self.test_data, encoder)
     return signature
 
   @JsonInput
-  def Test(self, signature, algorithm, generate_params, test_options):
-    if generate_params["encoding"] == "encoded":
+  def Test(self, signature, algorithm, generate_options, test_options):
+    if generate_options["encoding"] == "encoded":
       decoder = util.Base64WSDecode
     else:
       decoder = None
     verifier_class = (keyczar.Verifier
                       if test_options["class"] == "verifier"
                       else keyczar.Signer)
-    verifier = verifier_class.Read(self._GetKeyPath(algorithm))
+    verifier = verifier_class(
+        self._GetReader(algorithm, generate_options["cryptedKeySet"]))
     assert verifier.Verify(self.test_data, signature, decoder=decoder)
 
 
@@ -263,17 +283,18 @@ class EncryptOperation(BaseOperation):
       crypter_class = keyczar.Crypter
     else:
       crypter_class = keyczar.Encrypter
-    crypter = crypter_class.Read(self._GetKeyPath(algorithm))
+    crypter = crypter_class(self._GetReader(algorithm, options["cryptedKeySet"]))
     ciphertext = crypter.Encrypt(self.test_data, encoder)
     return ciphertext
 
   @JsonInput
-  def Test(self, ciphertext, algorithm, generate_params, test_options):
-    if generate_params["encoding"] == "encoded":
+  def Test(self, ciphertext, algorithm, generate_options, test_options):
+    if generate_options["encoding"] == "encoded":
       decoder = util.Base64WSDecode
     else:
       decoder = None
-    crypter = keyczar.Crypter.Read(self._GetKeyPath(algorithm))
+    crypter = keyczar.Crypter(
+        self._GetReader(algorithm, generate_options["cryptedKeySet"]))
     assert crypter.Decrypt(ciphertext, decoder=decoder) == self.test_data
 
 operations = {

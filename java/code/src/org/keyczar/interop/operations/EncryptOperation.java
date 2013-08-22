@@ -19,7 +19,7 @@ public class EncryptOperation extends Operation {
   public byte[] generate(String algorithm, Map<String, String> generateParams)
       throws KeyczarException {
     if (generateParams.get("class").equals("crypter")) {
-      Crypter crypter = new Crypter(getKeyPath(algorithm));
+      Crypter crypter = new Crypter(getReader(algorithm, generateParams.get("cryptedKeySet")));
       if (generateParams.get("encoding").equals("encoded")) {
         String ciphertext = crypter.encrypt(testData);
         return ciphertext.getBytes();
@@ -30,7 +30,7 @@ public class EncryptOperation extends Operation {
         throw new KeyczarException("Expects encoded or unencoded in parameters");
       }
     } else if (generateParams.get("class").equals("encrypter")) {
-      Encrypter crypter = new Encrypter(getKeyPath(algorithm));
+      Encrypter crypter = new Encrypter(getReader(algorithm, generateParams.get("cryptedKeySet")));
       if (generateParams.get("encoding").equals("encoded")) {
         String ciphertext = crypter.encrypt(testData);
         return ciphertext.getBytes();
@@ -49,7 +49,7 @@ public class EncryptOperation extends Operation {
   public void test(
       byte[] output, String algorithm, Map<String, String> generateParams,
       Map<String, String> testParams) throws KeyczarException {
-    Crypter crypter = new Crypter(getKeyPath(algorithm));
+    Crypter crypter = new Crypter(getReader(algorithm, generateParams.get("cryptedKeySet")));
     if (generateParams.get("encoding").equals("encoded")) {
       String plaintext = crypter.decrypt(new String(output));
       assert(plaintext.equals(testData));

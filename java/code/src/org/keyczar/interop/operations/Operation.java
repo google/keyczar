@@ -20,7 +20,11 @@ import com.google.gson.Gson;
 
 import org.keyczar.exceptions.Base64DecodingException;
 import org.keyczar.exceptions.KeyczarException;
+import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.util.Base64Coder;
+import org.keyczar.Crypter;
+import org.keyczar.KeyczarEncryptedReader;
+import org.keyczar.KeyczarFileReader;
 
 import java.io.File;
 import java.util.Map;
@@ -113,6 +117,16 @@ public abstract class Operation {
     File file1 = new File(keyPath);
     File file2 = new File(file1, algorithm);
     return file2.getPath();
+  }
+
+  public KeyczarReader getReader(String algorithm, String crypterAlgorithm) throws KeyczarException {
+    String keysetName = algorithm + crypterAlgorithm;
+    KeyczarReader reader = new KeyczarFileReader(getKeyPath(keysetName));
+    if (!crypterAlgorithm.equals("")) {
+      Crypter crypter = new Crypter(getKeyPath(crypterAlgorithm));
+      reader = new KeyczarEncryptedReader(reader, crypter);
+    }
+    return reader;
   }
 
   /**

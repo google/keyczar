@@ -2,7 +2,8 @@
   "unversioned" : {
     "keytype" : "sign",
     "generateOptions" : {
-      "encoding" : ["encoded", "unencoded"]
+      "encoding" : ["encoded", "unencoded"],
+      "cryptedKeySet" : "CRYPTED_KEY_SET_OPTIONS"
     },
     "testOptions" : {
       "class" : ["verifier", "signer"]
@@ -11,14 +12,16 @@
   "signedSession" : {
     "keytype" : "crypt",
     "generateOptions" : {
-      "signer" : ["rsa-sign1024", "rsa-sign2048", "rsa-sign4096", "dsa1024", "hmac256"]
+      "signer" : "ALL_SIGNING_KEYS",
+      "cryptedKeySet" : "CRYPTED_KEY_SET_OPTIONS"
     },
     "testOptions" : {}
   },
   "attached" : {
     "keytype" : "sign",
     "generateOptions" : {
-      "encoding" : ["encoded", "unencoded"]
+      "encoding" : ["encoded", "unencoded"],
+      "cryptedKeySet" : "CRYPTED_KEY_SET_OPTIONS"
     },
     "testOptions" : {
       "class" : ["verifier", "signer"]
@@ -27,7 +30,8 @@
   "sign" : {
     "keytype" : "sign",
     "generateOptions" : {
-      "encoding" : ["encoded", "unencoded"]
+      "encoding" : ["encoded", "unencoded"],
+      "cryptedKeySet" : "CRYPTED_KEY_SET_OPTIONS"
     },
     "testOptions" : {
       "class" : ["verifier", "signer"]
@@ -37,7 +41,8 @@
     "keytype" : "crypt",
     "generateOptions" : {
       "encoding" : ["encoded", "unencoded"],
-      "class" : ["crypter", "encrypter"]
+      "class" : ["crypter", "encrypter"],
+      "cryptedKeySet" : "CRYPTED_KEY_SET_OPTIONS"
     },
     "testOptions" : {}
   }
