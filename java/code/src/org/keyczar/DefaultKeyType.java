@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -29,21 +27,22 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Encodes different types of keys each with default key size. Some
- * have multiple acceptable sizes given in a list with the first as default.
+ * Encodes different types of keys each with default key size. Some have multiple acceptable sizes
+ * given in a list with the first as default.
  * <ul>
- *   <li>AES:         (128, 192, 256)
- *   <li>HMAC-SHA1:   (256)
+ *   <li>AES: (128, 192, 256)
+ *   <li>HMAC-SHA1: (256)
  *   <li>DSA Private: (1024)
- *   <li>DSA Public:  (1024)
+ *   <li>DSA Public: (1024)
  *   <li>RSA Private: (4096, 2048, 1024)
- *   <li>RSA Public:  (4096, 2048, 1024)
- *   <li>EC Private:  (256, 384, 521, 192)
- *   <li>EC Public:   (256, 384, 521, 192)
- *   <li>Test:        (1)
+ *   <li>RSA Public: (4096, 2048, 1024)
+ *   <li>EC Private: (256, 384, 521, 192)
+ *   <li>EC Public: (256, 384, 521, 192)
+ *   <li>Test: (1)
  * </ul>
  *
- * <p>JSON Representation currently supports these strings:
+ * <p>
+ * JSON Representation currently supports these strings:
  * <ul>
  *   <li>"AES"
  *   <li>"HMAC_SHA1"
@@ -73,8 +72,8 @@ public enum DefaultKeyType implements KeyType {
   private final List<Integer> acceptableSizes;
 
   /**
-   * Takes a list of acceptable sizes for key lengths. The first one is assumed
-   * to be the default size.
+   * Takes a list of acceptable sizes for key lengths. The first one is assumed to be the default
+   * size.
    *
    * @param sizes
    */
@@ -88,8 +87,7 @@ public enum DefaultKeyType implements KeyType {
     return validateKeySize(keyParams);
   }
 
-  private void validateParametersType(KeyParameters keyParams)
-      throws KeyczarException {
+  private void validateParametersType(KeyParameters keyParams) throws KeyczarException {
     switch (this) {
       case RSA_PRIV:
         if (!(keyParams instanceof RsaKeyParameters)) {
@@ -104,8 +102,7 @@ public enum DefaultKeyType implements KeyType {
     }
   }
 
-  private String validateKeySize(KeyParameters keyParams)
-      throws KeyczarException {
+  private String validateKeySize(KeyParameters keyParams) throws KeyczarException {
     int keySize = keyParams.getKeySize();
     if (!isAcceptableSize(keySize)) {
       throw new KeyczarException("Invalid key size");
@@ -194,11 +191,9 @@ public enum DefaultKeyType implements KeyType {
   }
 
   /**
-   * Default key builder that switches on type to use existing reading and
-   * generation methods.
+   * Default key builder that switches on type to use existing reading and generation methods.
    */
   private class DefaultKeyBuilder implements Builder {
-    @Override
     public KeyczarKey read(String key) throws KeyczarException {
       switch (DefaultKeyType.this) {
         case AES:
@@ -213,16 +208,16 @@ public enum DefaultKeyType implements KeyType {
           return RsaPrivateKey.read(key);
         case RSA_PUB:
           return RsaPublicKey.read(key);
-        // Currently unsupported. See "unofficial" directory.
-        //case EC_PRIV:
-        //    return EcPrivateKey.read(key);
-        //case EC_PUB:
-        //    return EcPublicKey.read(key);
+      // Currently unsupported. See "unofficial" directory.
+      // case EC_PRIV:
+      //   return EcPrivateKey.read(key);
+      // case EC_PUB:
+      //   return EcPublicKey.read(key);
+        default:
+          throw new UnsupportedTypeException(DefaultKeyType.this);
       }
-      throw new UnsupportedTypeException(DefaultKeyType.this);
     }
 
-    @Override
     public KeyczarKey generate(KeyParameters params) throws KeyczarException {
       params = applyDefaultParameters(params);
       validateKeyParameters(params);
@@ -236,14 +231,16 @@ public enum DefaultKeyType implements KeyType {
           return DsaPrivateKey.generate(params);
         case RSA_PRIV:
           return RsaPrivateKey.generate((RsaKeyParameters) params);
-        // Currently unsupported. See "unofficial" directory.
-        //case EC_PRIV:
-        //    return EcPrivateKey.generate(keySize);
-        case RSA_PUB: case DSA_PUB:
-          throw new KeyczarException(Messages.getString(
-              "KeyczarKey.PublicKeyExport", DefaultKeyType.this));
+      // Currently unsupported. See "unofficial" directory.
+      // case EC_PRIV:
+      //   return EcPrivateKey.generate(keySize);
+        case RSA_PUB:
+        case DSA_PUB:
+          throw new KeyczarException(
+              Messages.getString("KeyczarKey.PublicKeyExport", DefaultKeyType.this));
+        default:
+          throw new UnsupportedTypeException(DefaultKeyType.this);
       }
-      throw new UnsupportedTypeException(DefaultKeyType.this);
     }
   }
 }

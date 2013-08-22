@@ -9,6 +9,10 @@ import org.keyczar.interfaces.KeyczarReader;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 
+ * TODO(dlundberg): Insert description here.
+ */
 @Experimental
 public class ImportedKeyReader implements KeyczarReader {
   private final KeyMetadata metadata;
@@ -20,8 +24,8 @@ public class ImportedKeyReader implements KeyczarReader {
   }
 
   ImportedKeyReader(AesKey key) {
-    this.metadata = new KeyMetadata(
-            "Imported AES", KeyPurpose.DECRYPT_AND_ENCRYPT, DefaultKeyType.AES);
+    this.metadata =
+        new KeyMetadata("Imported AES", KeyPurpose.DECRYPT_AND_ENCRYPT, DefaultKeyType.AES);
     KeyVersion version = new KeyVersion(0, KeyStatus.PRIMARY, false);
     this.metadata.addVersion(version);
     this.keys = new ArrayList<KeyczarKey>();
@@ -29,8 +33,8 @@ public class ImportedKeyReader implements KeyczarReader {
   }
 
   ImportedKeyReader(HmacKey key) {
-    this.metadata = new KeyMetadata(
-            "Imported HMAC", KeyPurpose.SIGN_AND_VERIFY, DefaultKeyType.HMAC_SHA1);
+    this.metadata =
+        new KeyMetadata("Imported HMAC", KeyPurpose.SIGN_AND_VERIFY, DefaultKeyType.HMAC_SHA1);
     KeyVersion version = new KeyVersion(0, KeyStatus.PRIMARY, false);
     this.metadata.addVersion(version);
     this.keys = new ArrayList<KeyczarKey>();
@@ -39,9 +43,9 @@ public class ImportedKeyReader implements KeyczarReader {
 
   @Override
   public String getKey() throws KeyczarException {
-	KeyMetadata metadata = KeyMetadata.read(getMetadata());
-		
-	return getKey(metadata.getPrimaryVersion().getVersionNumber());
+    KeyMetadata metadata = KeyMetadata.read(getMetadata());
+
+    return getKey(metadata.getPrimaryVersion().getVersionNumber());
   }
 
   @Override

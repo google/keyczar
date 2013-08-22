@@ -1,17 +1,15 @@
 /*
  * Copyright 2011 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -45,18 +43,19 @@ public class X509CertificateReader implements KeyczarReader {
    * Creates an certificate reader that reads a key from the specified stream, tags it with the
    * specified purpose and sets it to use the specified padding.
    *
-   * @param padding The padding to associate with the key.  May be null for RSA keys, in
-   * which case it will default to OAEP.  Must be null for DSA keys.
+   * @param padding The padding to associate with the key. May be null for RSA keys, in which case
+   *        it will default to OAEP. Must be null for DSA keys.
    * @throws KeyczarException
    */
-  public X509CertificateReader(KeyPurpose purpose, InputStream certificateStream, RsaPadding padding)
+  public X509CertificateReader(
+      KeyPurpose purpose, InputStream certificateStream, RsaPadding padding)
       throws KeyczarException {
     if (purpose == null) {
       throw new KeyczarException("X509Certificate purpose must not be null");
-	}
-	if (certificateStream == null) {
-	  throw new KeyczarException("X509Certificate stream must not be null");
-	}
+    }
+    if (certificateStream == null) {
+      throw new KeyczarException("X509Certificate stream must not be null");
+    }
     this.purpose = purpose;
     this.certificateStream = certificateStream;
     this.padding = padding;
@@ -100,8 +99,8 @@ public class X509CertificateReader implements KeyczarReader {
   }
 
   private void parseCertificate() throws CertificateException, KeyczarException {
-    Certificate certificate = CertificateFactory.getInstance("X.509")
-        .generateCertificate(certificateStream);
+    Certificate certificate =
+        CertificateFactory.getInstance("X.509").generateCertificate(certificateStream);
     PublicKey publicKey = certificate.getPublicKey();
 
     if (publicKey instanceof RSAPublicKey) {
@@ -112,8 +111,8 @@ public class X509CertificateReader implements KeyczarReader {
       }
       key = new DsaPublicKey((DSAPublicKey) publicKey);
     } else {
-      throw new KeyczarException("Unrecognized key type " + publicKey.getAlgorithm() +
-          " in certificate");
+      throw new KeyczarException(
+          "Unrecognized key type " + publicKey.getAlgorithm() + " in certificate");
     }
   }
 }

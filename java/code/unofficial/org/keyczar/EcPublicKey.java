@@ -1,16 +1,14 @@
 /*
  * Copyright 2008 Google Inc.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
 
@@ -34,11 +32,10 @@ import java.security.SignatureException;
 import java.security.spec.X509EncodedKeySpec;
 
 /**
- * Wrapping class for EC Public Keys. These must be exported from existing EC
- * private key sets.
- * 
+ * Wrapping class for EC Public Keys. These must be exported from existing EC private key sets.
+ *
  * @author martclau@gmail.com
- * 
+ *
  */
 public class EcPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "EC";
@@ -49,7 +46,7 @@ public class EcPublicKey extends KeyczarPublicKey {
   @Expose String x509;
 
   private byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
-  
+
   public EcPublicKey(int keySize) {
     super(keySize);
   }
@@ -72,12 +69,12 @@ public class EcPublicKey extends KeyczarPublicKey {
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
     init();
   }
-  
+
   @Override
   protected byte[] hash() {
     return hash;
   }
-  
+
   @Override
   protected Stream getStream() throws KeyczarException {
     return new EcVerifyingStream();
@@ -136,8 +133,7 @@ public class EcPublicKey extends KeyczarPublicKey {
     @Override
     public boolean verify(ByteBuffer sig) throws KeyczarException {
       try {
-        return signature.verify(sig.array(), sig.position(), sig.limit()
-            - sig.position());
+        return signature.verify(sig.array(), sig.position(), sig.limit() - sig.position());
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }

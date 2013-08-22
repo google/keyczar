@@ -1,17 +1,15 @@
 /*
  * Copyright 2010 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -76,18 +74,17 @@ public class SessionTest extends TestCase {
   @Test
   public final void testDecrypt() throws KeyczarException, IOException {
     RandomAccessFile sessionMaterialInput =
-      new RandomAccessFile(TEST_DATA + "/rsa/session.material.out", "r");
+        new RandomAccessFile(TEST_DATA + "/rsa/session.material.out", "r");
     String sessionMaterialString = sessionMaterialInput.readLine();
     sessionMaterialInput.close();
     byte[] sessionMaterial = Base64Coder.decodeWebSafe(sessionMaterialString);
 
     RandomAccessFile sessionCiphertextInput =
-      new RandomAccessFile(TEST_DATA + "/rsa/session.ciphertext.out", "r");
+        new RandomAccessFile(TEST_DATA + "/rsa/session.ciphertext.out", "r");
     String sessionCiphertextString = sessionCiphertextInput.readLine();
     sessionCiphertextInput.close();
     byte[] sessionCiphertext = Base64Coder.decodeWebSafe(sessionCiphertextString);
-    sessionDecrypter =
-      new SessionDecrypter(privateKeyDecrypter, sessionMaterial);
+    sessionDecrypter = new SessionDecrypter(privateKeyDecrypter, sessionMaterial);
     byte[] plaintext = sessionDecrypter.decrypt(sessionCiphertext);
     String decrypted = new String(plaintext);
     assertEquals(input, decrypted);
@@ -97,18 +94,17 @@ public class SessionTest extends TestCase {
   public final void testWrongSession() throws KeyczarException {
     byte[] sessionMaterial = sessionEncrypter.getSessionMaterial();
     byte[] ciphertext = sessionEncrypter.encrypt(input.getBytes());
-    sessionDecrypter =
-      new SessionDecrypter(privateKeyDecrypter, sessionMaterial);
+    sessionDecrypter = new SessionDecrypter(privateKeyDecrypter, sessionMaterial);
 
     // Instantiate a new hybrid encrypter
     sessionEncrypter = new SessionEncrypter(publicKeyEncrypter);
     byte[] moreSessionMaterial = sessionEncrypter.getSessionMaterial();
     SessionDecrypter anotherHybridDecrypter =
-      new SessionDecrypter(privateKeyDecrypter, moreSessionMaterial);
+        new SessionDecrypter(privateKeyDecrypter, moreSessionMaterial);
     try {
       // This should fail. It's trying to decrypt ciphertext from another session
       anotherHybridDecrypter.decrypt(ciphertext);
-      assertTrue(false);  // Should not be reached
+      assertTrue(false); // Should not be reached
     } catch (KeyczarException e) {
       // Expected
     }
@@ -153,19 +149,18 @@ public class SessionTest extends TestCase {
 
   @Test
   public final void testCrypterPair() throws KeyczarException {
-     SessionCrypter localCrypter = new SessionCrypter(publicKeyEncrypter);
+    SessionCrypter localCrypter = new SessionCrypter(publicKeyEncrypter);
 
-     byte[] encrypted = localCrypter.encrypt(input.getBytes());
-     byte[] sessionMaterial = localCrypter.getSessionMaterial();
+    byte[] encrypted = localCrypter.encrypt(input.getBytes());
+    byte[] sessionMaterial = localCrypter.getSessionMaterial();
 
-     SessionCrypter remoteCrypter =
-         new SessionCrypter(privateKeyDecrypter, sessionMaterial);
+    SessionCrypter remoteCrypter = new SessionCrypter(privateKeyDecrypter, sessionMaterial);
 
-     byte[] decrypted = remoteCrypter.decrypt(encrypted);
-     assertTrue(Arrays.equals(input.getBytes(), decrypted));
+    byte[] decrypted = remoteCrypter.decrypt(encrypted);
+    assertTrue(Arrays.equals(input.getBytes(), decrypted));
 
-     encrypted = remoteCrypter.encrypt(bigInput);
-     decrypted = localCrypter.decrypt(encrypted);
-     assertTrue(Arrays.equals(bigInput, decrypted));
+    encrypted = remoteCrypter.encrypt(bigInput);
+    decrypted = localCrypter.decrypt(encrypted);
+    assertTrue(Arrays.equals(bigInput, decrypted));
   }
 }

@@ -1,20 +1,20 @@
 /*
  * Copyright 2011 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
+
+import com.google.gson.JsonParseException;
 
 import junit.framework.TestCase;
 
@@ -24,8 +24,6 @@ import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyNotFoundException;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyczarReader;
-
-import com.google.gson.JsonParseException;
 
 /**
  * This test case verifies that OAEP and PKCS1 v1.5 padding are both supported for RSA keys.
@@ -39,50 +37,50 @@ public class RsaPaddingTest extends TestCase {
   private KeyczarReader pkcsReader;
   private KeyczarReader invalidReader;
 
-  private static final String metadataString =
+  private static final String METADATA_STRING =
       "{\"name\":\"\",\"purpose\":\"DECRYPT_AND_ENCRYPT\",\"type\":\"RSA_PRIV\",\"version"
-          + "s\":[{\"exportable\":false,\"status\":\"PRIMARY\",\"versionNumber\":1}],\"en"
-          + "crypted\":false}";
+      + "s\":[{\"exportable\":false,\"status\":\"PRIMARY\",\"versionNumber\":1}],\"en"
+      + "crypted\":false}";
 
-  private static final String pubKeyStringPrefix =
+  private static final String PUB_KEY_STRING_PREFIX =
       "{\"modulus\":\"ANRvrByiiuvqU53_8EdhXR_ieDX7gsMpnHTRZn8vuPRlooLcVg_TP_6DrkHDT1kSfso"
-          + "OMkpCw6dv7qJEqHS8kO7qUwBh3ZtM02-9jc0VY--Pjp8uFeq6SMkCa8EpzSyBSjucOoUi-yqs0-g"
-          + "KGGgd_0N88A37aGNedtCWqyePYsi7\",\"publicExponent\":\"AQAB\",\"size\":1024";
-  private static final String pubKeyStringSuffix = "}";
+      + "OMkpCw6dv7qJEqHS8kO7qUwBh3ZtM02-9jc0VY--Pjp8uFeq6SMkCa8EpzSyBSjucOoUi-yqs0-g"
+      + "KGGgd_0N88A37aGNedtCWqyePYsi7\",\"publicExponent\":\"AQAB\",\"size\":1024";
+  private static final String PUB_KEY_STRING_SUFFIX = "}";
 
-  private static final String oaepPaddingString = ",\"padding\":\"OAEP\"";
-  private static final String pkcsPaddingString = ",\"padding\":\"PKCS\"";
-  private static final String invalidPaddingString = ",\"padding\":\"INVALID\"";
+  private static final String OAEP_PADDING_STRING = ",\"padding\":\"OAEP\"";
+  private static final String PKCS_PADDING_STRING = ",\"padding\":\"PKCS\"";
+  private static final String INVALID_PADDING_STRING = ",\"padding\":\"INVALID\"";
 
-  private static final String privKeyStringPrefix = "{\"publicKey\":";
-  private static final String privKeyStringSuffix =
+  private static final String PRIV_KEY_STRING_PREFIX = "{\"publicKey\":";
+  private static final String PRIV_KEY_STRING_SUFFIX =
       ",\"privateExponent\":\"KAq4lVkp-Ffd1P1GDB5VEEp-wCYdOq4gOICz4itboG172VCwxCDcghvN_8V"
-          + "Rsodi8LEGV6sH-AqIH3vziLV2V8pXV6E4ZxpmKQVM4vtK0P-cHz3IExXzQaM5q-BrYNuzhl-Qzs9"
-          + "lsD5IxNPQYwGgDAL5yl_e1z41VDyfOCqQZIE\",\"primeP\":\"AOlnBr4i8vKddjvRr2upGTcl"
-          + "gRxQbqOwvXdcif6hFk_7iBxwAfltDzSlDR1Zx2i2IaSJJOQEilvBPcYx8Lq9_0E\",\"primeQ\""
-          + ":\"AOkA_VZjN7PQkJgDxcpvn_ptFCpdKhA0NPBu9PmocaUKmfyF-KQK6bZf5-gOgCvy01KdIx_xy"
-          + "DPf8bres9x8hPs\",\"primeExponentP\":\"ANfFINyhnotfui_u1wbmWqM6jrNIQCAfgehYql"
-          + "G1RdVHKTtw6MJXahk3BHq_xrMsvMlI58vLzsSoTp1tCaj5gIE\",\"primeExponentQ\":\"ALl"
-          + "66jB8pvjjTFdWmXr-xPELKARZSYTAqmvDSAv9hQoGmHInC7k6XrWpPujBslJJ6ONY538kb2SsHrf"
-          + "NVIxuK0U\",\"crtCoefficient\":\"AM-mryy-gC1CHOpA-Mtqfe3pM6IIcsQfiLRswtez5mid"
-          + "jb4Gy7juZKHIuPz_t7y0s2C4mSXsqwi2W5gj9MqbXUw\",\"size\":1024}";
+      + "Rsodi8LEGV6sH-AqIH3vziLV2V8pXV6E4ZxpmKQVM4vtK0P-cHz3IExXzQaM5q-BrYNuzhl-Qzs9"
+      + "lsD5IxNPQYwGgDAL5yl_e1z41VDyfOCqQZIE\",\"primeP\":\"AOlnBr4i8vKddjvRr2upGTcl"
+      + "gRxQbqOwvXdcif6hFk_7iBxwAfltDzSlDR1Zx2i2IaSJJOQEilvBPcYx8Lq9_0E\",\"primeQ\""
+      + ":\"AOkA_VZjN7PQkJgDxcpvn_ptFCpdKhA0NPBu9PmocaUKmfyF-KQK6bZf5-gOgCvy01KdIx_xy"
+      + "DPf8bres9x8hPs\",\"primeExponentP\":\"ANfFINyhnotfui_u1wbmWqM6jrNIQCAfgehYql"
+      + "G1RdVHKTtw6MJXahk3BHq_xrMsvMlI58vLzsSoTp1tCaj5gIE\",\"primeExponentQ\":\"ALl"
+      + "66jB8pvjjTFdWmXr-xPELKARZSYTAqmvDSAv9hQoGmHInC7k6XrWpPujBslJJ6ONY538kb2SsHrf"
+      + "NVIxuK0U\",\"crtCoefficient\":\"AM-mryy-gC1CHOpA-Mtqfe3pM6IIcsQfiLRswtez5mid"
+      + "jb4Gy7juZKHIuPz_t7y0s2C4mSXsqwi2W5gj9MqbXUw\",\"size\":1024}";
 
   private String buildKey(String paddingString) {
-    return privKeyStringPrefix
-        + pubKeyStringPrefix
+    return PRIV_KEY_STRING_PREFIX
+        + PUB_KEY_STRING_PREFIX
         + paddingString
-        + pubKeyStringSuffix
-        + privKeyStringSuffix;
+        + PUB_KEY_STRING_SUFFIX
+        + PRIV_KEY_STRING_SUFFIX;
   }
 
   @Before
   @Override
   public void setUp() {
 
-    defaultReader = new StaticKeyczarReader(metadataString, buildKey(""));
-    oaepReader = new StaticKeyczarReader(metadataString, buildKey(oaepPaddingString));
-    pkcsReader = new StaticKeyczarReader(metadataString, buildKey(pkcsPaddingString));
-    invalidReader = new StaticKeyczarReader(metadataString, buildKey(invalidPaddingString));
+    defaultReader = new StaticKeyczarReader(METADATA_STRING, buildKey(""));
+    oaepReader = new StaticKeyczarReader(METADATA_STRING, buildKey(OAEP_PADDING_STRING));
+    pkcsReader = new StaticKeyczarReader(METADATA_STRING, buildKey(PKCS_PADDING_STRING));
+    invalidReader = new StaticKeyczarReader(METADATA_STRING, buildKey(INVALID_PADDING_STRING));
   }
 
   /**

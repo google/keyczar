@@ -1,5 +1,9 @@
 package org.keyczar.jce;
 
+import org.mozilla.jss.asn1.BIT_STRING;
+import org.mozilla.jss.asn1.OBJECT_IDENTIFIER;
+import org.mozilla.jss.asn1.SEQUENCE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -7,15 +11,11 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 
-import org.mozilla.jss.asn1.BIT_STRING;
-import org.mozilla.jss.asn1.OBJECT_IDENTIFIER;
-import org.mozilla.jss.asn1.SEQUENCE;
-
 /**
  * This class implements EC public keys.
- * 
+ *
  * @author martclau@gmail.com
- * 
+ *
  */
 public class EcPublicKeyImpl implements ECPublicKey {
 
@@ -57,8 +57,7 @@ public class EcPublicKeyImpl implements ECPublicKey {
     algid.addElement(new OBJECT_IDENTIFIER(EcCore.getOID(params)));
     outer.addElement(algid);
 
-    BIT_STRING ecPublivKey = new BIT_STRING(EcCore.ecPointToBytes(getW(),
-        params), 0);
+    BIT_STRING ecPublivKey = new BIT_STRING(EcCore.ecPointToBytes(getW(), params), 0);
     outer.addElement(ecPublivKey);
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -87,8 +86,8 @@ public class EcPublicKeyImpl implements ECPublicKey {
     sb.append("GooKey EC public key, " + bitlen + " bit\n");
     sb.append("  Public value (x coordinate): " + x.toString(16) + "\n");
     sb.append("  Public value (y coordinate): " + y.toString(16) + "\n");
-    sb.append("  Parameters: " + EcCore.getFriendlyName(params) + " ("
-        + EcCore.getOID(params) + ")");
+    sb.append(
+        "  Parameters: " + EcCore.getFriendlyName(params) + " (" + EcCore.getOID(params) + ")");
     return sb.toString();
   }
 }

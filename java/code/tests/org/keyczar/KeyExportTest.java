@@ -11,10 +11,10 @@ import org.keyczar.i18n.Messages;
 /**
  * Test PKCS8 export functionality.
  *
- * TODO(swillden) After import functionality is added, make this a more thorough, round-trip
- * test.  Right now the only validation that the exported keys are in any way correct is done
- * manually, outside of this test.  Fixing that without import functionality would make the
- * test code dependent on the presence of openssl, which isn't a good idea.
+ *  TODO(swillden) After import functionality is added, make this a more thorough, round-trip test.
+ * Right now the only validation that the exported keys are in any way correct is done manually,
+ * outside of this test. Fixing that without import functionality would make the test code dependent
+ * on the presence of openssl, which isn't a good idea.
  *
  * @author swillden@google.com (Shawn Willden)
  */
@@ -59,7 +59,7 @@ public class KeyExportTest extends TestCase {
   public void testRsaPublicExport() throws KeyczarException {
     doTestImport("rsa-crypt-pub", "BEGIN RSA PUBLIC KEY", null);
   }
-  
+
   @Test
   public void testRsaPublicExportWithPassphrase() {
     try {

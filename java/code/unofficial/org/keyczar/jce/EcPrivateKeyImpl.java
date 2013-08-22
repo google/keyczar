@@ -1,21 +1,21 @@
 package org.keyczar.jce;
 
+import org.mozilla.jss.asn1.INTEGER;
+import org.mozilla.jss.asn1.OBJECT_IDENTIFIER;
+import org.mozilla.jss.asn1.OCTET_STRING;
+import org.mozilla.jss.asn1.SEQUENCE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.interfaces.ECPrivateKey;
 import java.security.spec.ECParameterSpec;
 
-import org.mozilla.jss.asn1.INTEGER;
-import org.mozilla.jss.asn1.OBJECT_IDENTIFIER;
-import org.mozilla.jss.asn1.OCTET_STRING;
-import org.mozilla.jss.asn1.SEQUENCE;
-
 /**
  * This class implements EC private keys.
- * 
+ *
  * @author martclau@gmail.com
- * 
+ *
  */
 public class EcPrivateKeyImpl implements ECPrivateKey {
 
@@ -53,8 +53,7 @@ public class EcPrivateKeyImpl implements ECPrivateKey {
 
     SEQUENCE ecPrivateKey = new SEQUENCE();
     ecPrivateKey.addElement(new INTEGER(1));
-    ecPrivateKey
-        .addElement(new OCTET_STRING(EcCore.fieldElemToBytes(S, params)));
+    ecPrivateKey.addElement(new OCTET_STRING(EcCore.fieldElemToBytes(S, params)));
 
     try {
       ecPrivateKey.encode(baos);
@@ -90,8 +89,8 @@ public class EcPrivateKeyImpl implements ECPrivateKey {
     int bitlen = params.getOrder().bitLength();
     sb.append("GooKey EC private key, " + bitlen + " bit\n");
     sb.append("  Private value: " + S.toString(16) + "\n");
-    sb.append("  Parameters: " + EcCore.getFriendlyName(params) + " ("
-        + EcCore.getOID(params) + ")");
+    sb.append(
+        "  Parameters: " + EcCore.getFriendlyName(params) + " (" + EcCore.getOID(params) + ")");
     return sb.toString();
   }
 }

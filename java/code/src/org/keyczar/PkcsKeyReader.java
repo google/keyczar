@@ -1,17 +1,15 @@
 /*
  * Copyright 2011 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -50,8 +48,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
 /**
- * Keyczar Reader that reads from a PKCS#8 private key file, optionally
- * passphrase-encrypted.
+ * Keyczar Reader that reads from a PKCS#8 private key file, optionally passphrase-encrypted.
  *
  * @author swillden@google.com (Shawn Willden)
  */
@@ -68,22 +65,23 @@ public class PkcsKeyReader implements KeyczarReader {
   /**
    * Creates a PkcsKeyReader.
    *
-   * @param purpose The purpose that will be specified for this key.  PKCS#8 doesn't specify
-   *        a purpose, so it must be provided.
+   * @param purpose The purpose that will be specified for this key. PKCS#8 doesn't specify a
+   *        purpose, so it must be provided.
    * @param pkcs8Stream The input stream from which the PKCS#8-formatted key data will be read.
-   * @param rsaPadding If the PKCS#8 stream contains an RSA key, padding may be specified.  If
-   *        null, OAEP will be assumed.  If the stream contains a DSA key, padding must be null.
-   * @param passphrase The passphrase that will be used to decrypt the encrypted private key.  If
-   *        the key is not encrypted, this should be null or the empty string.
+   * @param rsaPadding If the PKCS#8 stream contains an RSA key, padding may be specified. If null,
+   *        OAEP will be assumed. If the stream contains a DSA key, padding must be null.
+   * @param passphrase The passphrase that will be used to decrypt the encrypted private key. If the
+   *        key is not encrypted, this should be null or the empty string.
    */
-  public PkcsKeyReader(KeyPurpose purpose, InputStream pkcs8Stream, RsaPadding rsaPadding,
-      String passphrase) throws KeyczarException {
+  public PkcsKeyReader(
+      KeyPurpose purpose, InputStream pkcs8Stream, RsaPadding rsaPadding, String passphrase)
+      throws KeyczarException {
     if (purpose == null) {
       throw new KeyczarException("Key purpose must not be null");
-	}
-	if (pkcs8Stream == null) {
-	  throw new KeyczarException("PKCS8 stream must not be null");
-	}
+    }
+    if (pkcs8Stream == null) {
+      throw new KeyczarException("PKCS8 stream must not be null");
+    }
     this.purpose = purpose;
     this.pkcs8Stream = pkcs8Stream;
     this.rsaPadding = rsaPadding;
@@ -133,8 +131,9 @@ public class PkcsKeyReader implements KeyczarReader {
     }
   }
 
-  private static KeyczarKey parseKeyStream(InputStream pkcs8Stream, String passphrase,
-      RsaPadding padding) throws IOException, KeyczarException {
+  private static KeyczarKey parseKeyStream(
+      InputStream pkcs8Stream, String passphrase, RsaPadding padding)
+      throws IOException, KeyczarException {
     byte[] pkcs8Data = convertPemToDer(Util.readStreamFully(pkcs8Stream));
     pkcs8Data = decryptPbeEncryptedKey(pkcs8Data, passphrase);
 
@@ -144,20 +143,20 @@ public class PkcsKeyReader implements KeyczarReader {
     // type in turn.
     try {
       return new RsaPrivateKey(
-        (RSAPrivateCrtKey) PkcsKeyReader.extractPrivateKey(kspec, "RSA"), padding);
+          (RSAPrivateCrtKey) PkcsKeyReader.extractPrivateKey(kspec, "RSA"), padding);
     } catch (InvalidKeySpecException e) {
       // Not a valid RSA key, fall through.
     }
 
     try {
-      KeyczarKey key = new DsaPrivateKey(
-        (DSAPrivateKey) PkcsKeyReader.extractPrivateKey(kspec, "DSA"));
+      KeyczarKey key =
+          new DsaPrivateKey((DSAPrivateKey) PkcsKeyReader.extractPrivateKey(kspec, "DSA"));
       if (padding != null) {
         throw new KeyczarException(Messages.getString("InvalidPadding", padding.name()));
       }
       return key;
     } catch (InvalidKeySpecException e) {
-      //Not a valid DSA key, fall through.
+      // Not a valid DSA key, fall through.
     }
 
     throw new KeyczarException(Messages.getString("KeyczarTool.InvalidPkcs8Stream"));
@@ -195,8 +194,9 @@ public class PkcsKeyReader implements KeyczarReader {
     }
   }
 
-  private static SecretKey computeDecryptionKey(final String passphrase,
-      final String pbeAlgorithmName) throws NoSuchAlgorithmException, InvalidKeySpecException {
+  private static SecretKey computeDecryptionKey(
+      final String passphrase, final String pbeAlgorithmName)
+      throws NoSuchAlgorithmException, InvalidKeySpecException {
     final PBEKeySpec pbeKeySpec = new PBEKeySpec(passphrase.toCharArray());
     final SecretKeyFactory pbeKeyFactory = SecretKeyFactory.getInstance(pbeAlgorithmName);
     return pbeKeyFactory.generateSecret(pbeKeySpec);
@@ -207,7 +207,7 @@ public class PkcsKeyReader implements KeyczarReader {
     String firstLine = bis.readLine();
     Matcher headerMatcher = PEM_HEADER_PATTERN.matcher(firstLine);
     if (!headerMatcher.matches()) {
-      // No properly-formatted header?  Assume it's DER format.
+      // No properly-formatted header? Assume it's DER format.
       return data;
     } else {
       String header = headerMatcher.group(1);

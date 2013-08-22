@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -38,16 +36,16 @@ public abstract class Keyczar {
   private static final Logger LOG = Logger.getLogger(Keyczar.class);
   public static final String DEFAULT_ENCODING = "UTF-8";
   public static final byte FORMAT_VERSION = 0;
-  public static final byte[] FORMAT_BYTES = { FORMAT_VERSION };
+  public static final byte[] FORMAT_BYTES = {FORMAT_VERSION};
   public static final int KEY_HASH_SIZE = 4;
   public static final int HEADER_SIZE = 1 + KEY_HASH_SIZE;
 
   final KeyMetadata kmd;
   KeyVersion primaryVersion;
-  final HashMap<KeyVersion, KeyczarKey> versionMap =
-    new HashMap<KeyVersion, KeyczarKey>();
-  final HashMap<KeyHash, KeyczarKey> hashMap =
-    new HashMap<KeyHash, KeyczarKey>(); // keep track of used hash identifiers
+  final HashMap<KeyVersion, KeyczarKey> versionMap = new HashMap<KeyVersion, KeyczarKey>();
+  
+  // keeps track of used hash identifiers
+  final HashMap<KeyHash, KeyczarKey> hashMap = new HashMap<KeyHash, KeyczarKey>();
 
   private class KeyHash {
     private byte[] data;
@@ -85,14 +83,12 @@ public abstract class Keyczar {
     }
 
     if (kmd.isEncrypted() && !(reader instanceof EncryptedReader)) {
-      throw new KeyczarException(
-          Messages.getString("Keyczar.NeedEncryptedReader"));
+      throw new KeyczarException(Messages.getString("Keyczar.NeedEncryptedReader"));
     }
     for (KeyVersion version : kmd.getVersions()) {
       if (version.getStatus() == KeyStatus.PRIMARY) {
         if (primaryVersion != null) {
-          throw new KeyczarException(
-              Messages.getString("Keyczar.SinglePrimary"));
+          throw new KeyczarException(Messages.getString("Keyczar.SinglePrimary"));
         }
         primaryVersion = version;
       }
@@ -105,8 +101,8 @@ public abstract class Keyczar {
   }
 
   /**
-   * Instantiates a new Keyczar object with a KeyczarFileReader instantiated
-   * with the given file location
+   * Instantiates a new Keyczar object with a KeyczarFileReader instantiated with the given file
+   * location
    *
    * @param fileLocation
    * @throws KeyczarException
@@ -121,8 +117,8 @@ public abstract class Keyczar {
   }
 
   /**
-   * Adds a new KeyczarKey (new version) to the key store. Associates it
-   * with given version. Adds new KeyVersion to the key set.
+   * Adds a new KeyczarKey (new version) to the key store. Associates it with given version. Adds
+   * new KeyVersion to the key set.
    *
    * @param version KeyVersion
    * @param key KeyczarKey

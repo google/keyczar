@@ -14,6 +14,7 @@ public interface AesKeyParameters extends KeyParameters {
 
   /**
    * Returns HMAC key which should be used with the AES key to verify ciphertexts.
+   *
    * @throws KeyczarException
    */
   HmacKey getHmacKey() throws KeyczarException;

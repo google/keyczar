@@ -8,9 +8,9 @@ import java.security.spec.ECParameterSpec;
 
 /**
  * This class implements an EC keypair generator.
- * 
+ *
  * @author martclau@gmail.com
- * 
+ *
  */
 public class EcKeyPairGeneratorImpl extends KeyPairGeneratorSpi {
 
@@ -34,30 +34,29 @@ public class EcKeyPairGeneratorImpl extends KeyPairGeneratorSpi {
     BigInteger[] Q = EcCore.multiplyPoint(G, S, params);
     EcCore.toAffine(Q, params);
 
-    return new KeyPair(new EcPublicKeyImpl(Q[0], Q[1], params),
-        new EcPrivateKeyImpl(S, params));
+    return new KeyPair(new EcPublicKeyImpl(Q[0], Q[1], params), new EcPrivateKeyImpl(S, params));
   }
 
   @Override
   public void initialize(int keysize, SecureRandom random) {
     switch (keysize) {
-    case 192:
-      this.params = EcCore.getParams(EcCore.EC_PARAMS_P192_OID);
-      break;
-    case 224:
-      this.params = EcCore.getParams(EcCore.EC_PARAMS_P224_OID);
-      break;
-    case 256:
-      this.params = EcCore.getParams(EcCore.EC_PARAMS_P256_OID);
-      break;
-    case 384:
-      this.params = EcCore.getParams(EcCore.EC_PARAMS_P384_OID);
-      break;
-    case 521:
-      this.params = EcCore.getParams(EcCore.EC_PARAMS_P521_OID);
-      break;
-    default:
-      throw new IllegalArgumentException("Unsupported keysize: " + keysize);
+      case 192:
+        this.params = EcCore.getParams(EcCore.EC_PARAMS_P192_OID);
+        break;
+      case 224:
+        this.params = EcCore.getParams(EcCore.EC_PARAMS_P224_OID);
+        break;
+      case 256:
+        this.params = EcCore.getParams(EcCore.EC_PARAMS_P256_OID);
+        break;
+      case 384:
+        this.params = EcCore.getParams(EcCore.EC_PARAMS_P384_OID);
+        break;
+      case 521:
+        this.params = EcCore.getParams(EcCore.EC_PARAMS_P521_OID);
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported keysize: " + keysize);
     }
   }
 }

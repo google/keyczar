@@ -1,22 +1,18 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
-
-import java.io.RandomAccessFile;
 
 import junit.framework.TestCase;
 
@@ -29,16 +25,18 @@ import org.keyczar.exceptions.NoPrimaryKeyException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.keyparams.RsaKeyParameters;
 
+import java.io.RandomAccessFile;
+
 /**
  *
- * Mocks out KeyczarReader and uses it to influence the creation of a
- * GenericKeyCzar that reads metadata and key info from our mock.
+ * Mocks out KeyczarReader and uses it to influence the creation of a GenericKeyCzar that reads
+ * metadata and key info from our mock.
  *
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
 public class KeyczarToolTest extends TestCase {
-  private final static class FastRsaKeyParameters implements RsaKeyParameters {
+  private static final class FastRsaKeyParameters implements RsaKeyParameters {
     @Override
     public int getKeySize() {
       return 1024; // use 1024-bit keys for speed
@@ -62,8 +60,8 @@ public class KeyczarToolTest extends TestCase {
     mock.addKey(77, KeyStatus.ACTIVE);
     mock.addKey(99, KeyStatus.INACTIVE);
 
-    pubMock = new MockKeyczarReader("PUBLIC-TEST",
-        KeyPurpose.DECRYPT_AND_ENCRYPT, DefaultKeyType.RSA_PRIV);
+    pubMock = new MockKeyczarReader(
+        "PUBLIC-TEST", KeyPurpose.DECRYPT_AND_ENCRYPT, DefaultKeyType.RSA_PRIV);
 
     KeyczarTool.setReader(mock); // use mock reader
   }
@@ -189,15 +187,15 @@ public class KeyczarToolTest extends TestCase {
     KeyczarTool.setReader(pubMock); // use pubMock reader instead
 
     assertEquals(0, pubMock.numKeys());
-    KeyczarTool.main(new String[] { "importkey", "--pemfile=" + TEST_DATA + "rsa-crypt-crt.pem",
-        "--status=primary"});
+    KeyczarTool.main(new String[] {
+        "importkey", "--pemfile=" + TEST_DATA + "rsa-crypt-crt.pem", "--status=primary"});
     assertEquals(1, pubMock.numKeys());
     assertTrue(pubMock.existsVersion(1));
     assertEquals(KeyStatus.PRIMARY, pubMock.getStatus(1));
     assertFalse(pubMock.getKey(1).contains("\"PKCS\""));
 
-    KeyczarTool.main(new String[] { "importkey", "--pemfile=" + TEST_DATA + "rsa-sign-crt.pem",
-        "--status=primary"});
+    KeyczarTool.main(new String[] {
+        "importkey", "--pemfile=" + TEST_DATA + "rsa-sign-crt.pem", "--status=primary"});
     assertEquals(2, pubMock.numKeys());
     assertTrue(pubMock.existsVersion(2));
     assertEquals(KeyStatus.ACTIVE, pubMock.getStatus(1));
@@ -217,9 +215,8 @@ public class KeyczarToolTest extends TestCase {
 
   @Test
   public final void testImportPkcsRsaKey() throws KeyczarException {
-    String[] args = {"importkey",
-                     "--pemfile=" + TEST_DATA + "rsa-crypt-pkcs8.pem",
-                     "--passphrase=pass"};
+    String[] args =
+        {"importkey", "--pemfile=" + TEST_DATA + "rsa-crypt-pkcs8.pem", "--passphrase=pass"};
     assertEquals(3, mock.numKeys());
     KeyczarTool.main(args);
     assertEquals(4, mock.numKeys());
@@ -229,8 +226,7 @@ public class KeyczarToolTest extends TestCase {
 
   @Test
   public final void testImportPkcsRsaKeyNoPassphrase() {
-    String[] args = {"importkey",
-                     "--pemfile=" + TEST_DATA + "rsa-crypt-pkcs8.pem" };
+    String[] args = {"importkey", "--pemfile=" + TEST_DATA + "rsa-crypt-pkcs8.pem"};
 
     assertEquals(3, mock.numKeys());
     KeyczarTool.main(args);
@@ -239,9 +235,8 @@ public class KeyczarToolTest extends TestCase {
 
   @Test
   public final void testImportPkcsDsaKey() throws KeyczarException {
-    String[] args = {"importkey",
-                     "--pemfile=" + TEST_DATA + "dsa-sign-pkcs8.pem",
-                     "--passphrase=pass"};
+    String[] args =
+        {"importkey", "--pemfile=" + TEST_DATA + "dsa-sign-pkcs8.pem", "--passphrase=pass"};
 
     assertEquals(3, mock.numKeys());
     KeyczarTool.main(args);
@@ -252,8 +247,7 @@ public class KeyczarToolTest extends TestCase {
 
   @Test
   public final void testImportPkcsDsaKeyNoPassphrase() {
-    String[] args = {"importkey",
-                     "--pemfile=" + TEST_DATA + "dsa-sign-pkcs8.pem" };
+    String[] args = {"importkey", "--pemfile=" + TEST_DATA + "dsa-sign-pkcs8.pem"};
 
     assertEquals(3, mock.numKeys());
     KeyczarTool.main(args);
@@ -292,13 +286,10 @@ public class KeyczarToolTest extends TestCase {
       Crypter crypter = new Crypter(testKeyPath);
 
       {
-        String[] args = {"usekey",
-                         "--location=" + testKeyPath,
-                         "--destination=" + testOutputPath,
-                         testMsg};
+        String[] args =
+            {"usekey", "--location=" + testKeyPath, "--destination=" + testOutputPath, testMsg};
         KeyczarTool.main(args);
-        RandomAccessFile encryptedOutput =
-            new RandomAccessFile(testOutputPath, "r");
+        RandomAccessFile encryptedOutput = new RandomAccessFile(testOutputPath, "r");
         String encryptedKey = encryptedOutput.readLine();
         encryptedOutput.close();
 
@@ -306,14 +297,11 @@ public class KeyczarToolTest extends TestCase {
       }
       {
         // Verify argument order does not matter.
-        String[] args2 = {"usekey",
-                          "--location=" + testKeyPath,
-                          testMsg,
-                          "--destination=" + testOutputPath2};
+        String[] args2 =
+            {"usekey", "--location=" + testKeyPath, testMsg, "--destination=" + testOutputPath2};
 
         KeyczarTool.main(args2);
-        RandomAccessFile encryptedOutput =
-            new RandomAccessFile(testOutputPath2, "r");
+        RandomAccessFile encryptedOutput = new RandomAccessFile(testOutputPath2, "r");
         String encryptedKey = encryptedOutput.readLine();
         encryptedOutput.close();
 
@@ -327,7 +315,7 @@ public class KeyczarToolTest extends TestCase {
   }
 
   // TODO(mtomczak): Add tests for stdin and stdout support. Will need
-  //                 to mock stdin and stdout in keytool.
+  // to mock stdin and stdout in keytool.
   // TODO(swillden) Add export tests.
 
   @Override

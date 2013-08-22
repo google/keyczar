@@ -1,17 +1,15 @@
 /*
  * Copyright 2012 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -21,9 +19,9 @@ import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.keyparams.AesKeyParameters;
 
 /**
- * A {@link SessionCrypter} encrypts and decrypts session key encrypted data.
- * The session key is encrypted and made available as session material so that
- * remote {@link SessionCrypter}s can be created.
+ * A {@link SessionCrypter} encrypts and decrypts session key encrypted data. The session key is
+ * encrypted and made available as session material so that remote {@link SessionCrypter}s can be
+ * created.
  *
  * A typical exchange may look like,
  *
@@ -33,7 +31,7 @@ import org.keyczar.keyparams.AesKeyParameters;
  * byte[] sessionMaterial = crypter.getSessionMaterial();
  * </pre>
  *
- *    ... and on the remote side ...
+ * ... and on the remote side ...
  *
  * <pre>
  * SessionCrypter crypter = new SessionCrypter(keyCrypter, sessionMaterial);
@@ -51,9 +49,8 @@ public class SessionCrypter {
   private final byte[] sessionMaterial;
 
   /**
-   * Create a session crypter. This will generate a session key and encrypt
-   * it with the given Encrypter. That session key will be used to encrypt
-   * and decrypt arbitrary data.
+   * Create a session crypter. This will generate a session key and encrypt it with the given
+   * Encrypter. That session key will be used to encrypt and decrypt arbitrary data.
    *
    * @param encrypter The encrypter used to encrypt session keys
    * @throws KeyczarException If there is an error instantiating a Crypter
@@ -67,16 +64,15 @@ public class SessionCrypter {
   }
 
   /**
-   * Create a session crypter. This will use the crypter to decrypt the given
-   * session material and use it to create a session key. That session key will
-   * be used to encrypt and decrypt arbitrary data.
+   * Create a session crypter. This will use the crypter to decrypt the given session material and
+   * use it to create a session key. That session key will be used to encrypt and decrypt arbitrary
+   * data.
    *
    * @param crypter The crypter to decrypt session material with
    * @param sessionMaterial An encrypted symmetric key to decrypt
    * @throws KeyczarException If there is an error during decryption
    */
-  public SessionCrypter(Crypter crypter, byte[] sessionMaterial)
-      throws KeyczarException {
+  public SessionCrypter(Crypter crypter, byte[] sessionMaterial) throws KeyczarException {
     byte[] packedKeys = crypter.decrypt(sessionMaterial);
     AesKey aesKey = AesKey.fromPackedKey(packedKeys);
     ImportedKeyReader importedKeyReader = new ImportedKeyReader(aesKey);
@@ -103,8 +99,7 @@ public class SessionCrypter {
   }
 
   /**
-   * Returns an encrypted session key useful for initializing remote
-   * {@link SessionCrypter}'s.
+   * Returns an encrypted session key useful for initializing remote {@link SessionCrypter}'s.
    *
    * @return the encrypted session key
    */

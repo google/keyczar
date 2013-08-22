@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -61,8 +59,8 @@ public class AesKey extends KeyczarKey {
   private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
   /**
-   * Creates an AES key from the provided key data and HMAC key.  The key data can be any
-   * byte array, but must be a valid AES key length (128, 192 or 256 bits).
+   * Creates an AES key from the provided key data and HMAC key. The key data can be any byte array,
+   * but must be a valid AES key length (128, 192 or 256 bits).
    */
   public AesKey(byte[] aesKeyBytes, HmacKey hmacKey) throws KeyczarException {
     super(aesKeyBytes.length * 8);
@@ -119,8 +117,7 @@ public class AesKey extends KeyczarKey {
   }
 
   /*
-   * Used by SessionEncrypters to get a packed representation of an AES and
-   * HMAC key.
+   * Used by SessionEncrypters to get a packed representation of an AES and HMAC key.
    */
   byte[] getEncoded() {
     return Util.lenPrefixPack(aesKey.getEncoded(), hmacKey.getEncoded());
@@ -142,12 +139,11 @@ public class AesKey extends KeyczarKey {
     private final SigningStream signStream;
     boolean ivRead = false;
 
-    public AesStream() throws KeyczarException  {
+    public AesStream() throws KeyczarException {
       /*
-       * The JCE Cipher.init() call essentially reallocates a new Cipher object
-       * We avoid this by initializing two Cipher objects with zero-valued IVs,
-       * Then passing IVs for CBC mode ourselves. The Ciphers will be cached in
-       * this stream
+       * The JCE Cipher.init() call essentially reallocates a new Cipher object We avoid this by
+       * initializing two Cipher objects with zero-valued IVs, Then passing IVs for CBC mode
+       * ourselves. The Ciphers will be cached in this stream
        */
       IvParameterSpec zeroIv = new IvParameterSpec(new byte[BLOCK_SIZE]);
       try {
@@ -194,13 +190,12 @@ public class AesKey extends KeyczarKey {
     }
 
     @Override
-    public int updateDecrypt(ByteBuffer input, ByteBuffer output)
-        throws KeyczarException {
+    public int updateDecrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       if (ivRead && input.remaining() >= BLOCK_SIZE) {
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[BLOCK_SIZE];
         input.get(temp);
-        decryptingCipher.update(temp);  // discard IV preimage byte array
+        decryptingCipher.update(temp); // discard IV preimage byte array
         ivRead = false;
       }
       try {
@@ -211,8 +206,7 @@ public class AesKey extends KeyczarKey {
     }
 
     @Override
-    public int updateEncrypt(ByteBuffer input, ByteBuffer output)
-        throws KeyczarException {
+    public int updateEncrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       try {
         return encryptingCipher.update(input, output);
       } catch (javax.crypto.ShortBufferException e) {
@@ -221,8 +215,7 @@ public class AesKey extends KeyczarKey {
     }
 
     @Override
-    public int doFinalDecrypt(ByteBuffer input, ByteBuffer output)
-        throws KeyczarException {
+    public int doFinalDecrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       if (ivRead) {
         if (input.remaining() == 0) {
           // This can occur if someone encrypts an 0-length array
@@ -231,7 +224,7 @@ public class AesKey extends KeyczarKey {
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[BLOCK_SIZE];
         input.get(temp);
-        decryptingCipher.update(temp);  // discard IV preimage byte array
+        decryptingCipher.update(temp); // discard IV preimage byte array
         ivRead = false;
       }
       try {
@@ -248,8 +241,7 @@ public class AesKey extends KeyczarKey {
     }
 
     @Override
-    public int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
-        throws KeyczarException {
+    public int doFinalEncrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       try {
         return encryptingCipher.doFinal(input, output);
       } catch (GeneralSecurityException e) {

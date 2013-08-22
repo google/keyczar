@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -45,8 +43,7 @@ import javax.crypto.ShortBufferException;
 
 
 /**
- * Wrapping class for RSA Public Keys. These must be exported from existing RSA
- * private key sets.
+ * Wrapping class for RSA Public Keys. These must be exported from existing RSA private key sets.
  *
  * @author steveweis@gmail.com (Steve Weis)
  */
@@ -112,9 +109,9 @@ public class RsaPublicKey extends KeyczarPublicKey {
   }
 
   /**
-   * Initialize JCE key from JSON data.  Must be called after an instance is read from JSON.
-   * In default scope so {@link RsaPrivateKey} can call it when a private key string (which
-   * contains a public key string) is deserialized.
+   * Initialize JCE key from JSON data. Must be called after an instance is read from JSON. In
+   * default scope so {@link RsaPrivateKey} can call it when a private key string (which contains a
+   * public key string) is deserialized.
    */
   RsaPublicKey initFromJson() throws KeyczarException {
     initializeJceKey(Util.decodeBigInteger(modulus), Util.decodeBigInteger(publicExponent));
@@ -180,8 +177,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
     }
 
     @Override
-    public int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
-        throws KeyczarException {
+    public int doFinalEncrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       try {
         final int ciphertextSize = cipher.getOutputSize(input.limit());
         final int outputCapacity = output.limit() - output.position();
@@ -196,7 +192,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
             && tmpOutput.array()[ciphertextSize - 1] == 0) {
           // There exists at least one JCE (the one IBM ships with some versions of
           // Websphere) which outputs ciphertext that's one byte too long, appending
-          // a trailing zero.  We need to trim this byte.
+          // a trailing zero. We need to trim this byte.
           output.put(tmpOutput.array(), 0, outputCapacity);
 
         } else {
@@ -260,8 +256,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
     }
 
     @Override
-    public int updateEncrypt(ByteBuffer input, ByteBuffer output)
-        throws KeyczarException {
+    public int updateEncrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       try {
         return cipher.update(input, output);
       } catch (ShortBufferException e) {
@@ -281,8 +276,7 @@ public class RsaPublicKey extends KeyczarPublicKey {
     @Override
     public boolean verify(ByteBuffer sig) throws KeyczarException {
       try {
-        return signature.verify(sig.array(), sig.position(), sig.limit()
-            - sig.position());
+        return signature.verify(sig.array(), sig.position(), sig.limit() - sig.position());
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }

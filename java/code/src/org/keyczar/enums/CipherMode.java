@@ -1,22 +1,21 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar.enums;
 
 import com.google.gson.annotations.Expose;
+
 /**
  * Encodes different modes of operation:
  *   Cipher Block Chaining (CBC) with initial value (IV)
@@ -28,14 +27,11 @@ import com.google.gson.annotations.Expose;
  *
  */
 public enum CipherMode {
-  CBC(0, "AES/CBC/PKCS5Padding", true),
-  CTR(1, "AES/CTR/NoPadding", true),
-  ECB(2, "AES/ECB/NoPadding", false),
-  DET_CBC(3, "AES/CBC/PKCS5Padding", false);
+  CBC(0, "AES/CBC/PKCS5Padding", true), CTR(1, "AES/CTR/NoPadding", true), ECB(
+      2, "AES/ECB/NoPadding", false), DET_CBC(3, "AES/CBC/PKCS5Padding", false);
 
   private String jceMode;
-  @Expose
-  private int value;
+  @Expose private int value;
 
   private CipherMode(int v, String s, boolean useIv) {
     value = v;

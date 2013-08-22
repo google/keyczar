@@ -10,10 +10,10 @@ import org.keyczar.keyparams.RsaKeyParameters;
 import java.util.HashMap;
 
 /**
- * A key configuration class used by KeyczarTool to provide configuration data for
- * key generation.  It extracts provided configuration parameters from command-line
- * flags, handles providing default values where possible and reports errors and
- * warnings for missing required values or provided invalid or sub-optimal values.
+ * A key configuration class used by KeyczarTool to provide configuration data for key generation.
+ * It extracts provided configuration parameters from command-line flags, handles providing default
+ * values where possible and reports errors and warnings for missing required values or provided
+ * invalid or sub-optimal values.
  *
  * @author swillden@google.com (Shawn Willden)
  */

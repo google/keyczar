@@ -1,35 +1,32 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar.experimental;
-
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.TreeSet;
 
 import org.keyczar.Signer;
 import org.keyczar.annotations.Experimental;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyczarReader;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.TreeSet;
+
 /**
- * Adds a signature parameter, named sig by default, to a URI query which
- * signs all the query parameters. Can use to check integrity of query
- * parameters. Canonicalizes URI query parameters to be in lexicographic order.
+ * Adds a signature parameter, named sig by default, to a URI query which signs all the query
+ * parameters. Can use to check integrity of query parameters. Canonicalizes URI query parameters to
+ * be in lexicographic order.
  *
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
@@ -49,8 +46,8 @@ public class UriSigner {
   }
 
   /**
-   * Returns a signed URI with the signature in the default parameter 'sig'.
-   * Rest of the URI and query parameters are unchanged. Entire URI is signed.
+   * Returns a signed URI with the signature in the default parameter 'sig'. Rest of the URI and
+   * query parameters are unchanged. Entire URI is signed.
    *
    * @param uri to be signed
    * @return signed uri
@@ -61,9 +58,8 @@ public class UriSigner {
   }
 
   /**
-   * Returns a signed URI with the signature in a parameter with the specified
-   * name. Rest of the URI and query parameters are unchanged.
-   * Entire URI is signed.
+   * Returns a signed URI with the signature in a parameter with the specified name. Rest of the URI
+   * and query parameters are unchanged. Entire URI is signed.
    *
    * @param uri to be signed
    * @param sigParam String name of signature parameter
@@ -85,16 +81,16 @@ public class UriSigner {
     }
 
     try {
-      return new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(),
-          signedQuery, uri.getFragment());
+      return new URI(
+          uri.getScheme(), uri.getAuthority(), uri.getPath(), signedQuery, uri.getFragment());
     } catch (URISyntaxException e) {
       throw new KeyczarException(e);
     }
   }
 
   /**
-   * Verifies that the given URI is properly signed. Assumes signature is
-   * in query parameter named 'sig'.
+   * Verifies that the given URI is properly signed. Assumes signature is in query parameter named
+   * 'sig'.
    *
    * @param signedUri
    * @return true if signature is valid, false otherwise
@@ -105,16 +101,15 @@ public class UriSigner {
   }
 
   /**
-   * Verifies that the given URI is properly signed. Takes signature from
-   * from the parameter name given.
+   * Verifies that the given URI is properly signed. Takes signature from from the parameter name
+   * given.
    *
    * @param signedUri
    * @param sigParam
    * @return true if signature is valid, false otherwise
    * @throws KeyczarException
    */
-  public boolean verify(URI signedUri, String sigParam)
-      throws KeyczarException {
+  public boolean verify(URI signedUri, String sigParam) throws KeyczarException {
     if (signedUri == null) {
       return false;
     }
@@ -143,12 +138,12 @@ public class UriSigner {
       URI unsignedUri;
       if (unsignedQuery.length() > 0) {
         unsignedQuery.deleteCharAt(unsignedQuery.length() - 1); // extra &
-        unsignedUri = new URI(signedUri.getScheme(), signedUri.getAuthority(),
-            signedUri.getPath(), unsignedQuery.toString(),
-            signedUri.getFragment());
+        unsignedUri = new URI(signedUri.getScheme(), signedUri.getAuthority(), signedUri.getPath(),
+            unsignedQuery.toString(), signedUri.getFragment());
       } else {
-        unsignedUri = new URI(signedUri.getScheme(), signedUri.getAuthority(),
-            signedUri.getPath(), null, signedUri.getFragment());
+        unsignedUri = new URI(
+            signedUri.getScheme(), signedUri.getAuthority(), signedUri.getPath(), null,
+            signedUri.getFragment());
       }
       unsignedUri = canonicalUri(unsignedUri); // CHECK: use canonical version
       return signer.verify(unsignedUri.toASCIIString(), sig);
@@ -159,8 +154,8 @@ public class UriSigner {
   }
 
   /**
-   * Return canonical version of query string with all query parameters sorted
-   * in lexicographic order.
+   * Return canonical version of query string with all query parameters sorted in lexicographic
+   * order.
    *
    * @param query to canonicalize
    * @return canonicalized query String
@@ -191,7 +186,8 @@ public class UriSigner {
    * @throws URISyntaxException if uri is invalid
    */
   private URI canonicalUri(URI uri) throws URISyntaxException {
-    return (uri == null) ? null : new URI(uri.getScheme(), uri.getAuthority(),
-        uri.getPath(), canonicalQuery(uri.getQuery()), uri.getFragment());
+    return (uri == null) ? null
+        : new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(),
+            canonicalQuery(uri.getQuery()), uri.getFragment());
   }
 }

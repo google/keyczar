@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -122,17 +120,21 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   /**
-   * Initialize JCE key from JSON data.  Must be called after an instance is read from JSON.
+   * Initialize JCE key from JSON data. Must be called after an instance is read from JSON.
    */
   private RsaPrivateKey initFromJson() throws KeyczarException {
     publicKey.initFromJson();
     try {
       final KeyFactory keyFactory = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
-      final RSAPrivateCrtKeySpec spec =
-          new RSAPrivateCrtKeySpec(decodeBigInteger(publicKey.modulus),
-            decodeBigInteger(publicKey.publicExponent), decodeBigInteger(privateExponent),
-            decodeBigInteger(primeP), decodeBigInteger(primeQ), decodeBigInteger(primeExponentP),
-            decodeBigInteger(primeExponentQ), decodeBigInteger(crtCoefficient));
+      final RSAPrivateCrtKeySpec spec = new RSAPrivateCrtKeySpec(
+          decodeBigInteger(publicKey.modulus),
+          decodeBigInteger(publicKey.publicExponent),
+          decodeBigInteger(privateExponent),
+          decodeBigInteger(primeP),
+          decodeBigInteger(primeQ),
+          decodeBigInteger(primeExponentP),
+          decodeBigInteger(primeExponentQ),
+          decodeBigInteger(crtCoefficient));
       jcePrivateKey = (RSAPrivateCrtKey) keyFactory.generatePrivate(spec);
       return this;
     } catch (GeneralSecurityException e) {
@@ -145,8 +147,8 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     return jcePrivateKey;
   }
 
-  private class RsaPrivateStream implements SigningStream, VerifyingStream,
-      DecryptingStream, EncryptingStream {
+  private class RsaPrivateStream
+      implements SigningStream, VerifyingStream, DecryptingStream, EncryptingStream {
     private Cipher cipher;
     private EncryptingStream encryptingStream;
     private Signature signature;
@@ -169,8 +171,7 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     }
 
     @Override
-    public int doFinalDecrypt(ByteBuffer input, ByteBuffer output)
-        throws KeyczarException {
+    public int doFinalDecrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       try {
         return cipher.doFinal(input, output);
       } catch (GeneralSecurityException e) {
@@ -179,8 +180,7 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     }
 
     @Override
-    public int doFinalEncrypt(ByteBuffer input, ByteBuffer output)
-        throws KeyczarException {
+    public int doFinalEncrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       return encryptingStream.doFinalEncrypt(input, output);
     }
 
@@ -259,8 +259,7 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     }
 
     @Override
-    public int updateDecrypt(ByteBuffer input, ByteBuffer output)
-        throws KeyczarException {
+    public int updateDecrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       try {
         return cipher.update(input, output);
       } catch (ShortBufferException e) {
@@ -269,8 +268,7 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     }
 
     @Override
-    public int updateEncrypt(ByteBuffer input, ByteBuffer output)
-        throws KeyczarException {
+    public int updateEncrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
       return encryptingStream.updateEncrypt(input, output);
     }
 

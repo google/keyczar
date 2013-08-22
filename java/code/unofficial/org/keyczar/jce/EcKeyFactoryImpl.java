@@ -1,5 +1,14 @@
 package org.keyczar.jce;
 
+import org.mozilla.jss.asn1.ASN1Value;
+import org.mozilla.jss.asn1.BIT_STRING;
+import org.mozilla.jss.asn1.INTEGER;
+import org.mozilla.jss.asn1.OBJECT_IDENTIFIER;
+import org.mozilla.jss.asn1.OCTET_STRING;
+import org.mozilla.jss.asn1.SEQUENCE;
+import org.mozilla.jss.pkix.primitive.AlgorithmIdentifier;
+import org.mozilla.jss.pkix.primitive.PrivateKeyInfo;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
@@ -15,24 +24,15 @@ import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
-import org.mozilla.jss.asn1.ASN1Value;
-import org.mozilla.jss.asn1.BIT_STRING;
-import org.mozilla.jss.asn1.INTEGER;
-import org.mozilla.jss.asn1.OBJECT_IDENTIFIER;
-import org.mozilla.jss.asn1.OCTET_STRING;
-import org.mozilla.jss.asn1.SEQUENCE;
-import org.mozilla.jss.pkix.primitive.AlgorithmIdentifier;
-import org.mozilla.jss.pkix.primitive.PrivateKeyInfo;
-
 /**
  * This class implements an EC key factory capable of generating:
  * <ul>
  * <li>Private keys from PKCS#8 and ECPrivateKeySpec
  * <li>Public keys from X.509 and ECPublicKeySpec
  * </ul>
- * 
+ *
  * @author martclau@gmail.com
- * 
+ *
  */
 public class EcKeyFactoryImpl extends KeyFactorySpi {
 
@@ -45,8 +45,8 @@ public class EcKeyFactoryImpl extends KeyFactorySpi {
     OBJECT_IDENTIFIER.Template ot = new OBJECT_IDENTIFIER.Template();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     val.encode(baos);
-    OBJECT_IDENTIFIER o = (OBJECT_IDENTIFIER) ot
-        .decode(new ByteArrayInputStream(baos.toByteArray()));
+    OBJECT_IDENTIFIER o =
+        (OBJECT_IDENTIFIER) ot.decode(new ByteArrayInputStream(baos.toByteArray()));
     StringBuffer sb = new StringBuffer();
     long[] nums = o.getNumbers();
     for (int i = 0; i < nums.length - 1; i++) {
@@ -57,31 +57,27 @@ public class EcKeyFactoryImpl extends KeyFactorySpi {
   }
 
   @Override
-  protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
-      throws InvalidKeySpecException {
+  protected PrivateKey engineGeneratePrivate(KeySpec keySpec) throws InvalidKeySpecException {
     if (keySpec instanceof PKCS8EncodedKeySpec) {
       try {
         PrivateKeyInfo.Template pkiTemp = new PrivateKeyInfo.Template();
         byte[] data = ((PKCS8EncodedKeySpec) keySpec).getEncoded();
-        PrivateKeyInfo pki = (PrivateKeyInfo) pkiTemp
-            .decode(new ByteArrayInputStream(data));
+        PrivateKeyInfo pki = (PrivateKeyInfo) pkiTemp.decode(new ByteArrayInputStream(data));
 
         AlgorithmIdentifier algid = pki.getPrivateKeyAlgorithm();
-        if (!algid.getOID().toString().equals("{1 2 840 10045 2 1}")) // ecPublicKey
+        if (!algid.getOID().toString().equals("{1 2 840 10045 2 1}")) { // ecPublicKey
           throw new IllegalArgumentException("Unsupported key");
+        }
 
-        ECParameterSpec params = EcCore.getParams(decodeOID(algid
-            .getParameters()));
+        ECParameterSpec params = EcCore.getParams(decodeOID(algid.getParameters()));
 
         SEQUENCE.Template foo = new SEQUENCE.Template();
         foo.addElement(new INTEGER.Template());
         foo.addElement(new OCTET_STRING.Template());
 
-        SEQUENCE ecPrivateKey = (SEQUENCE) foo.decode(new ByteArrayInputStream(
-            pki.getEncoded()));
+        SEQUENCE ecPrivateKey = (SEQUENCE) foo.decode(new ByteArrayInputStream(pki.getEncoded()));
         OCTET_STRING arrhh = (OCTET_STRING) ecPrivateKey.elementAt(1);
-        return new EcPrivateKeyImpl(new BigInteger(1, arrhh.toByteArray()),
-            params);
+        return new EcPrivateKeyImpl(new BigInteger(1, arrhh.toByteArray()), params);
       } catch (Exception e) {
         throw new InvalidKeySpecException("Invalid key encoding", e);
       }
@@ -94,8 +90,7 @@ public class EcKeyFactoryImpl extends KeyFactorySpi {
   }
 
   @Override
-  protected PublicKey engineGeneratePublic(KeySpec keySpec)
-      throws InvalidKeySpecException {
+  protected PublicKey engineGeneratePublic(KeySpec keySpec) throws InvalidKeySpecException {
     if (keySpec instanceof X509EncodedKeySpec) {
       try {
         SEQUENCE.Template outer = new SEQUENCE.Template();
@@ -103,16 +98,14 @@ public class EcKeyFactoryImpl extends KeyFactorySpi {
         outer.addElement(BIT_STRING.getTemplate());
 
         byte[] data = ((X509EncodedKeySpec) keySpec).getEncoded();
-        SEQUENCE ecPublicKey = (SEQUENCE) outer
-            .decode(new ByteArrayInputStream(data));
+        SEQUENCE ecPublicKey = (SEQUENCE) outer.decode(new ByteArrayInputStream(data));
 
-        AlgorithmIdentifier algid = (AlgorithmIdentifier) ecPublicKey
-            .elementAt(0);
-        if (!algid.getOID().toString().equals("{1 2 840 10045 2 1}")) // ecPublicKey
+        AlgorithmIdentifier algid = (AlgorithmIdentifier) ecPublicKey.elementAt(0);
+        if (!algid.getOID().toString().equals("{1 2 840 10045 2 1}")) { // ecPublicKey
           throw new IllegalArgumentException("Unsupported key");
+        }
 
-        ECParameterSpec params = EcCore.getParams(decodeOID(algid
-            .getParameters()));
+        ECParameterSpec params = EcCore.getParams(decodeOID(algid.getParameters()));
 
         BIT_STRING bs = (BIT_STRING) ecPublicKey.elementAt(1);
         data = bs.getBits();

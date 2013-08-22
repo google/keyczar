@@ -11,8 +11,8 @@ import org.keyczar.exceptions.KeyczarException;
 public interface RsaKeyParameters extends KeyParameters {
 
   /**
-   * Returns the padding mode that should be used by the generated key to generate ciphertexts,
-   * or null if unspecified.
+   * Returns the padding mode that should be used by the generated key to generate ciphertexts, or
+   * null if unspecified.
    */
   public RsaPadding getRsaPadding() throws KeyczarException;
 }

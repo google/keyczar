@@ -42,9 +42,9 @@ public class MockKeyczarReader implements KeyczarReader {
 
   @Override
   public String getKey() throws KeyczarException {
-	KeyMetadata metadata = KeyMetadata.read(getMetadata());
+    KeyMetadata metadata = KeyMetadata.read(getMetadata());
 
-	return getKey(metadata.getPrimaryVersion().getVersionNumber());
+    return getKey(metadata.getPrimaryVersion().getVersionNumber());
   }
 
   @Override
@@ -84,8 +84,7 @@ public class MockKeyczarReader implements KeyczarReader {
     return kmd.getType();
   }
 
-  public boolean addKey(int versionNumber, KeyStatus status)
-      throws KeyczarException {
+  public boolean addKey(int versionNumber, KeyStatus status) throws KeyczarException {
     KeyType type = kmd.getType();
     KeyczarKey key = type.getBuilder().generate(type.applyDefaultParameters(null));
     keys.put(versionNumber, key);
@@ -113,10 +112,8 @@ public class MockKeyczarReader implements KeyczarReader {
 
   public boolean hasPublicKey(int versionNumber) {
     KeyczarPrivateKey privateKey = (KeyczarPrivateKey) keys.get(versionNumber);
-    KeyczarPublicKey publicKey =
-      (KeyczarPublicKey) publicKeys.get(versionNumber);
-    return privateKey != null && publicKey != null &&
-      publicKey.equals(privateKey.getPublic());
+    KeyczarPublicKey publicKey = (KeyczarPublicKey) publicKeys.get(versionNumber);
+    return privateKey != null && publicKey != null && publicKey.equals(privateKey.getPublic());
   }
 
   public int numKeys() {

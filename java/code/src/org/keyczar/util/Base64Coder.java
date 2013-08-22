@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar.util;
@@ -36,6 +34,7 @@ public class Base64Coder {
       'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
       'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3',
       '4', '5', '6', '7', '8', '9', '-', '_'};
+
   /**
    * Mapping table from Base64 characters to 6-bit nibbles.
    */
@@ -62,6 +61,7 @@ public class Base64Coder {
 
   /**
    * Decodes a web-safe Base64 encoded string.
+   *
    * @deprecated Use {@link #decodeWebSafe(String)} instead.
    */
   @Deprecated
@@ -71,11 +71,12 @@ public class Base64Coder {
 
   /**
    * Decodes a web-safe Base64 encoded string
-   * @param source The string to decode. May contain whitespace and optionally
-   * up to two padding '=' characters.
+   *
+   * @param source The string to decode. May contain whitespace and optionally up to two padding '='
+   *        characters.
    * @return A byte array representation of the encoded data.
-   * @throws Base64DecodingException If the source string contains an illegal
-   * character or is of an illegal length (1 mod 4).
+   * @throws Base64DecodingException If the source string contains an illegal character or is of an
+   *         illegal length (1 mod 4).
    */
   public static byte[] decodeWebSafe(String source) throws Base64DecodingException {
     char[] input = source.toCharArray();
@@ -101,15 +102,14 @@ public class Base64Coder {
     int remainder = inLen % 4;
     int outputLen = inputBlocks * 3;
     switch (remainder) {
-    case 1:
-      throw new Base64DecodingException(
-          Messages.getString("Base64Coder.IllegalLength", inLen));
-    case 2:
-      outputLen += 1;
-      break;
-    case 3:
-      outputLen += 2;
-      break;
+      case 1:
+        throw new Base64DecodingException(Messages.getString("Base64Coder.IllegalLength", inLen));
+      case 2:
+        outputLen += 1;
+        break;
+      case 3:
+        outputLen += 2;
+        break;
     }
     byte[] out = new byte[outputLen];
     int buffer = 0;
@@ -129,24 +129,25 @@ public class Base64Coder {
       }
     }
     switch (buffCount) {
-    case 2:
-      out[outPos++] = (byte) (buffer >> 4);
-      break;
-    case 3:
-      out[outPos++] = (byte) (buffer >> 10);
-      out[outPos++] = (byte) (buffer >> 2);
-      break;
+      case 2:
+        out[outPos++] = (byte) (buffer >> 4);
+        break;
+      case 3:
+        out[outPos++] = (byte) (buffer >> 10);
+        out[outPos++] = (byte) (buffer >> 2);
+        break;
     }
     return out;
   }
 
   /**
    * Decodes a MIME Base64 encoded string.
-   * @param source The string to decode.  May contain whitespace and optionally up to
-   * two padding '=' characters.
+   *
+   * @param source The string to decode. May contain whitespace and optionally up to two padding '='
+   *        characters.
    * @return a byte array representation of the encoded data.
-   * @throws Base64DecodingException if the source string contains an illegal character
-   * or is of an illegal length (1 mod 4).
+   * @throws Base64DecodingException if the source string contains an illegal character or is of an
+   *         illegal length (1 mod 4).
    */
   public static byte[] decodeMime(String source) throws Base64DecodingException {
     source = source.replace('+', '-');
@@ -156,6 +157,7 @@ public class Base64Coder {
 
   /**
    * Encodes an arbitrary array of input as a web-safe Base64 string.
+   *
    * @deprecated Use {@link #encodeWebSafe(byte[])} instead.
    */
   @Deprecated
@@ -165,9 +167,10 @@ public class Base64Coder {
 
   /**
    * Encodes an arbitrary array of input as a web-safe Base64 string.
+   *
    * @param input Input bytes to encode as a web-safe Base64 String
-   * @return A web-safe Base64 representation of the input. This string will not
-   * be padded with '=' characters.
+   * @return A web-safe Base64 representation of the input. This string will not be padded with '='
+   *         characters.
    */
   public static String encodeWebSafe(byte[] input) {
     int inputBlocks = input.length / 3;
@@ -175,12 +178,12 @@ public class Base64Coder {
     int outputLen = inputBlocks * 4;
 
     switch (remainder) {
-    case 1:
-      outputLen += 2;
-      break;
-    case 2:
-      outputLen += 3;
-      break;
+      case 1:
+        outputLen += 2;
+        break;
+      case 2:
+        outputLen += 3;
+        break;
     }
 
     char[] out = new char[outputLen];
@@ -188,8 +191,8 @@ public class Base64Coder {
     int inPos = 0;
 
     for (int i = 0; i < inputBlocks; i++) {
-      int buffer = (0xFF & input[inPos++]) << 16 | (0xFF & input[inPos++]) << 8
-          | (0xFF & input[inPos++]);
+      int buffer =
+          (0xFF & input[inPos++]) << 16 | (0xFF & input[inPos++]) << 8 | (0xFF & input[inPos++]);
       out[outPos++] = ALPHABET[(buffer >> 18) & 0x3F];
       out[outPos++] = ALPHABET[(buffer >> 12) & 0x3F];
       out[outPos++] = ALPHABET[(buffer >> 6) & 0x3F];
@@ -212,10 +215,11 @@ public class Base64Coder {
 
   /**
    * Encodes an arbitrary array of input as a MIME Base64 string.
+   *
    * @param input Input bytes to encode as a MIME Base64 String
    * @param pad If true, the Base64 string will be padded with up to two '=' characters.
-   * @return A MIME Base64 representation of the input. This string will not
-   * be padded with '=' characters.
+   * @return A MIME Base64 representation of the input. This string will not be padded with '='
+   *         characters.
    */
   public static String encodeMime(byte[] input, boolean pad) {
     String result = encodeWebSafe(input);
@@ -236,8 +240,7 @@ public class Base64Coder {
 
   private static byte getByte(int i) throws Base64DecodingException {
     if (i < 0 || i > 127 || DECODE[i] == -1) {
-      throw new Base64DecodingException(
-          Messages.getString("Base64Coder.IllegalCharacter", i));
+      throw new Base64DecodingException(Messages.getString("Base64Coder.IllegalCharacter", i));
     }
     return DECODE[i];
   }

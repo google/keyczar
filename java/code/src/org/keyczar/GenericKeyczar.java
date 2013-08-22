@@ -16,9 +16,9 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Wrapper class to access Keyczar utility methods of reading and manipulating
- * key metadata files. Also contains additional utility methods for pushing
- * updates to meta files on disk and exporting public key sets.
+ * Wrapper class to access Keyczar utility methods of reading and manipulating key metadata files.
+ * Also contains additional utility methods for pushing updates to meta files on disk and exporting
+ * public key sets.
  *
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
@@ -26,6 +26,7 @@ import java.util.Set;
  */
 public class GenericKeyczar extends Keyczar {
   private static final Logger LOG = Logger.getLogger(GenericKeyczar.class);
+
   public GenericKeyczar(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
@@ -52,20 +53,18 @@ public class GenericKeyczar extends Keyczar {
   }
 
   /**
-   * Promotes the status of key with given version number. Promoting ACTIVE key
-   * automatically demotes current PRIMARY key to ACTIVE.
+   * Promotes the status of key with given version number. Promoting ACTIVE key automatically
+   * demotes current PRIMARY key to ACTIVE.
    *
    * @param versionNumber integer version number to promote
-   * @throws KeyczarException if invalid version number or trying to promote
-   * a primary key.
+   * @throws KeyczarException if invalid version number or trying to promote a primary key.
    */
   public void promote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
     LOG.debug(Messages.getString("Keyczar.PromotedVersion", version));
     switch (version.getStatus()) {
       case PRIMARY:
-        throw new KeyczarException(
-            Messages.getString("Keyczar.CantPromotePrimary"));
+        throw new KeyczarException(Messages.getString("Keyczar.CantPromotePrimary"));
       case ACTIVE:
         version.setStatus(KeyStatus.PRIMARY); // promote to PRIMARY
         if (primaryVersion != null) {
@@ -80,12 +79,12 @@ public class GenericKeyczar extends Keyczar {
   }
 
   /**
-   * Demotes the status of key with given version number. Demoting PRIMARY key
-   * results in a key set with no primary version.
+   * Demotes the status of key with given version number. Demoting PRIMARY key results in a key set
+   * with no primary version.
    *
    * @param versionNumber integer version number to demote
-   * @throws KeyczarException if invalid version number or trying to demote
-   * a key scheduled for revocation.
+   * @throws KeyczarException if invalid version number or trying to demote a key scheduled for
+   *         revocation.
    */
   public void demote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
@@ -99,8 +98,7 @@ public class GenericKeyczar extends Keyczar {
         version.setStatus(KeyStatus.INACTIVE);
         break;
       case INACTIVE:
-        throw new KeyczarException(
-            Messages.getString("Keyczar.CantDemoteScheduled"));
+        throw new KeyczarException(Messages.getString("Keyczar.CantDemoteScheduled"));
     }
   }
 
@@ -112,9 +110,9 @@ public class GenericKeyczar extends Keyczar {
   }
 
   /**
-   * Adds a new key version with given status and next available version
-   * number to key set. Generates a new key of same type (repeated until hash
-   * identifier is unique) for this version. Uses supplied key parameters.
+   * Adds a new key version with given status and next available version number to key set.
+   * Generates a new key of same type (repeated until hash identifier is unique) for this version.
+   * Uses supplied key parameters.
    *
    * @param status KeyStatus desired for new key version
    * @param keyParams parameters for new key generation.
@@ -130,8 +128,8 @@ public class GenericKeyczar extends Keyczar {
   }
 
   /**
-   * Adds the given key as a new version with given status and next available
-   * version number to key set.
+   * Adds the given key as a new version with given status and next available version number to key
+   * set.
    *
    * @param status KeyStatus desired for new key version
    */
@@ -165,11 +163,10 @@ public class GenericKeyczar extends Keyczar {
    * @return KeyVersion if it exists
    * @throws KeyczarException if version number doesn't exist
    */
-   public KeyVersion getVersion(int versionNumber) throws KeyczarException {
+  public KeyVersion getVersion(int versionNumber) throws KeyczarException {
     KeyVersion version = kmd.getVersion(versionNumber);
     if (version == null) {
-      throw new KeyczarException(
-          Messages.getString("Keyczar.NoSuchVersion", versionNumber));
+      throw new KeyczarException(Messages.getString("Keyczar.NoSuchVersion", versionNumber));
     }
     return version;
   }
@@ -179,8 +176,7 @@ public class GenericKeyczar extends Keyczar {
    * Revokes the key with given version number if it is scheduled to be revoked.
    *
    * @param versionNumber integer version number to be revoked
-   * @throws KeyczarException if version number nonexistent or key is not
-   * scheduled for revocation.
+   * @throws KeyczarException if version number nonexistent or key is not scheduled for revocation.
    */
   public void revoke(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
@@ -203,10 +199,9 @@ public class GenericKeyczar extends Keyczar {
   }
 
   /**
-   * For the managed key set, exports a set of public keys at given location.
-   * Client's key must be a private key for DSA or RSA. For DSA private key,
-   * purpose must be SIGN_AND_VERIFY. For RSA private key, purpose can also
-   * be DECRYPT_AND_ENCRYPT.KeyczarTool
+   * For the managed key set, exports a set of public keys at given location. Client's key must be a
+   * private key for DSA or RSA. For DSA private key, purpose must be SIGN_AND_VERIFY. For RSA
+   * private key, purpose can also be DECRYPT_AND_ENCRYPT.KeyczarTool
    *
    * @param destination String pathname of directory to export key set to
    * @throws KeyczarException if unable to export key set.
@@ -220,60 +215,50 @@ public class GenericKeyczar extends Keyczar {
     KeyMetadata publicKmd = null;
     if (kmd.getType() == DefaultKeyType.DSA_PRIV) {
       if (kmd.getPurpose() == KeyPurpose.SIGN_AND_VERIFY) {
-        publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY,
-            DefaultKeyType.DSA_PUB);
+        publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY, DefaultKeyType.DSA_PUB);
       }
     } else if (kmd.getType() == DefaultKeyType.RSA_PRIV) {
-      switch(kmd.getPurpose()) {
+      switch (kmd.getPurpose()) {
         case DECRYPT_AND_ENCRYPT:
-          publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.ENCRYPT,
-              DefaultKeyType.RSA_PUB);
+          publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.ENCRYPT, DefaultKeyType.RSA_PUB);
           break;
         case SIGN_AND_VERIFY:
-          publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY,
-              DefaultKeyType.RSA_PUB);
+          publicKmd = new KeyMetadata(kmd.getName(), KeyPurpose.VERIFY, DefaultKeyType.RSA_PUB);
           break;
       }
     }
     if (publicKmd == null) {
       throw new KeyczarException(
-          Messages.getString("KeyczarTool.CannotExportPubKey",
-              kmd.getType(), kmd.getPurpose()));
+          Messages.getString("KeyczarTool.CannotExportPubKey", kmd.getType(), kmd.getPurpose()));
     }
 
     for (KeyVersion version : getVersions()) {
-      KeyczarKey publicKey =
-        ((KeyczarPrivateKey) getKey(version)).getPublic();
+      KeyczarKey publicKey = ((KeyczarPrivateKey) getKey(version)).getPublic();
       if (KeyczarTool.getMock() == null) {
-        writeFile(publicKey.toString(), destination
-            + version.getVersionNumber());
+        writeFile(publicKey.toString(), destination + version.getVersionNumber());
       } else { // for testing, update mock object
         KeyczarTool.getMock().setPublicKey(version.getVersionNumber(), publicKey);
       }
       publicKmd.addVersion(version);
     }
     if (KeyczarTool.getMock() == null) {
-      writeFile(publicKmd.toString(), destination
-          + KeyczarFileReader.META_FILE);
+      writeFile(publicKmd.toString(), destination + KeyczarFileReader.META_FILE);
     } else { // for testing, update mock public kmd
       KeyczarTool.getMock().setPublicKeyMetadata(publicKmd);
     }
   }
 
   /**
-   * Pushes updated KeyMetadata and KeyVersion info to files at given
-   * directory location. Version files are named by their number and the
-   * meta file is named meta.
+   * Pushes updated KeyMetadata and KeyVersion info to files at given directory location. Version
+   * files are named by their number and the meta file is named meta.
    *
    * @param location String pathname of directory to write to
    * @throws KeyczarException if unable to write to given location.
    */
   void write(String location) throws KeyczarException {
-    writeFile(kmd.toString(), location
-        + KeyczarFileReader.META_FILE);
+    writeFile(kmd.toString(), location + KeyczarFileReader.META_FILE);
     for (KeyVersion version : getVersions()) {
-      writeFile(getKey(version).toString(), location
-          + version.getVersionNumber());
+      writeFile(getKey(version).toString(), location + version.getVersionNumber());
     }
   }
 
@@ -284,14 +269,13 @@ public class GenericKeyczar extends Keyczar {
    * @param encrypter The encrypter object used to encrypt keys
    * @throws KeyczarException If unable to write to a given location
    */
-  void writeEncrypted(String location, Encrypter encrypter)
-      throws KeyczarException {
+  void writeEncrypted(String location, Encrypter encrypter) throws KeyczarException {
     KeyMetadata kmd = getMetadata();
     kmd.setEncrypted(true);
     writeFile(kmd.toString(), location + KeyczarFileReader.META_FILE);
     for (KeyVersion version : getVersions()) {
-      writeFile(encrypter.encrypt(getKey(version).toString()), location
-          + version.getVersionNumber());
+      writeFile(
+          encrypter.encrypt(getKey(version).toString()), location + version.getVersionNumber());
     }
   }
 
@@ -302,8 +286,7 @@ public class GenericKeyczar extends Keyczar {
    * @param location String pathname of destination file
    * @throws KeyczarException if unable to write to file.
    */
-  void writeFile(String data, String location)
-      throws KeyczarException {
+  void writeFile(String data, String location) throws KeyczarException {
     File outputFile = new File(location);
     try {
       FileWriter writer = new FileWriter(outputFile);
@@ -311,8 +294,7 @@ public class GenericKeyczar extends Keyczar {
       writer.close();
     } catch (IOException e) {
       throw new KeyczarException(
-          Messages.getString("KeyczarTool.UnableToWrite",
-              outputFile.toString()), e);
+          Messages.getString("KeyczarTool.UnableToWrite", outputFile.toString()), e);
     }
   }
 }

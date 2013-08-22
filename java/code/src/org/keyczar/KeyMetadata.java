@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -20,8 +18,8 @@ import com.google.gson.annotations.Expose;
 
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
-import org.keyczar.interfaces.KeyType;
 import org.keyczar.exceptions.NoPrimaryKeyException;
+import org.keyczar.interfaces.KeyType;
 import org.keyczar.util.Util;
 
 import java.util.ArrayList;
@@ -38,7 +36,8 @@ import java.util.Map;
  *   <li>a set of KeyVersion values.
  * </ul>
  *
- * <p>JSON Representation consists of the following fields:
+ * <p>
+ * JSON Representation consists of the following fields:
  * <ul>
  *   <li>"name": a String name,
  *   <li>"purpose": JSON representation of KeyPurpose value,
@@ -57,8 +56,8 @@ public class KeyMetadata {
   @Expose List<KeyVersion> versions = new ArrayList<KeyVersion>();
   @Expose boolean encrypted = false;
 
-  protected Map<Integer, KeyVersion> versionMap =
-      new HashMap<Integer, KeyVersion>(); // link version number to version
+  // link version number to version
+  protected Map<Integer, KeyVersion> versionMap = new HashMap<Integer, KeyVersion>();
 
   public KeyMetadata() {
     // For GSON
@@ -148,16 +147,16 @@ public class KeyMetadata {
   public KeyVersion getPrimaryVersion() throws NoPrimaryKeyException {
     for (KeyVersion version : versions) {
       if (version.getStatus() == KeyStatus.PRIMARY) {
-	    return version;
-	  }
+        return version;
+      }
     }
-		
+
     throw new NoPrimaryKeyException();
   }
 
   /**
-   * Parses JSON string to create a KeyMetadata object. Initializes it with
-   * versions listed in the JSON array.
+   * Parses JSON string to create a KeyMetadata object. Initializes it with versions listed in the
+   * JSON array.
    *
    * @param jsonString
    * @return KeyMetadata corresponding to JSON input

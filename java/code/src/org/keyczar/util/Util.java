@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar.util;
@@ -39,17 +37,16 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * A miscellaneous utility class. Includes random number generation, int-to-byte
- * conversion, etc.
+ * A miscellaneous utility class. Includes random number generation, int-to-byte conversion, etc.
  *
  * @author steveweis@gmail.com (Steve Weis)
  *
  */
 public class Util {
   private static final ConcurrentLinkedQueue<MessageDigest> DIGEST_QUEUE =
-    new ConcurrentLinkedQueue<MessageDigest>();
+      new ConcurrentLinkedQueue<MessageDigest>();
   private static final ConcurrentLinkedQueue<SecureRandom> RAND_QUEUE =
-    new ConcurrentLinkedQueue<SecureRandom>();
+      new ConcurrentLinkedQueue<SecureRandom>();
   private static final int READ_BUF_SIZE = 8192;
 
   private Util() {
@@ -60,10 +57,10 @@ public class Util {
     @Override
     protected Gson initialValue() {
       return new GsonBuilder()
-        .excludeFieldsWithoutExposeAnnotation()
-        .registerTypeAdapter(KeyType.class, new KeyType.KeyTypeSerializer())
-        .registerTypeAdapter(KeyType.class, new KeyType.KeyTypeDeserializer())
-        .create();
+          .excludeFieldsWithoutExposeAnnotation()
+          .registerTypeAdapter(KeyType.class, new KeyType.KeyTypeSerializer())
+          .registerTypeAdapter(KeyType.class, new KeyType.KeyTypeDeserializer())
+          .create();
     }
   };
 
@@ -89,8 +86,7 @@ public class Util {
   }
 
   /**
-   * Returns a byte array containing 4 big-endian ordered bytes representing the
-   * given integer.
+   * Returns a byte array containing 4 big-endian ordered bytes representing the given integer.
    *
    * @param input The integer to convert to a byte array.
    * @return A byte array representation of an integer.
@@ -102,8 +98,7 @@ public class Util {
   }
 
   /**
-   * Returns a byte array containing 8 big-endian ordered bytes representing the
-   * given long.
+   * Returns a byte array containing 8 big-endian ordered bytes representing the given long.
    *
    * @param input The long to convert to a byte array.
    * @return A byte array representation of a long.
@@ -115,10 +110,9 @@ public class Util {
   }
 
   /**
-   * Takes a variable number of byte arrays as input and hashes each one
-   * prefixed by an integer representation of its size. For example,
-   * prefixHash({0, 1, 2}, {1}) would hash the bytes equivalent to:
-   * {3, 0, 1, 2, 1, 1}
+   * Takes a variable number of byte arrays as input and hashes each one prefixed by an integer
+   * representation of its size. For example, prefixHash({0, 1, 2}, {1}) would hash the bytes
+   * equivalent to: {3, 0, 1, 2, 1, 1}
    *
    * @param inputs The inputs to hash
    * @return The hash output
@@ -143,9 +137,8 @@ public class Util {
   }
 
   /**
-   * Prefixes an input array with a 4-byte transportable length field.
-   * If the input data is null or has zero length, returns a 4-byte
-   * representation of 0.
+   * Prefixes an input array with a 4-byte transportable length field. If the input data is null or
+   * has zero length, returns a 4-byte representation of 0.
    *
    * @param data
    * @return The input data prefixed by a 4-byte representation of its length
@@ -154,18 +147,14 @@ public class Util {
     if (data == null || data.length == 0) {
       return fromInt(0);
     }
-    return ByteBuffer.allocate(4 + data.length)
-        .putInt(data.length)
-        .put(data)
-        .array();
+    return ByteBuffer.allocate(4 + data.length).putInt(data.length).put(data).array();
   }
 
   /**
-   * Packs a set of input arrays into a single array. The packed array is
-   * prefixed by an integer value of the number of arrays. Then each individual
-   * array is prefixed by its length, followed by the contents of the array
-   * itself. Thus, three arrays A, B, C would output:
-   *   {3, len(A), A, len(B), B, len(C), C}
+   * Packs a set of input arrays into a single array. The packed array is prefixed by an integer
+   * value of the number of arrays. Then each individual array is prefixed by its length, followed
+   * by the contents of the array itself. Thus, three arrays A, B, C would output: {3, len(A), A,
+   * len(B), B, len(C), C}
    *
    * @param inputArrays A list of arrays to pack together
    * @return A packed list of arrays, with each preceded by its integer length
@@ -233,8 +222,7 @@ public class Util {
   }
 
   /**
-   * Write random bytes into the destination. Uses pre-cached secure random
-   * objects
+   * Write random bytes into the destination. Uses pre-cached secure random objects
    *
    * @param dest Destination to write the data
    */
@@ -249,6 +237,7 @@ public class Util {
 
   /**
    * Returns an array of random bytes of the given length
+   *
    * @param len The length of the random array to output
    * @return A random array of bytes
    */
@@ -259,8 +248,8 @@ public class Util {
   }
 
   /**
-   * Reads 4 big-endian ordered bytes from a given offset in an array and
-   * returns an integer representation.
+   * Reads 4 big-endian ordered bytes from a given offset in an array and returns an integer
+   * representation.
    *
    * This method does not check the source array length.
    *
@@ -278,8 +267,8 @@ public class Util {
   }
 
   /**
-   * Reads 8 big-endian ordered bytes from a given offset in an array and
-   * returns a long representation.
+   * Reads 8 big-endian ordered bytes from a given offset in an array and returns a long
+   * representation.
    *
    * This method does not check the source array length.
    *
@@ -301,8 +290,7 @@ public class Util {
   }
 
   /**
-   * Converts a given byte array to an integer. Reads the bytes in big-endian
-   * order.
+   * Converts a given byte array to an integer. Reads the bytes in big-endian order.
    *
    * This method does not check the source array length.
    *
@@ -326,8 +314,8 @@ public class Util {
   }
 
   /**
-   * Writes 4 big-endian ordered bytes representing the given integer into the
-   * destination byte array starting from the given offset.
+   * Writes 4 big-endian ordered bytes representing the given integer into the destination byte
+   * array starting from the given offset.
    *
    * This method does not check the destination array length.
    *
@@ -343,8 +331,8 @@ public class Util {
   }
 
   /**
-   * Writes 8 big-endian ordered bytes representing the given long into the
-   * destination byte array starting from the given offset.
+   * Writes 8 big-endian ordered bytes representing the given long into the destination byte array
+   * starting from the given offset.
    *
    * This method does not check the destination array length.
    *
@@ -364,18 +352,17 @@ public class Util {
   }
 
   /**
-   * An array comparison that is safe from timing attacks. If two arrays are
-   * of equal length, this code will always check all elements, rather than
-   * exiting once it encounters a differing byte.
+   * An array comparison that is safe from timing attacks. If two arrays are of equal length, this
+   * code will always check all elements, rather than exiting once it encounters a differing byte.
    *
    * @param a1 An array to compare
    * @param a2 Another array to compare
-   * @return True if these arrays are both null or if they have equal length
-   *         and equal bytes in all elements
+   * @return True if these arrays are both null or if they have equal length and equal bytes in all
+   *         elements
    */
   public static boolean safeArrayEquals(byte[] a1, byte[] a2) {
     if (a1 == null || a2 == null) {
-        return (a1 == a2);
+      return (a1 == a2);
     }
     if (a1.length != a2.length) {
       return false;
@@ -449,8 +436,7 @@ public class Util {
   /**
    * Generate a public/private key pair with the specified algorithm and key size.
    */
-  public static KeyPair generateKeyPair(String algorithm, int keySize)
-      throws KeyczarException {
+  public static KeyPair generateKeyPair(String algorithm, int keySize) throws KeyczarException {
     try {
       KeyPairGenerator kpg = KeyPairGenerator.getInstance(algorithm);
       kpg.initialize(keySize);

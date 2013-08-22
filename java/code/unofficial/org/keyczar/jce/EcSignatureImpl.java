@@ -1,5 +1,8 @@
 package org.keyczar.jce;
 
+import org.mozilla.jss.asn1.ANY;
+import org.mozilla.jss.asn1.SEQUENCE;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
@@ -17,19 +20,15 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 
-import org.mozilla.jss.asn1.ANY;
-import org.mozilla.jss.asn1.SEQUENCE;
-
 /**
  * This class implements the ECDSA signature scheme.
- * 
- * From
- * http://java.sun.com/javase/6/docs/technotes/guides/security/StandardNames.html:
- * "The ECDSA signature algorithms as defined in ANSI X9.62." This means that an
- * ECDSA signature is encoded as SEQUENCE { INTEGER, INTEGER } in ASN.1.
- * 
+ *
+ *  From http://java.sun.com/javase/6/docs/technotes/guides/security/StandardNames.html: "The ECDSA
+ * signature algorithms as defined in ANSI X9.62." This means that an ECDSA signature is encoded as
+ * SEQUENCE { INTEGER, INTEGER } in ASN.1.
+ *
  * @author martclau@gmail.com
- * 
+ *
  */
 public class EcSignatureImpl extends SignatureSpi {
 
@@ -45,33 +44,31 @@ public class EcSignatureImpl extends SignatureSpi {
 
   @Deprecated
   @Override
-  protected Object engineGetParameter(String param)
-      throws InvalidParameterException {
+  protected Object engineGetParameter(String param) throws InvalidParameterException {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  protected void engineInitSign(PrivateKey privateKey)
-      throws InvalidKeyException {
-    if (!(privateKey instanceof ECPrivateKey))
+  protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
+    if (!(privateKey instanceof ECPrivateKey)) {
       throw new InvalidKeyException("Unsupported key type");
+    }
     this.privateKey = (ECPrivateKey) privateKey;
     this.params = this.privateKey.getParams();
   }
 
   @Override
-  protected void engineInitVerify(PublicKey publicKey)
-      throws InvalidKeyException {
-    if (!(publicKey instanceof ECPublicKey))
+  protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
+    if (!(publicKey instanceof ECPublicKey)) {
       throw new InvalidKeyException("Unsupported key type");
+    }
     this.publicKey = (ECPublicKey) publicKey;
     this.params = this.publicKey.getParams();
   }
 
   @Deprecated
   @Override
-  protected void engineSetParameter(String param, Object value)
-      throws InvalidParameterException {
+  protected void engineSetParameter(String param, Object value) throws InvalidParameterException {
     throw new UnsupportedOperationException();
   }
 
@@ -111,14 +108,13 @@ public class EcSignatureImpl extends SignatureSpi {
       // Sigh, another work around...
       SEQUENCE seq = new SEQUENCE();
 
-      byte[] tmp = new byte[2 + (((ECFieldFp) params.getCurve().getField())
-          .getFieldSize() + 7) / 8];
+      byte[] tmp =
+          new byte[2 + (((ECFieldFp) params.getCurve().getField()).getFieldSize() + 7) / 8];
       tmp[0] = 0x02;
       tmp[1] = (byte) EcCore.fieldElemToBytes(r, params, tmp, 2);
       seq.addElement(new ANY(tmp));
 
-      tmp = new byte[2 + (((ECFieldFp) params.getCurve().getField())
-          .getFieldSize() + 7) / 8];
+      tmp = new byte[2 + (((ECFieldFp) params.getCurve().getField()).getFieldSize() + 7) / 8];
       tmp[0] = 0x02;
       tmp[1] = (byte) EcCore.fieldElemToBytes(s, params, tmp, 2);
       seq.addElement(new ANY(tmp));
@@ -171,10 +167,14 @@ public class EcSignatureImpl extends SignatureSpi {
       BigInteger n = params.getOrder();
 
       // r in [1,n-1]
-      if (r.compareTo(BigInteger.ONE) < 0 || r.compareTo(n) >= 0) return false;
+      if (r.compareTo(BigInteger.ONE) < 0 || r.compareTo(n) >= 0) {
+        return false;
+      }
 
       // s in [1,n-1]
-      if (s.compareTo(BigInteger.ONE) < 0 || s.compareTo(n) >= 0) return false;
+      if (s.compareTo(BigInteger.ONE) < 0 || s.compareTo(n) >= 0) {
+        return false;
+      }
 
       BigInteger c = s.modInverse(n);
       BigInteger u1 = e.multiply(c).mod(n);
@@ -197,7 +197,9 @@ public class EcSignatureImpl extends SignatureSpi {
     BigInteger e = new BigInteger(1, hash);
     int orderLength = params.getOrder().bitLength();
     int hashLength = 8 * hash.length;
-    if (orderLength < hashLength) e = e.shiftRight(hashLength - orderLength);
+    if (orderLength < hashLength) {
+      e = e.shiftRight(hashLength - orderLength);
+    }
     return e;
   }
 

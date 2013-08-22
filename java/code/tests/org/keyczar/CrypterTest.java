@@ -1,24 +1,19 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
 
-
-import java.io.RandomAccessFile;
-import java.util.Arrays;
 
 import junit.framework.TestCase;
 
@@ -29,8 +24,11 @@ import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.ShortCiphertextException;
 import org.keyczar.interfaces.KeyczarReader;
 
+import java.io.RandomAccessFile;
+import java.util.Arrays;
+
 /**
- * Tests Crypter class for encrypting and decrypting with RSA and AES. 
+ * Tests Crypter class for encrypting and decrypting with RSA and AES.
  *
  * @author steveweis@gmail.com (Steve Weis)
  *
@@ -40,20 +38,17 @@ public class CrypterTest extends TestCase {
   private static final Logger LOG = Logger.getLogger(CrypterTest.class);
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
-  
+
   private final void testDecrypt(String subDir) throws Exception {
     testDecrypt(new KeyczarFileReader(TEST_DATA + subDir), subDir);
   }
 
-  private final void testDecrypt(KeyczarReader reader, String subDir)
-      throws Exception {
+  private final void testDecrypt(KeyczarReader reader, String subDir) throws Exception {
     Crypter crypter = new Crypter(reader);
-    RandomAccessFile activeInput =
-      new RandomAccessFile(TEST_DATA + subDir + "/1.out", "r");
-    String activeCiphertext = activeInput.readLine(); 
+    RandomAccessFile activeInput = new RandomAccessFile(TEST_DATA + subDir + "/1.out", "r");
+    String activeCiphertext = activeInput.readLine();
     activeInput.close();
-    RandomAccessFile primaryInput =
-      new RandomAccessFile(TEST_DATA + subDir + "/2.out", "r");
+    RandomAccessFile primaryInput = new RandomAccessFile(TEST_DATA + subDir + "/2.out", "r");
     String primaryCiphertext = primaryInput.readLine();
     primaryInput.close();
     String activeDecrypted = crypter.decrypt(activeCiphertext);
@@ -61,28 +56,26 @@ public class CrypterTest extends TestCase {
     String primaryDecrypted = crypter.decrypt(primaryCiphertext);
     assertEquals(input, primaryDecrypted);
   }
-  
+
   @Test
   public final void testAesDecrypt() throws Exception {
     testDecrypt("/aes");
   }
-  
-  @Test 
+
+  @Test
   public final void testAesEncryptedKeyDecrypt() throws Exception {
     // Test reading and using encrypted keys
-    KeyczarFileReader fileReader =
-      new KeyczarFileReader(TEST_DATA + "/aes-crypted");
+    KeyczarFileReader fileReader = new KeyczarFileReader(TEST_DATA + "/aes-crypted");
     Crypter keyDecrypter = new Crypter(TEST_DATA + "/aes");
-    KeyczarEncryptedReader reader =
-      new KeyczarEncryptedReader(fileReader, keyDecrypter);
+    KeyczarEncryptedReader reader = new KeyczarEncryptedReader(fileReader, keyDecrypter);
     testDecrypt(reader, "/aes-crypted");
   }
-  
+
   @Test
-  public final void testRsaDecrypt() throws Exception  {
+  public final void testRsaDecrypt() throws Exception {
     testDecrypt("/rsa");
   }
-  
+
   @Test
   public final void testAesEncryptAndDecrypt() throws KeyczarException {
     Crypter crypter = new Crypter(TEST_DATA + "/aes");
@@ -100,7 +93,7 @@ public class CrypterTest extends TestCase {
     String decrypted = crypter.decrypt(ciphertext);
     assertEquals(input, decrypted);
   }
-  
+
   @Test
   public final void testRsaEncryptAndDecryptWithEncrypter() throws KeyczarException {
     Encrypter encrypter = new Encrypter(TEST_DATA + "/rsa.public");
@@ -128,7 +121,7 @@ public class CrypterTest extends TestCase {
   public final void testBadAesCiphertexts() throws KeyczarException {
     Crypter crypter = new Crypter(TEST_DATA + "/aes");
     try {
-      crypter.decrypt(new byte[0]);  // discard garbage decrypted output
+      crypter.decrypt(new byte[0]); // discard garbage decrypted output
     } catch (ShortCiphertextException e) {
       // Expected exception
     }
@@ -136,9 +129,9 @@ public class CrypterTest extends TestCase {
     // Munge the ciphertext
     ciphertext[1] ^= 44;
     try {
-      crypter.decrypt(ciphertext);  // discard garbage decrypted output
+      crypter.decrypt(ciphertext); // discard garbage decrypted output
     } catch (KeyNotFoundException e) {
       // Expected exception
-    }    
+    }
   }
 }

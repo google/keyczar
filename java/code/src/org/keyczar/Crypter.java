@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -32,8 +30,8 @@ import org.keyczar.util.Base64Coder;
 import java.nio.ByteBuffer;
 
 /**
- * Crypters may both encrypt and decrypt data using sets of symmetric or private
- * keys. Sets of public keys may only be used with {@link Encrypter} objects.
+ * Crypters may both encrypt and decrypt data using sets of symmetric or private keys. Sets of
+ * public keys may only be used with {@link Encrypter} objects.
  *
  * @author steveweis@gmail.com (Steve Weis)
  *
@@ -41,30 +39,28 @@ import java.nio.ByteBuffer;
 public class Crypter extends Encrypter {
   private static final int DECRYPT_CHUNK_SIZE = 1024;
   private static final Logger LOG = Logger.getLogger(Crypter.class);
-  private final StreamCache<DecryptingStream> CRYPT_CACHE
-    = new StreamCache<DecryptingStream>();
+  private final StreamCache<DecryptingStream> CRYPT_CACHE = new StreamCache<DecryptingStream>();
 
   /**
-   * Initialize a new Crypter with a KeyczarReader. The corresponding key set
-   * must have a purpose {@link org.keyczar.enums.KeyPurpose#DECRYPT_AND_ENCRYPT}.
+   * Initialize a new Crypter with a KeyczarReader. The corresponding key set must have a purpose
+   * {@link org.keyczar.enums.KeyPurpose#DECRYPT_AND_ENCRYPT}.
    *
    * @param reader A reader to read keys from
-   * @throws KeyczarException In the event of an IO error reading keys or if the
-   * key set does not have the appropriate purpose.
+   * @throws KeyczarException In the event of an IO error reading keys or if the key set does not
+   *         have the appropriate purpose.
    */
   public Crypter(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
 
   /**
-   * Initialize a new Crypter with a key set location. This will attempt to
-   * read the keys using a KeyczarFileReader. The corresponding key set
-   * must have a purpose of
+   * Initialize a new Crypter with a key set location. This will attempt to read the keys using a
+   * KeyczarFileReader. The corresponding key set must have a purpose of
    * {@link org.keyczar.enums.KeyPurpose#DECRYPT_AND_ENCRYPT}.
    *
    * @param fileLocation Directory containing a key set
-   * @throws KeyczarException In the event of an IO error reading keys or if the
-   * key set does not have the appropriate purpose.
+   * @throws KeyczarException In the event of an IO error reading keys or if the key set does not
+   *         have the appropriate purpose.
    */
   public Crypter(String fileLocation) throws KeyczarException {
     super(fileLocation);
@@ -75,9 +71,8 @@ public class Crypter extends Encrypter {
    *
    * @param input The input ciphertext
    * @return The decrypted plaintext
-   * @throws KeyczarException If the input is malformed, the ciphertext
-   * signature does not verify, the decryption key is not found, or a JCE
-   * error occurs.
+   * @throws KeyczarException If the input is malformed, the ciphertext signature does not verify,
+   *         the decryption key is not found, or a JCE error occurs.
    */
   public byte[] decrypt(byte[] input) throws KeyczarException {
     ByteBuffer output = ByteBuffer.allocate(input.length);
@@ -89,17 +84,15 @@ public class Crypter extends Encrypter {
   }
 
   /**
-   * Decrypt the given ciphertext input ByteBuffer and write the decrypted
-   * plaintext to the output ByteBuffer
+   * Decrypt the given ciphertext input ByteBuffer and write the decrypted plaintext to the output
+   * ByteBuffer
    *
    * @param input The input ciphertext. Will not be modified.
    * @param output The output buffer to write the decrypted plaintext
-   * @throws KeyczarException If the input is malformed, the ciphertext
-   * signature does not verify, the decryption key is not found, or a JCE
-   * error occurs.
+   * @throws KeyczarException If the input is malformed, the ciphertext signature does not verify,
+   *         the decryption key is not found, or a JCE error occurs.
    */
-  public void decrypt(ByteBuffer input, ByteBuffer output)
-      throws KeyczarException {
+  public void decrypt(ByteBuffer input, ByteBuffer output) throws KeyczarException {
     ByteBuffer inputCopy = input.asReadOnlyBuffer();
     LOG.debug(Messages.getString("Crypter.Decrypting", inputCopy.remaining()));
     if (inputCopy.remaining() < HEADER_SIZE) {
@@ -170,14 +163,14 @@ public class Crypter extends Encrypter {
   }
 
   /**
-   * Decrypt the given web-safe Base64 encoded ciphertext and return the
-   * decrypted plaintext as a String.
+   * Decrypt the given web-safe Base64 encoded ciphertext and return the decrypted plaintext as a
+   * String.
    *
    * @param ciphertext The encrypted ciphertext in web-safe Base64 format
    * @return The decrypted plaintext as a string
-   * @throws KeyczarException If the input is malformed, the ciphertext
-   * signature does not verify, the decryption key is not found, the input is
-   * not web-safe Base64 encoded, or a JCE error occurs.
+   * @throws KeyczarException If the input is malformed, the ciphertext signature does not verify,
+   *         the decryption key is not found, the input is not web-safe Base64 encoded, or a JCE
+   *         error occurs.
    */
   public String decrypt(String ciphertext) throws KeyczarException {
     return new String(decrypt(Base64Coder.decodeWebSafe(ciphertext)));

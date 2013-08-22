@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -38,10 +36,9 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
 /**
- * Common base wrapper class for different types of KeyczarKeys (e.g. AesKey).
- * Allows generating arbitrary key types or parsing key info from JSON
- * string representations. Binds each key to a hash identifier and exposes
- * the Stream used to access the key material.
+ * Common base wrapper class for different types of KeyczarKeys (e.g. AesKey). Allows generating
+ * arbitrary key types or parsing key info from JSON string representations. Binds each key to a
+ * hash identifier and exposes the Stream used to access the key material.
  *
  * @author steveweis@gmail.com (Steve Weis)
  * @author arkajit.dey@gmail.com (Arkajit Dey)
@@ -108,11 +105,10 @@ public abstract class KeyczarKey {
   /**
    * Register a new key type.
    *
-   * Custom {@link KeyType}s should be immutable singletons, Note that
-   * defining custom key types is strongly discouraged for most applications.
+   * Custom {@link KeyType}s should be immutable singletons, Note that defining custom key types is
+   * strongly discouraged for most applications.
    *
-   * This method is just a proxy to
-   * {@link KeyType.KeyTypeDeserializer#registerType}
+   * This method is just a proxy to {@link KeyType.KeyTypeDeserializer#registerType}
    *
    * @param keyType a singleton immutable key type to register for the name
    */
@@ -128,8 +124,8 @@ public abstract class KeyczarKey {
   /**
    * Returns a PKCS8 PEM-format string containing the key information.
    *
-   * @param passphrase Passphrase to use for encrypting private keys.
-   * Required for private keys, must be null for public keys.
+   * @param passphrase Passphrase to use for encrypting private keys. Required for private keys,
+   *        must be null for public keys.
    * @return PEM-format key data.
    */
   public String getPemString(String passphrase) throws KeyczarException {
@@ -162,7 +158,8 @@ public abstract class KeyczarKey {
       cipher.init(
           Cipher.ENCRYPT_MODE, pkcs8EncryptionKey, new PBEParameterSpec(salt, PBE_ITERATION_COUNT));
       byte[] encryptedKey = cipher.doFinal(key.getEncoded());
-      EncryptedPrivateKeyInfo inf = new EncryptedPrivateKeyInfo(cipher.getParameters(), encryptedKey);
+      EncryptedPrivateKeyInfo inf =
+          new EncryptedPrivateKeyInfo(cipher.getParameters(), encryptedKey);
       return inf.getEncoded();
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(Messages.getString("KeyczarTool.FailedToEncryptPrivateKey"), e);
@@ -193,7 +190,7 @@ public abstract class KeyczarKey {
     return true;
   }
 
-  abstract protected Key getJceKey();
+  protected abstract Key getJceKey();
 
   private String getPemType() {
     if (isSecret()) {

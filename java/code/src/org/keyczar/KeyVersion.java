@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -27,10 +25,10 @@ import org.keyczar.util.Util;
  * <ul>
  *   <li>an integer value version number, counting from 1,
  *   <li>a KeyStatus, and
- *   <li>a boolean representing whether this key is exportable
- *       outside of Keyczar.
+ *   <li>a boolean representing whether this key is exportable outside of Keyczar.
  * </ul>
- * <p>JSON Representation consists of the following fields:
+ * <p>
+ * JSON Representation consists of the following fields:
  * <ul>
  *   <li>"status": JSON representation of KeyStatus value,
  *   <li>"versionNumber": integer version number,
@@ -95,6 +93,7 @@ public class KeyVersion {
 
   /**
    * Updates the status of this KeyVersion to given status if not null.
+   *
    * @param status
    */
   public void setStatus(KeyStatus status) {

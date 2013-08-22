@@ -1,17 +1,15 @@
 /*
  * Copyright 2008 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.keyczar;
@@ -38,8 +36,7 @@ import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPublicKeySpec;
 
 /**
- * Wrapping class for DSA Public Keys. These must be exported from existing DSA
- * private key sets.
+ * Wrapping class for DSA Public Keys. These must be exported from existing DSA private key sets.
  *
  * @author steveweis@gmail.com (Steve Weis)
  */
@@ -118,9 +115,9 @@ public class DsaPublicKey extends KeyczarPublicKey {
   }
 
   /**
-   * Initialize JCE key from JSON data.  Must be called after an instance is read from JSON.
-   * In default scope so {@link DsaPrivateKey} can call it when a private key string (which
-   * contains a public key string) is deserialized.
+   * Initialize JCE key from JSON data. Must be called after an instance is read from JSON. In
+   * default scope so {@link DsaPrivateKey} can call it when a private key string (which contains a
+   * public key string) is deserialized.
    */
   void initFromJson() throws KeyczarException {
     BigInteger yVal = new BigInteger(Base64Coder.decodeWebSafe(y));
@@ -131,8 +128,8 @@ public class DsaPublicKey extends KeyczarPublicKey {
     initializeHash();
   }
 
-  private void initializeJceKey(BigInteger yVal, BigInteger pVal, BigInteger qVal,
-      BigInteger gVal) throws KeyczarException {
+  private void initializeJceKey(BigInteger yVal, BigInteger pVal, BigInteger qVal, BigInteger gVal)
+      throws KeyczarException {
     try {
       KeyFactory kf = KeyFactory.getInstance(KEY_GEN_ALGORITHM);
       jcePublicKey = (DSAPublicKey) kf.generatePublic(new DSAPublicKeySpec(yVal, pVal, qVal, gVal));
@@ -198,8 +195,7 @@ public class DsaPublicKey extends KeyczarPublicKey {
     @Override
     public boolean verify(ByteBuffer sig) throws KeyczarException {
       try {
-        return signature.verify(sig.array(), sig.position(), sig.limit()
-            - sig.position());
+        return signature.verify(sig.array(), sig.position(), sig.limit() - sig.position());
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
