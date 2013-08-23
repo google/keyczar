@@ -76,16 +76,8 @@ bool Operation::OutputToJson(
   return true;
 }
 
-bool Operation::InputFromJson(const std::string& json, std::string * output) {
+bool Operation::InputFromJson(const DictionaryValue * json_dict, std::string * output) {
   std::string encoded_output;
-  scoped_ptr<const Value> json_value(base::JSONReader::Read(json, false));
-  if (json_value.get() == NULL
-      || !json_value->IsType(Value::TYPE_DICTIONARY))
-    return false;
-
-  const DictionaryValue* json_dict
-      = static_cast<const DictionaryValue*>(json_value.get());
-
   if (!json_dict->GetString("output", &encoded_output)) {
     return false;
   }
@@ -129,9 +121,11 @@ bool EncryptOperation::Generate(
 }
 
 bool EncryptOperation::Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * output_json, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params) {
+  std::string output;
+  if (!InputFromJson(output_json, &output)) return false;
   keyczar::Keyczar* crypter;
   std::string encoding, crypted_key_set, plaintext;
   if (!generate_params->GetString("encoding", &encoding) ||
@@ -156,13 +150,6 @@ bool SignedSessionOperation::OutputToJson(
       const std::string& output, std::string * json_string) {
   // Signed sessions already are in json format
   json_string->assign(std::string(output));
-  return true;
-}
-
-bool SignedSessionOperation::InputFromJson(
-      const std::string& json, std::string * output) {
-  // Signed sessions already are in json format
-  output->assign(std::string(json));
   return true;
 }
 
@@ -219,7 +206,7 @@ bool SignedSessionOperation::Generate(
 }
 
 bool SignedSessionOperation::Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * json_dict, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params) {
   std::string encoded_output,
@@ -228,13 +215,6 @@ bool SignedSessionOperation::Test(
       session_material,
       crypted_key_set,
       plaintext;
-  scoped_ptr<const Value> json_value(base::JSONReader::Read(output, false));
-  if (json_value.get() == NULL ||
-      !json_value->IsType(Value::TYPE_DICTIONARY))
-    return false;
-
-  const DictionaryValue* json_dict
-      = static_cast<const DictionaryValue*>(json_value.get());
 
   if (!json_dict->GetString("output", &encoded_output) ||
       !json_dict->GetString("sessionMaterial", &session_material) ||
@@ -294,9 +274,11 @@ bool SignOperation::Generate(
 }
 
 bool SignOperation::Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * output_json, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params) {
+  std::string output;
+  if (!InputFromJson(output_json, &output)) return false;
   keyczar::Keyczar* verifier;
   std::string encoding, crypted_key_set, verifier_class;
   if (!generate_params->GetString("encoding", &encoding) ||
@@ -341,9 +323,11 @@ bool AttachedSignOperation::Generate(
 }
 
 bool AttachedSignOperation::Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * output_json, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params) {
+  std::string output;
+  if (!InputFromJson(output_json, &output)) return false;
   keyczar::Keyczar* verifier;
   std::string message, encoding, crypted_key_set, verifier_class;
   if (!generate_params->GetString("encoding", &encoding) ||
@@ -390,9 +374,11 @@ bool UnversionedSignOperation::Generate(
 }
 
 bool UnversionedSignOperation::Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * output_json, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params) {
+  std::string output;
+  if (!InputFromJson(output_json, &output)) return false;
   keyczar::Keyczar* verifier;
   std::string encoding, crypted_key_set, verifier_class;
   if (!generate_params->GetString("encoding", &encoding) ||

@@ -42,6 +42,7 @@ import itertools
 import json
 import os
 import subprocess
+import sys
 import unittest
 
 
@@ -204,7 +205,7 @@ class InteropTestRunner(object):
     add_key_flags = self._GetAddKeyFlags(algorithm, size, location)
     params = {
         "command": "create",
-        "keyczartCommands": [create_flags, add_key_flags]
+        "keyczartCommands": [create_flags, add_key_flags, add_key_flags]
         }
     print self._CallImplementation(implementation, json.dumps(params))
 
@@ -268,9 +269,10 @@ class InteropTestRunner(object):
         }
     return self._CallImplementation(implementation, json.dumps(args))
 
-  def _Test(self, output, test_implementation, generate_implementation,
+  def _Test(self, output_json, test_implementation, generate_implementation,
             operation, algorithm, generate_options, test_options):
     """ Sets up arguments and calls test function for given parameters. """
+    output = json.loads(output_json)
     args = {
         "command": "test",
         "operation": operation,
@@ -327,15 +329,40 @@ class InteropTest(unittest.TestCase):
   pass
 
 
-def Suite():
-  alltests = unittest.TestSuite([
-      unittest.TestLoader().loadTestsFromTestCase(InteropTest)
-      ])
-  return alltests
+def RunTests():
+  suite = unittest.TestLoader().loadTestsFromTestCase(InteropTest)
+  unittest.TextTestRunner().run(suite)
 
+
+def Usage():
+  print ("Interoperability testing for Keyczar\n"
+         "Example: ./interop.py --create=n\n"
+         "Run from the interop directory. Optional flags include:\n"
+         "      --create         (y/n) whether to create keys (default:y)\n")
+  return 1
+
+
+def main(argv):
+  flags = {"create" : "y"}
+  for arg in argv:
+    if arg.startswith("--"):
+      arg = arg[2:]  # trim leading dashes
+      try:
+        [flag, val] = arg.split("=")
+        if flag not in flags:
+          raise ValueError("flag not in flags")
+        flags[flag] = val
+      except ValueError:
+        print "Flags incorrectly formatted"
+        return Usage()
+  if flags["create"] not in ("y","n"):
+    return Usage()
+  runner = InteropTestRunner()
+  if flags["create"] == "y":
+    runner.CreateKeys()
+  runner.SetupInteropTests()
+  RunTests()
 
 if __name__ == "__main__":
-  runner = InteropTestRunner()
-  runner.CreateKeys()
-  runner.SetupInteropTests()
-  unittest.main(defaultTest="Suite")
+  sys.exit(main(sys.argv[1:]))
+

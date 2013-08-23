@@ -104,7 +104,7 @@ public abstract class Operation {
    * @param algorithm
    */
   public abstract void test(
-      byte[] output, String algorithm,
+      Map<String, String> output, String algorithm,
       Map<String, String> generateParams, Map<String, String> testParams)
           throws KeyczarException;
 
@@ -156,10 +156,8 @@ public abstract class Operation {
    * @return
    * @throws Base64DecodingException
    */
-  public byte[] readOutput(String output) throws Base64DecodingException{
-    Gson gson = new Gson();
-    Output out = gson.fromJson(output, Output.class);
-    return Base64Coder.decodeWebSafe(out.output);
+  public byte[] readOutput(Map<String, String> output) throws Base64DecodingException{
+    return Base64Coder.decodeWebSafe(output.get("output"));
   }
 
 }

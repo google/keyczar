@@ -129,9 +129,8 @@ def JsonOutput(method):
 
 def JsonInput(method):
   """ Decorator for the test function to read input in json form. """
-  def WrapperFunction(self, json_string, *args):
-    output_dict = json.loads(json_string)
-    output = util.Base64WSDecode(output_dict["output"])
+  def WrapperFunction(self, json_dict, *args):
+    output = util.Base64WSDecode(json_dict["output"])
     return method(self, output, *args)
   return WrapperFunction
 
@@ -191,7 +190,6 @@ class SignedSessionOperation(BaseOperation):
     return json.dumps(output)
 
   def Test(self, output, algorithm, generate_options, test_options):
-    output = json.loads(output)
     encrypted_data = output["output"]
     session_material = output["sessionMaterial"]
     signer_algorithm = generate_options["signer"]

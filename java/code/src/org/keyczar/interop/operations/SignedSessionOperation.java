@@ -8,7 +8,6 @@ import org.keyczar.SignedSessionDecrypter;
 import org.keyczar.SignedSessionEncrypter;
 import org.keyczar.Signer;
 import org.keyczar.Verifier;
-import org.keyczar.exceptions.Base64DecodingException;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
 
@@ -41,12 +40,11 @@ public class SignedSessionOperation extends Operation {
 
   @Override
   public void test(
-      byte[] output, String algorithm, Map<String, String> generateParams,
+      Map<String, String> output, String algorithm, Map<String, String> generateParams,
       Map<String, String> testParams) throws KeyczarException {
     Gson gson = new Gson();
-    SignedSessionOutput out = gson.fromJson(new String(output), SignedSessionOutput.class);
-    byte[] encryptedData = Base64Coder.decodeWebSafe(out.output);
-    String sessionMaterial = out.sessionMaterial;
+    byte[] encryptedData = readOutput(output);
+    String sessionMaterial = output.get("sessionMaterial");
     
     Crypter keyCrypter = new Crypter(getReader(algorithm, generateParams.get("cryptedKeySet")));
     Verifier verifier = new Verifier(
@@ -75,12 +73,5 @@ public class SignedSessionOperation extends Operation {
   public String formatOutput(byte[] output){
     return new String(output);
   }
-  
-  @Override
-  public byte[] readOutput(String output) throws Base64DecodingException{
-    return output.getBytes();
-  }
-  
-  
 
 }

@@ -135,15 +135,16 @@ bool Interop::CmdGenerate(
 }
 
 bool Interop::CmdTest(const DictionaryValue* json) const {
-  std::string output, json_output, operation, key_path, algorithm, test_data;
+  std::string output, operation, key_path, algorithm, test_data;
   DictionaryValue* generate_options;
   DictionaryValue* test_options;
+  DictionaryValue* json_output;
 
   if (!json->GetString("operation", &operation) ||
       !json->GetString("keyPath", &key_path) ||
       !json->GetString("algorithm", &algorithm) ||
       !json->GetString("testData", &test_data) ||
-      !json->GetString("output", &json_output) ||
+      !json->GetDictionary("output", &json_output) ||
       !json->GetDictionary("generateOptions", &generate_options) ||
       !json->GetDictionary("testOptions", &test_options)) {
     std::cout << "Incorrect parameters in test json" << std::endl;
@@ -151,11 +152,7 @@ bool Interop::CmdTest(const DictionaryValue* json) const {
   }
 
   Operation* op = Operation::GetOperationByName(operation, key_path, test_data);
-  if (!op->InputFromJson(json_output, &output)) {
-    std::cout << "Failed to parse output from json" << std::endl;
-    return false;
-  }
-  if (!op->Test(output, algorithm, generate_options, test_options)) {
+  if (!op->Test(json_output, algorithm, generate_options, test_options)) {
     std::cout << "Test failed" << std::endl;
     return false;
   }

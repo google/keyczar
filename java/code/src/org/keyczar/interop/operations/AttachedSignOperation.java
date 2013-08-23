@@ -33,7 +33,7 @@ public class AttachedSignOperation extends Operation {
 
   @Override
   public void test(
-      byte[] output, String algorithm, 
+      Map<String, String> output, String algorithm, 
       Map<String, String> generateParams, Map<String, String> testParams)
       throws KeyczarException {
     if (testParams.get("class").equals("signer")) {
@@ -41,7 +41,7 @@ public class AttachedSignOperation extends Operation {
       if (generateParams.get("encoding").equals("encoded")) {
         throw new KeyczarException("Not Implemented");
       } else if (generateParams.get("encoding").equals("unencoded")) {
-        assert(verifier.attachedVerify(output, "".getBytes()));
+        assert(verifier.attachedVerify(readOutput(output), "".getBytes()));
       } else {
         throw new KeyczarException("Expects encoded or unencoded in parameters");
       }
@@ -50,7 +50,7 @@ public class AttachedSignOperation extends Operation {
       if (generateParams.get("encoding").equals("encoded")) {
         throw new KeyczarException("Not Implemented");
       } else if (generateParams.get("encoding").equals("unencoded")) {
-        assert(verifier.attachedVerify(output, "".getBytes()));
+        assert(verifier.attachedVerify(readOutput(output), "".getBytes()));
       } else {
         throw new KeyczarException("Expects encoded or unencoded in parameters");
       }

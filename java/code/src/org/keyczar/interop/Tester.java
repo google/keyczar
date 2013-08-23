@@ -17,12 +17,13 @@ public class Tester {
   private final String algorithm;
   private final Map<String, String> generateOptions;
   private final Map<String, String> testOptions;
-  private final String output;
+  private final Map<String, String> output;
   private final String testData;
   
   public Tester(
       String command, String operation, String keyPath, String algorithm, 
-      Map<String, String> generateOptions, Map<String, String> testOptions, String output, String testData) {
+      Map<String, String> generateOptions, Map<String, String> testOptions,
+      Map<String, String> output, String testData) {
     this.command = command;
     this.operation = operation;
     this.keyPath = keyPath;
@@ -35,7 +36,6 @@ public class Tester {
   
   public void test() throws KeyczarException {
     Operation op = Operation.getOperationByName(operation, keyPath, testData);
-    byte[] out = op.readOutput(output);
-    op.test(out, algorithm, generateOptions, testOptions);
+    op.test(output, algorithm, generateOptions, testOptions);
   }
 }

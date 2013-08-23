@@ -38,14 +38,14 @@ class Operation {
       std::string * output) = 0;
 
   virtual bool Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * output, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params) = 0;
 
   virtual bool OutputToJson(
       const std::string& output, std::string * json_string);
 
-  virtual bool InputFromJson(const std::string& json, std::string * output);
+  virtual bool InputFromJson(const DictionaryValue * json, std::string * output);
 
  protected:
   const std::string GetKeyPath(const std::string& algorithm);
@@ -70,7 +70,7 @@ class UnversionedSignOperation : public Operation {
       std::string * output);
 
   virtual bool Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * output, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params);
 
@@ -89,14 +89,12 @@ class SignedSessionOperation : public Operation {
       std::string * output);
 
   virtual bool Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * output, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params);
 
   virtual bool OutputToJson(
       const std::string& output, std::string * json_string);
-
-  virtual bool InputFromJson(const std::string& json, std::string * output);
 
  private:
   DISALLOW_COPY_AND_ASSIGN(SignedSessionOperation);
@@ -112,7 +110,7 @@ class SignOperation : public Operation {
       std::string * output);
 
   virtual bool Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * output, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params);
 
@@ -131,7 +129,7 @@ class AttachedSignOperation : public Operation {
       std::string * output);
 
   virtual bool Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * output, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params);
 
@@ -149,7 +147,7 @@ class EncryptOperation : public Operation {
       std::string * output);
 
   virtual bool Test(
-      const std::string& output, const std::string& algorithm,
+      const DictionaryValue * output, const std::string& algorithm,
       const DictionaryValue * generate_params,
       const DictionaryValue * test_params);
 

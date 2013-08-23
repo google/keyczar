@@ -47,14 +47,14 @@ public class EncryptOperation extends Operation {
 
   @Override
   public void test(
-      byte[] output, String algorithm, Map<String, String> generateParams,
+      Map<String, String> output, String algorithm, Map<String, String> generateParams,
       Map<String, String> testParams) throws KeyczarException {
     Crypter crypter = new Crypter(getReader(algorithm, generateParams.get("cryptedKeySet")));
     if (generateParams.get("encoding").equals("encoded")) {
-      String plaintext = crypter.decrypt(new String(output));
+      String plaintext = crypter.decrypt(new String(readOutput(output)));
       assert(plaintext.equals(testData));
     } else if (generateParams.get("encoding").equals("unencoded")) {
-      byte[] plaintext = crypter.decrypt(output);
+      byte[] plaintext = crypter.decrypt(readOutput(output));
       assert((new String(plaintext)).equals(testData));
     } else {
       throw new KeyczarException("Expects encoded or unencoded in parameters");
