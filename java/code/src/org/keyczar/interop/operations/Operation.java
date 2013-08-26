@@ -18,13 +18,13 @@ package org.keyczar.interop.operations;
 
 import com.google.gson.Gson;
 
+import org.keyczar.Crypter;
+import org.keyczar.KeyczarEncryptedReader;
+import org.keyczar.KeyczarFileReader;
 import org.keyczar.exceptions.Base64DecodingException;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.util.Base64Coder;
-import org.keyczar.Crypter;
-import org.keyczar.KeyczarEncryptedReader;
-import org.keyczar.KeyczarFileReader;
 
 import java.io.File;
 import java.util.Map;
@@ -119,8 +119,20 @@ public abstract class Operation {
     return file2.getPath();
   }
 
-  public KeyczarReader getReader(String algorithm, String crypterAlgorithm) throws KeyczarException {
+  /**
+   * Gets a reader to be used by keyczar for the appropriate parameters
+   * @param algorithm
+   * @param crypterAlgorithm
+   * @param pubKey
+   * @return KeyczarReader
+   * @throws KeyczarException
+   */
+  public KeyczarReader getReader(
+      String algorithm, String crypterAlgorithm, String pubKey) throws KeyczarException {
     String keysetName = algorithm + crypterAlgorithm;
+    if (pubKey != null) {
+      keysetName += pubKey;
+    }
     KeyczarReader reader = new KeyczarFileReader(getKeyPath(keysetName));
     if (!crypterAlgorithm.equals("")) {
       Crypter crypter = new Crypter(getKeyPath(crypterAlgorithm));

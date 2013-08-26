@@ -54,6 +54,7 @@ IMPLEMENTATIONS = "config/implementations.json"
 TESTDATA = "This is some test data."
 CRYPTED_KEY_SET_ALGORITHM = "aes128"
 
+
 def ReadFile(loc):
   """
   Read data from file at given location.
@@ -80,10 +81,28 @@ class InteropTestRunner(object):
     self.ignored_tests = json.loads(ReadFile(IGNORED_TESTS))
     self.operations = json.loads(ReadFile(OPERATIONS))
     self.implementations = json.loads(ReadFile(IMPLEMENTATIONS))
+
+    def AsymmetricOptions(implementation, operation, algorithm):
+      algorithm_name = self._GetAlgorithmName(algorithm)
+      if self.algorithms[algorithm_name]["asymmetric"]:
+        return ["public", ""]
+      return [""]
+
     self.macros = {
-      "ALL_SIGNING_KEYS" : self.GetKeysByPurpose("sign"),
-      "CRYPTED_KEY_SET_OPTIONS" : [CRYPTED_KEY_SET_ALGORITHM, ""]
-      }
+        "ALL_SIGNING_KEYS": lambda *_: self.GetKeysByPurpose("sign"),
+        "CRYPTED_KEY_SET_OPTIONS": lambda *_: [CRYPTED_KEY_SET_ALGORITHM, ""],
+        "ASYMMETRIC_OPTIONS": AsymmetricOptions
+    }
+
+  def _GetAlgorithmName(self, algorithm):
+    algorithms = self.algorithms.keys()
+    if algorithm in algorithms:
+      return algorithm
+    for algorithm_name in algorithms:
+      for size in self.algorithms[algorithm_name]["keySizes"]:
+        if algorithm == algorithm_name + str(size):
+          return algorithm_name
+    raise ValueError("Algorithm %s not found" % algorithm)
 
   def GetKeysByPurpose(self, purpose=""):
     """ Gets names for all algorithms or ones with the given purpose. """
@@ -101,30 +120,30 @@ class InteropTestRunner(object):
   def _IsException(self, implementation, operation, algorithm, options):
     """ Returns true if the configuration given is supposed to be ignored. """
     for ignored_test in self.ignored_tests:
-      contains = lambda v, name: any(x in ignored_test[name] for x in (v,"*"))
+      contains = lambda v, name: any(x in ignored_test[name] for x in (v, "*"))
       if (contains(implementation, "implementation") and
           contains(algorithm, "algorithm") and
           contains(operation, "operation")):
         ignored_ops = ignored_test["options"]
         ignored = True
-        for option_name in options:
-          if (option_name in ignored_ops and
+        for option_name in ignored_ops:
+          if option_name != "*" and (
+              option_name not in options or
               options[option_name] not in ignored_ops[option_name]):
             ignored = False
+
         if ignored:
-          print "Ignoring %s with %s for %s with options %s because %s" % (
-            operation, algorithm, implementation,
-            ", ".join(options.values()), ignored_test["reason"])
+          if not ignored_test["hidden"]:
+            print "Ignoring %s with %s for %s with options %s because %s" % (
+                operation, algorithm, implementation,
+                ", ".join(options.values()), ignored_test["reason"])
           return True
     return False
-
 
   def TestAll(self, operation, algorithm, generate_options):
     """ Generates all possible configurations for the Test function. """
     for implementation in self.implementations:
-      option_dict = self.operations[operation]["testOptions"]
-      if isinstance(option_dict, str) or isinstance(option_dict, unicode):
-        option_dict = self.macros[option_dict]
+      option_dict = self.operations[operation]["testOptions"].copy()
       if not option_dict:
         if not self._IsException(
             implementation, operation, algorithm, {}):
@@ -132,13 +151,16 @@ class InteropTestRunner(object):
       else:
         for name, option_list in option_dict.iteritems():
           if isinstance(option_list, unicode):
-            option_dict[name] = self.macros[option_list]
+            option_dict[name] = self.macros[option_list](
+                implementation, operation, algorithm)
         names, all_options = zip(*option_dict.items())
         for options in itertools.product(*all_options):
           options_with_names = dict(
               [(name, option) for name, option in zip(names, options)])
+          combined_options = dict(
+              options_with_names.items() + generate_options.items())
           if not self._IsException(
-              implementation, operation, algorithm, generate_options):
+              implementation, operation, algorithm, combined_options):
             yield (implementation, options_with_names)
 
   def GenerateAll(self):
@@ -155,7 +177,8 @@ class InteropTestRunner(object):
           else:
             for name, option_list in option_dict.iteritems():
               if isinstance(option_list, unicode):
-                option_dict[name] = self.macros[option_list]
+                option_dict[name] = self.macros[option_list](
+                    implementation, operation, algorithm)
             names, all_options = zip(*option_dict.items())
             for options in itertools.product(*all_options):
               chosen_options = dict(
@@ -197,19 +220,25 @@ class InteropTestRunner(object):
       cmd = subprocess.list2cmdline(args)
       raise Exception("%s failed:\n %s" % (cmd, e.output))
 
-  def _Create(self, implementation, algorithm, size):
+  def _Create(self, implementation, algorithm, size, asymmetric):
     """ Sets up necessary flags and creates keys """
     location = self._GetKeyDir(implementation, algorithm + str(size))
     self._MakeDirs(location)
     create_flags = self._GetCreateFlags(algorithm, size, location)
     add_key_flags = self._GetAddKeyFlags(algorithm, size, location)
+    commands = [create_flags]
+    commands += 2 * [add_key_flags]
+    if asymmetric:
+      self._MakeDirs(location + "public")
+      commands.append(self._GetPubKeyFlags(algorithm, size, location))
     params = {
         "command": "create",
-        "keyczartCommands": [create_flags, add_key_flags, add_key_flags]
-        }
+        "keyczartCommands": commands
+    }
     print self._CallImplementation(implementation, json.dumps(params))
 
-  def _CreateEncrypted(self, implementation, algorithm, size, crypter):
+  def _CreateEncrypted(
+      self, implementation, algorithm, size, crypter, asymmetric):
     """ Sets up necessary flags and creates keys """
     location = self._GetKeyDir(implementation, algorithm + str(size) + crypter)
     crypter_location = self._GetKeyDir(implementation, crypter)
@@ -217,11 +246,13 @@ class InteropTestRunner(object):
     create_flags = self._GetCreateFlags(algorithm, size, location)
     add_key_flags = self._GetAddKeyFlags(
         algorithm, size, location, "--crypter=" + crypter_location)
+    commands = [create_flags]
+    commands.append(add_key_flags)
     params = {
         "command": "create",
-        "keyczartCommands": [create_flags, add_key_flags]
-        }
-    print self._CallImplementation(implementation, json.dumps(params)) 
+        "keyczartCommands": commands
+    }
+    print self._CallImplementation(implementation, json.dumps(params))
 
   def _GetCreateFlags(self, algorithm, size, location):
     """ Returns list of flags for keyczart key creation """
@@ -245,17 +276,29 @@ class InteropTestRunner(object):
     add_key_flags += self.algorithms[algorithm]["addKeyFlags"]
     return add_key_flags
 
+  def _GetPubKeyFlags(self, algorithm, size, location, *flags):
+    """ Returns list of flags for pub key call to keyczart """
+    pub_key_flags = [
+        "pubkey",
+        "--destination=" + location + "public",
+        "--location=" + location,
+        ]
+    pub_key_flags += flags
+    return pub_key_flags
+
   def CreateKeys(self):
     """ creates keys for all implementations, sizes, and algorithms """
     for implementation in self.implementations:
       for algorithm in self.algorithms:
         for size in self.algorithms[algorithm]["keySizes"]:
-          self._Create(implementation, algorithm, size)
+          self._Create(implementation, algorithm, size,
+                       self.algorithms[algorithm]["asymmetric"])
     for implementation in self.implementations:
       for algorithm in self.algorithms:
         for size in self.algorithms[algorithm]["keySizes"]:
           self._CreateEncrypted(
-              implementation, algorithm, size, CRYPTED_KEY_SET_ALGORITHM)
+              implementation, algorithm, size, CRYPTED_KEY_SET_ALGORITHM,
+              self.algorithms[algorithm]["asymmetric"])
 
   def _Generate(self, implementation, operation, algorithm, options):
     """ Sets up arguments and calls generate function for given parameters. """
@@ -266,7 +309,7 @@ class InteropTestRunner(object):
         "algorithm": algorithm,
         "generateOptions": options,
         "testData": TESTDATA
-        }
+    }
     return self._CallImplementation(implementation, json.dumps(args))
 
   def _Test(self, output_json, test_implementation, generate_implementation,
@@ -282,7 +325,7 @@ class InteropTestRunner(object):
         "testOptions": test_options,
         "output": output,
         "testData": TESTDATA
-        }
+    }
     return self._CallImplementation(test_implementation, json.dumps(args))
 
   def InteropTestGenerator(self, *args):
@@ -343,7 +386,7 @@ def Usage():
 
 
 def main(argv):
-  flags = {"create" : "y"}
+  flags = {"create": "y"}
   for arg in argv:
     if arg.startswith("--"):
       arg = arg[2:]  # trim leading dashes
@@ -355,7 +398,7 @@ def main(argv):
       except ValueError:
         print "Flags incorrectly formatted"
         return Usage()
-  if flags["create"] not in ("y","n"):
+  if flags["create"] not in ("y", "n"):
     return Usage()
   runner = InteropTestRunner()
   if flags["create"] == "y":

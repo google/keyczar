@@ -26,9 +26,9 @@ public class SignedSessionOperation extends Operation {
   public byte[] generate(String algorithm, Map<String, String> generateParams)
       throws KeyczarException {
     Encrypter keyEncrypter = new Encrypter(
-        getReader(algorithm, generateParams.get("cryptedKeySet")));
+        getReader(algorithm, generateParams.get("cryptedKeySet"), generateParams.get("pubKey")));
     Signer signer = new Signer(getReader(
-        generateParams.get("signer"), generateParams.get("cryptedKeySet")));
+        generateParams.get("signer"), generateParams.get("cryptedKeySet"), ""));
     SignedSessionEncrypter crypter = new SignedSessionEncrypter(keyEncrypter, signer);
     String sessionMaterial = crypter.newSession();
     byte[] ciphertext = crypter.encrypt(testData.getBytes());
@@ -46,9 +46,10 @@ public class SignedSessionOperation extends Operation {
     byte[] encryptedData = readOutput(output);
     String sessionMaterial = output.get("sessionMaterial");
     
-    Crypter keyCrypter = new Crypter(getReader(algorithm, generateParams.get("cryptedKeySet")));
-    Verifier verifier = new Verifier(
-        getReader(generateParams.get("signer"), generateParams.get("cryptedKeySet")));
+    Crypter keyCrypter = new Crypter(
+        getReader(algorithm, generateParams.get("cryptedKeySet"), testParams.get("pubKey")));
+    Verifier verifier = new Verifier(getReader(
+        generateParams.get("signer"), generateParams.get("cryptedKeySet"), ""));
     SignedSessionDecrypter sessionCrypter =
         new SignedSessionDecrypter(keyCrypter, verifier, sessionMaterial);
     byte[] decryptedData = sessionCrypter.decrypt(encryptedData);

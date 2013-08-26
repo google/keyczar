@@ -45,12 +45,15 @@ class Operation {
   virtual bool OutputToJson(
       const std::string& output, std::string * json_string);
 
-  virtual bool InputFromJson(const DictionaryValue * json, std::string * output);
+  virtual bool InputFromJson(
+      const DictionaryValue * json, std::string * output);
 
  protected:
   const std::string GetKeyPath(const std::string& algorithm);
-  
-  rw::KeysetReader* GetReader(const std::string& algorithm, const std::string& crypter);
+
+  rw::KeysetReader* GetReader(
+      const std::string& algorithm, const std::string& crypter,
+      const std::string& publicKey);
 
   const std::string key_path_;
   const std::string test_data_;

@@ -18,7 +18,8 @@ public class UnversionedSignOperation extends Operation {
   @Override
   public byte[] generate(String algorithm, Map<String, String> generateParams)
       throws KeyczarException{
-    UnversionedSigner signer = new UnversionedSigner(getReader(algorithm, generateParams.get("cryptedKeySet")));
+    UnversionedSigner signer = new UnversionedSigner(
+        getReader(algorithm, generateParams.get("cryptedKeySet"), ""));
     if (generateParams.get("encoding").equals("encoded")) {
       String signature = signer.sign(testData);
       return signature.getBytes();
@@ -36,7 +37,7 @@ public class UnversionedSignOperation extends Operation {
       Map<String, String> testParams) throws KeyczarException {
     if (testParams.get("class").equals("signer")) {
       UnversionedSigner verifier = new UnversionedSigner(
-          getReader(algorithm, generateParams.get("cryptedKeySet")));
+          getReader(algorithm, generateParams.get("cryptedKeySet"), testParams.get("pubKey")));
       if (generateParams.get("encoding").equals("encoded")) {
         assert(verifier.verify(testData, new String(readOutput(output))));
       } else if (generateParams.get("encoding").equals("unencoded")) {
@@ -46,7 +47,7 @@ public class UnversionedSignOperation extends Operation {
       }
     } else if (testParams.get("class").equals("verifier")) {
       UnversionedVerifier verifier = new UnversionedVerifier(
-          getReader(algorithm, generateParams.get("cryptedKeySet")));
+          getReader(algorithm, generateParams.get("cryptedKeySet"), testParams.get("pubKey")));
       if (generateParams.get("encoding").equals("encoded")) {
         assert(verifier.verify(testData, new String(readOutput(output))));
       } else if (generateParams.get("encoding").equals("unencoded")) {

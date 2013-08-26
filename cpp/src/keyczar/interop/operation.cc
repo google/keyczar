@@ -45,13 +45,16 @@ Operation * Operation::GetOperationByName(
 }
 
 rw::KeysetReader* Operation::GetReader(
-    const std::string& algorithm, const std::string& crypter_algorithm) {
+    const std::string& algorithm, const std::string& crypter_algorithm,
+    const std::string& pub_key) {
   rw::KeysetReader * reader;
   if (crypter_algorithm == "") {
-    reader = new rw::KeysetJSONFileReader(GetKeyPath(algorithm));
+    reader = new rw::KeysetJSONFileReader(GetKeyPath(algorithm + pub_key));
   } else {
-    scoped_ptr<keyczar::Crypter> crypter(keyczar::Crypter::Read(GetKeyPath(crypter_algorithm)));
-    reader = new rw::KeysetEncryptedJSONFileReader(GetKeyPath(algorithm + crypter_algorithm), crypter.release());
+    scoped_ptr<keyczar::Crypter> crypter(
+        keyczar::Crypter::Read(GetKeyPath(crypter_algorithm)));
+    reader = new rw::KeysetEncryptedJSONFileReader(
+        GetKeyPath(algorithm + crypter_algorithm + pub_key), crypter.release());
   }
   return reader;
 }
@@ -76,7 +79,8 @@ bool Operation::OutputToJson(
   return true;
 }
 
-bool Operation::InputFromJson(const DictionaryValue * json_dict, std::string * output) {
+bool Operation::InputFromJson(
+    const DictionaryValue * json_dict, std::string * output) {
   std::string encoded_output;
   if (!json_dict->GetString("output", &encoded_output)) {
     return false;
@@ -97,16 +101,19 @@ bool EncryptOperation::Generate(
     const std::string& algorithm, const DictionaryValue * generate_params,
     std::string * output) {
   keyczar::Keyczar* crypter;
-  std::string encoding, crypted_key_set, crypter_class;
+  std::string encoding, crypted_key_set, crypter_class, pub_key;
   if (!generate_params->GetString("encoding", &encoding) ||
       !generate_params->GetString("cryptedKeySet", &crypted_key_set) ||
-      !generate_params->GetString("class", &crypter_class)) {
+      !generate_params->GetString("class", &crypter_class) ||
+      !generate_params->GetString("pubKey", &pub_key)) {
     return false;
   }
   if (crypter_class == "encrypter") {
-    crypter = keyczar::Encrypter::Read(*GetReader(algorithm, crypted_key_set));
+    crypter = keyczar::Encrypter::Read(
+        *GetReader(algorithm, crypted_key_set, ""));
   } else if (crypter_class == "crypter") {
-    crypter = keyczar::Crypter::Read(*GetReader(algorithm, crypted_key_set));
+    crypter = keyczar::Crypter::Read(
+        *GetReader(algorithm, crypted_key_set, pub_key));
   } else {
     return false;
   }
@@ -132,7 +139,7 @@ bool EncryptOperation::Test(
       !generate_params->GetString("cryptedKeySet", &crypted_key_set)) {
     return false;
   }
-  crypter = keyczar::Crypter::Read(*GetReader(algorithm, crypted_key_set));
+  crypter = keyczar::Crypter::Read(*GetReader(algorithm, crypted_key_set, ""));
 
   if (!crypter) return false;
   if (encoding == "unencoded") {
@@ -156,18 +163,25 @@ bool SignedSessionOperation::OutputToJson(
 bool SignedSessionOperation::Generate(
     const std::string& algorithm, const DictionaryValue * generate_params,
     std::string * output) {
-  std::string session_material, encrypted_data, signer_algorithm, crypted_key_set;
+  std::string session_material,
+      encrypted_data,
+      signer_algorithm,
+      crypted_key_set,
+      pub_key;
 
   keyczar::Encrypter* key_encrypter;
   keyczar::Signer* signer;
 
   if (!generate_params->GetString("signer", &signer_algorithm) ||
-      !generate_params->GetString("cryptedKeySet", &crypted_key_set)) {
+      !generate_params->GetString("cryptedKeySet", &crypted_key_set) ||
+      !generate_params->GetString("pubKey", &pub_key)) {
     return false;
   }
 
-  key_encrypter = keyczar::Crypter::Read(*GetReader(algorithm, crypted_key_set));
-  signer = keyczar::Signer::Read(*GetReader(signer_algorithm, crypted_key_set));
+  key_encrypter = keyczar::Encrypter::Read(
+      *GetReader(algorithm, crypted_key_set, pub_key));
+  signer = keyczar::Signer::Read(
+      *GetReader(signer_algorithm, crypted_key_set, ""));
 
   if (!key_encrypter || !signer) {
     return false;
@@ -232,8 +246,10 @@ bool SignedSessionOperation::Test(
     return false;
   }
 
-  key_decrypter = keyczar::Crypter::Read(*GetReader(algorithm, crypted_key_set));
-  verifier = keyczar::Signer::Read(*GetReader(signer_algorithm, crypted_key_set));
+  key_decrypter = keyczar::Crypter::Read(
+      *GetReader(algorithm, crypted_key_set, ""));
+  verifier = keyczar::Signer::Read(
+      *GetReader(signer_algorithm, crypted_key_set, ""));
 
   if (!key_decrypter || !verifier) {
     return false;
@@ -262,7 +278,7 @@ bool SignOperation::Generate(
       !generate_params->GetString("cryptedKeySet", &crypted_key_set)) {
     return false;
   }
-  signer = keyczar::Signer::Read(*GetReader(algorithm, crypted_key_set));
+  signer = keyczar::Signer::Read(*GetReader(algorithm, crypted_key_set, ""));
   if (!signer) return false;
   if (encoding == "unencoded") {
     signer->set_encoding(Keyczar::NO_ENCODING);
@@ -280,16 +296,19 @@ bool SignOperation::Test(
   std::string output;
   if (!InputFromJson(output_json, &output)) return false;
   keyczar::Keyczar* verifier;
-  std::string encoding, crypted_key_set, verifier_class;
+  std::string encoding, crypted_key_set, verifier_class, pub_key;
   if (!generate_params->GetString("encoding", &encoding) ||
       !generate_params->GetString("cryptedKeySet", &crypted_key_set) ||
-      !test_params->GetString("class", &verifier_class)) {
+      !test_params->GetString("class", &verifier_class) ||
+      !test_params->GetString("pubKey", &pub_key)) {
     return false;
   }
   if (verifier_class == "signer") {
-    verifier = keyczar::Signer::Read(*GetReader(algorithm, crypted_key_set));
+    verifier = keyczar::Signer::Read(
+        *GetReader(algorithm, crypted_key_set, pub_key));
   } else if (verifier_class == "verifier") {
-    verifier = keyczar::Verifier::Read(*GetReader(algorithm, crypted_key_set));
+    verifier = keyczar::Verifier::Read(
+        *GetReader(algorithm, crypted_key_set, pub_key));
   } else {
     return false;
   }
@@ -311,7 +330,7 @@ bool AttachedSignOperation::Generate(
       !generate_params->GetString("cryptedKeySet", &crypted_key_set)) {
     return false;
   }
-  signer = keyczar::Signer::Read(*GetReader(algorithm, crypted_key_set));
+  signer = keyczar::Signer::Read(*GetReader(algorithm, crypted_key_set, ""));
   if (!signer) return false;
   if (encoding == "unencoded") {
     signer->set_encoding(Keyczar::NO_ENCODING);
@@ -329,16 +348,19 @@ bool AttachedSignOperation::Test(
   std::string output;
   if (!InputFromJson(output_json, &output)) return false;
   keyczar::Keyczar* verifier;
-  std::string message, encoding, crypted_key_set, verifier_class;
+  std::string message, encoding, crypted_key_set, verifier_class, pub_key;
   if (!generate_params->GetString("encoding", &encoding) ||
       !generate_params->GetString("cryptedKeySet", &crypted_key_set) ||
-      !test_params->GetString("class", &verifier_class)) {
+      !test_params->GetString("class", &verifier_class) ||
+      !test_params->GetString("pubKey", &pub_key)) {
     return false;
   }
   if (verifier_class == "signer") {
-    verifier = keyczar::Signer::Read(*GetReader(algorithm, crypted_key_set));
+    verifier = keyczar::Signer::Read(
+        *GetReader(algorithm, crypted_key_set, pub_key));
   } else if (verifier_class == "verifier") {
-    verifier = keyczar::Verifier::Read(*GetReader(algorithm, crypted_key_set));
+    verifier = keyczar::Verifier::Read(
+        *GetReader(algorithm, crypted_key_set, pub_key));
   } else {
     return false;
   }
@@ -362,7 +384,8 @@ bool UnversionedSignOperation::Generate(
       !generate_params->GetString("cryptedKeySet", &crypted_key_set)) {
     return false;
   }
-  signer = keyczar::UnversionedSigner::Read(*GetReader(algorithm, crypted_key_set));
+  signer = keyczar::UnversionedSigner::Read(
+      *GetReader(algorithm, crypted_key_set, ""));
   if (!signer) return false;
   if (encoding == "unencoded") {
     signer->set_encoding(Keyczar::NO_ENCODING);
@@ -380,16 +403,19 @@ bool UnversionedSignOperation::Test(
   std::string output;
   if (!InputFromJson(output_json, &output)) return false;
   keyczar::Keyczar* verifier;
-  std::string encoding, crypted_key_set, verifier_class;
+  std::string encoding, crypted_key_set, verifier_class, pub_key;
   if (!generate_params->GetString("encoding", &encoding) ||
       !generate_params->GetString("cryptedKeySet", &crypted_key_set) ||
-      !test_params->GetString("class", &verifier_class)) {
+      !test_params->GetString("class", &verifier_class) ||
+      !test_params->GetString("pubKey", &pub_key)) {
     return false;
   }
   if (verifier_class == "signer") {
-    verifier = keyczar::UnversionedSigner::Read(*GetReader(algorithm, crypted_key_set));
+    verifier = keyczar::UnversionedSigner::Read(
+        *GetReader(algorithm, crypted_key_set, pub_key));
   } else if (verifier_class == "verifier") {
-    verifier = keyczar::UnversionedVerifier::Read(*GetReader(algorithm, crypted_key_set));
+    verifier = keyczar::UnversionedVerifier::Read(
+        *GetReader(algorithm, crypted_key_set, pub_key));
   } else {
     return false;
   }
