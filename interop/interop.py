@@ -47,13 +47,13 @@ import unittest
 
 
 ALGORITHM_JSON = "config/interopAlgorithms.json"
+CRYPTED_KEY_SET_ALGORITHM = "aes128"
 INTEROP_DATA = "keys"
 IGNORED_TESTS = "config/ignoredTests.json"
+KEY_SET_OPTIONS = "config/keySetOptions.json"
 OPERATIONS = "config/operations.json"
 IMPLEMENTATIONS = "config/implementations.json"
 TESTDATA = "This is some test data."
-CRYPTED_KEY_SET_ALGORITHM = "aes128"
-
 
 def ReadFile(loc):
   """
@@ -73,7 +73,85 @@ def ReadFile(loc):
     raise Exception("Unable to read file %s." % loc)
 
 
+class Keyset(object):
+  """ Represents a key set"""
+
+  @classmethod
+  def GetGenerateKeysets(cls, purpose, interop_test_runner):
+    """
+    Generates all keysets for the specified purpose
+
+    @param purpose: specifed purpose
+    @type purpose: string, either "crypt" or "sign"
+
+    @param interop_test_runner: the class holding the configuration
+    @type interop_test_runner: an instance of InteropTestRunner
+    """
+    algorithms = interop_test_runner.algorithms
+    key_set_options = interop_test_runner.key_set_options
+
+    for algorithm in algorithms:
+      if algorithms[algorithm]["purpose"] == purpose:
+        for size in algorithms[algorithm]["keySizes"]:
+          if purpose == "crypt" and algorithms[algorithm]["asymmetric"]:
+            yield cls(key_set_options, algorithm, size, "encrypt")
+          yield cls(key_set_options, algorithm, size, purpose)
+
+  @classmethod
+  def GetTestKeysets(cls, generate_keyset, interop_test_runner):
+    """
+    Generates all test keysets to be used with this generate keyset
+
+    This allows for a distinction to be made between public and private keys and
+    for different options to be passed to the different types of keys.
+
+    @param generate_keyset: The keyset used for the Generate function
+    @type generate_keyset: Keyset
+
+    @param interop_test_runner: the class holding the configuration
+    @type interop_test_runner: an instance of InteropTestRunner
+
+    @raises ValueError: if the generate purpose doesn't fit a known purpose
+    """
+    algorithms = interop_test_runner.algorithms
+    if generate_keyset.purpose == "crypt":
+      return [generate_keyset]
+    elif generate_keyset.purpose == "encrypt":
+      return [cls._SwitchPurpose(generate_keyset, "crypt")]
+    elif generate_keyset.purpose == "sign":
+      if algorithms[generate_keyset.algorithm]["asymmetric"]:
+        return [generate_keyset, cls._SwitchPurpose(generate_keyset, "verify")]
+      return [generate_keyset]
+    else:
+      raise ValueError("Unexpected generate purpose:" + generate_keyset.purpose)
+
+  @classmethod
+  def _SwitchPurpose(cls, keyset, purpose):
+    """ generates a new keyset with a different purpose """
+    return cls(keyset.key_set_options, keyset.algorithm, keyset.size, purpose)
+
+  def __init__(self, key_set_options, algorithm, size, purpose):
+    self.key_set_options = key_set_options
+    self.algorithm = algorithm
+    self.size = size
+    self.purpose = purpose
+
+  @property
+  def name(self):
+    return self.algorithm + str(self.size)
+
+  def options(self, option_string):
+    return self.key_set_options[self.purpose][option_string]
+
+  def test_options(self):
+    return self.options("testOptions")
+
+  def generate_options(self):
+    return self.options("generateOptions")
+
+
 class InteropTestRunner(object):
+  """ Class for running interop testing"""
 
   def __init__(self):
     """ loads the json data from the config files """
@@ -81,41 +159,11 @@ class InteropTestRunner(object):
     self.ignored_tests = json.loads(ReadFile(IGNORED_TESTS))
     self.operations = json.loads(ReadFile(OPERATIONS))
     self.implementations = json.loads(ReadFile(IMPLEMENTATIONS))
-
-    def AsymmetricOptions(implementation, operation, algorithm):
-      algorithm_name = self._GetAlgorithmName(algorithm)
-      if self.algorithms[algorithm_name]["asymmetric"]:
-        return ["public", ""]
-      return [""]
-
+    self.key_set_options = json.loads(ReadFile(KEY_SET_OPTIONS))
     self.macros = {
-        "ALL_SIGNING_KEYS": lambda *_: self.GetKeysByPurpose("sign"),
-        "CRYPTED_KEY_SET_OPTIONS": lambda *_: [CRYPTED_KEY_SET_ALGORITHM, ""],
-        "ASYMMETRIC_OPTIONS": AsymmetricOptions
+        "ALL_SIGNING_KEYS":
+            [ks.name for ks in Keyset.GetGenerateKeysets("sign", self)]
     }
-
-  def _GetAlgorithmName(self, algorithm):
-    algorithms = self.algorithms.keys()
-    if algorithm in algorithms:
-      return algorithm
-    for algorithm_name in algorithms:
-      for size in self.algorithms[algorithm_name]["keySizes"]:
-        if algorithm == algorithm_name + str(size):
-          return algorithm_name
-    raise ValueError("Algorithm %s not found" % algorithm)
-
-  def GetKeysByPurpose(self, purpose=""):
-    """ Gets names for all algorithms or ones with the given purpose. """
-    if purpose:
-      algorithms = [algorithm for algorithm in self.algorithms
-                    if self.algorithms[algorithm]["purpose"] == purpose]
-    else:
-      algorithms = self.algorithms.keys()
-    algorithms_with_sizes = []
-    for algorithm in algorithms:
-      for size in self.algorithms[algorithm]["keySizes"]:
-        algorithms_with_sizes.append(algorithm + str(size))
-    return algorithms_with_sizes
 
   def _IsException(self, implementation, operation, algorithm, options):
     """ Returns true if the configuration given is supposed to be ignored. """
@@ -133,59 +181,58 @@ class InteropTestRunner(object):
             ignored = False
 
         if ignored:
-          if not ignored_test["hidden"]:
-            print "Ignoring %s with %s for %s with options %s because %s" % (
-                operation, algorithm, implementation,
-                ", ".join(options.values()), ignored_test["reason"])
+          print "Ignoring %s with %s for %s with options %s because %s" % (
+              operation, algorithm, implementation,
+              ", ".join(options.values()), ignored_test["reason"])
           return True
     return False
 
-  def TestAll(self, operation, algorithm, generate_options):
+  def _Options(self, operation, keyset, option_string):
+    """
+    Iterates over all options possible for that operation/keyset/option_string.
+
+    @param operation: The name of the operation to get options from
+    @type operation: string
+
+    @param keyset: type of algorithm/keyset to use
+    @type keyset: Keyset
+
+    @param option_string: specifies what type of options
+    @type option_string: string, either "generateOptions" or "testOptions"
+    """
+    operation_options = self.operations[operation][option_string]
+    key_set_options = keyset.options(option_string)
+    option_dict = dict(key_set_options.items() + operation_options.items())
+    if not option_dict:
+      yield {}
+    else:
+      for name, option_list in option_dict.iteritems():
+        if isinstance(option_list, unicode):
+          option_dict[name] = self.macros[option_list]
+      names, all_options = zip(*option_dict.items())
+      for options in itertools.product(*all_options):
+        yield dict([(name, option) for name, option in zip(names, options)])
+
+  def TestAll(self, operation, keyset, generate_options):
     """ Generates all possible configurations for the Test function. """
     for implementation in self.implementations:
-      option_dict = self.operations[operation]["testOptions"].copy()
-      if not option_dict:
-        if not self._IsException(
-            implementation, operation, algorithm, {}):
-          yield (implementation, {})
-      else:
-        for name, option_list in option_dict.iteritems():
-          if isinstance(option_list, unicode):
-            option_dict[name] = self.macros[option_list](
-                implementation, operation, algorithm)
-        names, all_options = zip(*option_dict.items())
-        for options in itertools.product(*all_options):
-          options_with_names = dict(
-              [(name, option) for name, option in zip(names, options)])
-          combined_options = dict(
-              options_with_names.items() + generate_options.items())
+      for test_keyset in Keyset.GetTestKeysets(keyset, self):
+        for options in self._Options(operation, test_keyset, "testOptions"):
+          combined_options = dict(options.items() + generate_options.items())
           if not self._IsException(
-              implementation, operation, algorithm, combined_options):
-            yield (implementation, options_with_names)
+              implementation, operation, keyset.name, combined_options):
+            yield (implementation, options)
 
   def GenerateAll(self):
     """ Generates all possible configurations for the Generate function. """
     for implementation in self.implementations:
       for operation in self.operations:
         purpose = self.operations[operation]["keytype"]
-        for algorithm in self.GetKeysByPurpose(purpose):
-          option_dict = self.operations[operation]["generateOptions"]
-          if not option_dict:
+        for keyset in Keyset.GetGenerateKeysets(purpose, self):
+          for options in self._Options(operation, keyset, "generateOptions"):
             if not self._IsException(
-                implementation, operation, algorithm, {}):
-              yield (implementation, operation, algorithm, {})
-          else:
-            for name, option_list in option_dict.iteritems():
-              if isinstance(option_list, unicode):
-                option_dict[name] = self.macros[option_list](
-                    implementation, operation, algorithm)
-            names, all_options = zip(*option_dict.items())
-            for options in itertools.product(*all_options):
-              chosen_options = dict(
-                  [(name, option) for name, option in zip(names, options)])
-              if not self._IsException(
-                  implementation, operation, algorithm, chosen_options):
-                yield (implementation, operation, algorithm, chosen_options)
+                implementation, operation, keyset.name, options):
+              yield (implementation, operation, keyset, options)
 
   def _MakeDirs(self, location):
     """ Makes directories, will empty the leaf if it exists """
@@ -342,16 +389,16 @@ class InteropTestRunner(object):
     Should be called before loaded into unittest
     """
     for params in self.GenerateAll():
-      generate_implementation, operation, algorithm, generate_options = params
+      generate_implementation, operation, keyset, generate_options = params
       output = self._Generate(
-          generate_implementation, operation, algorithm, generate_options)
+          generate_implementation, operation, keyset.name, generate_options)
       for test_implementation, test_options in self.TestAll(
-          operation, algorithm, generate_options):
+          operation, keyset, generate_options):
         test_name = "test_%s_generated_by_%s_%s_%s_%s_%s" % (
             test_implementation,
             generate_implementation,
             operation,
-            algorithm,
+            keyset.name,
             "_".join(generate_options.values()),
             "_".join(test_options.values()),
             )
@@ -361,11 +408,28 @@ class InteropTestRunner(object):
             test_implementation,
             generate_implementation,
             operation,
-            algorithm,
+            keyset.name,
             generate_options,
             test_options)
         setattr(InteropTest, test_name, test)
 
+  def DisplayTests(self):
+    """ iterates through all options and prints out tests that would be ran"""
+    tests = []
+    for params in self.GenerateAll():
+      generate_implementation, operation, keyset, generate_options = params
+      for test_implementation, test_options in self.TestAll(
+          operation, keyset, generate_options):
+        tests.append("test_%s_generated_by_%s_%s_%s_%s_%s" % (
+            test_implementation,
+            generate_implementation,
+            operation,
+            keyset.name,
+            "_".join(["%s=%s"%o for o in generate_options.items()]),
+            "_".join(["%s=%s"%o for o in test_options.items()]),
+            ))
+    for test in sorted(tests):
+      print test
 
 class InteropTest(unittest.TestCase):
   """ unittests to run interop tests """
@@ -379,17 +443,25 @@ def RunTests():
 
 def Usage():
   print ("Interoperability testing for Keyczar\n"
-         "Example: ./interop.py --create=n\n"
+         "         ./interop.py [--create=(y|n)]\n"
+         "         ./interop.py display\n"
          "Run from the interop directory. Optional flags include:\n"
-         "      --create         (y/n) whether to create keys (default:y)\n")
+         "      --create         (y/n) whether to create keys (default:y)\n"
+         "When run with display argument. It will print all tests that will be ran.\n")
   return 1
 
 
 def main(argv):
   flags = {"create": "y"}
   for arg in argv:
-    if arg.startswith("--"):
+    if arg == "display":
+      runner = InteropTestRunner()
+      runner.DisplayTests()
+      return
+    elif arg.startswith("--"):
       arg = arg[2:]  # trim leading dashes
+      if arg in ("help","h"):
+        return Usage()
       try:
         [flag, val] = arg.split("=")
         if flag not in flags:
@@ -398,6 +470,8 @@ def main(argv):
       except ValueError:
         print "Flags incorrectly formatted"
         return Usage()
+    else:
+      return Usage()
   if flags["create"] not in ("y", "n"):
     return Usage()
   runner = InteropTestRunner()

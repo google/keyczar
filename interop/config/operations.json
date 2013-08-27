@@ -2,52 +2,38 @@
   "unversioned" : {
     "keytype" : "sign",
     "generateOptions" : {
-      "encoding" : ["encoded", "unencoded"],
-      "cryptedKeySet" : "CRYPTED_KEY_SET_OPTIONS"
+      "encoding" : ["encoded", "unencoded"]
     },
     "testOptions" : {
-      "class" : ["verifier", "signer"],
-      "pubKey" : "ASYMMETRIC_OPTIONS"
     }
   },
   "signedSession" : {
     "keytype" : "crypt",
     "generateOptions" : {
-      "signer" : "ALL_SIGNING_KEYS",
-      "cryptedKeySet" : "CRYPTED_KEY_SET_OPTIONS",
-      "pubKey" : "ASYMMETRIC_OPTIONS"
+      "signer" : "ALL_SIGNING_KEYS"
     },
     "testOptions" : {}
   },
   "attached" : {
     "keytype" : "sign",
     "generateOptions" : {
-      "encoding" : ["encoded", "unencoded"],
-      "cryptedKeySet" : "CRYPTED_KEY_SET_OPTIONS"
+      "encoding" : ["encoded", "unencoded"]
     },
     "testOptions" : {
-      "class" : ["verifier", "signer"],
-      "pubKey" : "ASYMMETRIC_OPTIONS"
     }
   },
   "sign" : {
     "keytype" : "sign",
     "generateOptions" : {
-      "encoding" : ["encoded", "unencoded"],
-      "cryptedKeySet" : "CRYPTED_KEY_SET_OPTIONS"
+      "encoding" : ["encoded", "unencoded"]
     },
     "testOptions" : {
-      "class" : ["verifier", "signer"],
-      "pubKey" : "ASYMMETRIC_OPTIONS"
     }
   },
   "encrypt" : {
     "keytype" : "crypt",
     "generateOptions" : {
-      "encoding" : ["encoded", "unencoded"],
-      "class" : ["crypter", "encrypter"],
-      "cryptedKeySet" : "CRYPTED_KEY_SET_OPTIONS",
-      "pubKey" : "ASYMMETRIC_OPTIONS"
+      "encoding" : ["encoded", "unencoded"]
     },
     "testOptions" : {}
   }

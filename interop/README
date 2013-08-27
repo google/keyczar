@@ -70,6 +70,13 @@ Example of parameters for a create command:
 
 }}}
 
+====Reading from a Key Set====
+Key set names need to be constructed in each tool. The correct formatting of each name is as follows:
+{{{
+keyPath + algorithm + cryptedKeySet + pubKey
+}}}
+cryptedKeySet and pubKey are in options and will be blank or not present if there is no encryption used on the keyset or the key is not just a public key.
+
 ====Generate====
 The Generate command will generate data for other implementations to test. The Generate function will run the designated operation, using the algorithm and options listed. For example, if the operation involves signing. The generate function will compute the signature and pass that into the output. If it is an encryption operation, the output will be the encrypted data. The possible types of operations can be found in the "config/operations.json" file, along with the other options possible for generateOptions. The keys for any given algorithm can be loaded in from the path resulting from the concatenation of the "keyPath" and "algorithm" name. To understand what an individual option does, checking the code of another implementation is useful. In general, the encoding will specify whether the output is WebSafeBase64 "encoded" or it is "unencoded" and the "class" option will specify what kind of keyczar class is used: either a Crypter or an Encrypter. "testData" is the value of the data to be encrypted/signed. This will be an ASCII string. If there is an error that occurs during generation, please print a useful debugging message and return a non-zero exit code.
 Example input:
@@ -132,14 +139,12 @@ The options list the options that are required. If the option is not present it 
 
 The reason is the reason that these tests are ignored to be displayed each time the interop tests are run.
 
-Hidden will toggle whether to display this as an ignored test when running interop tests. This should be false unless ignoring this test is the desired functionality.
 {{{
 {
   "implementation" : ["*"],
   "operation" : ["signedSession"],
   "algorithm" : ["rsa-crypt1024"],
   "options" : {"*" : "*"},
-  "reason" : "metadata in signed session is too big to be encrypted by 1024 bit RSA",
-  "hidden" : false
+  "reason" : "metadata in signed session is too big to be encrypted by 1024 bit RSA"
 }
 }}}

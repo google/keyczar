@@ -4,32 +4,28 @@
     "operation" : ["signedSession"],
     "algorithm" : ["rsa-crypt1024"],
     "options" : {"*" : "*"},
-    "reason" : "metadata in signed session is too big to be encrypted by 1024 bit RSA",
-    "hidden" : false
+    "reason" : "metadata in signed session is too big to be encrypted by 1024 bit RSA"
   },
   {
     "implementation" : ["cpp"],
     "operation" : ["*"],
     "algorithm" : ["aes256", "aes192"],
     "options" : {"*" : "*"},
-    "reason" : "Cpp wrong IV size for AES keysizes above 128 (Issue 132)",
-    "hidden" : false
+    "reason" : "Cpp wrong IV size for AES keysizes above 128 (Issue 132)"
   },
   {
     "implementation" : ["java"],
     "operation" : ["attached"],
     "algorithm" : ["*"],
     "options" : {"encoding" : ["encoded"]},
-    "reason" : "AttachedSign does not have the option to be encoded in java",
-    "hidden" : false
+    "reason" : "AttachedSign does not have the option to be encoded in java"
   },
   {
     "implementation" : ["java"],
     "operation" : ["*"],
     "algorithm" : ["aes256", "aes192"],
     "options" : {"*" : "*"},
-    "reason" : "Java doesn't produce the same hash for non 128 bit keysizes of AES as C++&Python (Issue 105)",
-    "hidden" : false
+    "reason" : "Java doesn't produce the same hash for non 128 bit keysizes of AES as C++&Python (Issue 105)"
   },
   {
     "implementation" : ["*"],
@@ -39,29 +35,6 @@
       "cryptedKeySet" : ["aes128"],
       "pubKey" : ["public"]
     },
-    "reason" : "Can't create a public key from an encrypted keyset.",
-    "hidden" : false
-  },
-  {
-    "implementation" : ["*"],
-    "operation" : ["*"],
-    "algorithm" : ["*"],
-    "options" : {
-      "class" : ["signer"],
-      "pubKey" : ["public"]
-    },
-    "reason" : "Public key can only verify.",
-    "hidden" : true
-  },
-  {
-    "implementation" : ["*"],
-    "operation" : ["*"],
-    "algorithm" : ["*"],
-    "options" : {
-      "class" : ["crypter"],
-      "pubKey" : ["public"]
-    },
-    "reason" : "Public key can only encrypt.",
-    "hidden" : true
+    "reason" : "Can't create a public key from an encrypted keyset."
   }
 ]
