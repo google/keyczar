@@ -174,8 +174,8 @@ bool AESKey::ComputeHash(std::string* hash, bool buggy) const {
     return false;
   }
 
-  MessageDigestImpl* digest_impl = CryptoFactory::SHA1();
-  if (digest_impl == NULL)
+  scoped_ptr<MessageDigestImpl> digest_impl(CryptoFactory::SHA1());
+  if (digest_impl.get() == NULL)
     return false;
 
   digest_impl->Init();

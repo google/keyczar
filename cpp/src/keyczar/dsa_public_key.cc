@@ -92,8 +92,8 @@ bool DSAPublicKey::Hash(std::string* hash) const {
     return false;
 
   // Builds a message digest based on public attributes
-  MessageDigestImpl* digest_impl = CryptoFactory::SHA1();
-  if (digest_impl == NULL)
+  scoped_ptr<MessageDigestImpl> digest_impl(CryptoFactory::SHA1());
+  if (digest_impl.get() == NULL)
     return false;
 
   digest_impl->Init();
@@ -114,8 +114,8 @@ bool DSAPublicKey::Verify(const std::string& data,
   if (dsa_impl() == NULL)
     return false;
 
-  MessageDigestImpl* digest_impl = CryptoFactory::SHAFromFFCIFCSize(size());
-  if (digest_impl == NULL)
+  scoped_ptr<MessageDigestImpl> digest_impl(CryptoFactory::SHAFromFFCIFCSize(size()));
+  if (digest_impl.get() == NULL)
     return false;
 
   std::string message_digest;
