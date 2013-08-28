@@ -55,6 +55,7 @@ OPERATIONS = "config/operations.json"
 IMPLEMENTATIONS = "config/implementations.json"
 TESTDATA = "This is some test data."
 
+
 def ReadFile(loc):
   """
   Read data from file at given location.
@@ -136,18 +137,23 @@ class Keyset(object):
     self.size = size
     self.purpose = purpose
 
+  def __repr__(self):
+    return "Keyset(%s,%d,%s)"%(self.algorithm, self.size, self.purpose)
+
   @property
   def name(self):
     return self.algorithm + str(self.size)
 
-  def options(self, option_string):
+  def Options(self, option_string):
     return self.key_set_options[self.purpose][option_string]
 
+  @property
   def test_options(self):
-    return self.options("testOptions")
+    return self.Options("testOptions")
 
+  @property
   def generate_options(self):
-    return self.options("generateOptions")
+    return self.Options("generateOptions")
 
 
 class InteropTestRunner(object):
@@ -160,10 +166,8 @@ class InteropTestRunner(object):
     self.operations = json.loads(ReadFile(OPERATIONS))
     self.implementations = json.loads(ReadFile(IMPLEMENTATIONS))
     self.key_set_options = json.loads(ReadFile(KEY_SET_OPTIONS))
-    self.macros = {
-        "ALL_SIGNING_KEYS":
-            [ks.name for ks in Keyset.GetGenerateKeysets("sign", self)]
-    }
+    self.macros = {"ALL_SIGNING_KEYS":
+                   [ks.name for ks in Keyset.GetGenerateKeysets("sign", self)]}
 
   def _IsException(self, implementation, operation, algorithm, options):
     """ Returns true if the configuration given is supposed to be ignored. """
@@ -201,7 +205,7 @@ class InteropTestRunner(object):
     @type option_string: string, either "generateOptions" or "testOptions"
     """
     operation_options = self.operations[operation][option_string]
-    key_set_options = keyset.options(option_string)
+    key_set_options = keyset.Options(option_string)
     option_dict = dict(key_set_options.items() + operation_options.items())
     if not option_dict:
       yield {}
@@ -213,7 +217,7 @@ class InteropTestRunner(object):
       for options in itertools.product(*all_options):
         yield dict([(name, option) for name, option in zip(names, options)])
 
-  def TestAll(self, operation, keyset, generate_options):
+  def _TestAll(self, operation, keyset, generate_options):
     """ Generates all possible configurations for the Test function. """
     for implementation in self.implementations:
       for test_keyset in Keyset.GetTestKeysets(keyset, self):
@@ -223,7 +227,7 @@ class InteropTestRunner(object):
               implementation, operation, keyset.name, combined_options):
             yield (implementation, options)
 
-  def GenerateAll(self):
+  def _GenerateAll(self):
     """ Generates all possible configurations for the Generate function. """
     for implementation in self.implementations:
       for operation in self.operations:
@@ -277,7 +281,7 @@ class InteropTestRunner(object):
     commands += 2 * [add_key_flags]
     if asymmetric:
       self._MakeDirs(location + "public")
-      commands.append(self._GetPubKeyFlags(algorithm, size, location))
+      commands.append(self._GetPubKeyFlags(location))
     params = {
         "command": "create",
         "keyczartCommands": commands
@@ -285,7 +289,7 @@ class InteropTestRunner(object):
     print self._CallImplementation(implementation, json.dumps(params))
 
   def _CreateEncrypted(
-      self, implementation, algorithm, size, crypter, asymmetric):
+      self, implementation, algorithm, size, crypter, _):
     """ Sets up necessary flags and creates keys """
     location = self._GetKeyDir(implementation, algorithm + str(size) + crypter)
     crypter_location = self._GetKeyDir(implementation, crypter)
@@ -323,7 +327,7 @@ class InteropTestRunner(object):
     add_key_flags += self.algorithms[algorithm]["addKeyFlags"]
     return add_key_flags
 
-  def _GetPubKeyFlags(self, algorithm, size, location, *flags):
+  def _GetPubKeyFlags(self, location, *flags):
     """ Returns list of flags for pub key call to keyczart """
     pub_key_flags = [
         "pubkey",
@@ -388,11 +392,11 @@ class InteropTestRunner(object):
 
     Should be called before loaded into unittest
     """
-    for params in self.GenerateAll():
+    for params in self._GenerateAll():
       generate_implementation, operation, keyset, generate_options = params
       output = self._Generate(
           generate_implementation, operation, keyset.name, generate_options)
-      for test_implementation, test_options in self.TestAll(
+      for test_implementation, test_options in self._TestAll(
           operation, keyset, generate_options):
         test_name = "test_%s_generated_by_%s_%s_%s_%s_%s" % (
             test_implementation,
@@ -411,14 +415,14 @@ class InteropTestRunner(object):
             keyset.name,
             generate_options,
             test_options)
-        setattr(InteropTest, test_name, test)
+        setattr(self.InteropTest, test_name, test)
 
   def DisplayTests(self):
     """ iterates through all options and prints out tests that would be ran"""
     tests = []
-    for params in self.GenerateAll():
+    for params in self._GenerateAll():
       generate_implementation, operation, keyset, generate_options = params
-      for test_implementation, test_options in self.TestAll(
+      for test_implementation, test_options in self._TestAll(
           operation, keyset, generate_options):
         tests.append("test_%s_generated_by_%s_%s_%s_%s_%s" % (
             test_implementation,
@@ -431,14 +435,13 @@ class InteropTestRunner(object):
     for test in sorted(tests):
       print test
 
-class InteropTest(unittest.TestCase):
-  """ unittests to run interop tests """
-  pass
+  class InteropTest(unittest.TestCase):
+    """ unittests to run interop tests """
+    pass
 
-
-def RunTests():
-  suite = unittest.TestLoader().loadTestsFromTestCase(InteropTest)
-  unittest.TextTestRunner().run(suite)
+  def RunTests(self):
+    suite = unittest.TestLoader().loadTestsFromTestCase(self.InteropTest)
+    unittest.TextTestRunner().run(suite)
 
 
 def Usage():
@@ -447,7 +450,7 @@ def Usage():
          "         ./interop.py display\n"
          "Run from the interop directory. Optional flags include:\n"
          "      --create         (y/n) whether to create keys (default:y)\n"
-         "When run with display argument. It will print all tests that will be ran.\n")
+         "When run with display argument. It will print all tests to be ran.\n")
   return 1
 
 
@@ -460,7 +463,7 @@ def main(argv):
       return
     elif arg.startswith("--"):
       arg = arg[2:]  # trim leading dashes
-      if arg in ("help","h"):
+      if arg in ("help", "h"):
         return Usage()
       try:
         [flag, val] = arg.split("=")
@@ -478,7 +481,7 @@ def main(argv):
   if flags["create"] == "y":
     runner.CreateKeys()
   runner.SetupInteropTests()
-  RunTests()
+  runner.RunTests()
 
 if __name__ == "__main__":
   sys.exit(main(sys.argv[1:]))
