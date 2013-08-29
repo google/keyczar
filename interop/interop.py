@@ -74,6 +74,34 @@ def ReadFile(loc):
     raise Exception("Unable to read file %s." % loc)
 
 
+class InteropLogger(object):
+  """ Logs output for interop testing. """
+
+  def __init__(self, verbose=False):
+    self.collection = {}
+    self.verbose = verbose
+
+  def Output(self, string):
+    print string
+
+  def Debug(self, string):
+    if self.verbose:
+      print string
+
+  def Collect(self, message, details):
+    if message not in self.collection:
+      self.collection[message] = []
+    self.collection[message].append(details)
+
+  def OutputCollection(self):
+    for message in self.collection:
+      print "%d Events: %s" % (len(self.collection[message]), message)
+      if self.verbose:
+        for details in self.collection[message]:
+          print "    %s" % details
+    self.collection = {}
+
+
 class Keyset(object):
   """ Represents a key set"""
 
@@ -159,8 +187,9 @@ class Keyset(object):
 class InteropTestRunner(object):
   """ Class for running interop testing"""
 
-  def __init__(self):
+  def __init__(self, logger):
     """ loads the json data from the config files """
+    self.logger = logger
     self.algorithms = json.loads(ReadFile(ALGORITHM_JSON))
     self.ignored_tests = json.loads(ReadFile(IGNORED_TESTS))
     self.operations = json.loads(ReadFile(OPERATIONS))
@@ -185,9 +214,11 @@ class InteropTestRunner(object):
             ignored = False
 
         if ignored:
-          print "Ignoring %s with %s for %s with options %s because %s" % (
-              operation, algorithm, implementation,
-              ", ".join(options.values()), ignored_test["reason"])
+          self.logger.Collect(
+              "Ignoring tests because %s" % ignored_test["reason"],
+              "%s with %s for %s with options %s" % (
+                  operation, algorithm,
+                  implementation, ", ".join(options.values())))
           return True
     return False
 
@@ -248,9 +279,10 @@ class InteropTestRunner(object):
           file_path = os.path.join(location, filename)
           if os.path.isfile(file_path):
             os.remove(file_path)
-        print "overwrote %s"%location
+        self.logger.Debug("overwrote %s" % location)
       except os.error, e:
-        print "Error accessing location: %s, error: %s"%(location, e)
+        self.logger.Output(
+            "Error accessing location: %s, error: %s" % (location, e))
         os._exit(1)
 
   def _GetKeyPath(self, implementation):
@@ -286,7 +318,8 @@ class InteropTestRunner(object):
         "command": "create",
         "keyczartCommands": commands
     }
-    print self._CallImplementation(implementation, json.dumps(params))
+    self.logger.Debug(
+        self._CallImplementation(implementation, json.dumps(params)))
 
   def _CreateEncrypted(
       self, implementation, algorithm, size, crypter, _):
@@ -303,7 +336,8 @@ class InteropTestRunner(object):
         "command": "create",
         "keyczartCommands": commands
     }
-    print self._CallImplementation(implementation, json.dumps(params))
+    self.logger.Debug(
+        self._CallImplementation(implementation, json.dumps(params)))
 
   def _GetCreateFlags(self, algorithm, size, location):
     """ Returns list of flags for keyczart key creation """
@@ -416,6 +450,7 @@ class InteropTestRunner(object):
             generate_options,
             test_options)
         setattr(self.InteropTest, test_name, test)
+    self.logger.OutputCollection()
 
   def DisplayTests(self):
     """ iterates through all options and prints out tests that would be ran"""
@@ -433,7 +468,7 @@ class InteropTestRunner(object):
             "_".join(["%s=%s"%o for o in test_options.items()]),
             ))
     for test in sorted(tests):
-      print test
+      self.logger.Output(test)
 
   class InteropTest(unittest.TestCase):
     """ unittests to run interop tests """
@@ -446,16 +481,17 @@ class InteropTestRunner(object):
 
 def Usage():
   print ("Interoperability testing for Keyczar\n"
-         "         ./interop.py [--create=(y|n)]\n"
+         "         ./interop.py [--create=(y|n)] [--verbose=(y|n)]\n"
          "         ./interop.py display\n"
          "Run from the interop directory. Optional flags include:\n"
          "      --create         (y/n) whether to create keys (default:y)\n"
+         "      --verbose        (y/n) verbose logging (default:n)\n"
          "When run with display argument. It will print all tests to be ran.\n")
   return 1
 
 
 def main(argv):
-  flags = {"create": "y"}
+  flags = {"create": "y", "verbose": "n"}
   for arg in argv:
     if arg == "display":
       runner = InteropTestRunner()
@@ -475,9 +511,13 @@ def main(argv):
         return Usage()
     else:
       return Usage()
-  if flags["create"] not in ("y", "n"):
+  if flags["create"] not in ("y", "n") or flags["verbose"] not in ("y", "n"):
     return Usage()
-  runner = InteropTestRunner()
+  if flags["verbose"] == "y":
+    logger = InteropLogger(verbose=True)
+  else:
+    logger = InteropLogger(verbose=False)
+  runner = InteropTestRunner(logger)
   if flags["create"] == "y":
     runner.CreateKeys()
   runner.SetupInteropTests()

@@ -20,6 +20,25 @@ import unittest
 import interop
 
 
+class MockLogger(object):
+  """Mock Logging class for testing"""
+
+  def __init__(self, verbose=False):
+    pass
+
+  def Output(self, string):
+    pass
+
+  def Debug(self, string):
+    pass
+
+  def Collect(self, message, details):
+    pass
+
+  def OutputCollection(self):
+    pass
+
+
 class InteropTestRunnerTest(unittest.TestCase):
   """
   Tests InteropTestRunner
@@ -29,7 +48,7 @@ class InteropTestRunnerTest(unittest.TestCase):
   """
 
   def setUp(self):
-    self.runner = interop.InteropTestRunner()
+    self.runner = interop.InteropTestRunner(MockLogger())
     self.runner.algorithms = {
         "crypting": {
           "purpose": "crypt",
@@ -324,7 +343,7 @@ class InteropTestRunnerTest(unittest.TestCase):
 class KeySetTest(unittest.TestCase):
 
   def setUp(self):
-    self.runner = interop.InteropTestRunner()
+    self.runner = interop.InteropTestRunner(MockLogger())
     self.runner.algorithms = {
         "crypting": {
           "purpose": "crypt",
