@@ -494,7 +494,8 @@ def main(argv):
   flags = {"create": "y", "verbose": "n"}
   for arg in argv:
     if arg == "display":
-      runner = InteropTestRunner()
+      logger = InteropLogger(verbose=False)
+      runner = InteropTestRunner(logger)
       runner.DisplayTests()
       return
     elif arg.startswith("--"):
