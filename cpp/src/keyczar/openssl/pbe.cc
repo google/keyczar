@@ -331,6 +331,7 @@ bool PBEOpenSSL::Decrypt(const std::string& salt, const std::string& iv,
   }
 
   plaintext->assign(reinterpret_cast<char*>(p_pt_buffer), plaintext_len);
+  OPENSSL_free(p_pt_buffer);
   return true;
 }
 

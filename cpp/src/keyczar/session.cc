@@ -196,11 +196,11 @@ SignedSessionDecrypter* SignedSessionDecrypter::NewSessionDecrypter(
     Crypter* crypter,
     Verifier* verifier,
     const std::string& session_material) {
-  if (crypter == NULL || verifier == NULL)
-    return NULL;
-
   scoped_ptr<Crypter> crypter_p(crypter);
   scoped_ptr<Verifier> verifier_p(verifier);
+
+  if (crypter == NULL || verifier == NULL)
+    return NULL;
 
   std::string decrypted_session;
   crypter_p->set_encoding(Keyczar::BASE64W);

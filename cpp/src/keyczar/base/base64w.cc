@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <keyczar/base/modp/modp_b64w.h>
 
+#include <stdint.h>
+
 namespace keyczar {
 namespace base {
 
@@ -32,7 +34,14 @@ bool Base64WDecode(const std::string& input, std::string* output) {
 
   const std::string::size_type last_good_char = input.find_last_not_of("= ");
 
-  output->assign(modp::b64w_decode(input.substr(0, last_good_char+1)));
+  std::string substr = input.substr(0, last_good_char+1);
+  const int len = substr.size();
+
+  // b64w_decode() reads sizeof(uint32_t) bytes at a time and goes past the end
+  // of the string.  Pad the input to ensure the reads are valid.
+  substr.append(sizeof(uint32_t), '\0');
+
+  output->assign(modp::b64w_decode(substr.data(), len));
 
   if (output->empty())
     return false;

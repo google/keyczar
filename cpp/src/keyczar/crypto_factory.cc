@@ -35,32 +35,27 @@ RandImpl* CryptoFactory::Rand() {
 
 // static
 MessageDigestImpl* CryptoFactory::SHA1() {
-  static openssl::MessageDigestOpenSSL md(MessageDigestImpl::SHA1);
-  return &md;
+  return new openssl::MessageDigestOpenSSL(MessageDigestImpl::SHA1);
 }
 
 // static
 MessageDigestImpl* CryptoFactory::SHA224() {
-  static openssl::MessageDigestOpenSSL md(MessageDigestImpl::SHA224);
-  return &md;
+  return new openssl::MessageDigestOpenSSL(MessageDigestImpl::SHA1);
 }
 
 // static
 MessageDigestImpl* CryptoFactory::SHA256() {
-  static openssl::MessageDigestOpenSSL md(MessageDigestImpl::SHA256);
-  return &md;
+  return new openssl::MessageDigestOpenSSL(MessageDigestImpl::SHA256);
 }
 
 // static
 MessageDigestImpl* CryptoFactory::SHA384() {
-  static openssl::MessageDigestOpenSSL md(MessageDigestImpl::SHA384);
-  return &md;
+  return new openssl::MessageDigestOpenSSL(MessageDigestImpl::SHA384);
 }
 
 // static
 MessageDigestImpl* CryptoFactory::SHA512() {
-  static openssl::MessageDigestOpenSSL md(MessageDigestImpl::SHA512);
-  return &md;
+  return new openssl::MessageDigestOpenSSL(MessageDigestImpl::SHA512);
 }
 
 // static

@@ -147,6 +147,7 @@ TEST(ValuesTest, StringValue) {
   ASSERT_TRUE(wide_value->GetAsString(&narrow));
   ASSERT_EQ(std::string("wide"), narrow);
   delete narrow_value;
+  delete wide_value;
 }
 
 // This is a Value object that allows us to tell if it's been

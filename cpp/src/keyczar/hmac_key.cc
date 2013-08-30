@@ -152,8 +152,8 @@ bool HMACKey::Hash(std::string* hash) const {
   if (hash == NULL || hmac_impl_.get() == NULL)
     return false;
 
-  MessageDigestImpl* digest_impl = CryptoFactory::SHA1();
-  if (digest_impl == NULL)
+  scoped_ptr<MessageDigestImpl> digest_impl(CryptoFactory::SHA1());
+  if (digest_impl.get() == NULL)
     return false;
 
   // Builds a message digest based on the secret key
