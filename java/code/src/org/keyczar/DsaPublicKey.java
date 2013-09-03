@@ -46,7 +46,6 @@ import java.security.spec.DSAPublicKeySpec;
 public class DsaPublicKey extends KeyczarPublicKey {
   private static final String KEY_GEN_ALGORITHM = "DSA";
   private static final String SIG_ALGORITHM = "SHA1withDSA";
-  private static final int DSA_DIGEST_SIZE = 48;
 
   private DSAPublicKey jcePublicKey;
   private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
@@ -174,7 +173,21 @@ public class DsaPublicKey extends KeyczarPublicKey {
 
     @Override
     public int digestSize() {
-      return DSA_DIGEST_SIZE;
+      // Calculates Der Encoding length based on q
+      // Assumes r and s are less than q, since they are both mod q
+      int qlen;
+      try {
+        qlen = Base64Coder.decodeWebSafe(q).length;
+      } catch (KeyczarException e) {
+        // If the key has not been initialized properly this will yield the same value that was
+        // previously returned when DSA_DIGEST_SIZE = 48. (It is the length of a 160 bit r or s +
+        // an extra bit because of the way BigIntegers are converted to bytes.)
+        qlen = 21;
+      }
+      int berQLength = qlen > 127 ? qlen / 256 + 2 : 1;
+      int berIntLength = berQLength + 1 + qlen;
+      int berTotalLength = 2 * berIntLength > 127 ? (2 * berIntLength) / 256 + 2 : 1;
+      return 1 + berTotalLength + 2 * berIntLength;
     }
 
     @Override

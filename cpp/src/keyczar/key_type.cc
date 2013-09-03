@@ -137,7 +137,7 @@ int KeyType::DefaultCipherSize(Type type) {
 #endif
     case DSA_PRIV:
     case DSA_PUB:
-      return 2048;
+      return 1024;
     case ECDSA_PRIV:
     case ECDSA_PUB:
       return 224;

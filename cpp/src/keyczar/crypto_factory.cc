@@ -80,7 +80,22 @@ MessageDigestImpl* CryptoFactory::SHA(int size) {
 // static
 MessageDigestImpl* CryptoFactory::SHAFromFFCIFCSize(int size) {
 #ifdef COMPAT_KEYCZAR_06B
-  return CryptoFactory::SHA1();
+  switch (size) {
+    case 512:
+    case 768:
+    case 1024:
+      return CryptoFactory::SHA1();
+    case 2048:
+    case 3072:
+    case 4096:
+      LOG(WARNING) << "Using SHA1 with " << size << " bit key size." <<
+          " This may not provide the expected security." <<
+          " Compile keyczar without compat flag for more secure SHA.";
+      return CryptoFactory::SHA1();
+    default:
+      NOTREACHED();
+  }
+  return NULL;
 #else
   // These choices follow the recommendations made by NIST in document
   // SP800-57 part1 (Recommendation for Key Management) pages 63-64.
