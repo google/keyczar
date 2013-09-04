@@ -470,6 +470,49 @@ class InteropTestRunner(object):
     for test in sorted(tests):
       self.logger.Output(test)
 
+  def DisplayOptions(self):
+    """
+    Iterates through operations and keyset types and prints possible options.
+    """
+    test_dict = {}
+    generate_dict = {}
+    # First it reconstructs the dictionary of lists of options
+    for operation in self.operations:
+      purpose = self.operations[operation]["keytype"]
+      for keyset in Keyset.GetGenerateKeysets(purpose, self):
+        options_list = [options for options in
+                        self._Options(operation, keyset, "generateOptions")]
+        if operation not in generate_dict:
+          generate_dict[operation] = dict()
+        for options in options_list:
+          for option in options:
+            if option not in generate_dict[operation]:
+              generate_dict[operation][option] = set()
+            generate_dict[operation][option].add(options[option])
+        for test_keyset in Keyset.GetTestKeysets(keyset, self):
+          options_list = [option for option in
+                          self._Options(operation, test_keyset, "testOptions")]
+          if operation not in test_dict:
+            test_dict[operation] = dict()
+          for options in options_list:
+            for option in options:
+              if option not in test_dict[operation]:
+                test_dict[operation][option] = set()
+              test_dict[operation][option].add(options[option])
+
+    # Then it prints out this output.
+    self.logger.Output("Generate Options:")
+    for operation in generate_dict:
+      self.logger.Output("  %s:" % operation)
+      for option_name, options in generate_dict[operation].iteritems():
+        self.logger.Output("    %s: %s" % (option_name, str(list(options))))
+
+    self.logger.Output("\nTest Options:")
+    for operation in test_dict:
+      self.logger.Output("  %s:" % (operation))
+      for option_name, options in test_dict[operation].iteritems():
+        self.logger.Output("    %s: %s" % (option_name, str(list(options))))
+
   class InteropTest(unittest.TestCase):
     """ unittests to run interop tests """
     pass
@@ -483,10 +526,12 @@ def Usage():
   print ("Interoperability testing for Keyczar\n"
          "         ./interop.py [--create=(y|n)] [--verbose=(y|n)]\n"
          "         ./interop.py display\n"
+         "         ./interop.py options\n"
          "Run from the interop directory. Optional flags include:\n"
          "      --create         (y/n) whether to create keys (default:y)\n"
          "      --verbose        (y/n) verbose logging (default:n)\n"
-         "When run with display argument. It will print all tests to be ran.\n")
+         "display will print all tests to be ran.\n"
+         "options shows you the possible options for each of the operations\n")
   return 1
 
 
@@ -497,6 +542,11 @@ def main(argv):
       logger = InteropLogger(verbose=False)
       runner = InteropTestRunner(logger)
       runner.DisplayTests()
+      return
+    elif arg == "options":
+      logger = InteropLogger(verbose=False)
+      runner = InteropTestRunner(logger)
+      runner.DisplayOptions()
       return
     elif arg.startswith("--"):
       arg = arg[2:]  # trim leading dashes
