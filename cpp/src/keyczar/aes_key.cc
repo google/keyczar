@@ -52,6 +52,8 @@ static int GetHMACSizeFromAESSize(int size) {
 
 namespace keyczar {
 
+const int kBlockSize = 128 / 8;
+
 // static
 AESKey* AESKey::CreateFromValue(const Value& root_key) {
   if (!root_key.IsType(Value::TYPE_DICTIONARY))
@@ -227,15 +229,14 @@ bool AESKey::Decrypt(const std::string& ciphertext,
     return false;
 
 
-  int block_size = 128 / 8;
   int digest_size = hmac_key()->size() / 8;
 
   std::string data_bytes = ciphertext.substr(Key::GetHeaderSize());
   int data_bytes_len = data_bytes.length();
 
-  std::string iv_bytes = data_bytes.substr(0, block_size);
+  std::string iv_bytes = data_bytes.substr(0, kBlockSize);
   std::string aes_bytes = data_bytes.substr(
-      block_size, data_bytes_len - digest_size - block_size);
+      kBlockSize, data_bytes_len - digest_size - kBlockSize);
   std::string signature_bytes = data_bytes.substr(data_bytes_len - digest_size);
 
   if (!hmac_key()->Verify(
