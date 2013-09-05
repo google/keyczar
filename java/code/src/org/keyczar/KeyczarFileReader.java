@@ -19,10 +19,11 @@ package org.keyczar;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
+import org.keyczar.util.Util;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /**
  * Reads metadata and key files from the given location.
@@ -60,11 +61,14 @@ public class KeyczarFileReader implements KeyczarReader {
 
   private String readFile(String filename) throws KeyczarException {
     try {
-      RandomAccessFile file = new RandomAccessFile(filename, "r");
-      byte[] contents = new byte[(int) file.length()];
-      file.read(contents);
-      file.close();
-      return new String(contents);
+      File file = new File(filename);
+      FileInputStream fis = new FileInputStream(file);
+      try {
+        byte[] contents = Util.readStreamFully(fis);
+        return new String(contents);
+      } finally {
+        fis.close();
+      }
     } catch (IOException e) {
       throw new KeyczarException(
           Messages.getString("KeyczarFileReader.FileError", filename), e);
