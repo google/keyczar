@@ -66,7 +66,7 @@ class KeyczarTool {
   // Processes command lines arguments |argv| and writes results to
   // |location_type|. This method returns false if it failed.
   static bool ProcessCommandLine(LocationType location_type, int argc,
-                                 char** argv);
+                                 const char* const* argv);
 
   // |location| is the path/file location of the key set. |name| is the name
   // of the new created key set. |cipher| is the key set's cipher type and

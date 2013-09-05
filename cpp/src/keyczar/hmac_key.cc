@@ -68,18 +68,15 @@ HMACKey* HMACKey::CreateFromValue(const Value& root_key) {
   if (!hmac_key->GetInteger("size", &size))
     return NULL;
 
-#ifdef COMPAT_KEYCZAR_06B
-  CHECK_EQ(size, 256);
-  size = 160;
-
-  if (!KeyType::IsValidCipherSize(KeyType::HMAC_SHA1, size))
-    return NULL;
-#else
   if (size / 8 != static_cast<int>(key->size())) {
     LOG(ERROR) << "Mismatch between key string length and declared size";
     return NULL;
   }
 
+#ifdef COMPAT_KEYCZAR_06B
+  if (!KeyType::IsValidCipherSize(KeyType::HMAC_SHA1, size))
+    return NULL;
+#else
   if (!KeyType::IsValidCipherSize(KeyType::HMAC, size))
     return NULL;
 
@@ -104,7 +101,12 @@ HMACKey* HMACKey::CreateFromValue(const Value& root_key) {
 // static
 HMACKey* HMACKey::GenerateKey(int size) {
 #ifdef COMPAT_KEYCZAR_06B
-  CHECK_EQ(size, 160);
+  if (size == 160) {
+    LOG(WARNING) << "160 bit key size for C++ hmac is not supported. "
+        << "For compatability with older versions, this will generate "
+        << "a 256 bit key to be used with SHA1.";
+    size = 256;
+  }
   if (!KeyType::IsValidCipherSize(KeyType::HMAC_SHA1, size))
 #else
   if (!KeyType::IsValidCipherSize(KeyType::HMAC, size))
@@ -131,8 +133,7 @@ Value* HMACKey::GetValue() const {
     return NULL;
 
 #ifdef COMPAT_KEYCZAR_06B
-  CHECK_EQ(size(), 160);
-  if (!hmac_key->SetInteger("size", 256))
+  if (!hmac_key->SetInteger("size", size()))
 #else
   std::string digest_name;
   if (!GetDigestNameFromHMACKeySize(size(), &digest_name))

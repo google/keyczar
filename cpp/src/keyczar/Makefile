@@ -30,5 +30,8 @@ kctests:
 keyczart:
 	$(BUILD_CMD) keyczart
 
+interop:
+	$(BUILD_CMD) interop
+
 clean:
 	$(BUILD_CMD) -c

@@ -849,7 +849,8 @@ class RsaPrivateKey(PrivateKey):
     @rtype: string
     """
     emsa_encoded = util.MakeEmsaMessage(msg, self.size)
-    return util.BigIntToBytes(self.key.sign(emsa_encoded, None)[0])
+    byte_string = util.BigIntToBytes(self.key.sign(emsa_encoded, None)[0])
+    return util.PadBytes(byte_string, self.size/8 - len(byte_string))
 
   def Verify(self, msg, sig):
     """@see: L{RsaPublicKey.Verify}"""

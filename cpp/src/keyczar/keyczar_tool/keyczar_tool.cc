@@ -134,7 +134,7 @@ static KeyczarTool::Cipher GetCipher(const std::string& cipher) {
 
 // static
 bool KeyczarTool::ProcessCommandLine(LocationType location_type, int argc,
-                                     char** argv) {
+                                      const char* const* argv) {
   KeyczarTool kt(location_type);
   base::CommandLine cl(argc, argv);
   return kt.DoProcessCommandLine(cl);

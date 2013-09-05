@@ -118,10 +118,17 @@ public class UnversionedVerifier extends Keyczar {
     if (stream == null) {
       stream = (VerifyingStream) key.getStream();
     }
-    stream.initVerify();
-    stream.updateVerify(data.duplicate());
-    boolean foundValidSignature = stream.verify(signature.duplicate());
-    VERIFY_CACHE.put(key, stream);
+    boolean foundValidSignature;
+    try {
+      stream.initVerify();
+      stream.updateVerify(data.duplicate());
+      foundValidSignature = stream.verify(signature.duplicate());
+      VERIFY_CACHE.put(key, stream);
+    } catch (KeyczarException e) {
+      // Crypto library can throw errors for invalid keys
+      // this allows the verifier to continue trying other keys
+      foundValidSignature = false;
+    }
     return foundValidSignature;
   }
 

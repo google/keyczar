@@ -191,9 +191,10 @@
         <version>2.6</version>
         <configuration>
           <excludes>
+            <exclude>**/interop/Tester.java</exclude>
             <exclude>**/SymmetricPerformanceTest.java</exclude>
           </excludes>
-         </configuration>
+        </configuration>
       </plugin>
 
       <!-- Rule to copy i18n properties to output directory -->
