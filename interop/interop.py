@@ -570,8 +570,11 @@ def main(argv):
     logger = InteropLogger(verbose=False)
   runner = InteropTestRunner(logger)
   if flags["create"] == "y":
+    logger.Output("Creating Keys")
     runner.CreateKeys()
+  logger.Output("Generating Data")
   runner.SetupInteropTests()
+  logger.Output("Running Tests")
   runner.RunTests()
 
 if __name__ == "__main__":
