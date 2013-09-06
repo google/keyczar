@@ -1,3 +1,12 @@
+Keyczar Python release 0.71d
+==================
+
+Overview of Changes:
+	* Unpadding happens after MAC validation to prevent padding oracle attacks
+	* Added Encoding options to all crypto operations to select whether or not
+	  not encoding should be used.
+	* Python version setup improved for PyPi.
+	* AttachedSign with empty nonce now correctly functions.
 
 Keyczar Python release 0.71c
 ==================

@@ -1,3 +1,19 @@
+Keyczar Java release 0.71g
+==========================
+
+2013-09-05  Devin Lundberg <dlundberg@google.com>
+
+	* ASM version bumped to 3.3 to prevent exceptions
+	* updated usekey for more functionality and ability to read from stdin
+	  and stdout
+	* Refactor of key generation parameters
+	* DSA key json size bug
+	* Close file and fully read file stream
+	* Write metadata after keys on import
+	* KeyczarTool now uses the max version instead of the number of keys
+	  to create new version numbers.
+	* Fixed AttachedSign bug.
+
 Keyzcar Java release 0.71f
 ==========================
 

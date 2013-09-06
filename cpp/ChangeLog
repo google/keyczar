@@ -17,3 +17,17 @@
 	  previous versions of the C++ library (though previous versions
 	  may not be able to decrypt messages encrypted by 0.70 or
 	  above).
+
+2013-09-05 Devin Lundberg <dlundberg@google.com>
+
+	Release 0.71
+
+	- String to int conversion bug fix
+	- KeyczarTool uses same --size=256 in compat mode for consistency
+	  between python and java
+	- AES IV for 192 and 256 bit uses correct value now.
+	- Support added for FreeBSD 8+9
+	- Fixed OpenSSL pem bug that caused unit test failure
+	- Thread safety issues with SHA1 corrected.
+	- Several memory leaks fixed including ones in base64 conversion.
+	- Keyczart supports "--size" flag for "addkey".
