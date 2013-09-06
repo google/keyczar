@@ -193,14 +193,24 @@ public class Util {
    * Unpack an input buffer into an array of byte arrays
    *
    * @param packedInput A packed representation of an array of byte arrays
-   * @return A two dimensional array of arrays
+   * @param maxLength The max number of byte arrays allowed.
+   * @return A two dimensional array of arrays, null if length prefix is not less than maxLength
    */
-  public static byte[][] lenPrefixUnpack(byte[] packedInput) {
+  public static byte[][] lenPrefixUnpack(byte[] packedInput, int maxLength) {
     ByteBuffer input = ByteBuffer.wrap(packedInput);
     int numArrays = input.getInt();
+    if (numArrays < 0 || numArrays > maxLength) {
+      return null;
+    }
     byte[][] output = new byte[numArrays][];
     for (int i = 0; i < numArrays; i++) {
+      if (input.remaining() < 4) {
+        return null;
+      }
       int len = input.getInt();
+      if (len < 0 || len > input.remaining()) {
+        return null;
+      }
       byte[] array = new byte[len];
       input.get(array);
       output[i] = array;
