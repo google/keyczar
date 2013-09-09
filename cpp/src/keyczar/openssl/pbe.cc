@@ -28,8 +28,6 @@
 
 namespace {
 
-static const int kPasswordBufferSize = 1024;
-
 typedef scoped_ptr_malloc<X509_ALGOR,
                           keyczar::openssl::OSSLDestroyer<
                             X509_ALGOR, X509_ALGOR_free> > ScopedX509Algor;
@@ -180,22 +178,8 @@ PBEOpenSSL* PBEOpenSSL::Create(CipherAlgorithm cipher_algorithm,
   if (iteration_count < PKCS5_DEFAULT_ITER)
     return NULL;
 
-  if (!password.empty())
-    return new PBEOpenSSL(cipher_algorithm, evp_cipher, hmac_algorithm,
-                          prf_nid, iteration_count, password);
-
-  // There is no password so prompt it interactively
-  char password_buffer[kPasswordBufferSize];
-  if (EVP_read_pw_string(password_buffer, kPasswordBufferSize,
-                         "Enter PBE password:", 0) != 0) {
-    memset(password_buffer, 0, kPasswordBufferSize);
-    PrintOSSLErrors();
-    return NULL;
-  }
-  base::ScopedSafeString in_password(new std::string(password_buffer));
-  memset(password_buffer, 0, kPasswordBufferSize);
   return new PBEOpenSSL(cipher_algorithm, evp_cipher, hmac_algorithm,
-                        prf_nid, iteration_count, *in_password);
+                        prf_nid, iteration_count, password);
 }
 
 bool PBEOpenSSL::Encrypt(const std::string& plaintext, std::string* ciphertext,

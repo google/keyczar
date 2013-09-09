@@ -49,6 +49,9 @@ typedef scoped_ptr_malloc<
 typedef scoped_ptr_malloc<
     BIO, OSSLDestroyer<BIO, BIO_vfree> > ScopedBIO;
 
+// Securely prompts for password to use in PBE.
+bool PromptPassword(const std::string& prompt, std::string* password);
+
 void PrintOSSLErrors();
 
 // Reads a private key |filename| with the associated |passphrase|. |passphrase|

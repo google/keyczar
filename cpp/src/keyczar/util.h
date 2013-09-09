@@ -22,6 +22,9 @@ namespace keyczar {
 
 namespace util {
 
+// Prompts the user for a password.
+bool PromptPassword(const std::string& prompt, std::string * password);
+
 // An string comparison that is safe from timing attacks. If two strings are
 // of equal length, this code will always check all elements, rather than
 // exiting once it encounters a differing character.

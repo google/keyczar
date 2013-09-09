@@ -14,10 +14,15 @@
 #include <keyczar/util.h>
 
 #include <keyczar/base/basictypes.h>
+#include <keyczar/openssl/util.h>
 
 namespace keyczar {
 
 namespace util {
+
+bool PromptPassword(const std::string& prompt, std::string * password) {
+  return openssl::PromptPassword(prompt, password);
+}
 
 bool SafeStringEquals(const std::string& s1, const std::string& s2) {
   if (s1.length() != s2.length())

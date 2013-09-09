@@ -24,6 +24,7 @@
 #include <keyczar/keyset.h>
 #include <keyczar/rw/keyset_encrypted_file_reader.h>
 #include <keyczar/rw/keyset_encrypted_file_writer.h>
+#include <keyczar/util.h>
 
 namespace {
 
@@ -42,7 +43,7 @@ static const char kUsageMessage[] =
     "   key set of the given algorithm. The \"dsa\" and \"ecdsa\" asymmetric\n"
     "   values are valid only for sets with \"sign\" purpose.\n\n"
     "addkey --location=/path/to/keys --status=(active|primary) --size=size \\\n"
-    "       --crypter=crypterLocation --pass=\"password\"\n"
+    "       --crypter=crypterLocation --pass\n"
     "   Adds a new key to an existing key set. Optionally specify a purpose,\n"
     "   which is \"active\" by default. Optionally specify a key size in\n"
     "   bits. Also optionally specify the location of a set of crypting keys,\n"
@@ -53,8 +54,8 @@ static const char kUsageMessage[] =
     "   key set otherwise it will be necessary to provide its own code to \n"
     "   read this key set.\n\n"
     "importkey --location=/path/to/keys --status=(active|primary) \\\n"
-    "          --key=keyFileLocation --passphrase=\"passphrase\" \\\n"
-    "          --crypter=crypterLocation --pass=\"password\"\n"
+    "          --key=keyFileLocation --passphrase \\\n"
+    "          --crypter=crypterLocation --pass\n"
     "   Imports a private key (RSA, DSA or ECDSA) to an existing key set.\n"
     "   keyFileLocation is the key file to import it must have a PEM or PKCS8\n"
     "   representation. Optionally provide its passphrase. If a mandatory\n"
@@ -65,14 +66,14 @@ static const char kUsageMessage[] =
     "   used to encrypt this key set or optionally use a password (read\n"
     "   complete description in command addkey).\n\n"
     "exportkey --location=/path/to/keys --dest=destinationFile \\\n"
-    "          --passphrase=\"passphrase\" --crypter=crypterLocation \\\n"
-    "          --pass=\"password\"\n"
+    "          --passphrase --crypter=crypterLocation \\\n"
+    "          --pass\n"
     "   Exports current primary private key to destinationFile using PKCS8\n"
     "   format. A crypterLocation or a password can be required to decrypt\n"
     "   the loaded key set. A passphrase is used to encrypt the exported key.\n"
-    "   If not provided it will be prompted at execution.\n\n"
+    "   It will be prompted at execution.\n\n"
     "pubkey --location=/path/to/keys --destination=/path/to/destination \\\n"
-    "       --crypter=crypterLocation --pass=\"password\"\n"
+    "       --crypter=crypterLocation --pass\n"
     "   Extracts public keys from a given key set and writes them to the\n"
     "   destination. The \"pubkey\" command only works for key sets that were\n"
     "   created with the \"--asymmetric\" flag. Also optionally specify the \n"
@@ -225,10 +226,6 @@ int KeyczarTool::CmdAddKey(const std::string& location,
   if (reader.get() == NULL)
     return 0;
 
-  // FIXME: awfull
-  if (key_enc_type == PBE && key_enc_value.empty())
-    LOG(INFO) << "For each key of this key set enter its password";
-
   scoped_ptr<Keyset> keyset(Keyset::Read(*reader, true));
   if (keyset.get() == NULL)
     return 0;
@@ -243,10 +240,6 @@ int KeyczarTool::CmdAddKey(const std::string& location,
       return 0;
     }
   }
-
-  // FIXME: awfull
-  if (key_enc_type == PBE && key_enc_value.empty())
-    LOG(INFO) << "Adding new key...";
 
   scoped_ptr<rw::KeysetWriter> writer(GetWriter(location, key_enc_type,
                                                 key_enc_value));
@@ -280,10 +273,6 @@ int KeyczarTool::CmdImportKey(const std::string& location,
   if (reader.get() == NULL)
     return 0;
 
-  // FIXME: awfull
-  if (key_enc_type == PBE && key_enc_value.empty())
-    LOG(INFO) << "For each key of this key set enter its password";
-
   scoped_ptr<Keyset> keyset(Keyset::Read(*reader, true));
   if (keyset.get() == NULL)
     return 0;
@@ -298,10 +287,6 @@ int KeyczarTool::CmdImportKey(const std::string& location,
       return 0;
     }
   }
-
-  // FIXME: awfull
-  if (key_enc_type == PBE && key_enc_value.empty())
-    LOG(INFO) << "Importing key...";
 
   scoped_ptr<rw::KeysetWriter> writer(GetWriter(location, key_enc_type,
                                                 key_enc_value));
@@ -332,10 +317,6 @@ bool KeyczarTool::CmdExportKey(const std::string& location,
   if (reader.get() == NULL)
     return false;
 
-  // FIXME: awfull
-  if (key_enc_type == PBE && key_enc_value.empty())
-    LOG(INFO) << "For each key of this key set enter its password";
-
   scoped_ptr<Keyset> keyset(Keyset::Read(*reader, true));
   if (keyset.get() == NULL) {
     LOG(INFO) << "Export failed:  No keyset found";
@@ -353,10 +334,6 @@ bool KeyczarTool::CmdPubKey(const std::string& location,
                                                 key_enc_value));
   if (reader.get() == NULL)
     return false;
-
-  // FIXME: awfull
-  if (key_enc_type == PBE && key_enc_value.empty())
-    LOG(INFO) << "For each key of this key set enter its password";
 
   scoped_ptr<Keyset> keyset(Keyset::Read(*reader, true));
   if (keyset.get() == NULL)
@@ -524,6 +501,14 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
         return false;
       }
       key_enc_type = PBE;
+      if (!key_enc_value->empty()) {
+        LOG(WARNING) << "Passphrases in the command line are unsafe.\n" <<
+            "Please use --pass with no additional text next time and reenter" <<
+            "your password when prompted.";
+      }
+      if (!keyczar::util::PromptPassword("PBE Password:", key_enc_value.get())) {
+        return false;
+      }
     }
 
     return CmdAddKey(location, status, size, key_enc_type, *key_enc_value);
@@ -548,8 +533,12 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
 
     // passphrase
     base::ScopedSafeString passphrase(new std::string());
-    if (!GetSwitchValue(cmdl, "passphrase", passphrase.get(), true))
+    if (!GetSwitchValue(cmdl, "passphrase", passphrase.get(), true)) {
       passphrase.reset(NULL);
+      if (!keyczar::util::PromptPassword("Imported Key Password:", passphrase.get())) {
+        return false;
+      }
+    }
 
     // Key encryption
     KeyEncryption key_enc_type = NONE;
@@ -566,6 +555,14 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
         return false;
       }
       key_enc_type = PBE;
+      if (!key_enc_value->empty()) {
+        LOG(WARNING) << "Passphrases in the command line are unsafe.\n" <<
+            "Please use --pass with no additional text next time and reenter" <<
+            "your password when prompted.";
+      }
+      if (!keyczar::util::PromptPassword("PBE Password:", key_enc_value.get())) {
+        return false;
+      }
     }
 
     return CmdImportKey(location, status, key_filename, passphrase.get(),
@@ -581,8 +578,12 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
 
     // passphrase
     base::ScopedSafeString passphrase(new std::string());
-    if (!GetSwitchValue(cmdl, "passphrase", passphrase.get(), true))
+    if (!GetSwitchValue(cmdl, "passphrase", passphrase.get(), true)) {
       passphrase.reset(NULL);
+      if (!keyczar::util::PromptPassword("Exported Key Password:", passphrase.get())) {
+        return false;
+      }
+    }
 
     // Key encryption
     KeyEncryption key_enc_type = NONE;
@@ -599,6 +600,14 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
         return false;
       }
       key_enc_type = PBE;
+      if (!key_enc_value->empty()) {
+        LOG(WARNING) << "Passphrases in the command line are unsafe.\n" <<
+            "Please use --pass with no additional text next time and reenter" <<
+            "your password when prompted.";
+      }
+      if (!keyczar::util::PromptPassword("PBE Password:", key_enc_value.get())) {
+        return false;
+      }
     }
 
     return CmdExportKey(location, dst_filename, passphrase.get(),
@@ -627,6 +636,14 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
         return false;
       }
       key_enc_type = PBE;
+      if (!key_enc_value->empty()) {
+        LOG(WARNING) << "Passphrases in the command line are unsafe.\n" <<
+            "Please use --pass with no additional text next time and reenter" <<
+            "your password when prompted.";
+      }
+      if (!keyczar::util::PromptPassword("PBE Password:", key_enc_value.get())) {
+        return false;
+      }
     }
 
     return CmdPubKey(location, destination, key_enc_type, *key_enc_value);
