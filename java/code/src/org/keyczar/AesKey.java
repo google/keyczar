@@ -52,6 +52,7 @@ public class AesKey extends KeyczarKey {
   private static final int BLOCK_SIZE = 16;
   private static final String AES_ALGORITHM = "AES";
   private static final CipherMode DEFAULT_MODE = CipherMode.CBC;
+  private static final int NUM_OF_KEYS = 2; // AesKeys contain HMAC and AES keys
 
   private SecretKey aesKey;
   @Expose private final String aesKeyString;
@@ -88,8 +89,8 @@ public class AesKey extends KeyczarKey {
    * Used by SessionDecrypters when decrypting encrypted keys
    */
   static AesKey fromPackedKey(byte[] packedKeys) throws KeyczarException {
-    byte[][] unpackedKeys = Util.lenPrefixUnpack(packedKeys, 2);
-    if (unpackedKeys == null || unpackedKeys.length != 2) {
+    byte[][] unpackedKeys = Util.lenPrefixUnpack(packedKeys, NUM_OF_KEYS);
+    if (unpackedKeys == null || unpackedKeys.length != NUM_OF_KEYS) {
       throw new KeyczarException(Messages.getString("AesKey.InvalidPackedKey"));
     }
     return new AesKey(unpackedKeys[0], new HmacKey(unpackedKeys[1]));

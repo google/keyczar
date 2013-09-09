@@ -196,10 +196,10 @@ public class Util {
    * @param maxLength The max number of byte arrays allowed.
    * @return A two dimensional array of arrays, null if length prefix is not less than maxLength
    */
-  public static byte[][] lenPrefixUnpack(byte[] packedInput, int maxLength) {
+  public static byte[][] lenPrefixUnpack(byte[] packedInput, int maxArrays) {
     ByteBuffer input = ByteBuffer.wrap(packedInput);
     int numArrays = input.getInt();
-    if (numArrays < 0 || numArrays > maxLength) {
+    if (numArrays < 0 || numArrays > maxArrays) {
       return null;
     }
     byte[][] output = new byte[numArrays][];
