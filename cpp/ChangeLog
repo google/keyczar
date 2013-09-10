@@ -1,5 +1,6 @@
 2011-09-08  Shawn Willden  <swillden@google.com>
 
+
 	Release 0.70
 
 	- Added support for session encryption.  This allows the user to
@@ -31,3 +32,10 @@
 	- Thread safety issues with SHA1 corrected.
 	- Several memory leaks fixed including ones in base64 conversion.
 	- Keyczart supports "--size" flag for "addkey".
+
+2013-09-09 Devin Lundberg <dlundberg@google.com>
+
+	Release 0.71a
+
+	- SHA224 worked incorrectly due to recent fix breaking non compat
+	  mode tests.
