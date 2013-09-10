@@ -535,9 +535,8 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
     base::ScopedSafeString passphrase(new std::string());
     if (!GetSwitchValue(cmdl, "passphrase", passphrase.get(), true)) {
       passphrase.reset(NULL);
-      if (!keyczar::util::PromptPassword("Imported Key Password:", passphrase.get())) {
-        return false;
-      }
+    } else if (!keyczar::util::PromptPassword("Imported Key Password:", passphrase.get())) {
+      return false;
     }
 
     // Key encryption
@@ -578,11 +577,8 @@ bool KeyczarTool::DoProcessCommandLine(const base::CommandLine& cmdl) {
 
     // passphrase
     base::ScopedSafeString passphrase(new std::string());
-    if (!GetSwitchValue(cmdl, "passphrase", passphrase.get(), true)) {
-      passphrase.reset(NULL);
-      if (!keyczar::util::PromptPassword("Exported Key Password:", passphrase.get())) {
-        return false;
-      }
+    if (!keyczar::util::PromptPassword("Imported Key Password:", passphrase.get())) {
+      return false;
     }
 
     // Key encryption
