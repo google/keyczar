@@ -40,7 +40,7 @@ MessageDigestImpl* CryptoFactory::SHA1() {
 
 // static
 MessageDigestImpl* CryptoFactory::SHA224() {
-  return new openssl::MessageDigestOpenSSL(MessageDigestImpl::SHA1);
+  return new openssl::MessageDigestOpenSSL(MessageDigestImpl::SHA224);
 }
 
 // static
