@@ -21,6 +21,9 @@
 #include <keyczar/key_util.h>
 #include <keyczar/pbe_impl.h>
 
+namespace keyczar {
+namespace rw {
+
 namespace {
 
 bool WriteJSONFile(const FilePath& file, const Value& root) {
@@ -29,9 +32,6 @@ bool WriteJSONFile(const FilePath& file, const Value& root) {
 }
 
 }  // namespace
-
-namespace keyczar {
-namespace rw {
 
 static DictionaryValue* EncryptPBEKey(const Value& key,
                                       const std::string& password) {

@@ -9,6 +9,8 @@
 #include <keyczar/base/logging.h>
 #include <keyczar/base/string_util.h>
 
+namespace keyczar {
+
 ///////////////////// Value ////////////////////
 
 Value::~Value() {
@@ -629,3 +631,4 @@ bool ListValue::Equals(const Value* other) const {
   return true;
 }
 
+}  // namespace keyczar

@@ -32,6 +32,8 @@
 #include <keyczar/base/basictypes.h>
 #include <keyczar/base/stl_util-inl.h>
 
+namespace keyczar {
+
 class Value;
 class FundamentalValue;
 class StringValue;
@@ -151,12 +153,12 @@ class StringValue : public Value {
   ~StringValue();
 
   // Subclassed methods
-  bool GetAsString(std::string* out_value) const;
-  Value* DeepCopy() const;
+  virtual bool GetAsString(std::string* out_value) const;
+  virtual Value* DeepCopy() const;
   virtual bool Equals(const Value* other) const;
 
  private:
-  keyczar::base::ScopedSafeString value_;
+  base::ScopedSafeString value_;
 
   DISALLOW_EVIL_CONSTRUCTORS(StringValue);
 };
@@ -177,7 +179,7 @@ class BinaryValue: public Value {
   ~BinaryValue();
 
   // Subclassed methods
-  Value* DeepCopy() const;
+  virtual Value* DeepCopy() const;
   virtual bool Equals(const Value* other) const;
 
   size_t GetSize() const { return size_; }
@@ -201,7 +203,7 @@ class DictionaryValue : public Value {
   ~DictionaryValue();
 
   // Subclassed methods
-  Value* DeepCopy() const;
+  virtual Value* DeepCopy() const;
   virtual bool Equals(const Value* other) const;
 
   // Returns true if the current dictionary has a value for the given key.
@@ -296,7 +298,7 @@ class ListValue : public Value {
   ~ListValue();
 
   // Subclassed methods
-  Value* DeepCopy() const;
+  virtual Value* DeepCopy() const;
   virtual bool Equals(const Value* other) const;
 
   // Clears the contents of this ListValue
@@ -372,5 +374,7 @@ class ValueSerializer {
   // error_message should be filled with a message describing the error.
   virtual Value* Deserialize(std::string* error_message) = 0;
 };
+
+}  // namespace keyczar
 
 #endif  // KEYCZAR_BASE_VALUES_H_

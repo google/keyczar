@@ -12,9 +12,10 @@
 
 #include <keyczar/base/basictypes.h>
 
+namespace keyczar {
+
 class Value;
 
-namespace keyczar {
 namespace base {
 
 class JSONWriter {
@@ -54,4 +55,3 @@ class JSONWriter {
 }  // namespace keyczar
 
 #endif  // KEYCZAR_BASE_JSON_WRITER_H_
-

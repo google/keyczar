@@ -43,9 +43,10 @@
 
 #include <keyczar/base/basictypes.h>
 
+namespace keyczar {
+
 class Value;
 
-namespace keyczar {
 namespace base {
 
 class JSONReader {

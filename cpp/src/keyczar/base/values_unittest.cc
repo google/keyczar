@@ -9,6 +9,8 @@
 
 #include <testing/gtest/include/gtest/gtest.h>
 
+namespace keyczar {
+
 class ValuesTest: public testing::Test {
 };
 
@@ -437,3 +439,4 @@ TEST(ValuesTest, Equals) {
   delete copy;
 }
 
+}  // namespace keyczar

@@ -21,6 +21,9 @@
 #include <keyczar/key_util.h>
 #include <keyczar/pbe_impl.h>
 
+namespace keyczar {
+namespace rw {
+
 namespace {
 
 Value* ReadJSONFile(const FilePath& file) {
@@ -35,9 +38,6 @@ Value* ReadJSONFile(const FilePath& file) {
 }
 
 }  // namespace
-
-namespace keyczar {
-namespace rw {
 
 static Value* DecryptPBEKey(const DictionaryValue& pbe_value,
                             const std::string& password) {
