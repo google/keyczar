@@ -39,3 +39,10 @@
 
 	- SHA224 worked incorrectly due to recent fix breaking non compat
 	  mode tests.
+
+2014-06-05 Daryl Seah <darylseah@google.com>
+
+	Release 0.71b
+
+	- Moved Value class from global namespace to Keyczar namespace to
+	  avoid conflicts.
