@@ -40,7 +40,7 @@
 	- SHA224 worked incorrectly due to recent fix breaking non compat
 	  mode tests.
 
-2014-06-05 Daryl Seah <darylseah@google.com>
+2014-06-04 Daryl Seah <darylseah@google.com>
 
 	Release 0.71b
 
