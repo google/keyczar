@@ -46,3 +46,4 @@
 
 	- Moved Value class from global namespace to Keyczar namespace to
 	  avoid conflicts.
+        - Fixed missing return statements in keyset.cc and keyczar_tool.cc.

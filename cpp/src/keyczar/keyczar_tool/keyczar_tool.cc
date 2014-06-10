@@ -342,7 +342,7 @@ bool KeyczarTool::CmdExportKey(const std::string& location,
     return false;
   }
 
-  bool result = keyset->ExportPrivateKey(filename, passphrase);
+  return keyset->ExportPrivateKey(filename, passphrase);
 }
 
 bool KeyczarTool::CmdPubKey(const std::string& location,

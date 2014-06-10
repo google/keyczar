@@ -255,9 +255,12 @@ bool Keyset::ExportPrivateKey(const std::string& filename,
     return false;
   }
 
-  if (!key->ExportPrivateKey(filename, passphrase))
+  if (!key->ExportPrivateKey(filename, passphrase)) {
     LOG(INFO) << "Failed to export key of type "
                << KeyType::GetNameFromType(metadata()->key_type());
+    return false;
+  }
+  return true;
 }
 
 bool Keyset::PromoteKey(int version_number) {
