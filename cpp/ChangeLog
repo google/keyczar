@@ -1,6 +1,5 @@
 2011-09-08  Shawn Willden  <swillden@google.com>
 
-
 	Release 0.70
 
 	- Added support for session encryption.  This allows the user to
@@ -46,4 +45,5 @@
 
 	- Moved Value class from global namespace to Keyczar namespace to
 	  avoid conflicts.
-        - Fixed missing return statements in keyset.cc and keyczar_tool.cc.
+	- Fixed missing return statements in keyset.cc and keyczar_tool.cc.
+
