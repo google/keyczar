@@ -163,7 +163,7 @@ class ObserverList {
 
   friend class ObserverList::Iterator;
 
-  DISALLOW_EVIL_CONSTRUCTORS(ObserverList);
+  DISALLOW_COPY_AND_ASSIGN(ObserverList);
 };
 
 #define FOR_EACH_OBSERVER(ObserverType, observer_list, func)  \

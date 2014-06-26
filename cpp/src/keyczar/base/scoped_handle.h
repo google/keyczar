@@ -48,7 +48,7 @@ class ScopedStdioHandle {
  private:
   FILE* handle_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(ScopedStdioHandle);
+  DISALLOW_COPY_AND_ASSIGN(ScopedStdioHandle);
 };
 
 #endif  // KEYCZAR_BASE_SCOPED_HANDLE_H_

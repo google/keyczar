@@ -114,7 +114,7 @@ class Value {
 
   ValueType type_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(Value);
+  DISALLOW_COPY_AND_ASSIGN(Value);
 };
 
 // FundamentalValue represents the simple fundamental types of values.
@@ -142,7 +142,7 @@ class FundamentalValue : public Value {
     double real_value_;
   };
 
-  DISALLOW_EVIL_CONSTRUCTORS(FundamentalValue);
+  DISALLOW_COPY_AND_ASSIGN(FundamentalValue);
 };
 
 class StringValue : public Value {
@@ -160,7 +160,7 @@ class StringValue : public Value {
  private:
   base::ScopedSafeString value_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(StringValue);
+  DISALLOW_COPY_AND_ASSIGN(StringValue);
 };
 
 class BinaryValue: public Value {
@@ -194,7 +194,7 @@ class BinaryValue: public Value {
   char* buffer_;
   size_t size_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(BinaryValue);
+  DISALLOW_COPY_AND_ASSIGN(BinaryValue);
 };
 
 class DictionaryValue : public Value {
@@ -288,7 +288,7 @@ class DictionaryValue : public Value {
 
   ValueMap dictionary_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(DictionaryValue);
+  DISALLOW_COPY_AND_ASSIGN(DictionaryValue);
 };
 
 // This type of Value represents a list of other Value values.
@@ -357,7 +357,7 @@ class ListValue : public Value {
  private:
   ValueVector list_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(ListValue);
+  DISALLOW_COPY_AND_ASSIGN(ListValue);
 };
 
 // This interface is implemented by classes that know how to serialize and

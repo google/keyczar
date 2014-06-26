@@ -64,7 +64,7 @@ class JSONStringValueSerializer : public ValueSerializer {
   // If true, deserialization will allow trailing commas.
   bool allow_trailing_comma_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(JSONStringValueSerializer);
+  DISALLOW_COPY_AND_ASSIGN(JSONStringValueSerializer);
 };
 
 class JSONFileValueSerializer : public ValueSerializer {
@@ -102,7 +102,7 @@ class JSONFileValueSerializer : public ValueSerializer {
  private:
   FilePath json_file_path_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(JSONFileValueSerializer);
+  DISALLOW_COPY_AND_ASSIGN(JSONFileValueSerializer);
 };
 
 }  // namespace base
