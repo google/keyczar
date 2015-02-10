@@ -65,8 +65,6 @@ def _HostPlatform():
       'openbsd4': 'BSD',
       'freebsd6': 'BSD',
       'freebsd7': 'BSD',
-      'freebsd8': 'BSD',
-      'freebsd9': 'BSD',
       'netbsd4': 'BSD',
       'netbsd5': 'BSD',
   }
