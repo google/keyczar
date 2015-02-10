@@ -776,11 +776,11 @@ class SessionEncrypter(object):
     """
     return self._encrypted_session_material
 
-  def Encrypt(self, plaintext, encoder=util.Base64WSEncode):
+  def Encrypt(self, plaintext):
     """
     Encrypts the given plaintext with the session key and returns the base 64-encoded result.
     """
-    return self._session.crypter.Encrypt(plaintext, encoder)
+    return self._session.crypter.Encrypt(plaintext)
 
 
 class SessionDecrypter(object):
@@ -792,12 +792,12 @@ class SessionDecrypter(object):
   def __init__(self, crypter, session_material):
     self._session = _Session.LoadPackedKey(crypter.Decrypt(session_material))
 
-  def Decrypt(self, ciphertext, decoder=util.Base64WSDecode):
+  def Decrypt(self, ciphertext):
     """
     Decrypts the given base 64-encoded ciphertext with the session key and returns the
     decrypted plaintext.
     """
-    return self._session.crypter.Decrypt(ciphertext, decoder)
+    return self._session.crypter.Decrypt(ciphertext)
 
 
 class SignedSessionEncrypter(object):
