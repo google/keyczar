@@ -304,8 +304,8 @@ public class KeyczarTool {
 
   /**
    * Creates a new KeyMetadata object, deciding its name, purpose and type
-   * based on command line flags. Outputs its JSON representation in a file
-   * named meta in the directory given by the location flag.
+   * based on command line flags. Outputs its JSON representation in a secure
+   * file named meta in the directory given by the location flag.
    * @param asymmetricFlag
    * @param purposeFlag
    * @param nameFlag
@@ -367,6 +367,14 @@ public class KeyczarTool {
       }
       try {
         FileOutputStream metaOutput = new FileOutputStream(file);
+
+        // only allow the file owner to read/write the file
+        file.setReadable(false, false);
+        file.setReadable(true, true);
+        file.setWritable(false, false);
+        file.setWritable(true, true);
+        file.setExecutable(false, false);
+
         metaOutput.write(kmd.toString().getBytes(Keyczar.DEFAULT_ENCODING));
         metaOutput.close();
       } catch (IOException e) {
