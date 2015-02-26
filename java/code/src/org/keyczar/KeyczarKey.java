@@ -47,7 +47,7 @@ import javax.crypto.spec.PBEParameterSpec;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-abstract class KeyczarKey {
+public abstract class KeyczarKey {
   private static final String PEM_FOOTER_BEGIN = "-----END ";
   private static final String PEM_LINE_ENDING = "-----\n";
   private static final String PEM_HEADER_BEGIN = "-----BEGIN ";

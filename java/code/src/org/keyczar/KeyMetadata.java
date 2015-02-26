@@ -50,7 +50,7 @@ import java.util.Map;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-class KeyMetadata {
+public class KeyMetadata {
   @Expose String name = "";
   @Expose KeyPurpose purpose = KeyPurpose.TEST;
   @Expose KeyType type = DefaultKeyType.TEST;
@@ -163,7 +163,7 @@ class KeyMetadata {
    * @param jsonString
    * @return KeyMetadata corresponding to JSON input
    */
-  static KeyMetadata read(String jsonString) {
+  public static KeyMetadata read(String jsonString) {
     KeyMetadata kmd = Util.gson().fromJson(jsonString, KeyMetadata.class);
     for (KeyVersion version : kmd.getVersions()) {
       kmd.versionMap.put(version.getVersionNumber(), version);

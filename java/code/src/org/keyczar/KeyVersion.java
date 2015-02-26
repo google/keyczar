@@ -41,7 +41,7 @@ import org.keyczar.util.Util;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-class KeyVersion {
+public class KeyVersion {
   @Expose private boolean exportable = false;
   @Expose private KeyStatus status = KeyStatus.ACTIVE;
   @Expose private int versionNumber = 0;
@@ -85,7 +85,7 @@ class KeyVersion {
     return status;
   }
 
-  int getVersionNumber() {
+  public int getVersionNumber() {
     return versionNumber;
   }
 
