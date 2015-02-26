@@ -41,7 +41,7 @@ import org.keyczar.util.Util;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-public class KeyVersion {
+class KeyVersion {
   @Expose private boolean exportable = false;
   @Expose private KeyStatus status = KeyStatus.ACTIVE;
   @Expose private int versionNumber = 0;
@@ -51,11 +51,11 @@ public class KeyVersion {
     // For GSON
   }
 
-  public KeyVersion(int v, boolean export) {
+  KeyVersion(int v, boolean export) {
     this(v, KeyStatus.ACTIVE, export);
   }
 
-  public KeyVersion(int v, KeyStatus s, boolean export) {
+  KeyVersion(int v, KeyStatus s, boolean export) {
     versionNumber = v;
     status = s;
     exportable = export;
@@ -81,15 +81,15 @@ public class KeyVersion {
     return versionNumber; // identity depends only on version number
   }
 
-  public KeyStatus getStatus() {
+  KeyStatus getStatus() {
     return status;
   }
 
-  public int getVersionNumber() {
+  int getVersionNumber() {
     return versionNumber;
   }
 
-  public boolean isExportable() {
+  boolean isExportable() {
     return exportable;
   }
 
@@ -97,11 +97,11 @@ public class KeyVersion {
    * Updates the status of this KeyVersion to given status if not null.
    * @param status
    */
-  public void setStatus(KeyStatus status) {
+  void setStatus(KeyStatus status) {
     this.status = (status == null) ? this.status : status;
   }
 
-  public static KeyVersion read(String jsonString) {
+  static KeyVersion read(String jsonString) {
     return Util.gson().fromJson(jsonString, KeyVersion.class);
   }
 }

@@ -50,7 +50,7 @@ import java.util.Map;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-public class KeyMetadata {
+class KeyMetadata {
   @Expose String name = "";
   @Expose KeyPurpose purpose = KeyPurpose.TEST;
   @Expose KeyType type = DefaultKeyType.TEST;
@@ -60,11 +60,12 @@ public class KeyMetadata {
   protected Map<Integer, KeyVersion> versionMap =
       new HashMap<Integer, KeyVersion>(); // link version number to version
 
-  public KeyMetadata() {
+  @SuppressWarnings("unused")
+  private KeyMetadata() {
     // For GSON
   }
 
-  public KeyMetadata(String n, KeyPurpose p, KeyType t) {
+  KeyMetadata(String n, KeyPurpose p, KeyType t) {
     name = n;
     purpose = p;
     type = t;
@@ -81,7 +82,7 @@ public class KeyMetadata {
    * @param version KeyVersion of key to be added
    * @return true if add was successful, false if version number collides
    */
-  public boolean addVersion(KeyVersion version) {
+  boolean addVersion(KeyVersion version) {
     int versionNumber = version.getVersionNumber();
     if (!versionMap.containsKey(versionNumber)) {
       versionMap.put(versionNumber, version);
@@ -97,7 +98,7 @@ public class KeyMetadata {
    * @param versionNumber integer version number of key to be removed
    * @return true if remove was successful
    */
-  public boolean removeVersion(int versionNumber) {
+  boolean removeVersion(int versionNumber) {
     if (versionMap.containsKey(versionNumber)) {
       KeyVersion version = versionMap.get(versionNumber);
       versions.remove(version);
@@ -107,15 +108,15 @@ public class KeyMetadata {
     return false;
   }
 
-  public String getName() {
+  String getName() {
     return name;
   }
 
-  public KeyPurpose getPurpose() {
+  KeyPurpose getPurpose() {
     return purpose;
   }
 
-  public KeyType getType() {
+  KeyType getType() {
     return type;
   }
 
@@ -127,7 +128,7 @@ public class KeyMetadata {
     this.encrypted = encrypted;
   }
 
-  public boolean isEncrypted() {
+  boolean isEncrypted() {
     return encrypted;
   }
 
@@ -137,11 +138,11 @@ public class KeyMetadata {
    * @param versionNumber
    * @return KeyVersion corresponding to given number, or null if nonexistent
    */
-  public KeyVersion getVersion(int versionNumber) {
+  KeyVersion getVersion(int versionNumber) {
     return versionMap.get(versionNumber);
   }
 
-  public List<KeyVersion> getVersions() {
+  List<KeyVersion> getVersions() {
     return versions;
   }
 
@@ -162,7 +163,7 @@ public class KeyMetadata {
    * @param jsonString
    * @return KeyMetadata corresponding to JSON input
    */
-  public static KeyMetadata read(String jsonString) {
+  static KeyMetadata read(String jsonString) {
     KeyMetadata kmd = Util.gson().fromJson(jsonString, KeyMetadata.class);
     for (KeyVersion version : kmd.getVersions()) {
       kmd.versionMap.put(version.getVersionNumber(), version);

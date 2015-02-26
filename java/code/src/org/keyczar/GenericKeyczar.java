@@ -24,30 +24,30 @@ import java.util.Set;
  * @author arkajit.dey@gmail.com (Arkajit Dey)
  *
  */
-public class GenericKeyczar extends Keyczar {
+class GenericKeyczar extends Keyczar {
   private static final Logger LOG = Logger.getLogger(GenericKeyczar.class);
-  public GenericKeyczar(KeyczarReader reader) throws KeyczarException {
+  GenericKeyczar(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
 
-  public GenericKeyczar(String location) throws KeyczarException {
+  GenericKeyczar(String location) throws KeyczarException {
     super(location);
   }
 
   @Override
-  public boolean isAcceptablePurpose(KeyPurpose purpose) {
+  boolean isAcceptablePurpose(KeyPurpose purpose) {
     return true;
   }
 
-  public KeyMetadata getMetadata() {
+  KeyMetadata getMetadata() {
     return this.kmd;
   }
 
-  public Set<KeyVersion> getVersions() {
+  Set<KeyVersion> getVersions() {
     return Collections.unmodifiableSet(versionMap.keySet());
   }
 
-  public KeyczarKey getKey(KeyVersion v) {
+  KeyczarKey getKey(KeyVersion v) {
     return versionMap.get(v);
   }
 
@@ -59,7 +59,7 @@ public class GenericKeyczar extends Keyczar {
    * @throws KeyczarException if invalid version number or trying to promote
    * a primary key.
    */
-  public void promote(int versionNumber) throws KeyczarException {
+  void promote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
     LOG.debug(Messages.getString("Keyczar.PromotedVersion", version));
     switch (version.getStatus()) {
@@ -87,7 +87,7 @@ public class GenericKeyczar extends Keyczar {
    * @throws KeyczarException if invalid version number or trying to demote
    * a key scheduled for revocation.
    */
-  public void demote(int versionNumber) throws KeyczarException {
+  void demote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
     LOG.debug(Messages.getString("Keyczar.DemotingVersion", version));
     switch (version.getStatus()) {
@@ -107,7 +107,7 @@ public class GenericKeyczar extends Keyczar {
   /**
    * Uses default key parameters to add a new key version.
    */
-  public void addVersion(KeyStatus status) throws KeyczarException {
+  void addVersion(KeyStatus status) throws KeyczarException {
     addVersion(status, kmd.getType().applyDefaultParameters(null));
   }
 
@@ -120,7 +120,7 @@ public class GenericKeyczar extends Keyczar {
    * @param keyParams parameters for new key generation.
    * @throws KeyczarException if key type is unsupported.
    */
-  public void addVersion(KeyStatus status, KeyParameters keyParams) throws KeyczarException {
+  void addVersion(KeyStatus status, KeyParameters keyParams) throws KeyczarException {
     KeyType type = kmd.getType();
     KeyczarKey key;
     do {
@@ -165,7 +165,7 @@ public class GenericKeyczar extends Keyczar {
    * @return KeyVersion if it exists
    * @throws KeyczarException if version number doesn't exist
    */
-   public KeyVersion getVersion(int versionNumber) throws KeyczarException {
+   KeyVersion getVersion(int versionNumber) throws KeyczarException {
     KeyVersion version = kmd.getVersion(versionNumber);
     if (version == null) {
       throw new KeyczarException(
@@ -182,7 +182,7 @@ public class GenericKeyczar extends Keyczar {
    * @throws KeyczarException if version number nonexistent or key is not
    * scheduled for revocation.
    */
-  public void revoke(int versionNumber) throws KeyczarException {
+  void revoke(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
     if (version.getStatus() == KeyStatus.INACTIVE) {
       kmd.removeVersion(versionNumber);
