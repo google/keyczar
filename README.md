@@ -47,13 +47,17 @@ handle initialization vectors, how to rotate keys, and how to sign
 ciphertexts. Keyczar simplifies these choices. Using an existing
 keyset, a Java developer would need to call the following:
 
-    Crypter crypter = new Crypter("/path/to/your/keys");
-    String ciphertext = crypter.encrypt("Secret message");
+```java
+Crypter crypter = new Crypter("/path/to/your/keys");
+String ciphertext = crypter.encrypt("Secret message");
+```
 
 Similarly a Python developer would call the following:
 
-    crypter = Crypter.Read("/path/to/your/keys");
-    ciphertext = crypter.Encrypt("Secret message");
+```python
+crypter = Crypter.Read("/path/to/your/keys");
+ciphertext = crypter.Encrypt("Secret message");
+```
 
 Get involved
 ------------
