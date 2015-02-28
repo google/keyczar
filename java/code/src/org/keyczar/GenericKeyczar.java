@@ -309,11 +309,13 @@ class GenericKeyczar extends Keyczar {
       FileWriter writer = new FileWriter(outputFile);
 
       // only allow the file owner to read/write the file
-      outputFile.setReadable(false, false);
-      outputFile.setReadable(true, true);
-      outputFile.setWritable(false, false);
-      outputFile.setWritable(true, true);
-      outputFile.setExecutable(false, false);
+      final boolean appliesToAll = false;
+      final boolean appliesToOwner = true;
+      outputFile.setReadable(false, appliesToAll);
+      outputFile.setReadable(true, appliesToOwner);
+      outputFile.setWritable(false, appliesToAll);
+      outputFile.setWritable(true, appliesToOwner);
+      outputFile.setExecutable(false, appliesToAll);
 
       writer.write(data);
       writer.close();

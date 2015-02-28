@@ -369,11 +369,13 @@ public class KeyczarTool {
         FileOutputStream metaOutput = new FileOutputStream(file);
 
         // only allow the file owner to read/write the file
-        file.setReadable(false, false);
-        file.setReadable(true, true);
-        file.setWritable(false, false);
-        file.setWritable(true, true);
-        file.setExecutable(false, false);
+        final boolean appliesToAll = false;
+        final boolean appliesToOwner = true;
+        file.setReadable(false, appliesToAll);
+        file.setReadable(true, appliesToOwner);
+        file.setWritable(false, appliesToAll);
+        file.setWritable(true, appliesToOwner);
+        file.setExecutable(false, appliesToAll);
 
         metaOutput.write(kmd.toString().getBytes(Keyczar.DEFAULT_ENCODING));
         metaOutput.close();
