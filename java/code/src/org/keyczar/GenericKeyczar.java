@@ -296,7 +296,7 @@ class GenericKeyczar extends Keyczar {
   }
 
   /**
-   * Utility function to write given data to a file at given location.
+   * Utility function to securely write given data to a file at given location.
    *
    * @param data String data to be written
    * @param location String pathname of destination file
@@ -307,6 +307,16 @@ class GenericKeyczar extends Keyczar {
     File outputFile = new File(location);
     try {
       FileWriter writer = new FileWriter(outputFile);
+
+      // only allow the file owner to read/write the file
+      final boolean appliesToAll = false;
+      final boolean appliesToOwner = true;
+      outputFile.setReadable(false, appliesToAll);
+      outputFile.setReadable(true, appliesToOwner);
+      outputFile.setWritable(false, appliesToAll);
+      outputFile.setWritable(true, appliesToOwner);
+      outputFile.setExecutable(false, appliesToAll);
+
       writer.write(data);
       writer.close();
     } catch (IOException e) {
