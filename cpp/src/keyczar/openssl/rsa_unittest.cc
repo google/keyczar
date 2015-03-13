@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <string>
 
-#include <testing/gtest/include/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 #include <keyczar/base/file_path.h>
 #include <keyczar/base/file_util.h>

@@ -20,8 +20,8 @@
 #include <keyczar/base/values.h>
 #include <keyczar/base_test/path_service.h>
 
-#include <testing/gtest/include/gtest/gtest.h>
 #include <testing/platform_test.h>
+#include <gtest/gtest.h>
 
 namespace keyczar {
 namespace base {

@@ -1,16 +1,17 @@
 = Keyczar C++ =
 
-== Dependancies ==
+== Dependencies ==
 
 - C++ compiler
 - Python for running the build system
 - OpenSSL (>= 0.9.8b)
+- gtest (>= 1.4)
 - [Optional]: Zlib (for compression)
 - [Optional]: Swig (Python binding)
 
 === Ubuntu/Debian ===
 
-Packages g++ make libssl-dev zlib1g-dev python python-dev swig
+Packages g++ make libssl-dev zlib1g-dev libgtest-dev python python-dev swig
 
 === MacOSX Snow Leopard ===
 
@@ -34,8 +35,10 @@ Note: only Linux x86 has been tested extensively
 
 For a local build of Keyczar C++ on Linux run these commands:
 
- $ cd src && sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat
+ $ cd src && sh ./tools/swtoolkit/hammer.sh -D GTEST_DIR=/usr/src/gtest --mode=opt-linux --compat
 
+- Replace /usr/src/gtest with the path to your gtest src dir (this path is
+  correct for Ubuntu).
 - Replace opt-linux by opt-bsd or opt-mac depending on your system
 - The Python binding is built automatically if swig is detected
 - Libraries and executables are assembled under scons-out/opt-linux/
@@ -47,7 +50,7 @@ For a local build of Keyczar C++ on Linux run these commands:
 
 You need to log as root and execute these commands:
 
-  $ cd src && sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat install
+  $ cd src && sh ./tools/swtoolkit/hammer.sh -D GTEST_DIR=/usr/src/gtest --mode=opt-linux --compat install
 
 /!\ Note: it is actually highly recommanded to use the compatibility (--compat)
 mode. This mode provides full compatibility with previous versions, other
