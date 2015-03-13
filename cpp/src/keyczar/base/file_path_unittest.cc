@@ -7,8 +7,8 @@
 #include <keyczar/base/file_util.h>
 #include <keyczar/base/string_util.h>
 
-#include <testing/gtest/include/gtest/gtest.h>
 #include <testing/platform_test.h>
+#include <gtest/gtest.h>
 
 // This macro helps avoid wrapped lines in the test structs.
 #define FPL(x) FILE_PATH_LITERAL(x)

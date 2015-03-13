@@ -18,7 +18,7 @@
 #include <keyczar/base/base64w.h>
 #include <keyczar/keyczar_test.h>
 #include <keyczar/session.h>
-#include <testing/gtest/include/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 namespace keyczar {
 
