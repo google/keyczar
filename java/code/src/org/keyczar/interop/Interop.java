@@ -4,8 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.varia.NullAppender;
 import org.keyczar.exceptions.KeyczarException;
 
 /**
@@ -18,7 +16,7 @@ public class Interop {
    * @param args
    */
   public static void main(String[] args) {
-    BasicConfigurator.configure(new NullAppender());
+
     Gson gson = new Gson();
     switch (getCommandType(args[0])) {
       case GENERATE:
@@ -53,7 +51,7 @@ public class Interop {
         System.exit(1);
     }
   }
-  
+
   /**
    * Parses the json input and returns the command attribute as an enum
    * @param jsonString
@@ -64,7 +62,7 @@ public class Interop {
     JsonObject object = parser.parse(jsonString).getAsJsonObject();
     return InteropCommand.getCommand(object.get("command").getAsString());
   }
-  
-  
+
+
 
 }

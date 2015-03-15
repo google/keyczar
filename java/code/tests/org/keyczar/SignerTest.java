@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,7 +22,8 @@ import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.Test;
 import org.keyczar.exceptions.BadVersionException;
 import org.keyczar.exceptions.KeyNotFoundException;
@@ -36,7 +37,7 @@ import org.keyczar.exceptions.ShortSignatureException;
  *
  */
 public class SignerTest extends TestCase {
-  private static final Logger LOG = Logger.getLogger(SignerTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SignerTest.class);
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
   private byte[] inputBytes = input.getBytes();
@@ -45,7 +46,7 @@ public class SignerTest extends TestCase {
     Signer signer = new Signer(TEST_DATA + subDir);
     RandomAccessFile activeInput =
       new RandomAccessFile(TEST_DATA + subDir + "/1.out", "r");
-    String activeSignature = activeInput.readLine(); 
+    String activeSignature = activeInput.readLine();
     activeInput.close();
     RandomAccessFile primaryInput =
       new RandomAccessFile(TEST_DATA + subDir + "/2.out", "r");
@@ -55,13 +56,13 @@ public class SignerTest extends TestCase {
     assertTrue(signer.verify(input, activeSignature));
     assertTrue(signer.verify(input, primarySignature));
   }
-  
+
   private final void testPublicVerify(String subDir) throws Exception {
     Verifier verifier = new Verifier(TEST_DATA + subDir);
     Verifier publicVerifier = new Verifier(TEST_DATA + subDir + ".public");
     RandomAccessFile activeInput =
       new RandomAccessFile(TEST_DATA + subDir + "/1.out", "r");
-    String activeSignature = activeInput.readLine(); 
+    String activeSignature = activeInput.readLine();
     activeInput.close();
     RandomAccessFile primaryInput =
       new RandomAccessFile(TEST_DATA + subDir + "/2.out", "r");
@@ -78,7 +79,7 @@ public class SignerTest extends TestCase {
     Signer signer = new Signer(TEST_DATA + subDir);
     RandomAccessFile activeInput =
       new RandomAccessFile(TEST_DATA + subDir + "/1.out", "r");
-    String activeSignature = activeInput.readLine(); 
+    String activeSignature = activeInput.readLine();
     activeInput.close();
     RandomAccessFile primaryInput =
       new RandomAccessFile(TEST_DATA + subDir + "/2.out", "r");
@@ -91,7 +92,7 @@ public class SignerTest extends TestCase {
     assertFalse(signer.verify(input,
         primarySignature.substring(0, primarySignature.length() - 4) + "Junk"));
   }
-  
+
   @Test
   public final void testHmacSignAndVerify() throws KeyczarException {
     Signer hmacSigner = new Signer(TEST_DATA + "/hmac");
@@ -115,12 +116,12 @@ public class SignerTest extends TestCase {
   public final void testHmacVerify() throws Exception {
     testSignerVerify("/hmac");
   }
-  
+
   @Test
   public final void testBadHmacVerify() throws Exception {
     testBadVerify("/hmac");
   }
-  
+
   @Test
   public final void testDsaSignAndVerify() throws KeyczarException {
     Signer dsaSigner = new Signer(TEST_DATA + "/dsa");
@@ -135,12 +136,12 @@ public class SignerTest extends TestCase {
     testSignerVerify("/dsa");
     testPublicVerify("/dsa");
   }
-  
+
   @Test
   public final void testBadDsaVerify() throws Exception {
     testBadVerify("/dsa");
   }
-    
+
   @Test
   public final void testRsaSignAndVerify() throws KeyczarException {
     Signer rsaSigner = new Signer(TEST_DATA + "/rsa-sign");
@@ -160,19 +161,19 @@ public class SignerTest extends TestCase {
   public final void testBadRsaVerify() throws Exception {
     testBadVerify("/rsa-sign");
   }
-  
+
   private final void testUnversionedSignAndVerify(String subDir)
       throws Exception {
     UnversionedSigner signer = new UnversionedSigner(TEST_DATA + subDir);
     byte[] sig = signer.sign(inputBytes);
     assertTrue(signer.verify(inputBytes, sig));
   }
-  
+
   @Test
   public final void testHmacUnversionedSignAndVerify() throws Exception {
     testUnversionedSignAndVerify("/hmac");
   }
-  
+
   @Test
   public final void testDsaUnversionedSignAndVerify() throws Exception {
     testUnversionedSignAndVerify("/dsa");
@@ -182,7 +183,7 @@ public class SignerTest extends TestCase {
   public final void testRsaUnversionedSignAndVerify() throws Exception {
     testUnversionedSignAndVerify("/rsa-sign");
   }
-  
+
   @Test
   public final void testHmacBadSigs() throws KeyczarException {
     Signer hmacSigner = new Signer(TEST_DATA + "/hmac");
@@ -214,6 +215,6 @@ public class SignerTest extends TestCase {
     }
     // Reset the key identifier
     sig[1] ^= 45;
-     
+
   }
 }

@@ -16,7 +16,8 @@
 
 package org.keyczar;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
@@ -44,7 +45,7 @@ import java.nio.ByteBuffer;
 */
 public class UnversionedVerifier extends Keyczar {
   private static final Logger LOG =
-    Logger.getLogger(UnversionedVerifier.class);
+    LoggerFactory.getLogger(UnversionedVerifier.class);
   private static final StreamCache<VerifyingStream> VERIFY_CACHE
     = new StreamCache<VerifyingStream>();
 

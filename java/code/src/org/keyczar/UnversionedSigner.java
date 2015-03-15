@@ -16,7 +16,8 @@
 
 package org.keyczar;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.NoPrimaryKeyException;
@@ -33,7 +34,7 @@ import java.nio.ByteBuffer;
  * UnversionedSigners may both sign and verify data using sets of symmetric or
  * private keys. Sets of public keys may only be used with {@link Verifier}
  * objects.
- * 
+ *
  * UnversionedSigners do not include any key versioning in their outputs. They
  * will return standard signatures (i.e. HMAC-SHA1, RSA-SHA1, DSA-SHA1).
  *
@@ -45,7 +46,7 @@ import java.nio.ByteBuffer;
  */
 public class UnversionedSigner extends UnversionedVerifier {
   static final int TIMESTAMP_SIZE = 8;
-  private static final Logger LOG = Logger.getLogger(UnversionedSigner.class);
+  private static final Logger LOG = LoggerFactory.getLogger(UnversionedSigner.class);
   private final StreamQueue<SigningStream> SIGN_QUEUE =
     new StreamQueue<SigningStream>();
 

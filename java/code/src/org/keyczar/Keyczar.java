@@ -16,7 +16,8 @@
 
 package org.keyczar;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.exceptions.KeyczarException;
@@ -35,7 +36,7 @@ import java.util.HashMap;
  *
  */
 abstract class Keyczar {
-  private static final Logger LOG = Logger.getLogger(Keyczar.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Keyczar.class);
   static final String DEFAULT_ENCODING = "UTF-8";
   static final byte FORMAT_VERSION = 0;
   static final byte[] FORMAT_BYTES = { FORMAT_VERSION };

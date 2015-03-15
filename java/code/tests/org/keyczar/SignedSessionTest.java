@@ -22,7 +22,8 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.Test;
 import org.keyczar.annotations.Experimental;
 import org.keyczar.exceptions.KeyczarException;
@@ -36,7 +37,7 @@ import org.keyczar.util.Base64Coder;
  */
 @Experimental
 public class SignedSessionTest extends TestCase {
-  private static final Logger LOG = Logger.getLogger(SignedSessionTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SignedSessionTest.class);
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
   // Bigger than a public key block

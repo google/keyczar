@@ -16,7 +16,8 @@
 
 package org.keyczar;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.NoPrimaryKeyException;
@@ -42,7 +43,7 @@ import java.nio.ByteBuffer;
  */
 public class Signer extends Verifier {
   static final int TIMESTAMP_SIZE = 8;
-  private static final Logger LOG = Logger.getLogger(Signer.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Signer.class);
   private final StreamQueue<SigningStream> SIGN_QUEUE = new StreamQueue<SigningStream>();
 
   /**

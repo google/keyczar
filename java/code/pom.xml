@@ -250,11 +250,11 @@
     	<scope>compile</scope>
     </dependency>
     <dependency>
-    	<groupId>log4j</groupId>
-    	<artifactId>log4j</artifactId>
-    	<version>1.2.14</version>
-    	<type>jar</type>
-    	<scope>compile</scope>
+         <groupId>org.slf4j</groupId>
+         <artifactId>slf4j-api</artifactId>
+         <version>1.7.6</version>
+         <type>jar</type>
+         <scope>compile</scope>
     </dependency>
 
     <!-- Dependencies required for testing -->
@@ -282,6 +282,14 @@
         <version>3.3</version>
         <scope>test</scope>
     </dependency>
+    <dependency> <!-- Logback is only used for tests. -->
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.1.1</version>
+        <type>jar</type>
+        <scope>test</scope>
+    </dependency>
+    
   </dependencies>
 
   <!-- Perhaps we can't do this with git?
