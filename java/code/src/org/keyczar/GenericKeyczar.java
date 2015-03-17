@@ -1,6 +1,7 @@
 package org.keyczar;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.exceptions.KeyczarException;
@@ -25,7 +26,7 @@ import java.util.Set;
  *
  */
 class GenericKeyczar extends Keyczar {
-  private static final Logger LOG = Logger.getLogger(GenericKeyczar.class);
+  private static final Logger LOG = LoggerFactory.getLogger(GenericKeyczar.class);
   GenericKeyczar(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }

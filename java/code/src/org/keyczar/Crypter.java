@@ -16,7 +16,8 @@
 
 package org.keyczar;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.BadVersionException;
 import org.keyczar.exceptions.InvalidSignatureException;
@@ -40,7 +41,7 @@ import java.nio.ByteBuffer;
  */
 public class Crypter extends Encrypter {
   private static final int DECRYPT_CHUNK_SIZE = 1024;
-  private static final Logger LOG = Logger.getLogger(Crypter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Crypter.class);
   private final StreamCache<DecryptingStream> CRYPT_CACHE
     = new StreamCache<DecryptingStream>();
 

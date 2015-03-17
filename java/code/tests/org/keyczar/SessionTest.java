@@ -18,7 +18,8 @@ package org.keyczar;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.Test;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
@@ -35,7 +36,7 @@ import java.util.Arrays;
  */
 @SuppressWarnings("deprecation")
 public class SessionTest extends TestCase {
-  private static final Logger LOG = Logger.getLogger(SessionTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SessionTest.class);
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
   // Bigger than a public key block
