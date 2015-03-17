@@ -62,7 +62,4 @@ public class Interop {
     JsonObject object = parser.parse(jsonString).getAsJsonObject();
     return InteropCommand.getCommand(object.get("command").getAsString());
   }
-
-
-
 }
