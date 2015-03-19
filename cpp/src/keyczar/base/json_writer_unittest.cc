@@ -6,7 +6,7 @@
 // with Keyczar, any encountered errors are probably due to these
 // modifications.
 
-#include <testing/gtest/include/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 #include <keyczar/base/json_writer.h>
 #include <keyczar/base/values.h>

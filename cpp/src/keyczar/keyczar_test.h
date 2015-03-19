@@ -15,8 +15,8 @@
 #define KEYCZAR_KEYCZAR_TEST_H_
 #include <string>
 
-#include <testing/gtest/include/gtest/gtest.h>
 #include <testing/platform_test.h>
+#include <gtest/gtest.h>
 
 #include <keyczar/base/file_path.h>
 #include <keyczar/base/file_util.h>

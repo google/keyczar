@@ -5,7 +5,7 @@
 #ifndef TESTING_PLATFORM_TEST_H_
 #define TESTING_PLATFORM_TEST_H_
 
-#include <testing/gtest/include/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 #if defined(GTEST_OS_MAC)
 #ifdef __OBJC__
@@ -32,5 +32,3 @@ typedef testing::Test PlatformTest;
 #endif // GTEST_OS_MAC
 
 #endif // TESTING_PLATFORM_TEST_H_
-
-
