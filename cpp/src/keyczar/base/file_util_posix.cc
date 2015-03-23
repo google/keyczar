@@ -57,7 +57,7 @@ FILE* OpenFile(const std::string& filename, const char* mode) {
 }
 
 int WriteFile(const std::string& filename, const char* data, int size) {
-  int fd = creat(filename.c_str(), 0666);
+  int fd = creat(filename.c_str(), 0600);
   if (fd < 0)
     return -1;
 
@@ -153,7 +153,7 @@ bool CreateDirectory(const FilePath& full_path) {
   for (std::vector<FilePath>::reverse_iterator i = subpaths.rbegin();
        i != subpaths.rend(); ++i) {
     if (!DirectoryExists(*i)) {
-      if (mkdir(i->value().c_str(), 0777) != 0)
+      if (mkdir(i->value().c_str(), 0700) != 0)
         return false;
     }
   }

@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <keyczar/base/zlib.h>
 
-#include <testing/gtest/include/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 namespace keyczar {
 namespace base {

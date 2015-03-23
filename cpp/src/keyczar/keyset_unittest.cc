@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <string>
 
-#include <testing/gtest/include/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 #include <keyczar/base/base64w.h>
 #include <keyczar/base/file_path.h>
@@ -233,4 +233,3 @@ TEST_F(KeysetTest, Observers) {
 }
 
 }  // namespace keyczar
-

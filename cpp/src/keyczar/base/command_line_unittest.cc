@@ -10,7 +10,7 @@
 #include <keyczar/base/logging.h>
 #include <keyczar/base/string_util.h>
 
-#include <testing/gtest/include/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 namespace keyczar {
 namespace base {
