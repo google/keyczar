@@ -25,8 +25,6 @@ import org.keyczar.exceptions.KeyNotFoundException;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyczarReader;
 
-import com.google.gson.JsonParseException;
-
 /**
  * This test case verifies that OAEP and PKCS1 v1.5 padding are both supported for RSA keys.
  *
@@ -117,7 +115,7 @@ public class RsaPaddingTest extends TestCase {
     try {
       new Encrypter(invalidReader);
       fail("Should throw");
-    } catch (JsonParseException e) {
+    } catch (RuntimeException e) {
       assertTrue(e.getMessage().contains("INVALID"));
     }
   }

@@ -16,12 +16,10 @@
 
 package org.keyczar.util;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.exceptions.Base64DecodingException;
 import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.interfaces.KeyType;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,7 +33,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -54,21 +55,6 @@ public class Util {
 
   private Util() {
     // Don't new me.
-  }
-
-  private static final ThreadLocal<Gson> GSON_THREAD_LOCAL = new ThreadLocal<Gson>() {
-    @Override
-    protected Gson initialValue() {
-      return new GsonBuilder()
-        .excludeFieldsWithoutExposeAnnotation()
-        .registerTypeAdapter(KeyType.class, new KeyType.KeyTypeSerializer())
-        .registerTypeAdapter(KeyType.class, new KeyType.KeyTypeDeserializer())
-        .create();
-    }
-  };
-
-  public static Gson gson() {
-    return GSON_THREAD_LOCAL.get();
   }
 
   public static byte[] stripLeadingZeros(byte[] input) {
@@ -469,5 +455,26 @@ public class Util {
     } catch (GeneralSecurityException e) {
       throw new KeyczarException(e);
     }
+  }
+
+  public static <T extends Enum<T>> T deserializeEnum(Class<T> enumType, String name) {
+    if (name == null || name.isEmpty()) {
+      return null;
+    }
+    return Enum.valueOf(enumType, name);
+  }
+
+  public static Map<String, String> deserializeMap(JSONObject jsonObject)
+      throws JSONException {
+    Map<String, String> map = new HashMap<String, String>();
+    if (jsonObject != null) {
+      Iterator<String> iter = jsonObject.keys();
+      while (iter.hasNext()) {
+        String key = iter.next();
+        String value = jsonObject.getString(key);
+        map.put(key,  value);
+      }
+    }
+    return map;
   }
 }

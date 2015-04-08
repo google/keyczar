@@ -39,24 +39,18 @@ package org.keyczar.enums;
  *  
  */
 public enum KeyPurpose {
-  DECRYPT_AND_ENCRYPT(0, "crypt"), 
-  ENCRYPT(1, "encrypt"), 
-  SIGN_AND_VERIFY(2, "sign"),
-  VERIFY(3, "verify"),
-  TEST(127, "test");
+  DECRYPT_AND_ENCRYPT("crypt"),
+  ENCRYPT("encrypt"),
+  SIGN_AND_VERIFY("sign"),
+  VERIFY("verify"),
+  TEST("test");
 
-  private int value;
   private String name;
 
-  private KeyPurpose(int v, String s) {
-    value = v;
+  private KeyPurpose(String s) {
     name = s;
   }
 
-  int getValue() {
-    return value;
-  }
-  
   String getName() {
     return name;
   }

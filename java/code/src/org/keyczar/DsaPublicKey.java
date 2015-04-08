@@ -16,8 +16,8 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.Stream;
@@ -50,15 +50,42 @@ public class DsaPublicKey extends KeyczarPublicKey {
 
   private DSAPublicKey jcePublicKey;
   private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
-  @Expose final String y;
-  @Expose final String p;
-  @Expose final String q;
-  @Expose final String g;
+  final String y;
+  final String p;
+  final String q;
+  final String g;
 
   static DsaPublicKey read(String input) throws KeyczarException {
-    DsaPublicKey key = Util.gson().fromJson(input, DsaPublicKey.class);
-    key.initFromJson();
-    return key;
+    try {
+      DsaPublicKey key = fromJson(new JSONObject(input));
+      key.initFromJson();
+      return key;
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  static DsaPublicKey fromJson(JSONObject json) throws JSONException {
+    return new DsaPublicKey(
+        json.getInt("size"),
+        json.getString("y"),
+        json.getString("p"),
+        json.getString("q"),
+        json.getString("g"));
+  }
+
+  @Override
+  JSONObject toJson() {
+    try {
+      return new JSONObject()
+        .put("size", size)
+        .put("y", y)
+        .put("p", p)
+        .put("q", q)
+        .put("g", g);
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -75,11 +102,14 @@ public class DsaPublicKey extends KeyczarPublicKey {
     this(computeY(jcePrivateKey), jcePrivateKey.getParams());
   }
 
-  // Used by GSON, which will overwrite the values set here.
-  private DsaPublicKey() {
-    super(0);
+  // Used by JSON
+  private DsaPublicKey(int size, String y, String p, String q, String g) {
+    super(size);
     jcePublicKey = null;
-    y = p = q = g = null;
+    this.y = y;
+    this.p = p;
+    this.q = q;
+    this.g = g;
   }
 
   private DsaPublicKey(BigInteger yVal, DSAParams params) throws KeyczarException {

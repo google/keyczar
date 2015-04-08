@@ -16,8 +16,6 @@
 
 package org.keyczar;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.BadVersionException;
 import org.keyczar.exceptions.InvalidSignatureException;
@@ -41,7 +39,6 @@ import java.nio.ByteBuffer;
  */
 public class Crypter extends Encrypter {
   private static final int DECRYPT_CHUNK_SIZE = 1024;
-  private static final Logger LOG = LoggerFactory.getLogger(Crypter.class);
   private final StreamCache<DecryptingStream> CRYPT_CACHE
     = new StreamCache<DecryptingStream>();
 
@@ -102,7 +99,6 @@ public class Crypter extends Encrypter {
   public void decrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
     ByteBuffer inputCopy = input.asReadOnlyBuffer();
-    LOG.debug(Messages.getString("Crypter.Decrypting", inputCopy.remaining()));
     if (inputCopy.remaining() < HEADER_SIZE) {
       throw new ShortCiphertextException(inputCopy.remaining());
     }

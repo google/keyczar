@@ -17,8 +17,6 @@
 package org.keyczar;
 
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.BadVersionException;
 import org.keyczar.exceptions.KeyNotFoundException;
@@ -46,7 +44,6 @@ import java.nio.ByteBuffer;
 *
 */
 public class Verifier extends Keyczar {
-  private static final Logger LOG = LoggerFactory.getLogger(Verifier.class);
   private final StreamCache<VerifyingStream> VERIFY_CACHE
     = new StreamCache<VerifyingStream>();
 
@@ -117,7 +114,6 @@ public class Verifier extends Keyczar {
    */
   boolean verify(ByteBuffer data, ByteBuffer hidden,
       ByteBuffer signature) throws KeyczarException {
-    LOG.debug(Messages.getString("Verifier.Verifying", data.remaining()));
     if (signature.remaining() < HEADER_SIZE) {
       throw new ShortSignatureException(signature.remaining());
     }

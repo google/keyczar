@@ -16,13 +16,14 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
-
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.interfaces.KeyType;
-import org.keyczar.exceptions.NoPrimaryKeyException;
 import org.keyczar.util.Util;
+import org.keyczar.exceptions.NoPrimaryKeyException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,29 +52,53 @@ import java.util.Map;
  *
  */
 public class KeyMetadata {
-  @Expose String name = "";
-  @Expose KeyPurpose purpose = KeyPurpose.TEST;
-  @Expose KeyType type = DefaultKeyType.TEST;
-  @Expose List<KeyVersion> versions = new ArrayList<KeyVersion>();
-  @Expose boolean encrypted = false;
+  String name = "";
+  KeyPurpose purpose = KeyPurpose.TEST;
+  KeyType type = DefaultKeyType.TEST;
+  List<KeyVersion> versions = new ArrayList<KeyVersion>();
+  boolean encrypted = false;
 
   protected Map<Integer, KeyVersion> versionMap =
       new HashMap<Integer, KeyVersion>(); // link version number to version
 
-  @SuppressWarnings("unused")
-  private KeyMetadata() {
-    // For GSON
-  }
-
-  KeyMetadata(String n, KeyPurpose p, KeyType t) {
+  public KeyMetadata(String n, KeyPurpose p, KeyType t) {
     name = n;
     purpose = p;
     type = t;
   }
 
+  // Used for JSON
+  private KeyMetadata(String name, KeyPurpose purpose, KeyType type,
+      List<KeyVersion> versions, boolean encrypted) {
+    this.name = name;
+    this.purpose = purpose;
+    this.type = type;
+    this.versions = versions;
+    this.encrypted = encrypted;
+  }
+
   @Override
   public String toString() {
-    return Util.gson().toJson(this);
+    try {
+      return new JSONObject()
+          .put("name", name)
+          .put("purpose", purpose != null ? purpose.name() : null)
+          .put("type", type != null ? type.getName() : null)
+          .put("versions", keyVersionsToJson())
+          .put("encrypted", encrypted)
+          .toString();
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private JSONArray keyVersionsToJson() {
+    JSONArray jsonArray = new JSONArray();
+    int max = versions.size();
+    for (int i = 0; i < max; i++) {
+      jsonArray.put(versions.get(i).toJson());
+    }
+    return jsonArray;
   }
 
   /**
@@ -82,7 +107,7 @@ public class KeyMetadata {
    * @param version KeyVersion of key to be added
    * @return true if add was successful, false if version number collides
    */
-  boolean addVersion(KeyVersion version) {
+  public boolean addVersion(KeyVersion version) {
     int versionNumber = version.getVersionNumber();
     if (!versionMap.containsKey(versionNumber)) {
       versionMap.put(versionNumber, version);
@@ -164,10 +189,29 @@ public class KeyMetadata {
    * @return KeyMetadata corresponding to JSON input
    */
   public static KeyMetadata read(String jsonString) {
-    KeyMetadata kmd = Util.gson().fromJson(jsonString, KeyMetadata.class);
-    for (KeyVersion version : kmd.getVersions()) {
-      kmd.versionMap.put(version.getVersionNumber(), version);
+    try {
+      JSONObject json = new JSONObject(jsonString);
+      KeyMetadata kmd = new KeyMetadata(
+          json.getString("name"),
+          Util.deserializeEnum(KeyPurpose.class, json.optString("purpose")),
+          new KeyType.KeyTypeDeserializer().deserialize(json.getString("type")),
+          buildVersions(json.getJSONArray("versions")),
+          json.getBoolean("encrypted"));
+      for (KeyVersion version : kmd.getVersions()) {
+        kmd.versionMap.put(version.getVersionNumber(), version);
+      }
+      return kmd;
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
     }
-    return kmd;
+  }
+
+  private static List<KeyVersion> buildVersions(JSONArray jsonArray) throws JSONException {
+    List<KeyVersion> list = new ArrayList<KeyVersion>();
+    int max = jsonArray.length();
+    for (int i = 0; i < max; i++) {
+      list.add(KeyVersion.fromJson(jsonArray.getJSONObject(i)));
+    }
+    return list;
   }
 }

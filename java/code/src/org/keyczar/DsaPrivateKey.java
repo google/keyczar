@@ -16,8 +16,8 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
@@ -47,8 +47,8 @@ public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String SIG_ALGORITHM = "SHA1withDSA";
   private static final int DSA_DIGEST_SIZE = 48;
 
-  @Expose private final DsaPublicKey publicKey;
-  @Expose private final String x;
+  private final DsaPublicKey publicKey;
+  private final String x;
 
   private DSAPrivateKey jcePrivateKey;
 
@@ -58,8 +58,28 @@ public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   static DsaPrivateKey read(String input) throws KeyczarException {
-    DsaPrivateKey key = Util.gson().fromJson(input, DsaPrivateKey.class);
-    return key.initFromJson();
+    try {
+      JSONObject json = new JSONObject(input);
+      DsaPrivateKey key = new DsaPrivateKey(
+          json.getInt("size"),
+          DsaPublicKey.fromJson(json.getJSONObject("publicKey")),
+          json.getString("x"));
+      return key.initFromJson();
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  JSONObject toJson() {
+    try {
+      return new JSONObject()
+        .put("size", size)
+        .put("publicKey", publicKey != null ? publicKey.toJson() : null)
+        .put("x", x);
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public DsaPrivateKey(DSAPrivateKey privateKey) throws KeyczarException {
@@ -69,11 +89,11 @@ public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     x = Base64Coder.encodeWebSafe(jcePrivateKey.getX().toByteArray());
   }
 
-  // Used by GSON, which will overwrite the values set here.
-  private DsaPrivateKey() {
-    super(0);
-    publicKey = null;
-    x = null;
+  // Used for JSON
+  private DsaPrivateKey(int size, DsaPublicKey publicKey, String x) {
+    super(size);
+    this.publicKey = publicKey;
+    this.x = x;
   }
 
   @Override

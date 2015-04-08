@@ -1,7 +1,7 @@
 package org.keyczar.interop.operations;
 
-import com.google.gson.Gson;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.Crypter;
 import org.keyczar.Encrypter;
 import org.keyczar.SignedSessionDecrypter;
@@ -32,9 +32,8 @@ public class SignedSessionOperation extends Operation {
     SignedSessionEncrypter crypter = new SignedSessionEncrypter(keyEncrypter, signer);
     String sessionMaterial = crypter.newSession();
     byte[] ciphertext = crypter.encrypt(testData.getBytes());
-    
-    Gson gson = new Gson();
-    String output = gson.toJson(new SignedSessionOutput(ciphertext, sessionMaterial));
+
+    String output = new SignedSessionOutput(ciphertext, sessionMaterial).toString();
     return output.getBytes();
   }
 
@@ -42,10 +41,9 @@ public class SignedSessionOperation extends Operation {
   public void test(
       Map<String, String> output, String algorithm, Map<String, String> generateParams,
       Map<String, String> testParams) throws KeyczarException {
-    Gson gson = new Gson();
     byte[] encryptedData = readOutput(output);
     String sessionMaterial = output.get("sessionMaterial");
-    
+
     Crypter keyCrypter = new Crypter(
         getReader(algorithm, generateParams.get("cryptedKeySet"), testParams.get("pubKey")));
     Verifier verifier = new Verifier(getReader(
@@ -56,9 +54,9 @@ public class SignedSessionOperation extends Operation {
     assert(new String(decryptedData).equals(testData));
 
   }
-  
+
   /**
-   * Used for the gson representation of signed sessions
+   * Used for the json representation of signed sessions
    */
   static class SignedSessionOutput {
     public final String output;
@@ -68,11 +66,22 @@ public class SignedSessionOperation extends Operation {
       this.output = Base64Coder.encodeWebSafe(output);
       this.sessionMaterial = sessionMaterial;
     }
+
+    @Override
+    public String toString() {
+      try {
+        return new JSONObject()
+            .put("output", output)
+            .put("sessionMaterial", sessionMaterial)
+            .toString();
+      } catch (JSONException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
-  
+
   @Override
   public String formatOutput(byte[] output){
     return new String(output);
   }
-
 }

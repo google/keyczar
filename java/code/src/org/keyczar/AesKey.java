@@ -16,8 +16,8 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.enums.CipherMode;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.ShortBufferException;
@@ -55,9 +55,9 @@ public class AesKey extends KeyczarKey {
   private static final int NUM_OF_KEYS = 2; // AesKeys contain HMAC and AES keys
 
   private SecretKey aesKey;
-  @Expose private final String aesKeyString;
-  @Expose private final HmacKey hmacKey;
-  @Expose private final CipherMode mode;
+  private final String aesKeyString;
+  private final HmacKey hmacKey;
+  private final CipherMode mode;
 
   private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
@@ -73,12 +73,12 @@ public class AesKey extends KeyczarKey {
     initJceKey(aesKeyBytes);
   }
 
-  // Used by GSON, which will overwrite the values set here.
-  private AesKey() {
-    super(0);
-    aesKeyString = null;
-    hmacKey = null;
-    mode = null;
+  // Used for JSON
+  private AesKey(int size, String aesKeyString, HmacKey hmacKey, CipherMode mode) {
+    super(size);
+    this.aesKeyString = aesKeyString;
+    this.hmacKey = hmacKey;
+    this.mode = mode;
   }
 
   static AesKey generate(AesKeyParameters params) throws KeyczarException {
@@ -107,10 +107,36 @@ public class AesKey extends KeyczarKey {
   }
 
   static AesKey read(String input) throws KeyczarException {
-    AesKey key = Util.gson().fromJson(input, AesKey.class);
-    key.hmacKey.initFromJson();
-    key.initJceKey(Base64Coder.decodeWebSafe(key.aesKeyString));
+    try {
+      AesKey key = fromJson(new JSONObject(input));
+      key.hmacKey.initFromJson();
+      key.initJceKey(Base64Coder.decodeWebSafe(key.aesKeyString));
+      return key;
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  static AesKey fromJson(JSONObject json) throws JSONException {
+    AesKey key = new AesKey(
+        json.getInt("size"),
+        json.getString("aesKeyString"),
+        HmacKey.fromJson(json.getJSONObject("hmacKey")),
+        Util.deserializeEnum(CipherMode.class, json.getString("mode")));
     return key;
+  }
+
+  @Override
+  JSONObject toJson() {
+    try {
+      return new JSONObject()
+        .put("size", size)
+        .put("aesKeyString", aesKeyString)
+        .put("hmacKey", hmacKey != null ? hmacKey.toJson() : null)
+        .put("mode", mode.name());
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private void initJceKey(byte[] aesBytes) throws KeyczarException {

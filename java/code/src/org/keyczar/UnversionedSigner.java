@@ -16,8 +16,6 @@
 
 package org.keyczar;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.NoPrimaryKeyException;
@@ -46,7 +44,6 @@ import java.nio.ByteBuffer;
  */
 public class UnversionedSigner extends UnversionedVerifier {
   static final int TIMESTAMP_SIZE = 8;
-  private static final Logger LOG = LoggerFactory.getLogger(UnversionedSigner.class);
   private final StreamQueue<SigningStream> SIGN_QUEUE =
     new StreamQueue<SigningStream>();
 
@@ -118,7 +115,6 @@ public class UnversionedSigner extends UnversionedVerifier {
    * @throws KeyczarException
    */
   void sign(ByteBuffer input, ByteBuffer output) throws KeyczarException {
-    LOG.debug(Messages.getString("Signer.Signing", input.remaining()));
     KeyczarKey signingKey = getPrimaryKey();
     if (signingKey == null) {
       throw new NoPrimaryKeyException();

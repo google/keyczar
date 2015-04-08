@@ -22,8 +22,6 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.junit.Test;
 import org.keyczar.exceptions.KeyNotFoundException;
 import org.keyczar.exceptions.KeyczarException;
@@ -38,7 +36,6 @@ import org.keyczar.interfaces.KeyczarReader;
  */
 
 public class CrypterTest extends TestCase {
-  private static final Logger LOG = LoggerFactory.getLogger(CrypterTest.class);
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
 
@@ -88,7 +85,6 @@ public class CrypterTest extends TestCase {
   public final void testAesEncryptAndDecrypt() throws KeyczarException {
     Crypter crypter = new Crypter(TEST_DATA + "/aes");
     String ciphertext = crypter.encrypt(input);
-    LOG.debug(String.format("Aes Ciphertext: %s", ciphertext));
     String decrypted = crypter.decrypt(ciphertext);
     assertEquals(input, decrypted);
   }
@@ -97,7 +93,6 @@ public class CrypterTest extends TestCase {
   public final void testRsaEncryptAndDecryptWithCrypter() throws KeyczarException {
     Crypter crypter = new Crypter(TEST_DATA + "/rsa");
     String ciphertext = crypter.encrypt(input);
-    LOG.debug(String.format("Rsa Ciphertext: %s", ciphertext));
     String decrypted = crypter.decrypt(ciphertext);
     assertEquals(input, decrypted);
   }
@@ -106,7 +101,6 @@ public class CrypterTest extends TestCase {
   public final void testRsaEncryptAndDecryptWithEncrypter() throws KeyczarException {
     Encrypter encrypter = new Encrypter(TEST_DATA + "/rsa.public");
     String ciphertext = encrypter.encrypt(input);
-    LOG.debug(String.format("Rsa Ciphertext: %s", ciphertext));
     Crypter crypter = new Crypter(TEST_DATA + "/rsa");
     String decrypted = crypter.decrypt(ciphertext);
     assertEquals(input, decrypted);

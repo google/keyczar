@@ -16,8 +16,8 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.KeyType;
 import org.keyczar.interfaces.SigningStream;
@@ -45,7 +45,7 @@ public class HmacKey extends KeyczarKey {
   private static final String MAC_ALGORITHM = "HMACSHA1";
   private static final int HMAC_DIGEST_SIZE = 20;
 
-  @Expose private final String hmacKeyString;
+  private final String hmacKeyString;
 
   private SecretKey hmacKey;
   private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
@@ -56,10 +56,10 @@ public class HmacKey extends KeyczarKey {
     initJceKey(keyBytes);
   }
 
-  // Used by GSON, which will overwrite the values set here.
-  private HmacKey() {
-    super(0);
-    hmacKeyString = null;
+  // Used for JSON
+  private HmacKey(int size, String hmacKeyString) {
+    super(size);
+    this.hmacKeyString = hmacKeyString;
   }
 
   static HmacKey generate(KeyParameters params) throws KeyczarException {
@@ -99,9 +99,30 @@ public class HmacKey extends KeyczarKey {
   }
 
   static HmacKey read(String input) throws KeyczarException {
-    HmacKey key = Util.gson().fromJson(input, HmacKey.class);
-    key.initFromJson();
-    return key;
+    try {
+      HmacKey key = fromJson(new JSONObject(input));
+      key.initFromJson();
+      return key;
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  static HmacKey fromJson(JSONObject json) throws JSONException {
+    return new HmacKey(
+        json.getInt("size"),
+        json.getString("hmacKeyString"));
+  }
+
+  @Override
+  JSONObject toJson() {
+    try {
+      return new JSONObject()
+        .put("size", size)
+        .put("hmacKeyString", hmacKeyString);
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

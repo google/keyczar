@@ -16,8 +16,8 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.util.Util;
 
@@ -42,20 +42,15 @@ import org.keyczar.util.Util;
  *
  */
 public class KeyVersion {
-  @Expose private boolean exportable = false;
-  @Expose private KeyStatus status = KeyStatus.ACTIVE;
-  @Expose private int versionNumber = 0;
-
-  @SuppressWarnings("unused")
-  private KeyVersion() {
-    // For GSON
-  }
+  private boolean exportable = false;
+  private KeyStatus status = KeyStatus.ACTIVE;
+  private int versionNumber = 0;
 
   KeyVersion(int v, boolean export) {
     this(v, KeyStatus.ACTIVE, export);
   }
 
-  KeyVersion(int v, KeyStatus s, boolean export) {
+  public KeyVersion(int v, KeyStatus s, boolean export) {
     versionNumber = v;
     status = s;
     exportable = export;
@@ -63,7 +58,18 @@ public class KeyVersion {
 
   @Override
   public String toString() {
-    return Util.gson().toJson(this);
+    return toJson().toString();
+  }
+
+  JSONObject toJson() {
+    try {
+      return new JSONObject()
+          .put("versionNumber", versionNumber)
+          .put("status", status != null ? status.name() : null)
+          .put("exportable", exportable);
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -102,6 +108,17 @@ public class KeyVersion {
   }
 
   static KeyVersion read(String jsonString) {
-    return Util.gson().fromJson(jsonString, KeyVersion.class);
+    try {
+      return fromJson(new JSONObject(jsonString));
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  static KeyVersion fromJson(JSONObject json) throws JSONException {
+    return new KeyVersion(
+        json.getInt("versionNumber"),
+        Util.deserializeEnum(KeyStatus.class, json.optString("status")),
+        json.getBoolean("exportable"));
   }
 }
