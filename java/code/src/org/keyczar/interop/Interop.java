@@ -1,9 +1,7 @@
 package org.keyczar.interop;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.exceptions.KeyczarException;
 
 /**
@@ -17,11 +15,10 @@ public class Interop {
    */
   public static void main(String[] args) {
 
-    Gson gson = new Gson();
     switch (getCommandType(args[0])) {
       case GENERATE:
         // initializes generator from json and then prints output
-        Generator generator = gson.fromJson(args[0], Generator.class);
+        Generator generator = Generator.read(args[0]);
         try {
           String output = generator.generate();
           if (output != null) {
@@ -33,12 +30,12 @@ public class Interop {
         }
         break;
       case CREATE:
-        Creator creator = gson.fromJson(args[0], Creator.class);
+        Creator creator = Creator.read(args[0]);
         creator.create();
         break;
       case TEST:
         // initializes tester from json and then throws error if it fails
-        Tester tester = gson.fromJson(args[0], Tester.class);
+        Tester tester = Tester.read(args[0]);
         try {
           tester.test();
         } catch (KeyczarException e) {
@@ -58,8 +55,10 @@ public class Interop {
    * @return command enum
    */
   private static InteropCommand getCommandType(String jsonString) {
-    JsonParser parser = new JsonParser();
-    JsonObject object = parser.parse(jsonString).getAsJsonObject();
-    return InteropCommand.getCommand(object.get("command").getAsString());
+    try {
+      return InteropCommand.getCommand(new JSONObject(jsonString).getString("command"));
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

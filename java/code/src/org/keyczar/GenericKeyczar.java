@@ -1,7 +1,5 @@
 package org.keyczar;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.enums.KeyStatus;
 import org.keyczar.exceptions.KeyczarException;
@@ -26,7 +24,6 @@ import java.util.Set;
  *
  */
 class GenericKeyczar extends Keyczar {
-  private static final Logger LOG = LoggerFactory.getLogger(GenericKeyczar.class);
   GenericKeyczar(KeyczarReader reader) throws KeyczarException {
     super(reader);
   }
@@ -62,7 +59,6 @@ class GenericKeyczar extends Keyczar {
    */
   void promote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
-    LOG.debug(Messages.getString("Keyczar.PromotedVersion", version));
     switch (version.getStatus()) {
       case PRIMARY:
         throw new KeyczarException(
@@ -90,7 +86,6 @@ class GenericKeyczar extends Keyczar {
    */
   void demote(int versionNumber) throws KeyczarException {
     KeyVersion version = getVersion(versionNumber);
-    LOG.debug(Messages.getString("Keyczar.DemotingVersion", version));
     switch (version.getStatus()) {
       case PRIMARY:
         version.setStatus(KeyStatus.ACTIVE);
@@ -145,7 +140,6 @@ class GenericKeyczar extends Keyczar {
       primaryVersion = version;
     }
     addKey(version, key);
-    LOG.debug(Messages.getString("Keyczar.NewVersion", version));
   }
 
   private int maxVersion() {

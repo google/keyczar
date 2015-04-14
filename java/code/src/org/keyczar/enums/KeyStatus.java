@@ -38,20 +38,14 @@ package org.keyczar.enums;
  *  
  */
 public enum KeyStatus {
-  PRIMARY(0, "primary"), 
-  ACTIVE(1, "active"),
-  INACTIVE(2, "inactive");
+  PRIMARY("primary"),
+  ACTIVE("active"),
+  INACTIVE("inactive");
 
-  private int value;
   private String name;
 
-  private KeyStatus(int v, String s) {
-    value = v;
+  private KeyStatus(String s) {
     name = s;
-  }
-
-  int getValue() {
-    return value;
   }
   
   String getName() {

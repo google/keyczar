@@ -16,11 +16,10 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.annotations.Experimental;
 import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.util.Util;
 
 /**
  * Data used for session based encryption. This consists of 
@@ -35,36 +34,46 @@ import org.keyczar.util.Util;
  */
 @Experimental
 public class SessionMaterial {
-  @Expose private AesKey key = null;
-  @Expose private String nonce = ""; // encoded
-  
-  public SessionMaterial() {
-    // For GSON only.  Don't use.
-  }
-    
+  private AesKey key = null;
+  private String nonce = ""; // encoded
+
   public SessionMaterial(AesKey key, String nonce) {
     this.key = key;
     this.nonce = nonce;
   }
-  
+
   public AesKey getKey() throws KeyczarException {
     if (null == key) {
       throw new KeyczarException ("Key has not been initialized");
     }
-    
+
     return key;
   }
-  
+
   public String getNonce() {
     return nonce;
   }
-  
+
   @Override
   public String toString() {
-    return Util.gson().toJson(this);
+    try {
+      return new JSONObject()
+          .put("key", key != null ? key.toJson() : null)
+          .put("nonce", nonce)
+          .toString();
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
-  
+
   public static SessionMaterial read(String sessionString) {
-    return Util.gson().fromJson(sessionString, SessionMaterial.class);
+    try {
+      JSONObject json = new JSONObject(sessionString);
+      return new SessionMaterial(
+          AesKey.fromJson(json.getJSONObject("key")),
+          json.getString("nonce"));
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

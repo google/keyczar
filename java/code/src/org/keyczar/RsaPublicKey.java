@@ -16,9 +16,8 @@
 
 package org.keyczar;
 
-
-import com.google.gson.annotations.Expose;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
@@ -55,19 +54,44 @@ public class RsaPublicKey extends KeyczarPublicKey {
   private static final String SIG_ALGORITHM = "SHA1withRSA";
 
   private RSAPublicKey jcePublicKey;
-  @Expose final String modulus;
-  @Expose final String publicExponent;
-  @Expose final RsaPadding padding;
+  final String modulus;
+  final String publicExponent;
+  final RsaPadding padding;
 
   private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
 
   static RsaPublicKey read(String input) throws KeyczarException {
-    RsaPublicKey key = Util.gson().fromJson(input, RsaPublicKey.class);
+    try {
+      return fromJson(new JSONObject(input));
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  static RsaPublicKey fromJson(JSONObject json) throws KeyczarException, JSONException {
+    RsaPublicKey key = new RsaPublicKey(
+        json.getInt("size"),
+        json.getString("modulus"),
+        json.getString("publicExponent"),
+        Util.deserializeEnum(RsaPadding.class, json.optString("padding")));
 
     if (key.getType() != DefaultKeyType.RSA_PUB) {
       throw new UnsupportedTypeException(key.getType());
     }
     return key.initFromJson();
+  }
+
+  @Override
+  JSONObject toJson() {
+    try {
+      return new JSONObject()
+        .put("size", size)
+        .put("modulus", modulus)
+        .put("publicExponent", publicExponent)
+        .put("padding", padding != null ? padding.name() : null);
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -97,11 +121,11 @@ public class RsaPublicKey extends KeyczarPublicKey {
     initializeHash();
   }
 
-  // Used by GSON, which will overwrite the values set here.
-  private RsaPublicKey() {
-    super(0);
-    modulus = publicExponent = null;
-    padding = null;
+  private RsaPublicKey(int size, String modulus, String publicExponent, RsaPadding padding) {
+    super(size);
+    this.modulus = modulus;
+    this.publicExponent = publicExponent;
+    this.padding = padding;
   }
 
   private RsaPublicKey(BigInteger mod, BigInteger exp, RsaPadding padding) {

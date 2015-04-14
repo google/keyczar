@@ -1,10 +1,14 @@
 package org.keyczar.interop;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interop.operations.Operation;
+import org.keyczar.util.Util;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Class used for gson data to call generate commands
@@ -35,5 +39,19 @@ public class Generator {
     byte[] output = op.generate(algorithm, generateOptions);
     return op.formatOutput(output);
   }
-  
+
+  static Generator read(String jsonString) {
+    try {
+      JSONObject json = new JSONObject(jsonString);
+    return new Generator(
+        json.optString("command"),
+        json.optString("operation"),
+        json.optString("keyPath"),
+        json.optString("algorithm"),
+        Util.deserializeMap(json.optJSONObject("generateOptions")),
+        json.optString("testData"));
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

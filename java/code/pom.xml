@@ -243,26 +243,19 @@
 
     <!-- Dependencies required at runtime -->
     <dependency>
-    	<groupId>com.google.code.gson</groupId>
-    	<artifactId>gson</artifactId>
-    	<version>1.7.1</version>
-    	<type>jar</type>
-    	<scope>compile</scope>
-    </dependency>
-    <dependency>
-         <groupId>org.slf4j</groupId>
-         <artifactId>slf4j-api</artifactId>
-         <version>1.7.6</version>
-         <type>jar</type>
-         <scope>compile</scope>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20080701</version>
+        <type>jar</type>
+        <scope>compile</scope>
     </dependency>
 
     <!-- Dependencies required for testing -->
     <dependency>
-    	<groupId>junit</groupId>
-    	<artifactId>junit</artifactId>
-    	<version>4.8.2</version>
-    	<scope>test</scope>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.8.2</version>
+        <scope>test</scope>
     </dependency>
     <dependency>
 	<groupId>org.easymock</groupId>

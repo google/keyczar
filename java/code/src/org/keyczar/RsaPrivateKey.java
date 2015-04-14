@@ -19,8 +19,8 @@ package org.keyczar;
 import static org.keyczar.util.Util.decodeBigInteger;
 import static org.keyczar.util.Util.encodeBigInteger;
 
-import com.google.gson.annotations.Expose;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.interfaces.DecryptingStream;
@@ -54,13 +54,13 @@ import javax.crypto.ShortBufferException;
 public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   private static final String KEY_GEN_ALGORITHM = "RSA";
 
-  @Expose private final RsaPublicKey publicKey;
-  @Expose private final String privateExponent;
-  @Expose private final String primeP;
-  @Expose private final String primeQ;
-  @Expose private final String primeExponentP;
-  @Expose private final String primeExponentQ;
-  @Expose private final String crtCoefficient;
+  private final RsaPublicKey publicKey;
+  private final String privateExponent;
+  private final String primeP;
+  private final String primeQ;
+  private final String primeExponentP;
+  private final String primeExponentQ;
+  private final String crtCoefficient;
 
   private static final String SIG_ALGORITHM = "SHA1withRSA";
 
@@ -73,8 +73,21 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   }
 
   static RsaPrivateKey read(String input) throws KeyczarException {
-    RsaPrivateKey key = Util.gson().fromJson(input, RsaPrivateKey.class);
-    return key.initFromJson();
+    try {
+      JSONObject json = new JSONObject(input);
+      return new RsaPrivateKey(
+          json.getInt("size"),
+          RsaPublicKey.fromJson(json.getJSONObject("publicKey")),
+          json.getString("privateExponent"),
+          json.getString("primeP"),
+          json.getString("primeQ"),
+          json.getString("primeExponentP"),
+          json.getString("primeExponentQ"),
+          json.getString("crtCoefficient"))
+          .initFromJson();
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public RsaPrivateKey(RSAPrivateCrtKey privateKey, RsaPadding padding) throws KeyczarException {
@@ -89,16 +102,35 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
     jcePrivateKey = privateKey;
   }
 
-  private RsaPrivateKey() {
-    super(0);
-    publicKey = null;
-    privateExponent = null;
-    primeP = null;
-    primeQ = null;
-    primeExponentP = null;
-    primeExponentQ = null;
-    crtCoefficient = null;
+  private RsaPrivateKey(int size, RsaPublicKey publicKey, String privateExponent,
+      String primeP, String primeQ, String primeExponentP, String primeExponentQ,
+      String crtCoefficient) {
+    super(size);
+    this.publicKey = publicKey;
+    this.privateExponent = privateExponent;
+    this.primeP = primeP;
+    this.primeQ = primeQ;
+    this.primeExponentP = primeExponentP;
+    this.primeExponentQ = primeExponentQ;
+    this.crtCoefficient = crtCoefficient;
     jcePrivateKey = null;
+  }
+
+  @Override
+  JSONObject toJson() {
+    try {
+      return new JSONObject()
+        .put("size", size)
+        .put("publicKey", publicKey != null ? publicKey.toJson() : null)
+        .put("privateExponent", privateExponent)
+        .put("primeP", primeP)
+        .put("primeQ", primeQ)
+        .put("primeExponentP", primeExponentP)
+        .put("primeExponentQ", primeExponentQ)
+        .put("crtCoefficient", crtCoefficient);
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

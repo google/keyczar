@@ -49,7 +49,7 @@ public class MockKeyczarReader implements KeyczarReader {
 
   @Override
   public String getMetadata() {
-    return Util.gson().toJson(kmd);
+    return kmd.toString();
   }
 
   public void setMetadata(KeyMetadata newKmd) {
