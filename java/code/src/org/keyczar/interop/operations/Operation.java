@@ -16,8 +16,8 @@
 
 package org.keyczar.interop.operations;
 
-import com.google.gson.Gson;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.keyczar.Crypter;
 import org.keyczar.KeyczarEncryptedReader;
 import org.keyczar.KeyczarFileReader;
@@ -142,7 +142,7 @@ public abstract class Operation {
   }
 
   /**
-   * Object for gson formatting of output data
+   * Object for json formatting of output data
    */
   static class Output {
     public final String output;
@@ -155,17 +155,20 @@ public abstract class Operation {
   /**
    * Takes a byte array and returns a json formatted string with output
    * @param output
-   * @return
    */
   public String formatOutput(byte[] output){
-    Gson gson = new Gson();
-    return gson.toJson(new Output(output));
+    JSONObject json = new JSONObject();
+    try {
+      json.put("output", new Output(output).output);
+      return json.toString();
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
    * Undoes formatting of formatOutput (takes in json string returns bytes)
    * @param output
-   * @return
    * @throws Base64DecodingException
    */
   public byte[] readOutput(Map<String, String> output) throws Base64DecodingException{

@@ -16,8 +16,7 @@
 
 package org.keyczar;
 
-import com.google.gson.annotations.Expose;
-
+import org.json.JSONObject;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyType;
@@ -52,7 +51,7 @@ public abstract class KeyczarKey {
   private static final String PEM_LINE_ENDING = "-----\n";
   private static final String PEM_HEADER_BEGIN = "-----BEGIN ";
 
-  @Expose final int size;
+  final int size;
 
   private static final int PBE_SALT_SIZE = 8;
   private static final int IV_SIZE = 16;
@@ -122,8 +121,10 @@ public abstract class KeyczarKey {
 
   @Override
   public String toString() {
-    return Util.gson().toJson(this);
+    return toJson().toString();
   }
+
+  abstract JSONObject toJson();
 
   /**
    * Returns a PKCS8 PEM-format string containing the key information.

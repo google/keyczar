@@ -16,8 +16,6 @@
 
 package org.keyczar;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.NoPrimaryKeyException;
@@ -42,8 +40,6 @@ import java.nio.ByteBuffer;
  *
  */
 public class Encrypter extends Keyczar {
-  private static final Logger LOG =
-    LoggerFactory.getLogger(Encrypter.class);
   private static final int ENCRYPT_CHUNK_SIZE = 1024;
   private final StreamQueue<EncryptingStream> ENCRYPT_QUEUE =
     new StreamQueue<EncryptingStream>();
@@ -129,7 +125,6 @@ public class Encrypter extends Keyczar {
    */
   public void encrypt(ByteBuffer input, ByteBuffer output)
       throws KeyczarException {
-    LOG.debug(Messages.getString("Encrypter.Encrypting", input.remaining()));
     KeyczarKey encryptingKey = getPrimaryKey();
     if (encryptingKey == null) {
       throw new NoPrimaryKeyException() ;

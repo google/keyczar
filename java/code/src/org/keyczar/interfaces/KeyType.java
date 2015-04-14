@@ -16,20 +16,11 @@
 
 package org.keyczar.interfaces;
 
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
-
 import org.keyczar.DefaultKeyType;
 import org.keyczar.KeyczarKey;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.keyparams.KeyParameters;
 
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -95,20 +86,9 @@ public interface KeyType {
   public Builder getBuilder();
 
   /**
-   * Serializer based on the key type's value.
-   */
-  public static class KeyTypeSerializer implements JsonSerializer<KeyType> {
-    @Override
-    public JsonElement serialize(KeyType src,
-        Type type, JsonSerializationContext context) {
-      return new JsonPrimitive(src.getName());
-    }
-  }
-
-  /**
    * Trivial deserialization based on the key value.
    */
-  public static class KeyTypeDeserializer implements JsonDeserializer<KeyType> {
+  public static class KeyTypeDeserializer {
     private static Map<String, KeyType> typeMap =
         new HashMap<String, KeyType>();
 
@@ -138,10 +118,7 @@ public interface KeyType {
       typeMap.put(name, keyType);
     }
 
-    @Override
-    public KeyType deserialize(JsonElement json, Type type,
-        JsonDeserializationContext context) throws JsonParseException {
-      String keyName = json.getAsJsonPrimitive().getAsString();
+    public KeyType deserialize(String keyName) {
       if (!typeMap.containsKey(keyName)) {
         throw new IllegalArgumentException("Cannot deserialize "
             + keyName + " no such key has been registered.");

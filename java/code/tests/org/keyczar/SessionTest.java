@@ -18,8 +18,6 @@ package org.keyczar;
 
 import junit.framework.TestCase;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.junit.Test;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.util.Base64Coder;
@@ -36,7 +34,6 @@ import java.util.Arrays;
  */
 @SuppressWarnings("deprecation")
 public class SessionTest extends TestCase {
-  private static final Logger LOG = LoggerFactory.getLogger(SessionTest.class);
   private static final String TEST_DATA = "./testdata";
   private String input = "This is some test data";
   // Bigger than a public key block
@@ -59,10 +56,8 @@ public class SessionTest extends TestCase {
   public final void testEncryptAndDecrypt() throws KeyczarException {
     byte[] sessionMaterial = sessionEncrypter.getSessionMaterial();
     String sessionMaterialString = Base64Coder.encodeWebSafe(sessionMaterial);
-    LOG.debug(String.format("Encoded session material: %s", sessionMaterialString));
     byte[] ciphertext = sessionEncrypter.encrypt(input.getBytes());
     String ciphertextString = Base64Coder.encodeWebSafe(ciphertext);
-    LOG.debug(String.format("Encoded ciphertext: %s", ciphertextString));
     sessionDecrypter = new SessionDecrypter(privateKeyDecrypter, sessionMaterial);
     byte[] plaintext = sessionDecrypter.decrypt(ciphertext);
     String decrypted = new String(plaintext);
@@ -119,7 +114,6 @@ public class SessionTest extends TestCase {
   public final void testCrypterDecryptsOwnCiphertext() throws KeyczarException {
     byte[] ciphertext = sessionCrypter.encrypt(input.getBytes());
     String ciphertextString = Base64Coder.encodeWebSafe(ciphertext);
-    LOG.debug(String.format("Encoded ciphertext: %s", ciphertextString));
 
     byte[] plaintext = sessionCrypter.decrypt(ciphertext);
     String decrypted = new String(plaintext);
