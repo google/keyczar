@@ -82,7 +82,6 @@ if CheckHasWorkingSwig(conf):
 conf.CheckCXX()
 
 # Mandatory libraries
-# fixme: is pthread mandatory for unittests ?
 for lib in ('crypto','pthread'):
     # FIXME: currently these checks are not enforced some may not work
     # reliably on every supported architectures.
