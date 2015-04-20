@@ -5,7 +5,7 @@
 #include <keyczar/base/basictypes.h>
 #include <keyczar/base/scoped_ptr.h>
 
-#include <testing/gtest/include/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 namespace {
 

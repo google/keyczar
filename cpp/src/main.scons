@@ -19,7 +19,7 @@ base_env.Append(
     CPPPATH = ['$MAIN_DIR'],
 
     # The list of components common to all platforms.
-    BUILD_SCONSCRIPTS = ['testing', 'keyczar'],
+    BUILD_SCONSCRIPTS = ['keyczar'],
 
     # Sets architecture byte order
     CPPDEFINES = [
@@ -82,8 +82,7 @@ if CheckHasWorkingSwig(conf):
 conf.CheckCXX()
 
 # Mandatory libraries
-# fixme: is pthread mandatory for unittests ?
-for lib in ('crypto',):
+for lib in ('crypto','pthread'):
     # FIXME: currently these checks are not enforced some may not work
     # reliably on every supported architectures.
     conf.CheckLib(lib)

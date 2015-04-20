@@ -14,7 +14,6 @@ if env.get('ZLIB_OPTION'):
             ],
         )
 
-
 #### Keyczar Library
 
 keyczar_lib_env = env.Clone()
@@ -253,6 +252,8 @@ if env.Bit('mac'):
 
 lib_unittests_env.Append(
     CPPPATH = [
+        ARGUMENTS['GTEST_DIR'],
+        ARGUMENTS['GTEST_DIR'] + '/include',
         ],
     LIBS = [
         lib_name,
@@ -262,6 +263,8 @@ lib_unittests_env.Append(
 unittests_sources = [
     'base_test/base_paths.cc',
     'base_test/path_service.cc',
+    'run_all_unittests.cc',
+    ARGUMENTS['GTEST_DIR'] + '/src/gtest-all.cc',
     ]
 
 unittests_posix_sources = [
@@ -277,6 +280,7 @@ unittests_bsd_sources = [
 
 unittests_mac_sources = [
     'base_test/base_paths_mac.mm',
+    'platform_test_mac.mm',
     ]
 
 unittests_win_sources = [
@@ -309,13 +313,11 @@ unittests_env = env.Clone()
 
 unittests_env.Append(
     CPPPATH = [
-        '../testing/gtest',
-        '../testing/gtest/include',
+        ARGUMENTS['GTEST_DIR'] + '/include',
         ],
     LIBS = [
         lib_name,
         unittest_lib_name,
-        'gtest',
         'crypto',
         ],
     )
@@ -329,7 +331,6 @@ base_unittests = [
     'base/json_value_serializer_unittest.cc',
     'base/json_writer_unittest.cc',
     'base/ref_counted_unittest.cc',
-    'base/run_all_unittests.cc',
     'base/scoped_ptr_unittest.cc',
     'base/string_escape_unittest.cc',
     'base/values_unittest.cc',
@@ -376,7 +377,6 @@ keyczar_unittests = [
     'keyset_metadata_unittest.cc',
     'keyset_unittest.cc',
     'rsa_key_unittest.cc',
-    'run_all_unittests.cc',
     'session_unittest.cc',
     ]
 

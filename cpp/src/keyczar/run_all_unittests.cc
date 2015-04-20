@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <testing/gtest/include/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 #include <keyczar/crypto_factory.h>
 
