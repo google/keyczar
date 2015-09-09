@@ -178,9 +178,18 @@ public class AesKey extends KeyczarKey {
       IvParameterSpec zeroIv = new IvParameterSpec(new byte[BLOCK_SIZE]);
       try {
         encryptingCipher = Cipher.getInstance(mode.getMode());
-        encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey, zeroIv);
+        if (mode.usesIv){
+          encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey, zeroIv);
+        } else {
+          encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey);
+        }
+
         decryptingCipher = Cipher.getInstance(mode.getMode());
-        decryptingCipher.init(Cipher.DECRYPT_MODE, aesKey, zeroIv);
+        if (mode.usesIv) {
+          decryptingCipher.init(Cipher.DECRYPT_MODE, aesKey, zeroIv);
+        } else {
+          decryptingCipher.init(Cipher.DECRYPT_MODE, aesKey);
+        }
         signStream = (SigningStream) hmacKey.getStream();
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
