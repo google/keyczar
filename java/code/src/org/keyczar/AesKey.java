@@ -166,6 +166,7 @@ public class AesKey extends KeyczarKey {
     private final Cipher encryptingCipher;
     private final Cipher decryptingCipher;
     private final SigningStream signStream;
+    boolean usesIv = true;
     boolean ivRead = false;
 
     public AesStream() throws KeyczarException  {
@@ -175,21 +176,20 @@ public class AesKey extends KeyczarKey {
        * Then passing IVs for CBC mode ourselves. The Ciphers will be cached in
        * this stream
        */
-      IvParameterSpec zeroIv = new IvParameterSpec(new byte[BLOCK_SIZE]);
       try {
+        usesIv = mode.usesIv;
         encryptingCipher = Cipher.getInstance(mode.getMode());
-        if (mode.usesIv){
-          encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey, zeroIv);
-        } else {
-          encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey);
-        }
-
         decryptingCipher = Cipher.getInstance(mode.getMode());
-        if (mode.usesIv) {
+
+        if (usesIv){
+          IvParameterSpec zeroIv = new IvParameterSpec(new byte[BLOCK_SIZE]);
+          encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey, zeroIv);
           decryptingCipher.init(Cipher.DECRYPT_MODE, aesKey, zeroIv);
         } else {
+          encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey);
           decryptingCipher.init(Cipher.DECRYPT_MODE, aesKey);
         }
+
         signStream = (SigningStream) hmacKey.getStream();
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
@@ -210,16 +210,18 @@ public class AesKey extends KeyczarKey {
     public void initDecrypt(ByteBuffer input) {
       // This will simply decrypt the first block, leaving the CBC Cipher
       // ready for the next block of input.
-      byte[] iv = new byte[BLOCK_SIZE];
-      input.get(iv);
-      decryptingCipher.update(iv);
+      if (usesIv) {
+        byte[] iv = new byte[usesIv ? BLOCK_SIZE : 0];
+        input.get(iv);
+        decryptingCipher.update(iv);
+      }
       ivRead = true;
     }
 
     @Override
     public int initEncrypt(ByteBuffer output) throws KeyczarException {
       // Generate a random value and encrypt it. This will be the IV.
-      byte[] ivPreImage = new byte[BLOCK_SIZE];
+      byte[] ivPreImage = new byte[usesIv ? BLOCK_SIZE : 0];
       Util.rand(ivPreImage);
       try {
         return encryptingCipher.update(ByteBuffer.wrap(ivPreImage), output);

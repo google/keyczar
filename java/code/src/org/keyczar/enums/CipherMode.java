@@ -29,7 +29,7 @@ package org.keyczar.enums;
 public enum CipherMode {
   CBC("AES/CBC/PKCS5Padding", true),
   CTR("AES/CTR/NoPadding", true),
-  ECB("AES/ECB/NoPadding", false),
+  ECB("AES/ECB/PKCS5Padding", false),
   DET_CBC("AES/CBC/PKCS5Padding",false);
 
   private String jceMode;
