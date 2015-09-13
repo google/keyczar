@@ -55,8 +55,8 @@ String ciphertext = crypter.encrypt("Secret message");
 Similarly a Python developer would call the following:
 
 ```python
-crypter = Crypter.Read("/path/to/your/keys");
-ciphertext = crypter.Encrypt("Secret message");
+crypter = Crypter.Read("/path/to/your/keys")
+ciphertext = crypter.Encrypt("Secret message")
 ```
 
 Get involved
