@@ -19,6 +19,7 @@ package org.keyczar;
 import static org.keyczar.util.Util.rand;
 
 import org.keyczar.annotations.Experimental;
+import org.keyczar.enums.CipherMode;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.keyparams.AesKeyParameters;
 import org.keyczar.util.Base64Coder;
@@ -88,6 +89,11 @@ public class SignedSessionEncrypter {
       @Override
       public HmacKey getHmacKey() throws KeyczarException {
         return HmacKey.generate(DefaultKeyType.HMAC_SHA1.applyDefaultParameters(null));
+      }
+
+      @Override
+      public CipherMode getAESMode() throws KeyczarException {
+        return CipherMode.CBC;
       }
     };
     SessionMaterial sessionMaterial = new SessionMaterial(buildSessionKey(params), buildNonce());

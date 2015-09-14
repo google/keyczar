@@ -121,6 +121,7 @@ public class KeyczarTool {
         final String passphraseFlag = flagMap.get(Flag.PASSPHRASE);
         final String pemFileFlag = flagMap.get(Flag.PEMFILE);
         final String versionFlag = flagMap.get(Flag.VERSION);
+        final String modeFlag = flagMap.get(Flag.MODE);
 
         switch (Command.getCommand(nonFlagArgs.get(0))) {
           case CREATE:
