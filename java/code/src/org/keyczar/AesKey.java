@@ -219,11 +219,10 @@ public class AesKey extends KeyczarKey {
     public void initDecrypt(ByteBuffer input) {
       // This will simply decrypt the first block, leaving the CBC Cipher
       // ready for the next block of input.
-      if (usesIv) {
-        byte[] iv = new byte[BLOCK_SIZE];
-        input.get(iv);
-        decryptingCipher.update(iv);
-      }
+
+      byte[] iv = new byte[usesIv ? BLOCK_SIZE : 0];
+      input.get(iv);
+      decryptingCipher.update(iv);
       ivRead = true;
     }
 
@@ -242,7 +241,7 @@ public class AesKey extends KeyczarKey {
     @Override
     public int updateDecrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
-      if (ivRead && input.remaining() >= BLOCK_SIZE) {
+      if (usesIv && ivRead && input.remaining() >= BLOCK_SIZE) {
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[BLOCK_SIZE];
         input.get(temp);
