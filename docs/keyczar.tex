@@ -507,7 +507,7 @@ preceding fields (for symmetric keys only):
 \vspace*{3mm}
 \begin{tabular}{| c | c | c | c |}
 \hline
-Header & IV (if any) & Encrypt(M) & Sign(header $|$ IV $|$ M) (if any) \\ \hline
+Header & IV (if any) & Encrypt(M) & Sign(header $|$ IV $|$ Encrypt(M)) (if any) \\ \hline
 5 bytes & Algorithm-dependent & Algorithm-dependent & Algorithm-dependent \\
 \hline
 \end{tabular}
@@ -519,7 +519,7 @@ mode would produce the following output:
 \vspace*{3mm}
 \begin{tabular}{| c | c | c | c |}
 \hline
-Header & IV & AES-CBC(M) & HMAC-SHA1(header $|$ IV $|$ M) \\ \hline
+Header & IV & AES-CBC(M) & HMAC-SHA1(header $|$ IV $|$ AES-CBC(M)) \\ \hline
 5 bytes & 16 bytes & Algorithm-dependent & 20 bytes \\
 \hline
 \end{tabular}
