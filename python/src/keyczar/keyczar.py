@@ -291,7 +291,7 @@ class GenericKeyczar(Keyczar):
     if isinstance(writer, basestring):
       writer = writers.CreateWriter(writer)
       warnings.warn(
-        'Using a string as the writer is deprecated. Use writers.CreateWriter', 
+        'Using a string as the writer is deprecated. Use writers.CreateWriter',
         DeprecationWarning)
     self.metadata.encrypted = (encrypter is not None)
     writer.WriteMetadata(self.metadata)
@@ -352,7 +352,7 @@ class Encrypter(Keyczar):
     @type output_stream: 'file-like' object
 
     @param encoder: the encoding stream to use on the ciphertext stream.
-    Defaults to base64 encoding with no padding or line breaks. 
+    Defaults to base64 encoding with no padding or line breaks.
     Use None for raw bytes.
     @type encoder: 'file-like' object
 
@@ -547,7 +547,7 @@ class Crypter(Encrypter):
     @type output_stream: 'file-like' object
 
     @param decoder: the decoding stream to use on the incoming stream.
-    Defaults to base64 decoding with no padding or line breaks. 
+    Defaults to base64 decoding with no padding or line breaks.
     Use None for handling raw bytes.
     @type decoder: 'file-like' object
 
@@ -729,12 +729,14 @@ class _Session(object):
     return session
 
   @property
-  @util.Memoize
   def crypter(self):
     """
     Returns a Crypter which can be used to encrypt and decrypt data using the session key.
     """
-    return Crypter(readers.StaticKeyReader(self.__session_key, keyinfo.DECRYPT_AND_ENCRYPT))
+    if not hasattr(self, '_crypter'):
+        self._crypter = Crypter(readers.StaticKeyReader(
+            self.__session_key, keyinfo.DECRYPT_AND_ENCRYPT))
+    return self._crypter
 
   @property
   def nonce(self):
