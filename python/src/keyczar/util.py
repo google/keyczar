@@ -579,7 +579,7 @@ class IncrementalBase64WSStreamWriter(codecs.StreamWriter, object):
 
   """
   def __init__(self, stream, errors='strict'):
-    """ 
+    """
     Creates an IncrementalBase64WSStreamWriter instance.
 
     @param stream: a file-like object open for writing (binary) data.
@@ -706,7 +706,7 @@ class IncrementalBase64WSStreamReader(codecs.StreamReader, object):
   """
 
   def __init__(self, stream, errors='strict'):
-    """ 
+    """
     Creates an IncrementalBase64WSStreamReader instance.
 
     @param stream: a file-like object open for reading (binary) data.
@@ -730,7 +730,7 @@ class IncrementalBase64WSStreamReader(codecs.StreamReader, object):
     self.decoder = BufferedIncrementalBase64WSDecoder(errors=errors)
 
   def read(self, size=-1, chars=-1, firstline=False):
-    """ 
+    """
     Decodes data from the input stream and returns the resulting object.
 
     @param chars: the number of characters to read from the stream. read() will
@@ -756,7 +756,7 @@ class IncrementalBase64WSStreamReader(codecs.StreamReader, object):
     end of the input data has been reached.
     @rtype: string
     """
-    
+
     # NOTE: this is a copy of the code from Python v2.7 codecs.py tweaked to
     # handle non-blocking streams i.e. those that return None to indicate no
     # data is available but is not at EOF - see read() in the Python I/O module
@@ -845,27 +845,6 @@ class IncrementalBase64WSStreamReader(codecs.StreamReader, object):
     """
     return self.decoder.decode(input)
 
-
-def Memoize(func):
-  """
-  General-purpose memoization decorator.  Handles functions with any number of arguments,
-  including keyword arguments.
-  """
-  memory = {}
-
-  @functools.wraps(func)
-  def memo(*args,**kwargs):
-    pickled_args = cPickle.dumps((args, sorted(kwargs.iteritems())))
-
-    if pickled_args not in memory:
-      memory[pickled_args] = func(*args,**kwargs)
-
-    return memory[pickled_args]
-
-  if memo.__doc__:
-    memo.__doc__ = "\n".join([memo.__doc__,"This function is memoized."])
-  return memo
-
 def ImportAll(pluginpath):
   """
   Simple plugin importer - imports from the specified subdirectory under the
@@ -883,7 +862,7 @@ def ImportAll(pluginpath):
 
 def ImportBackends():
   """
-  Simple backend plugin importer - imports from the 'backends' subdirectory 
+  Simple backend plugin importer - imports from the 'backends' subdirectory
   under the util.py directory and any directories in the environment variable
   'KEYCZAR_BACKEND_PATHS', which can contain >=1 paths joined using the o/s
   """
@@ -893,4 +872,3 @@ def ImportBackends():
   if xtra_paths:
     for path in xtra_paths.split(os.pathsep):
       ImportAll(path)
-
