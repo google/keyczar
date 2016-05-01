@@ -1,10 +1,20 @@
-Metadata-Version: 1.0
+Metadata-Version: 1.1
 Name: python-keyczar
-Version: 0.7b
+Version: 0.71h
 Summary: Toolkit for safe and simple cryptography
 Home-page: http://www.keyczar.org/
-Author: Arkajit Dey
-Author-email: arkajit.dey@gmail.com
-License: UNKNOWN
+Author: Google, Inc.
+Author-email: keyczar-discuss@googlegroups.com
+License: http://www.apache.org/licenses/LICENSE-2.0
 Description: UNKNOWN
-Platform: UNKNOWN
+Platform: any
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python
+Classifier: Topic :: Security
+Classifier: Topic :: Security :: Cryptography
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: Unix
