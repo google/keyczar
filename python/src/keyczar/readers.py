@@ -113,6 +113,8 @@ class FileReader(Reader):
   @classmethod
   def CreateReader(cls, location):
     result = None
+    location = str(location) # This fixes the case in case the location is
+                             # an instance of Path (from django-environ)
     if os.path.exists(location):
       result = FileReader(location)
     return result
