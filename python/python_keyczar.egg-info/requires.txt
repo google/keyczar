@@ -1,1 +1,2 @@
-pycrypto >= 1.9
+pycrypto>2.0
+pyasn1
