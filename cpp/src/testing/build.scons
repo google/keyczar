@@ -17,12 +17,6 @@ if env.Bit('mac'):
         )
 
 gtest_sources = [
-    'gtest/src/gtest-test-part.cc',
-    'gtest/src/gtest-death-test.cc',
-    'gtest/src/gtest-filepath.cc',
-    'gtest/src/gtest-port.cc',
-    'gtest/src/gtest.cc',
-    'gtest/src/gtest_main.cc',
     ]
 
 testing_mac = [
