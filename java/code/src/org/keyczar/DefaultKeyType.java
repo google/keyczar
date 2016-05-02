@@ -16,6 +16,7 @@
 
 package org.keyczar;
 
+import org.keyczar.enums.CipherMode;
 import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.UnsupportedTypeException;
@@ -174,6 +175,16 @@ public enum DefaultKeyType implements KeyType {
     public HmacKey getHmacKey() throws KeyczarException {
       return HmacKey.generate(HMAC_SHA1.applyDefaultParameters(null));
     }
+
+    @Override
+    public CipherMode getAESMode() throws KeyczarException {
+      if (baseParameters instanceof AesKeyParameters){
+        return ((AesKeyParameters) baseParameters).getAESMode();
+      }
+      return CipherMode.CBC;
+    }
+
+
   }
 
   private final class DefaultingRsaKeyParameters extends DefaultingKeyParameters

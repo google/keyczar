@@ -16,6 +16,7 @@
 
 package org.keyczar;
 
+import org.keyczar.enums.CipherMode;
 import org.keyczar.enums.Flag;
 import org.keyczar.enums.RsaPadding;
 import org.keyczar.exceptions.KeyczarException;
@@ -71,4 +72,19 @@ public class KeyczarToolKeyParameters implements AesKeyParameters, RsaKeyParamet
   public HmacKey getHmacKey() throws KeyczarException {
     return HmacKey.generate(DefaultKeyType.HMAC_SHA1.applyDefaultParameters(null));
   }
+
+  @Override
+  public CipherMode getAESMode() throws KeyczarException {
+
+    if (flagMap.containsKey(Flag.MODE)) {
+      try {
+        return CipherMode.valueOf(flagMap.get(Flag.MODE).toUpperCase());
+      } catch (IllegalArgumentException e) {
+        throw new KeyczarException(Messages.getString("InvalidMode", flagMap.get(Flag.MODE)));
+      }
+    } else {
+      return CipherMode.CBC;
+    }
+  }
+
 }

@@ -152,7 +152,7 @@ public class KeyMetadata {
     this.encrypted = encrypted;
   }
 
-  boolean isEncrypted() {
+  public boolean isEncrypted() {
     return encrypted;
   }
 
@@ -166,7 +166,7 @@ public class KeyMetadata {
     return versionMap.get(versionNumber);
   }
 
-  List<KeyVersion> getVersions() {
+  public List<KeyVersion> getVersions() {
     return versions;
   }
 

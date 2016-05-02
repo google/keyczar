@@ -17,6 +17,7 @@
 package org.keyczar.keyparams;
 
 import org.keyczar.HmacKey;
+import org.keyczar.enums.CipherMode;
 import org.keyczar.exceptions.KeyczarException;
 
 /**
@@ -31,4 +32,7 @@ public interface AesKeyParameters extends KeyParameters {
    * @throws KeyczarException
    */
   HmacKey getHmacKey() throws KeyczarException;
+
+  CipherMode getAESMode() throws KeyczarException;
+
 }

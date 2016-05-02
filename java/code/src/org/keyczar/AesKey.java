@@ -73,6 +73,14 @@ public class AesKey extends KeyczarKey {
     initJceKey(aesKeyBytes);
   }
 
+  public AesKey(byte[] aesKeyBytes, HmacKey hmacKey, CipherMode mode) throws KeyczarException {
+    super(aesKeyBytes.length * 8);
+    this.aesKeyString = Base64Coder.encodeWebSafe(aesKeyBytes);
+    this.mode = mode;
+    this.hmacKey = hmacKey;
+    initJceKey(aesKeyBytes);
+  }
+
   private AesKey(int size, String aesKeyString, HmacKey hmacKey, CipherMode mode) {
     super(size);
     this.aesKeyString = aesKeyString;
@@ -81,7 +89,7 @@ public class AesKey extends KeyczarKey {
   }
 
   static AesKey generate(AesKeyParameters params) throws KeyczarException {
-    return new AesKey(Util.rand(params.getKeySize() / 8), params.getHmacKey());
+    return new AesKey(Util.rand(params.getKeySize() / 8), params.getHmacKey(), params.getAESMode());
   }
 
   /*
@@ -166,6 +174,7 @@ public class AesKey extends KeyczarKey {
     private final Cipher encryptingCipher;
     private final Cipher decryptingCipher;
     private final SigningStream signStream;
+    final boolean usesIv;
     boolean ivRead = false;
 
     public AesStream() throws KeyczarException  {
@@ -175,12 +184,21 @@ public class AesKey extends KeyczarKey {
        * Then passing IVs for CBC mode ourselves. The Ciphers will be cached in
        * this stream
        */
-      IvParameterSpec zeroIv = new IvParameterSpec(new byte[BLOCK_SIZE]);
+      usesIv = mode.usesIv;
       try {
+
         encryptingCipher = Cipher.getInstance(mode.getMode());
-        encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey, zeroIv);
         decryptingCipher = Cipher.getInstance(mode.getMode());
-        decryptingCipher.init(Cipher.DECRYPT_MODE, aesKey, zeroIv);
+
+        if (usesIv){
+          IvParameterSpec zeroIv = new IvParameterSpec(new byte[BLOCK_SIZE]);
+          encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey, zeroIv);
+          decryptingCipher.init(Cipher.DECRYPT_MODE, aesKey, zeroIv);
+        } else {
+          encryptingCipher.init(Cipher.ENCRYPT_MODE, aesKey);
+          decryptingCipher.init(Cipher.DECRYPT_MODE, aesKey);
+        }
+
         signStream = (SigningStream) hmacKey.getStream();
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
@@ -201,7 +219,8 @@ public class AesKey extends KeyczarKey {
     public void initDecrypt(ByteBuffer input) {
       // This will simply decrypt the first block, leaving the CBC Cipher
       // ready for the next block of input.
-      byte[] iv = new byte[BLOCK_SIZE];
+
+      byte[] iv = new byte[usesIv ? BLOCK_SIZE : 0];
       input.get(iv);
       decryptingCipher.update(iv);
       ivRead = true;
@@ -210,7 +229,7 @@ public class AesKey extends KeyczarKey {
     @Override
     public int initEncrypt(ByteBuffer output) throws KeyczarException {
       // Generate a random value and encrypt it. This will be the IV.
-      byte[] ivPreImage = new byte[BLOCK_SIZE];
+      byte[] ivPreImage = new byte[usesIv ? BLOCK_SIZE : 0];
       Util.rand(ivPreImage);
       try {
         return encryptingCipher.update(ByteBuffer.wrap(ivPreImage), output);
@@ -222,7 +241,7 @@ public class AesKey extends KeyczarKey {
     @Override
     public int updateDecrypt(ByteBuffer input, ByteBuffer output)
         throws KeyczarException {
-      if (ivRead && input.remaining() >= BLOCK_SIZE) {
+      if (usesIv && ivRead && input.remaining() >= BLOCK_SIZE) {
         // The next output block will be the IV preimage, which we'll discard
         byte[] temp = new byte[BLOCK_SIZE];
         input.get(temp);

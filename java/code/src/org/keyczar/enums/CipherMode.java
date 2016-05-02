@@ -27,15 +27,17 @@ package org.keyczar.enums;
  *
  */
 public enum CipherMode {
-  CBC("AES/CBC/PKCS5Padding"),
-  CTR("AES/CTR/NoPadding"),
-  ECB("AES/ECB/NoPadding"),
-  DET_CBC("AES/CBC/PKCS5Padding");
+  CBC("AES/CBC/PKCS5Padding", true),
+  CTR("AES/CTR/NoPadding", true),
+  ECB("AES/ECB/PKCS5Padding", false),
+  DET_CBC("AES/CBC/PKCS5Padding",false);
 
   private String jceMode;
+  public final boolean usesIv;
 
-  private CipherMode(String s) {
+  private CipherMode(String s, final boolean usesIv) {
     jceMode = s;
+    this.usesIv = usesIv;
   }
 
   public String getMode() {
