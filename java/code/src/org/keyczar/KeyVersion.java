@@ -42,11 +42,11 @@ import org.keyczar.util.Util;
  *
  */
 public class KeyVersion {
-  private boolean exportable = false;
-  private KeyStatus status = KeyStatus.ACTIVE;
-  private int versionNumber = 0;
+  @Expose private boolean exportable = false;
+  @Expose private KeyStatus status = KeyStatus.ACTIVE;
+  @Expose private int versionNumber = 0;
 
-  KeyVersion(int v, boolean export) {
+  public KeyVersion(int v, boolean export) {
     this(v, KeyStatus.ACTIVE, export);
   }
 
@@ -87,7 +87,7 @@ public class KeyVersion {
     return versionNumber; // identity depends only on version number
   }
 
-  KeyStatus getStatus() {
+  public KeyStatus getStatus() {
     return status;
   }
 
@@ -95,7 +95,7 @@ public class KeyVersion {
     return versionNumber;
   }
 
-  boolean isExportable() {
+  public boolean isExportable() {
     return exportable;
   }
 
@@ -103,11 +103,11 @@ public class KeyVersion {
    * Updates the status of this KeyVersion to given status if not null.
    * @param status
    */
-  void setStatus(KeyStatus status) {
+  public void setStatus(KeyStatus status) {
     this.status = (status == null) ? this.status : status;
   }
 
-  static KeyVersion read(String jsonString) {
+  public static KeyVersion read(String jsonString) {
     try {
       return fromJson(new JSONObject(jsonString));
     } catch (JSONException e) {

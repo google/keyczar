@@ -52,11 +52,11 @@ import java.util.Map;
  *
  */
 public class KeyMetadata {
-  String name = "";
-  KeyPurpose purpose = KeyPurpose.TEST;
-  KeyType type = DefaultKeyType.TEST;
-  List<KeyVersion> versions = new ArrayList<KeyVersion>();
-  boolean encrypted = false;
+  @Expose String name = "";
+  @Expose KeyPurpose purpose = KeyPurpose.TEST;
+  @Expose KeyType type = DefaultKeyType.TEST;
+  @Expose List<KeyVersion> versions = new ArrayList<KeyVersion>();
+  @Expose boolean encrypted = false;
 
   protected Map<Integer, KeyVersion> versionMap =
       new HashMap<Integer, KeyVersion>(); // link version number to version
@@ -122,7 +122,7 @@ public class KeyMetadata {
    * @param versionNumber integer version number of key to be removed
    * @return true if remove was successful
    */
-  boolean removeVersion(int versionNumber) {
+  public boolean removeVersion(int versionNumber) {
     if (versionMap.containsKey(versionNumber)) {
       KeyVersion version = versionMap.get(versionNumber);
       versions.remove(version);
@@ -132,15 +132,15 @@ public class KeyMetadata {
     return false;
   }
 
-  String getName() {
+  public String getName() {
     return name;
   }
 
-  KeyPurpose getPurpose() {
+  public KeyPurpose getPurpose() {
     return purpose;
   }
 
-  KeyType getType() {
+  public KeyType getType() {
     return type;
   }
 
@@ -152,7 +152,7 @@ public class KeyMetadata {
     this.encrypted = encrypted;
   }
 
-  boolean isEncrypted() {
+  public boolean isEncrypted() {
     return encrypted;
   }
 
@@ -162,11 +162,11 @@ public class KeyMetadata {
    * @param versionNumber
    * @return KeyVersion corresponding to given number, or null if nonexistent
    */
-  KeyVersion getVersion(int versionNumber) {
+  public KeyVersion getVersion(int versionNumber) {
     return versionMap.get(versionNumber);
   }
 
-  List<KeyVersion> getVersions() {
+  public List<KeyVersion> getVersions() {
     return versions;
   }
 
