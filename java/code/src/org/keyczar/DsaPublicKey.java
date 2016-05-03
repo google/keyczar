@@ -134,10 +134,11 @@ public class DsaPublicKey extends KeyczarPublicKey {
 
   @Override
   protected Stream getStream() throws KeyczarException {
-    if (cachedStream == null) {
-      cachedStream = new DsaVerifyingStream();
-    }
-    return cachedStream;
+    Stream cachedStream = cachedStreams.poll();
+    if (cachedStream != null) {
+      return cachedStream;
+    } 
+    return new DsaVerifyingStream();
   }
 
   @Override

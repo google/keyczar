@@ -84,7 +84,10 @@ public class UnversionedSigner extends UnversionedVerifier {
     if (signingKey == null) {
       throw new NoPrimaryKeyException();
     }
-    return ((SigningStream) signingKey.getStream()).digestSize();
+    SigningStream stream = (SigningStream) signingKey.getStream();
+    int result = stream.digestSize();
+    signingKey.addStreamToCacheForReuse(stream);
+    return result;
   }
 
   /**
@@ -132,6 +135,8 @@ public class UnversionedSigner extends UnversionedVerifier {
     // Write the signature to the output
     stream.sign(output);
     output.limit(output.position());
+    signingKey.addStreamToCacheForReuse(stream);
+
   }
 
   /**

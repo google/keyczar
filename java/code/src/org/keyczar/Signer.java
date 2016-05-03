@@ -79,7 +79,10 @@ public class Signer extends Verifier {
     if (signingKey == null) {
       throw new NoPrimaryKeyException();
     }
-    return HEADER_SIZE + ((SigningStream) signingKey.getStream()).digestSize();
+    SigningStream stream = (SigningStream) signingKey.getStream();
+    int result = HEADER_SIZE + stream.digestSize();
+    signingKey.addStreamToCacheForReuse(stream);
+    return result;
   }
 
   /**
@@ -111,7 +114,7 @@ public class Signer extends Verifier {
     sign(input, null, 0, output);
   }
 
-  /**
+  /**g
    * This allows other classes in the package to pass in hidden data and/or
    * expiration data to be signed.
    *
@@ -168,6 +171,9 @@ public class Signer extends Verifier {
     // Write the signature to the output
     stream.sign(output);
     output.limit(output.position());
+    
+    signingKey.addStreamToCacheForReuse(stream);
+
   }
 
   /**
@@ -225,7 +231,7 @@ public class Signer extends Verifier {
     // [Format number | 4 bytes of key hash | blob size | blob | raw signature]
     byte[] signature =
         Util.cat(FORMAT_BYTES, signingKey.hash(), Util.lenPrefix(blob), output.array());
-
+    signingKey.addStreamToCacheForReuse(stream);
     return signature;
   }
 

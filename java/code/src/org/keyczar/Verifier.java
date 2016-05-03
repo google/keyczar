@@ -183,6 +183,7 @@ public class Verifier extends Keyczar {
       stream.updateVerify(ByteBuffer.wrap(FORMAT_BYTES));
 
       boolean result = stream.verify(signature);
+      key.addStreamToCacheForReuse(stream);
       return result;
   }
 

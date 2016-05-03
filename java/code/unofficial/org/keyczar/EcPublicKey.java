@@ -80,6 +80,10 @@ public class EcPublicKey extends KeyczarPublicKey {
   
   @Override
   protected Stream getStream() throws KeyczarException {
+    Stream cachedStream = cachedStreams.poll();
+    if (cachedStream != null) {
+      return cachedStream;
+    } 
     return new EcVerifyingStream();
   }
 

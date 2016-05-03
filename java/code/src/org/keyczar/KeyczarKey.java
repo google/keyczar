@@ -87,10 +87,13 @@ public abstract class KeyczarKey {
     return Util.toInt(this.hash());
   }
   
-  protected Stream cachedStream = null;
+  protected StreamQueue<Stream> cachedStreams = new StreamQueue<Stream>();
 
   protected abstract Stream getStream() throws KeyczarException;
 
+  protected void addStreamToCacheForReuse(Stream stream){
+    cachedStreams.add(stream);
+  }
   /**
    * Return this key's type
    *

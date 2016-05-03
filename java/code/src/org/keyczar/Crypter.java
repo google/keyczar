@@ -178,12 +178,11 @@ public class Crypter extends Encrypter {
           output.put(tempBuffer);
           output.limit(output.position());
         }
+        key.addStreamToCacheForReuse(cryptStream);
         return;
       } catch (KeyczarException e) {
-        LOG.debug(e.getMessage(), e);
         error = e;
       } catch (RuntimeException e) {
-        LOG.debug(e.getMessage(), e);
         error = new InvalidSignatureException();
       } finally {
         inputCopy.reset();

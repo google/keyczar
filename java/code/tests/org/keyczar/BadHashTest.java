@@ -2,14 +2,12 @@ package org.keyczar;
 
 import java.io.RandomAccessFile;
 
-import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.keyczar.interfaces.KeyczarReader;
 
 import junit.framework.TestCase;
 
 public class BadHashTest extends TestCase {
-  private static final Logger LOG = Logger.getLogger(BadHashTest.class);
   private static final String TEST_DATA = "./testdata/badhash";
   private String input = "This is some test data";
   

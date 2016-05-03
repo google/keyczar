@@ -172,10 +172,11 @@ public class AesKey extends KeyczarKey {
 
   @Override
   protected Stream getStream() throws KeyczarException {
-    if (cachedStream == null) {
-      cachedStream = new AesStream();
+    Stream cachedStream = cachedStreams.poll();
+    if (cachedStream != null) {
+      return cachedStream;
     }
-    return cachedStream;
+    return new AesStream();
   }
 
   @Override

@@ -2,7 +2,6 @@ package org.keyczar;
 
 import java.io.RandomAccessFile;
 
-import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.util.Base64Coder;
@@ -12,7 +11,6 @@ import junit.framework.TestCase;
 
 
 public class CollisionTest extends TestCase {
-  private static final Logger LOG = Logger.getLogger(CollisionTest.class);
   private static final String TEST_DATA = "./testdata/key-collision";
   private String input = "This is some test data";
   

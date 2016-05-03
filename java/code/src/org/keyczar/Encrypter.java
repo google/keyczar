@@ -91,6 +91,7 @@ public class Encrypter extends Keyczar {
 
     int outputSize = HEADER_SIZE + cryptStream.maxOutputSize(inputLength) +
         signStream.digestSize();
+    encryptingKey.addStreamToCacheForReuse(cryptStream);
     return outputSize;
   }
 
@@ -160,6 +161,8 @@ public class Encrypter extends Keyczar {
     signStream.updateSign(outputToSign);
     // Sign the final block of ciphertext output
     signStream.sign(output);
+    
+    encryptingKey.addStreamToCacheForReuse(cryptStream);
   }
 
   /**

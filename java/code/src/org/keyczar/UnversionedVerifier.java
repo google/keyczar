@@ -108,7 +108,9 @@ public class UnversionedVerifier extends Keyczar {
       VerifyingStream stream = (VerifyingStream) key.getStream();
       stream.initVerify();
       stream.updateVerify(data.duplicate());
-      return stream.verify(signature.duplicate());
+      boolean result = stream.verify(signature.duplicate());
+      key.addStreamToCacheForReuse(stream);
+      return result;
     } catch (KeyczarException e) {
       return false;
     } catch (RuntimeException e) {
