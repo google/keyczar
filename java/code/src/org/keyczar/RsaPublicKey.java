@@ -98,6 +98,10 @@ public class RsaPublicKey extends KeyczarPublicKey {
   public byte[] hash() {
     return hash;
   }
+  
+  public Iterable<byte[]> fallbackHash() {
+    return super.fallbackHash();
+  }
 
   @Override
   protected Stream getStream() throws KeyczarException {

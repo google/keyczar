@@ -149,6 +149,11 @@ public class DsaPublicKey extends KeyczarPublicKey {
   public byte[] hash() {
     return hash;
   }
+  
+  @Override
+  public Iterable<byte[]> fallbackHash() {
+    return super.fallbackHash();
+  }
 
   /**
    * Initialize JCE key from JSON data.  Must be called after an instance is read from JSON.
@@ -176,7 +181,7 @@ public class DsaPublicKey extends KeyczarPublicKey {
 
   private void initializeHash() throws KeyczarException {
     final DSAParams dsaParams = jcePublicKey.getParams();
-    final byte[] fullHash = Util.prefixHash(
+    byte[] fullHash = Util.prefixHash(
         Util.stripLeadingZeros(dsaParams.getP().toByteArray()),
         Util.stripLeadingZeros(dsaParams.getQ().toByteArray()),
         Util.stripLeadingZeros(dsaParams.getG().toByteArray()),

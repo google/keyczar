@@ -1,0 +1,12 @@
+{
+   "encrypted": false,
+   "name": "Test",
+   "nextKeyVersionNumber": 2,
+   "purpose": "DECRYPT_AND_ENCRYPT",
+   "type": "AES",
+   "versions": [ {
+      "exportable": false,
+      "status": "PRIMARY",
+      "versionNumber": 1
+   } ]
+}

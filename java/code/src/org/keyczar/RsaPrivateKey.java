@@ -150,6 +150,11 @@ public class RsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
   protected byte[] hash() {
     return publicKey.hash();
   }
+  
+  @Override
+  protected Iterable<byte[]> fallbackHash() {
+    return publicKey.fallbackHash();
+  }
 
   @Override
   public KeyczarPublicKey getPublic() {

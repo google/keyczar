@@ -130,7 +130,7 @@ public class Verifier extends Keyczar {
     signature.mark();
     for (KeyczarKey key : keys) {
       try {
-        if (rawVerify(key,data, hidden, signature)) {
+        if (rawVerify(key, data, hidden, signature)) {
           return true;
         }
       } catch (KeyczarException e) {

@@ -47,6 +47,7 @@ public class AllTests extends TestSuite {
     suite.addTestSuite(KeyExportTest.class);
     suite.addTestSuite(SessionTest.class);
     suite.addTestSuite(CollisionTest.class);
+    suite.addTestSuite(BadHashTest.class);
     return suite;
   }
 }

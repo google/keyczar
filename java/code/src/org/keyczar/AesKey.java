@@ -140,8 +140,26 @@ public class AesKey extends KeyczarKey {
 
   private void initJceKey(byte[] aesBytes) throws KeyczarException {
     aesKey = new SecretKeySpec(aesBytes, AES_ALGORITHM);
-    byte[] fullHash = Util.hash(Util.fromInt(BLOCK_SIZE), aesBytes, hmacKey.getEncoded());
+    byte[] fullHash = Util.hash(Util.fromInt(aesBytes.length), aesBytes, hmacKey.getEncoded());
+    
+    //Old java versions use block size for key length instead
+    if (aesBytes.length != BLOCK_SIZE) {
+      byte[] buggyHash = Util.hash(Util.fromInt(BLOCK_SIZE), aesBytes, hmacKey.getEncoded());
+      byte[] shortHash = new byte[Keyczar.KEY_HASH_SIZE];
+      System.arraycopy(buggyHash, 0, shortHash, 0, shortHash.length);
+      fallbackHash.add(shortHash);
+    }
+    //old version of cpp that stripped leading zeros out of key for hash
+    if (aesBytes[0] == 0x0) {
+      byte[] zeroStripKey = Util.stripLeadingZeros(aesBytes);
+      byte[] buggyHash = Util.hash(Util.fromInt(zeroStripKey.length), zeroStripKey, hmacKey.getEncoded());
+      byte[] shortHash = new byte[Keyczar.KEY_HASH_SIZE];
+      System.arraycopy(buggyHash, 0, shortHash, 0, shortHash.length);
+      fallbackHash.add(shortHash);
+    }
+    
     System.arraycopy(fullHash, 0, hash, 0, hash.length);
+
   }
 
   /*
