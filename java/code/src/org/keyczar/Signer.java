@@ -41,7 +41,6 @@ import java.nio.ByteBuffer;
  */
 public class Signer extends Verifier {
   static final int TIMESTAMP_SIZE = 8;
-  private final StreamQueue<SigningStream> SIGN_QUEUE = new StreamQueue<SigningStream>();
 
   /**
    * Initialize a new Signer with a KeyczarReader. The corresponding key set
@@ -80,7 +79,10 @@ public class Signer extends Verifier {
     if (signingKey == null) {
       throw new NoPrimaryKeyException();
     }
-    return HEADER_SIZE + ((SigningStream) signingKey.getStream()).digestSize();
+    SigningStream stream = (SigningStream) signingKey.getStream();
+    int result = HEADER_SIZE + stream.digestSize();
+    signingKey.addStreamToCacheForReuse(stream);
+    return result;
   }
 
   /**
@@ -112,7 +114,7 @@ public class Signer extends Verifier {
     sign(input, null, 0, output);
   }
 
-  /**
+  /**g
    * This allows other classes in the package to pass in hidden data and/or
    * expiration data to be signed.
    *
@@ -129,10 +131,7 @@ public class Signer extends Verifier {
     if (signingKey == null) {
       throw new NoPrimaryKeyException();
     }
-    SigningStream stream = SIGN_QUEUE.poll();
-    if (stream == null) {
-      stream = (SigningStream) signingKey.getStream();
-    }
+    SigningStream stream = (SigningStream) signingKey.getStream();
 
     int spaceNeeded = digestSize();
     if (expirationTime > 0) {
@@ -172,7 +171,9 @@ public class Signer extends Verifier {
     // Write the signature to the output
     stream.sign(output);
     output.limit(output.position());
-    SIGN_QUEUE.add(stream);
+    
+    signingKey.addStreamToCacheForReuse(stream);
+
   }
 
   /**
@@ -205,12 +206,7 @@ public class Signer extends Verifier {
       throw new NoPrimaryKeyException();
     }
 
-    SigningStream stream = SIGN_QUEUE.poll();
-
-    if (stream == null) {
-      // If not, allocate a new stream object.
-      stream = (SigningStream) signingKey.getStream();
-    }
+    SigningStream stream = (SigningStream) signingKey.getStream();
 
     stream.initSign();
     // Attached signature signs:
@@ -235,9 +231,7 @@ public class Signer extends Verifier {
     // [Format number | 4 bytes of key hash | blob size | blob | raw signature]
     byte[] signature =
         Util.cat(FORMAT_BYTES, signingKey.hash(), Util.lenPrefix(blob), output.array());
-
-    SIGN_QUEUE.add(stream);
-
+    signingKey.addStreamToCacheForReuse(stream);
     return signature;
   }
 

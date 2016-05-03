@@ -75,6 +75,10 @@ public class EcPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
   @Override
   protected Stream getStream() throws KeyczarException {
+    Stream cachedStream = cachedStreams.poll();
+    if (cachedStream != null) {
+      return cachedStream;
+    } 
     return new EcSigningStream();
   }
 

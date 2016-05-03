@@ -134,6 +134,10 @@ public class DsaPublicKey extends KeyczarPublicKey {
 
   @Override
   protected Stream getStream() throws KeyczarException {
+    Stream cachedStream = cachedStreams.poll();
+    if (cachedStream != null) {
+      return cachedStream;
+    } 
     return new DsaVerifyingStream();
   }
 
@@ -145,6 +149,11 @@ public class DsaPublicKey extends KeyczarPublicKey {
   @Override
   public byte[] hash() {
     return hash;
+  }
+  
+  @Override
+  public Iterable<byte[]> fallbackHash() {
+    return super.fallbackHash();
   }
 
   /**
@@ -173,7 +182,7 @@ public class DsaPublicKey extends KeyczarPublicKey {
 
   private void initializeHash() throws KeyczarException {
     final DSAParams dsaParams = jcePublicKey.getParams();
-    final byte[] fullHash = Util.prefixHash(
+    byte[] fullHash = Util.prefixHash(
         Util.stripLeadingZeros(dsaParams.getP().toByteArray()),
         Util.stripLeadingZeros(dsaParams.getQ().toByteArray()),
         Util.stripLeadingZeros(dsaParams.getG().toByteArray()),

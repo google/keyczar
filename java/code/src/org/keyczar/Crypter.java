@@ -29,6 +29,7 @@ import org.keyczar.interfaces.VerifyingStream;
 import org.keyczar.util.Base64Coder;
 
 import java.nio.ByteBuffer;
+import java.util.Collection;
 
 /**
  * Crypters may both encrypt and decrypt data using sets of symmetric or private
@@ -39,8 +40,6 @@ import java.nio.ByteBuffer;
  */
 public class Crypter extends Encrypter {
   private static final int DECRYPT_CHUNK_SIZE = 1024;
-  private final StreamCache<DecryptingStream> CRYPT_CACHE
-    = new StreamCache<DecryptingStream>();
 
   /**
    * Initialize a new Crypter with a KeyczarReader. The corresponding key set
@@ -80,7 +79,7 @@ public class Crypter extends Encrypter {
   public byte[] decrypt(byte[] input) throws KeyczarException {
     ByteBuffer output = ByteBuffer.allocate(input.length);
     decrypt(ByteBuffer.wrap(input), output);
-    output.reset();
+    output.rewind();
     byte[] outputBytes = new byte[output.remaining()];
     output.get(outputBytes);
     return outputBytes;
@@ -109,61 +108,90 @@ public class Crypter extends Encrypter {
 
     byte[] hash = new byte[KEY_HASH_SIZE];
     inputCopy.get(hash);
-    KeyczarKey key = getKey(hash);
-    if (key == null) {
+    Collection<KeyczarKey> keys  = getKey(hash);
+    if (keys == null) {
       throw new KeyNotFoundException(hash);
     }
 
     // The input to decrypt is now positioned at the start of the ciphertext
     inputCopy.mark();
+    int inputLimit = inputCopy.limit();
+    KeyczarException error = null;
+    
+    boolean collision = keys.size() > 1;
+    
+    for (KeyczarKey key : keys) {
+      error = null;
+      
+      ByteBuffer tempBuffer = output;
+      if (collision) {
+        tempBuffer = ByteBuffer.allocate(output.remaining());
+      }
+      
+      DecryptingStream cryptStream = (DecryptingStream) key.getStream();
+      
+      try {
+        VerifyingStream verifyStream = cryptStream.getVerifyingStream();
+        if (inputCopy.remaining() < verifyStream.digestSize()) {
+          throw new ShortCiphertextException(inputCopy.remaining());
+        }
 
-    DecryptingStream cryptStream = CRYPT_CACHE.get(key);
-    if (cryptStream == null) {
-      cryptStream = (DecryptingStream) key.getStream();
+        // Slice off the signature into another buffer
+        inputCopy.position(inputCopy.limit() - verifyStream.digestSize());
+        ByteBuffer signature = inputCopy.slice();
+
+        // Reset the position of the input to start of the ciphertext
+        inputCopy.reset();
+        inputCopy.limit(inputCopy.limit() - verifyStream.digestSize());
+
+        // Initialize the crypt stream. This may read an IV if any.
+        cryptStream.initDecrypt(inputCopy);
+
+        // Verify the header and IV if any
+        ByteBuffer headerAndIvToVerify = input.asReadOnlyBuffer();
+        headerAndIvToVerify.limit(inputCopy.position());
+        verifyStream.initVerify();
+        verifyStream.updateVerify(headerAndIvToVerify);
+
+        tempBuffer.mark();
+        // This will process large input in chunks, rather than all at once. This
+        // avoids making two passes through memory.
+        while (inputCopy.remaining() > DECRYPT_CHUNK_SIZE) {
+          ByteBuffer ciphertextChunk = inputCopy.slice();
+          ciphertextChunk.limit(DECRYPT_CHUNK_SIZE);
+          cryptStream.updateDecrypt(ciphertextChunk, output);
+          ciphertextChunk.rewind();
+          verifyStream.updateVerify(ciphertextChunk);
+          inputCopy.position(inputCopy.position() + DECRYPT_CHUNK_SIZE);
+        }
+        int lastBlock = inputCopy.position();
+        verifyStream.updateVerify(inputCopy);
+        if (!verifyStream.verify(signature)) {
+          throw new InvalidSignatureException();
+        }
+        inputCopy.position(lastBlock);
+        cryptStream.doFinalDecrypt(inputCopy, tempBuffer);
+        tempBuffer.limit(tempBuffer.position());
+        if (collision) {
+          //Success copy to final output buffer
+          tempBuffer.rewind();
+          output.put(tempBuffer);
+          output.limit(output.position());
+        }
+        key.addStreamToCacheForReuse(cryptStream);
+        return;
+      } catch (KeyczarException e) {
+        error = e;
+      } catch (RuntimeException e) {
+        error = new InvalidSignatureException();
+      } finally {
+        inputCopy.reset();
+        inputCopy.limit(inputLimit);
+      }
     }
-
-    VerifyingStream verifyStream = cryptStream.getVerifyingStream();
-    if (inputCopy.remaining() < verifyStream.digestSize()) {
-      throw new ShortCiphertextException(inputCopy.remaining());
+    if (error != null) {
+      throw error;
     }
-
-    // Slice off the signature into another buffer
-    inputCopy.position(inputCopy.limit() - verifyStream.digestSize());
-    ByteBuffer signature = inputCopy.slice();
-
-    // Reset the position of the input to start of the ciphertext
-    inputCopy.reset();
-    inputCopy.limit(inputCopy.limit() - verifyStream.digestSize());
-
-    // Initialize the crypt stream. This may read an IV if any.
-    cryptStream.initDecrypt(inputCopy);
-
-    // Verify the header and IV if any
-    ByteBuffer headerAndIvToVerify = input.asReadOnlyBuffer();
-    headerAndIvToVerify.limit(inputCopy.position());
-    verifyStream.initVerify();
-    verifyStream.updateVerify(headerAndIvToVerify);
-
-    output.mark();
-    // This will process large input in chunks, rather than all at once. This
-    // avoids making two passes through memory.
-    while (inputCopy.remaining() > DECRYPT_CHUNK_SIZE) {
-      ByteBuffer ciphertextChunk = inputCopy.slice();
-      ciphertextChunk.limit(DECRYPT_CHUNK_SIZE);
-      cryptStream.updateDecrypt(ciphertextChunk, output);
-      ciphertextChunk.rewind();
-      verifyStream.updateVerify(ciphertextChunk);
-      inputCopy.position(inputCopy.position() + DECRYPT_CHUNK_SIZE);
-    }
-    inputCopy.mark();
-    verifyStream.updateVerify(inputCopy);
-    if (!verifyStream.verify(signature)) {
-      throw new InvalidSignatureException();
-    }
-    inputCopy.reset();
-    cryptStream.doFinalDecrypt(inputCopy, output);
-    output.limit(output.position());
-    CRYPT_CACHE.put(key, cryptStream);
   }
 
   /**
