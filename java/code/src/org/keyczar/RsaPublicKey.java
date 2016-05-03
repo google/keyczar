@@ -101,7 +101,10 @@ public class RsaPublicKey extends KeyczarPublicKey {
 
   @Override
   protected Stream getStream() throws KeyczarException {
-    return new RsaStream();
+    if (cachedStream == null) {
+      cachedStream = new RsaStream();
+    }
+    return cachedStream;
   }
 
   @Override

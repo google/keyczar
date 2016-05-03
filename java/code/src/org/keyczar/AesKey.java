@@ -154,7 +154,10 @@ public class AesKey extends KeyczarKey {
 
   @Override
   protected Stream getStream() throws KeyczarException {
-    return new AesStream();
+    if (cachedStream == null) {
+      cachedStream = new AesStream();
+    }
+    return cachedStream;
   }
 
   @Override

@@ -84,7 +84,10 @@ public class HmacKey extends KeyczarKey {
 
   @Override
   protected Stream getStream() throws KeyczarException {
-    return new HmacStream();
+    if (cachedStream == null) {
+      cachedStream = new HmacStream();
+    }
+    return cachedStream;
   }
 
   @Override

@@ -111,7 +111,10 @@ public class DsaPrivateKey extends KeyczarKey implements KeyczarPrivateKey {
 
   @Override
   protected Stream getStream() throws KeyczarException {
-    return new DsaSigningStream();
+    if (cachedStream == null) {
+      cachedStream = new DsaSigningStream();
+    }
+    return cachedStream;
   }
 
   @Override

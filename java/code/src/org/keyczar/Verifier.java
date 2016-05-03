@@ -44,8 +44,6 @@ import java.nio.ByteBuffer;
 *
 */
 public class Verifier extends Keyczar {
-  private final StreamCache<VerifyingStream> VERIFY_CACHE
-    = new StreamCache<VerifyingStream>();
 
   /**
    * Initialize a new Verifier with a KeyczarReader. The corresponding key set
@@ -126,10 +124,7 @@ public class Verifier extends Keyczar {
     }
 
     // TODO(normandl): replace following with rawVerify().
-    VerifyingStream stream = VERIFY_CACHE.get(key);
-    if (stream == null) {
-      stream = (VerifyingStream) key.getStream();
-    }
+    VerifyingStream stream = (VerifyingStream) key.getStream();
     stream.initVerify();
     if (hidden != null) {
       stream.updateVerify(hidden);
@@ -141,7 +136,6 @@ public class Verifier extends Keyczar {
     stream.updateVerify(ByteBuffer.wrap(FORMAT_BYTES));
 
     boolean result = stream.verify(signature);
-    VERIFY_CACHE.put(key, stream);
     return result;
   }
 
@@ -169,23 +163,19 @@ public class Verifier extends Keyczar {
    */
   boolean rawVerify(KeyczarKey key, final ByteBuffer data, final ByteBuffer hidden,
       final ByteBuffer signature) throws KeyczarException {
-	VerifyingStream stream = VERIFY_CACHE.get(key);
-	if (stream == null) {
-	  stream = (VerifyingStream) key.getStream();
-	}
+      VerifyingStream stream = (VerifyingStream) key.getStream();
 
-	stream.initVerify();
-	stream.updateVerify(data);
-	if (hidden != null) {
-	  stream.updateVerify(hidden);
-	}
+      stream.initVerify();
+      stream.updateVerify(data);
+      if (hidden != null) {
+        stream.updateVerify(hidden);
+      }
 
-	// The signed data is terminated with the current Keyczar format
-	stream.updateVerify(ByteBuffer.wrap(FORMAT_BYTES));
+      // The signed data is terminated with the current Keyczar format 
+      stream.updateVerify(ByteBuffer.wrap(FORMAT_BYTES));
 
-	boolean result = stream.verify(signature);
-	VERIFY_CACHE.put(key, stream);
-	return result;
+      boolean result = stream.verify(signature);
+      return result;
   }
 
   /**

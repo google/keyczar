@@ -83,6 +83,8 @@ public abstract class KeyczarKey {
   public int hashCode() {
     return Util.toInt(this.hash());
   }
+  
+  protected Stream cachedStream = null;
 
   protected abstract Stream getStream() throws KeyczarException;
 
