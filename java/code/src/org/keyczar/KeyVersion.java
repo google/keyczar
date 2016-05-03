@@ -42,9 +42,9 @@ import org.keyczar.util.Util;
  *
  */
 public class KeyVersion {
-  @Expose private boolean exportable = false;
-  @Expose private KeyStatus status = KeyStatus.ACTIVE;
-  @Expose private int versionNumber = 0;
+  private boolean exportable = false;
+  private KeyStatus status = KeyStatus.ACTIVE;
+  private int versionNumber = 0;
 
   public KeyVersion(int v, boolean export) {
     this(v, KeyStatus.ACTIVE, export);
