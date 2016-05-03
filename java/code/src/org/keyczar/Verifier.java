@@ -117,26 +117,34 @@ public class Verifier extends Keyczar {
     }
 
     byte[] hash = checkFormatAndGetHash(signature);
-    KeyczarKey key = getVerifyingKey(hash);
+    Iterable<KeyczarKey> keys = getVerifyingKey(hash);
 
-    if (key == null) {
+    if (keys == null) {
       throw new KeyNotFoundException(hash);
     }
-
-    // TODO(normandl): replace following with rawVerify().
-    VerifyingStream stream = (VerifyingStream) key.getStream();
-    stream.initVerify();
+    
+    data.mark();
     if (hidden != null) {
-      stream.updateVerify(hidden);
+      hidden.mark();
     }
-
-    stream.updateVerify(data);
-
-    // The signed data is terminated with the current Keyczar format
-    stream.updateVerify(ByteBuffer.wrap(FORMAT_BYTES));
-
-    boolean result = stream.verify(signature);
-    return result;
+    signature.mark();
+    for (KeyczarKey key : keys) {
+      try {
+        if (rawVerify(key,data, hidden, signature)) {
+          return true;
+        }
+      } catch (KeyczarException e) {
+        //Continue Checking keys in case of collision
+      } catch (RuntimeException e) {
+        //Unfortunately Java crypto apis can throw runtime exceptions
+      }
+      data.reset();
+      if (hidden != null) {
+        hidden.reset();
+      }
+      signature.reset();
+    }
+    return false;
   }
 
 
@@ -195,7 +203,6 @@ public class Verifier extends Keyczar {
     ByteBuffer sigBuffer = ByteBuffer.wrap(signedBlob);
     // assume I need to decode here as well.
     byte[] hash = checkFormatAndGetHash(sigBuffer);
-    KeyczarKey key = getVerifyingKey(hash);
 
     // we have stripped the format and hash, now just get the blob and
     // raw signature
@@ -210,10 +217,24 @@ public class Verifier extends Keyczar {
     // [blob | hidden.length | hidden | format] or [blob | 0 | format]
     byte[] hiddenPlusLength = Util.fromInt(0);
     if (hidden.length > 0) {
-    	hiddenPlusLength = Util.lenPrefix(hidden);
+      hiddenPlusLength = Util.lenPrefix(hidden);
     }
-    return rawVerify(key, ByteBuffer.wrap(blob),
-      ByteBuffer.wrap(hiddenPlusLength), ByteBuffer.wrap(signature));
+    
+    Iterable<KeyczarKey> keys = getVerifyingKey(hash);
+    for (KeyczarKey key : keys) {
+      try {
+        if (rawVerify(key, ByteBuffer.wrap(blob), ByteBuffer.wrap(hiddenPlusLength), 
+            ByteBuffer.wrap(signature))) {
+          return true;
+        }
+      } catch (KeyczarException e) {
+            //continue checking keys incase of collision
+      } catch (RuntimeException e) {
+            //unfortunately java crypto apis can throw a runtime exception
+      } 
+    }
+    
+    return false;
   }
 
   /**
@@ -278,8 +299,8 @@ public class Verifier extends Keyczar {
     return hash;
   }
 
-  private KeyczarKey getVerifyingKey(byte[] hash) throws KeyNotFoundException {
-    KeyczarKey key = getKey(hash);
+  private Iterable<KeyczarKey> getVerifyingKey(byte[] hash) throws KeyNotFoundException {
+    Iterable<KeyczarKey> key = getKey(hash);
 
     if (key == null) {
       throw new KeyNotFoundException(hash);

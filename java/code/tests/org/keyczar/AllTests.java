@@ -46,6 +46,7 @@ public class AllTests extends TestSuite {
     suite.addTestSuite(CrossCompatibilityTest.class);
     suite.addTestSuite(KeyExportTest.class);
     suite.addTestSuite(SessionTest.class);
+    suite.addTestSuite(CollisionTest.class);
     return suite;
   }
 }
