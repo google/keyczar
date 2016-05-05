@@ -1,3 +1,11 @@
+Keyczar Python release 0.716
+==================
+2016-05-04  Shawn Willden <swillden@google.com>
+
+Overview of Changes:
+	* Replace the Memoize decorator with property cache to avoid memory leak.
+	* Add compatiblity with django-environ (Path)
+
 Keyczar Python release 0.715
 ==================
 Overview of Changes:
