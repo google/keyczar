@@ -1,6 +1,27 @@
 Keyczar Java release 0.71g
 ==========================
 
+2016-05-04  Shawn Willden <swillden@google.com>
+
+	* Enable custom implementations of KeyczarReader
+	* fixed cached thread safety regression
+	* AES >128bit key hash fallback, fixes issue #105
+	* Key collision robustness, refs #108 and fixes #107
+	* Refactored Stream Caching to be cleaner
+	* Correct/add copyright statements
+	* fix hardcoded temp file paths in KeyczarToolTest
+	* Change the Java source version to 1.6
+	* Remove GSON & logging, for easier use on Android
+	* Some whitespace cleanups.
+	* Removed log4j dependency and switched it for slf4j
+	* Explain file permission args
+	* Create metadata and key files in mode 0600
+	* Made magic number into constant and fixed up naming
+	* fix bugs in lenPrefixUnpack in Util.java
+
+Keyczar Java release 0.71g
+==========================
+
 2013-09-05  Devin Lundberg <dlundberg@google.com>
 
 	* ASM version bumped to 3.3 to prevent exceptions
