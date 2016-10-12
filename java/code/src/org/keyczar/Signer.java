@@ -20,7 +20,6 @@ import org.keyczar.enums.KeyPurpose;
 import org.keyczar.exceptions.KeyczarException;
 import org.keyczar.exceptions.NoPrimaryKeyException;
 import org.keyczar.exceptions.ShortBufferException;
-import org.keyczar.i18n.Messages;
 import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.interfaces.SigningStream;
 import org.keyczar.util.Base64Coder;
@@ -28,6 +27,7 @@ import org.keyczar.util.Util;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * Signers may both sign and verify data using sets of symmetric or private
@@ -230,7 +230,8 @@ public class Signer extends Verifier {
     // Attached signature format is:
     // [Format number | 4 bytes of key hash | blob size | blob | raw signature]
     byte[] signature =
-        Util.cat(FORMAT_BYTES, signingKey.hash(), Util.lenPrefix(blob), output.array());
+        Util.cat(FORMAT_BYTES, signingKey.hash(), Util.lenPrefix(blob),
+            Arrays.copyOfRange(output.array(), 0, output.position()));
     signingKey.addStreamToCacheForReuse(stream);
     return signature;
   }
