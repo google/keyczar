@@ -14,8 +14,12 @@
 # limitations under the License.
 
 # Building Cpp
+if [[ $GTEST_DIR = "" ]]; then
+  echo GTEST_DIR must be defined - see ../cpp/README for info about gtest
+  exit 1
+fi
 cd ../cpp/src/
-sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat
+sh ./tools/swtoolkit/hammer.sh --mode=opt-linux --compat GTEST_DIR=$GTEST_DIR
 
 # Building Java
 cd ../../java/code
