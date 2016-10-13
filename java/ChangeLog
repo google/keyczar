@@ -1,3 +1,11 @@
+Keyczar Java release 0.71i
+==========================
+
+2016-10-13  Andrew Sacamano <asacamano@gmail.com>
+
+	* Fix bug where extra bytes were being appended to signatures, and
+	truncate extra bytes on signatures before sending to JCE.
+
 Keyczar Java release 0.71h
 ==========================
 
