@@ -179,15 +179,6 @@ public class Verifier extends Keyczar {
       // The signed data is terminated with the current Keyczar format 
       stream.updateVerify(ByteBuffer.wrap(FORMAT_BYTES));
 
-      // There was a bug in Signer which allowed extra bytes to be included at the end of signatures
-      // in some cases.  There are some crypto libraries which reject signatures with extra bytes at
-      // the end. So this change trims the signature to the expected length so that existing
-      // signatures will not break. Note that if you don't use one of the strict crypto libraries,
-      // then you won't have this problem - but there is no way to identify them.
-      int trimmedSignatureLength =
-          Math.min(stream.digestSize(), signature.limit() - signature.position());
-      ByteBuffer trimmedSignature = ByteBuffer.allocate(trimmedSignatureLength);
-      trimmedSignature.put(signature.array(), signature.position(), trimmedSignatureLength);
       boolean result = stream.verify(signature);
       key.addStreamToCacheForReuse(stream);
       return result;
