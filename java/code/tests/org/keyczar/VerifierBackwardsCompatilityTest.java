@@ -1,10 +1,11 @@
 package org.keyczar;
 
-import java.nio.ByteBuffer;
+import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.Set;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.keyczar.exceptions.KeyczarException;
-import org.keyczar.util.Base64Coder;
 
 /**
  * This test makes sure that the verification of both proper length signatures and signatures with
@@ -14,35 +15,76 @@ public class VerifierBackwardsCompatilityTest extends TestCase {
   private static final String TEST_DATA = "./testdata";
   private Signer privateKeySigner;
   private Verifier publicKeyVerifier;
-  private byte[] data;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     privateKeySigner = new Signer(TEST_DATA + "/dsa");
     publicKeyVerifier = new Verifier(TEST_DATA + "/dsa.public");
-    data = Base64Coder.decodeWebSafe(
-        "U3VjY2VzcyEgWW91J3ZlIG1hbmFnZWQgdG8gaW5maWx0cmF0ZSBDb21tYW5kZXIgTGFtYmRhJ3MgZXZpbCBvcmdhbm"
-        + "l6YXRpb24sIGFuZCBmaW5hbGx5IGVhcm5lZCB5b3Vyc2VsZiBhbiBlbnRyeS1sZXZlbCBwb3NpdGlvbiBhcyBhIE"
-        + "1pbmlvbiBvbiBoZXIgc3BhY2Ugc3RhdGlvbi4gRnJvbSBoZXJlLCB5b3UganVzdCBtaWdodCBiZSBhYmxlIHRvIH"
-        + "N1YnZlcnQgaGVyIHBsYW5zIHRvIHVzZSB0aGUgTEFNQkNIT1AgZG9vbXNkYXkgZGV2aWNlIHRvIGRlc3Ryb3kgQn"
-        + "VubnkgUGxhbmV0LiBQcm9ibGVtIGlzLCBNaW5pb25zIGFyZSB0aGUgbG93ZXN0IG9mIHRoZSBsb3cgaW4gdGhlIE"
-        + "xhbWJkYSBoaWVyYXJjaHkuIEJldHRlciBidWNrIHVwIGFuZCBnZXQgd29ya2luZywgb3IgeW91J2xsIG5ldmVyIG"
-        + "1ha2UgaXQgdG8gdGhlIHRvcC4uLg=="
-        );
   }
 
   @Test
-  public final void testVerifyWithExtraBytes() throws KeyczarException {
-    byte[] signature = privateKeySigner.sign(data);
-    for (int cruftSize = 0; cruftSize < 16; cruftSize++) {
-      ByteBuffer cruftySignature = ByteBuffer.allocate(signature.length + cruftSize);
-      cruftySignature.put(signature);
-      for (int i = 0; i < cruftSize; i++) {
-        cruftySignature.put((byte)i);
+  public final void testVariableLengthSignaturesWithExtraBytes() throws KeyczarException {
+    // This is (I'm so sorry) a random test - because the signing process includes a random element.
+    // However, generally all these three sizes are found quite quickly, so this should not be too
+    // slow, nor flaky (if it flakes, buy a lottery ticket, and yell at me).
+    Set<Integer> remainingSizes = new HashSet<Integer>();
+    remainingSizes.add(50);
+    remainingSizes.add(51);
+    remainingSizes.add(52);
+
+    int limit = 10000;
+    Boolean jceDoesStrictVerification = null;
+    for (int i = 0; i < limit; i++) {
+      byte[] plaintext = BigInteger.valueOf(i).toByteArray();
+      byte[] signature = privateKeySigner.sign(plaintext);
+      int signatureSize = signature.length;
+      // Is this is a size that still needs to be tested
+      if (remainingSizes.contains(signatureSize)) {
+        for (int totalLength = signatureSize; totalLength <= 52; totalLength++) {
+          String error = "for " + i + ":" + signatureSize + ":" + totalLength;
+          byte[] signatureWithExtraBytes = new byte[totalLength];
+          System.arraycopy(signature, 0, signatureWithExtraBytes, 0, signature.length);
+          int extraBytesLength = totalLength - signature.length;
+
+          // Start by testing without strict verification - even with extra bytes at the end,
+          // the signatures should verify.
+          DsaPublicKey.setStrictVerificationForTest(false);
+          assertTrue("Invalid signature without strict verification " + error,
+              publicKeyVerifier.verify(plaintext, signatureWithExtraBytes));
+
+          // Now test without keyzar stripping the extra bytes.
+          DsaPublicKey.setStrictVerificationForTest(true);
+
+          // If there is no extra bytes, the signaure should verify
+          if (extraBytesLength == 0) {
+            assertTrue("Invalid signature with strict verification " + error,
+                publicKeyVerifier.verify(plaintext, signatureWithExtraBytes));
+          } else {
+            // This is dependant on the behavior of the JCE - so the first time through, use the
+            // behavior to decide whether the JCE has strict DSA verification - and then after that
+            // require that the behavior stays the same
+            boolean jceStrictVerificationDemonstrated =
+                !publicKeyVerifier.verify(plaintext, signatureWithExtraBytes);
+            if (jceDoesStrictVerification == null) {
+              jceDoesStrictVerification = jceStrictVerificationDemonstrated;
+              System.err.println("JCE strict DSA verification : " + jceDoesStrictVerification);
+            } else {
+              assertEquals("Invalid signature with strict verification " + error,
+                  jceStrictVerificationDemonstrated, jceDoesStrictVerification.booleanValue());
+            }
+          }
+        }
+
+        // Have we checked all the sizes we need to check - if so, stop
+        remainingSizes.remove(signatureSize);
+        if (remainingSizes.isEmpty()) {
+          return;
+        }
       }
-      assertTrue("failed with " + cruftSize + " bytes of cruft",
-          publicKeyVerifier.verify(data, cruftySignature.array()));
     }
+    // If we goes here, buy a lottery ticket because you're doing some crazy odds today.
+    fail("Failed after " + limit + " attempts to get 3 different signature sizes");
   }
 }
+

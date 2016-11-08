@@ -48,6 +48,15 @@ public class DsaPublicKey extends KeyczarPublicKey {
   private static final String SIG_ALGORITHM = "SHA1withDSA";
   private static final int DSA_DIGEST_SIZE = 48;
 
+  // See DsaVerifyingStream.verify
+  private static boolean strictVerification = Boolean.valueOf(
+      System.getProperty("keyczar.strict_dsa_verification", "false"));
+
+  // visible for testing
+  public static void setStrictVerificationForTest(boolean strictVerification) {
+    DsaPublicKey.strictVerification = strictVerification;
+  }
+
   private DSAPublicKey jcePublicKey;
   private final byte[] hash = new byte[Keyczar.KEY_HASH_SIZE];
   final String y;
@@ -137,7 +146,7 @@ public class DsaPublicKey extends KeyczarPublicKey {
     Stream cachedStream = cachedStreams.poll();
     if (cachedStream != null) {
       return cachedStream;
-    } 
+    }
     return new DsaVerifyingStream();
   }
 
@@ -150,7 +159,7 @@ public class DsaPublicKey extends KeyczarPublicKey {
   public byte[] hash() {
     return hash;
   }
-  
+
   @Override
   public Iterable<byte[]> fallbackHash() {
     return super.fallbackHash();
@@ -237,8 +246,58 @@ public class DsaPublicKey extends KeyczarPublicKey {
     @Override
     public boolean verify(ByteBuffer sig) throws KeyczarException {
       try {
-        return signature.verify(sig.array(), sig.position(), sig.limit()
+        // Copy the signature so that it can be safely modified
+        ByteBuffer signatureToVerify = ByteBuffer.allocate(sig.limit() - sig.position());
+        signatureToVerify.put(sig.array(), sig.position(), sig.limit()
             - sig.position());
+        if (!strictVerification) {
+          // A DSA signature is a DER sequence tag, following by a varint length that indicates
+          // length of the rest of the signature. This code truncates the signature to the indicated
+          // length.
+
+          // This is necessary since older versions of KeyCzar had a bug that included extra bytes
+          // at the end of the signature.
+
+          // if at any point we find something that is not as expected, stop processing and let it
+          // just fall through the the JCE.
+
+
+          // Start at the beginning and assume that we will truncate - set the flag to false if
+          // anything happens that is unexpected.
+          signatureToVerify.position(0);
+          boolean truncateSignature = true;
+          // Look for a DER sequence tag
+          if (signatureToVerify.get() != 0x30) {
+            truncateSignature = false;
+          } else {
+            // Now look for the DER length of the signature, which can be at most 48 bytes, so will
+            // only be 1 byte in DER varint.
+            int coefficientLength = signatureToVerify.get() & 0x00FF;
+            if (coefficientLength >= 0x80) {
+              // Nope - this means it's not a DSA 1024 SHA 1 signature
+              truncateSignature = false;
+            } else if (
+                signatureToVerify.position() + coefficientLength > signatureToVerify.limit()) {
+              // Nope - this is also not a well formed DSA 1024 SHA 1 signature
+              truncateSignature = false;
+            } else {
+              // Advance to the first byte past the signature
+              signatureToVerify.position(signatureToVerify.position() + coefficientLength);
+            }
+          }
+          if (truncateSignature) {
+            int bytesToTruncate = signatureToVerify.limit() - signatureToVerify.position();
+            if (bytesToTruncate > 0) {
+              signatureToVerify.limit(signatureToVerify.position());
+            }
+          }
+        }
+
+        // Now do the actual verify
+        signatureToVerify.position(0);
+        return signature.verify(signatureToVerify.array(),
+            signatureToVerify.position(),
+            signatureToVerify.limit() - signatureToVerify.position());
       } catch (GeneralSecurityException e) {
         throw new KeyczarException(e);
       }
