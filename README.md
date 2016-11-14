@@ -21,7 +21,7 @@ Quick Links
 
 - [Discussion Group](http://groups.google.com/group/keyczar-discuss)
 - [Design Document (PDF)](http://keyczar.googlecode.com/files/keyczar05b.pdf)
-- [Known Security Issues](Known-Security-Issues)
+- [Known Security Issues](#known-security-issues)
 
 Why Keyczar?
 ------------
