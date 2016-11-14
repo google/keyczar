@@ -1,5 +1,4 @@
-Introducing Keyczar
-===================
+# Introducing Keyczar
 
 Keyczar is an open source cryptographic toolkit designed to make it
 easier and safer for developers to use cryptography in their
@@ -16,15 +15,13 @@ symmetric and asymmetric keys. Some features of Keyczar include:
 Keyczar was originally developed by members of the Google Security
 Team and is released under an Apache 2.0 license.
 
-Quick Links
------------
+## Quick Links
 
 - [Discussion Group](http://groups.google.com/group/keyczar-discuss)
 - [Design Document (PDF)](http://keyczar.googlecode.com/files/keyczar05b.pdf)
 - [Known Security Issues](#known-security-issues)
 
-Why Keyczar?
-------------
+## Why Keyczar?
 
 Cryptography is easy to get wrong. Developers can choose improper
 cipher modes, use obsolete algorithms, compose primitives in an unsafe
@@ -38,8 +35,7 @@ compatible. It is not intended to replace existing cryptographic
 libraries like OpenSSL, PyCrypto, or the Java JCE, and in fact is
 built on these libraries.
 
-An illustrative use case
-------------------------
+## An illustrative use case
 
 Suppose an application needs to encrypt a URL parameter value with a
 symmetric key. Normally, a developer would need to decide which
@@ -60,31 +56,27 @@ crypter = Crypter.Read("/path/to/your/keys")
 ciphertext = crypter.Encrypt("Secret message")
 ```
 
-Get involved
-------------
+## Get involved
 
 Interested in getting involved? We encourage open source developers to
 contribute to the Keyczar project. Please join us on the Keyczar
 project and subscribe to the Keyczar discussion group.
 
 
-Known Security Issues
----------------------
+## Known Security Issues
 The following section lists known security issues.
 
 There are probably others that have not been identified.
 
 
-Signed Session Encryption Re-signing
------------------------------
+### Signed Session Encryption Re-signing
 Keyczar signed session enctyption does not include the key ID of the signing key inside
 the encrypted plaintext. This makes is possible for an attacker to strip the signature
 from a message, and re-sign it using their private key, making it look like they sent
 the original message.
 
 
-DSA Signature Malleability
---------------------------
+### DSA Signature Malleability
 DSA signatures are basically two variable length ints. So some DSA signatures are shorter
 than others.
 
