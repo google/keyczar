@@ -1,4 +1,10 @@
-# Introducing Keyczar
+# Keyczar
+
+Important note: KeyCzar has some known security issues which may
+influence your decision to use it. See [Known Security
+Issues](#known-security-issues).
+
+## Introduction
 
 Keyczar is an open source cryptographic toolkit designed to make it
 easier and safer for developers to use cryptography in their
@@ -17,9 +23,9 @@ Team and is released under an Apache 2.0 license.
 
 ## Quick Links
 
+- [Known Security Issues](#known-security-issues)
 - [Discussion Group](http://groups.google.com/group/keyczar-discuss)
 - [Design Document (PDF)](http://keyczar.googlecode.com/files/keyczar05b.pdf)
-- [Known Security Issues](#known-security-issues)
 
 ## Why Keyczar?
 
@@ -67,6 +73,12 @@ project and subscribe to the Keyczar discussion group.
 The following section lists known security issues.
 
 There are probably others that have not been identified.
+
+
+### Use of SHA 1 and 1024 bit DSA
+Keyczar uses 1024 bit DSA keys with SHA1. Both of these are considered weak by
+current security standards.  However, it is not trivial to upgrade without breaking
+backwards compatibility.
 
 
 ### Signed Session Encryption Re-signing
