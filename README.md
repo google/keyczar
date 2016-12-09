@@ -25,7 +25,7 @@ Team and is released under an Apache 2.0 license.
 
 - [Known Security Issues](#known-security-issues)
 - [Discussion Group](http://groups.google.com/group/keyczar-discuss)
-- [Design Document (PDF)](http://keyczar.googlecode.com/files/keyczar05b.pdf)
+- [Design Document (PDF)](https://github.com/google/keyczar/blob/wiki/keyczar05b.pdf)
 
 ## Why Keyczar?
 
