@@ -82,7 +82,7 @@ backwards compatibility.
 
 
 ### Signed Session Encryption Re-signing
-Keyczar signed session enctyption does not include the key ID of the signing key inside
+Keyczar signed session encryption does not include the key ID of the signing key inside
 the encrypted plaintext. This makes is possible for an attacker to strip the signature
 from a message, and re-sign it using their private key, making it look like they sent
 the original message.
