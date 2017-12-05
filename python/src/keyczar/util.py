@@ -475,7 +475,8 @@ def ReadFile(loc):
   @raise KeyczarError: if unable to read from file because of IOError
   """
   try:
-    return open(loc).read()
+    with open(loc) as f:
+      return f.read()
   except IOError:
     raise errors.KeyczarError("Unable to read file %s." % loc)
 
