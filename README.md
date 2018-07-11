@@ -105,7 +105,7 @@ of data that includes a message and its signature. See the
 [CVN](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2014-8275),
 [OpenSSL's comments](https://www.openssl.org/news/vulnerabilities.html#2014-8275)
 and [problem](and https://en.bitcoin.it/wiki/Transaction_Malleability)
-this causes for BitCoint.
+this causes for Bitcoin.
 
 Some new JCE implementations are more strict - and will reject DSA signatures with extra
 data. In order for older (improperly padded DSA signatures) to be acceptible even when
@@ -113,7 +113,7 @@ running KeyCzar on such new JCE implementations - the KeyCzar Java DSA verifier 
 trims any extra data from the signature.
 
 Note that this means you should not use this implementation for such applications - such as
-bitcoin - without setting the "keyczar.strict\_dsa\_verification" system property.
+Bitcoin - without setting the "keyczar.strict\_dsa\_verification" system property.
 
 As other underlying crypto libraries make this strict - it is probable that other language
 implementations may have this issue.
