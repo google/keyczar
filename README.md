@@ -1,8 +1,6 @@
 # Keyczar
 
-Important note: KeyCzar has some known security issues which may
-influence your decision to use it. See [Known Security
-Issues](#known-security-issues).
+*Important note:* Keyczar is deprecated.  The Keyczar developers recommend [Tink](https://github.com/google/tink).
 
 ## Introduction
 
