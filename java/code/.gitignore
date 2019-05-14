@@ -1,6 +1,0 @@
-bin
-target
-.pydevproject
-.settings/*
-maven
-.classpath

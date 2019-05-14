@@ -1,8 +1,0 @@
-{
-   "namedCurve": "secp224r1",
-   "privateKey": "ZXDbLHzgJFojz5S0M_Yj2fnLLuIB1BxSiNid7g",
-   "publicKey": {
-      "namedCurve": "secp224r1",
-      "publicBytes": "BA9XkZOyrPYQJyy-nR3wzB7ddcFyGaberpAjSZmeN-nQtacW0rQp5Kc1-xVcXX4TuIN0Av3SofwS"
-   }
-}

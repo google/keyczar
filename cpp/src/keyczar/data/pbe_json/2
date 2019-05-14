@@ -1,8 +1,0 @@
-{
-   "cipher": "AES128",
-   "hmac": "HMAC_SHA1",
-   "iterationCount": 4096,
-   "iv": "kF2rXrzf-mPiWmlfxnVP0Q",
-   "key": "2ejz5vdMdeag8m_GE_7NDOf2jdccgg111PFVAPLLlNT-NzhVkeKm8CNoEY55xq6EqknhNH7_FRi8f5gsDExYPQz_-tjkb6qO2lPdxFI1t6zHMWyRlvz9z_KrHULU9U4QSxhEktPahZAzDS5Orx3f-UC7Ul5vZuX-eRMmf1wTx9ghqdNaCRDi-myfo69XeykxvWw07IGnUVppOhr-iuhbBA",
-   "salt": "PsSTPe6Okqr-UWQ95sSPPw"
-}

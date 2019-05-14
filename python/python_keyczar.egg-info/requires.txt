@@ -1,2 +1,0 @@
-pycrypto>2.0
-pyasn1

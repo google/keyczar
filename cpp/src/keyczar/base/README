@@ -1,7 +1,0 @@
-The majority of the code used in this directory is copied from Chromium
-http://code.google.com/intl/fr/chromium/
-
-The followings files are copied from Protobuf http://code.google.com/p/protobuf/
-stl_util-inl.[cc,h]
-logging.[cc,h]
-parts of string_util.[cc,h]
